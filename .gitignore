@@ -12,3 +12,4 @@ pki/certs
 compose.env
 .vscode
 **/node_modules/
+cwms-data-api/features.properties

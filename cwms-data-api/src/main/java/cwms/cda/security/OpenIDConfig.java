@@ -56,25 +56,28 @@ public class OpenIDConfig {
         return jwksUrl;
     }
 
-    public SecurityScheme getScheme() {
-
-        
+    static SecurityScheme buildScheme(String wellKnownUrl, String clientId, String idpHint) {
         SecurityScheme scheme =  new SecurityScheme().type(Type.OPENIDCONNECT)
-                                                    .openIdConnectUrl(wellKnown.toString())
-                                                    .scheme("openid");
-        if (idp_hint != null)
+                                                    .openIdConnectUrl(wellKnownUrl);
+        if (idpHint != null)
         {
             Map<String, Object> hint = new HashMap<>();
             hint.put("query-parameter", "kc_idp_hint");
             ArrayList<String> values = new ArrayList<>();
-            for (String value: idp_hint.split(",")) {
+            for (String value: idpHint.split(",")) {
                 values.add(value.trim());
             }
             hint.put("values", values);
             scheme.addExtension("x-kc_idp_hint", hint);
         }
 
-        scheme.addExtension("x-oidc-client-id", client_id);
+        scheme.addExtension("x-oidc-client-id", clientId);
+        return scheme;
+    }
+
+    public SecurityScheme getScheme() {
+        
+        SecurityScheme scheme = buildScheme(wellKnown.toString(), client_id, idp_hint);
         return scheme;
     }
 }

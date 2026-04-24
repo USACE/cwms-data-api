@@ -14,7 +14,7 @@ import { useDebounce } from "use-debounce";
 // Catalog client
 const catalogApi = new CatalogApi(
   new Configuration({
-    basePath: import.meta.env.CDA_URL,
+    basePath: import.meta.env.VITE_CDA_API_ROOT,
     headers: { accept: "application/json;version=2" },
   }),
 );
@@ -76,6 +76,11 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="px-3 py-2 border rounded w-full"
             placeholder="Search TSID (e.g. Location.Elev.Inst.1Hour.0.Version)"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            name="tsid-search"
           />
           <ComboboxOptions className="bg-white border mt-1 max-h-60 overflow-auto">
             {loading ? (

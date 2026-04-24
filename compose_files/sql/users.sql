@@ -19,6 +19,7 @@ begin
    cwms_sec.add_cwms_user('m5hectest', null, 'SWT');
    cwms_sec.add_user_to_group('m5hectest', 'All Users', 'SWT');
    cwms_sec.add_user_to_group('m5hectest', 'CWMS Users', 'SWT');
+   cwms_sec.add_user_to_group('m5hectest', 'TS ID Creator', 'SWT');
    cwms_sec.add_cwms_user('q0hectest', null, 'SWT');
    cwms_sec.add_user_to_group('q0hectest', 'All Users', 'SWT');
    cwms_sec.add_user_to_group('q0hectest', 'CWMS Users', 'SWT');
@@ -50,6 +51,7 @@ begin
     cwms_sec.add_cwms_user('m5hectest',NULL,'SWT');
     cwms_sec.add_user_to_group('m5hectest','All Users', 'SWT');
     cwms_sec.add_user_to_group('m5hectest','CWMS Users', 'SWT');
+    cwms_sec.add_user_to_group('m5hectest','TS ID Creator', 'SWT');
     execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
 
 

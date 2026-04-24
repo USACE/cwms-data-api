@@ -59,6 +59,7 @@ import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -818,6 +819,32 @@ class LocationControllerTestIT extends DataApiTestIT {
             .contentType(is(test._expectedContentType));
     }
 
+    @Test
+    void test_get_all_locations_without_datum_returns_results() throws Exception {
+        String locationName = "TestLocNoDatum";
+        KeyUser user = KeyUser.SPK_NORMAL;
+        String officeId = user.getOperatingOffice();
+
+        createLocation(locationName, true, officeId, 38.5757, -121.4789, "WGS84", "UTC", "SITE");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAMES, locationName)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(1))
+            .body("[0].name", equalTo(locationName))
+        ;
+    }
+
     enum GetAllLegacyTest
     {
         JSON(Formats.JSON_LEGACY, Formats.JSON),
@@ -952,10 +979,12 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("aliases.size()", is(2))
-            .body("aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
-            .body("aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
-            .body("aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("aliases.name", containsInAnyOrder(
+                categoryName + "-" + groupName1,
+                categoryName + "-" + groupName2))
+            .body("aliases.value", containsInAnyOrder(
+                sharedLocAlias1,
+                sharedLocAlias2))
         ;
 
         // verify that alias as location ID does not return results

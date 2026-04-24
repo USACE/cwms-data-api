@@ -17,6 +17,7 @@ public class CatalogRequestParameters {
     private final String tsGroupLike;
     private final String boundingOfficeLike;
     private final boolean includeExtents;
+    private final boolean includeVersions;
     private final boolean excludeEmpty;
     private final String locationKind;
     private final String locationType;
@@ -35,6 +36,7 @@ public class CatalogRequestParameters {
         this.tsGroupLike = builder.tsGroupLike;
         this.boundingOfficeLike = builder.boundingOfficeLike;
         this.includeExtents = builder.includeExtents;
+        this.includeVersions = builder.includeVersions;
         this.excludeEmpty = builder.excludeEmpty;
         this.locationKind = builder.locationKind;
         this.locationType = builder.locationType;
@@ -54,6 +56,10 @@ public class CatalogRequestParameters {
 
     public boolean isIncludeExtents() {
         return includeExtents;
+    }
+
+    public boolean isIncludeVersions() {
+        return includeVersions;
     }
 
     public String getLocCatLike() {
@@ -118,6 +124,7 @@ public class CatalogRequestParameters {
         String tsGroupLike;
         String boundingOfficeLike;
         boolean includeExtents = false;
+        boolean includeVersions = false;
         private boolean excludeEmpty = true;
         String locationKind;
         String locationType;
@@ -175,6 +182,11 @@ public class CatalogRequestParameters {
             return this;
         }
 
+        public Builder withIncludeVersions(boolean includeVersions) {
+            this.includeVersions = includeVersions;
+            return this;
+        }
+
         public Builder withExcludeEmpty(boolean excludeExtents) {
             this.excludeEmpty = excludeExtents;
             return this;
@@ -222,6 +234,7 @@ public class CatalogRequestParameters {
                     .withTsGroupLike(params.tsGroupLike)
                     .withBoundingOfficeLike(params.boundingOfficeLike)
                     .withIncludeExtents(params.includeExtents)
+                    .withIncludeVersions(params.includeVersions)
                     .withExcludeEmpty(params.excludeEmpty)
                     .withLocationKind(params.locationKind)
                     .withLocationType(params.locationType)

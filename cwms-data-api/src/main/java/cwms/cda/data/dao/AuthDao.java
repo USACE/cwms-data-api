@@ -25,8 +25,10 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -41,7 +43,6 @@ import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -54,6 +55,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
+    public static final String AUTH_ERROR_MSG = "Authentication failed. The API Key may be invalid or no longer active.";
     // At this level we just care that the user has permissions in *any* office
     private static final String RETRIEVE_GROUPS_OF_USER =
             ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql", AuthDao.class);
@@ -202,7 +204,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         if (rs.next()) {
                             return rs.getString(1);
                         } else {
-                            throw new CwmsAuthException("No user for key");
+                            throw new CwmsAuthException(AUTH_ERROR_MSG);
                         }
                     }
                 } catch (SQLException ex) {
@@ -492,8 +494,15 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     private static ApiKey rs2ApiKey(ResultSet rs) throws SQLException {
         String userId = rs.getString("userid");
         String keyName = rs.getString("key_name");
-        ZonedDateTime created = rs.getObject("created",ZonedDateTime.class);
-        ZonedDateTime expires = rs.getObject("expires",ZonedDateTime.class);
+
+        ZonedDateTime created = Optional.ofNullable(rs.getObject("created", Timestamp.class))
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(ZoneOffset.UTC))
+            .orElse(null);
+        ZonedDateTime expires = Optional.ofNullable(rs.getObject("expires", Timestamp.class))
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(ZoneOffset.UTC))
+            .orElse(null);
         return new ApiKey(userId,keyName,null,created,expires);
     }
 

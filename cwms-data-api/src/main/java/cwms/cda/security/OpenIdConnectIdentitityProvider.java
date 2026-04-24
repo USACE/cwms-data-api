@@ -115,6 +115,10 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
                 throw new CwmsAuthException("Not Authorized",HttpServletResponse.SC_UNAUTHORIZED);
             }
         } catch (NumberFormatException | JwtException ex) {
+            log.atFine().withCause(ex).log(
+                "JWT validation failed for bearer token from issuer configuration '%s'",
+                System.getProperty(ISSUER_PROPERTY, System.getenv(ISSUER_PROPERTY))
+            );
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
         }
     }

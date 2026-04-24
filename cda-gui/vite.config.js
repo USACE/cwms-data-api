@@ -8,9 +8,6 @@ export default defineConfig(({ mode }) => {
   return {
     base: "/cwms-data",
     plugins: [react()],
-    define: {
-      "import.meta.env.CDA_URL": JSON.stringify("/cwms-data"),
-    },
     server: {
       proxy: {
         "^/cwms-data/timeseries/.*": {
