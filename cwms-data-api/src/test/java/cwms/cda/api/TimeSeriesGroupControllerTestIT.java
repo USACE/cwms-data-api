@@ -49,6 +49,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
@@ -133,7 +134,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             Configuration configuration = DSL.using(c).configuration();
             TimeSeriesGroupDao groupDao = new TimeSeriesGroupDao(configuration.dsl());
             TimeSeriesCategoryDao categoryDao = new TimeSeriesCategoryDao(configuration.dsl());
-            TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl());
+            TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl(), new MetricRegistry());
 
             for (TimeSeriesGroup group : cwmsgroupsToSPKUnassign) {
                 // We can't delete CWMS groups and we don't want to try to unassign "CWMS" assignments

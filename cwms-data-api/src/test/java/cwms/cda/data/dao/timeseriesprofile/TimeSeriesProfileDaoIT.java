@@ -1,12 +1,9 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.time.Duration;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Date;
+import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
@@ -17,15 +14,18 @@ import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileTest;
 import fixtures.CwmsDataApiSetupCallback;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Date;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag("integration")
 class TimeSeriesProfileDaoIT extends DataApiTestIT {
@@ -58,7 +58,7 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, databaseLink.getOfficeId());
-            TimeSeriesDao timeSeriesDao = new TimeSeriesDaoImpl(context);
+            TimeSeriesDao timeSeriesDao = new TimeSeriesDaoImpl(context, new MetricRegistry());
             timeSeriesDao.create(ts);
         });
     }
@@ -72,7 +72,7 @@ class TimeSeriesProfileDaoIT extends DataApiTestIT {
                     .withStartTime(Date.from(start.toInstant())).withEndTime(Date.from(end.toInstant()))
                     .withEndTimeInclusive(true).withStartTimeInclusive(true).withMaxVersion(true)
                     .withVersionDate(Date.from(start.toInstant())).withOverrideProtection("T").build();
-            TimeSeriesDao timeSeriesDao = new TimeSeriesDaoImpl(context);
+            TimeSeriesDao timeSeriesDao = new TimeSeriesDaoImpl(context, new MetricRegistry());
             timeSeriesDao.delete(OFFICE_ID, "Greensburg.Stage.Inst.15Minutes.0.USGS-rev", options);
         });
     }
