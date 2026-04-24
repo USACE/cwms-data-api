@@ -475,7 +475,7 @@ public class TimeSeriesController implements CrudHandler {
                 } catch (java.util.concurrent.TimeoutException ex) {
                     daoFuture.cancel(true);
                     cwms.cda.api.errors.CdaError re = new cwms.cda.api.errors.CdaError("Request is taking too long; try narrowing the date range.");
-                    ctx.status(HttpServletResponse.SC_GATEWAY_TIMEOUT);
+                    ctx.status(HttpServletResponse.SC_REQUEST_TIMEOUT);
                     ctx.json(re);
                     return;
                 } catch (InterruptedException ex) {
