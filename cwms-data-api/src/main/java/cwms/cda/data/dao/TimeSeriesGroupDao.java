@@ -106,7 +106,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         if (includeAssigned) {
             return getTimeSeriesGroupsWhere(dsl, whereCond, tsOfficeId, groupOfficeId, categoryOfficeId);
         } else {
-            return getTimeSeriesGroupsWithoutAssigned(whereCond);
+            return getTimeSeriesGroupsWithoutAssigned(whereCond, groupOfficeId, categoryOfficeId);
         }
 
     }
@@ -226,19 +226,29 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     @NotNull
-    private List<TimeSeriesGroup> getTimeSeriesGroupsWithoutAssigned(Condition whereCond) {
+    private List<TimeSeriesGroup> getTimeSeriesGroupsWithoutAssigned(Condition whereCond, String groupOfficeId, String categoryOfficeId) {
+        AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
+
+        Condition whereCondGrpCat = DSL.noCondition();
+        if (categoryOfficeId != null) {
+            whereCondGrpCat = whereCondGrpCat.and(catGrp.CAT_DB_OFFICE_ID.eq(categoryOfficeId.toUpperCase()));
+        }
+        if (groupOfficeId != null) {
+            whereCondGrpCat = whereCondGrpCat.and(catGrp.GRP_DB_OFFICE_ID.eq(groupOfficeId.toUpperCase()));
+        }
 
         SelectConditionStep<Record8<String, String, String, String, String, String, String, String>> query = dsl.select(
-                AV_TS_CAT_GRP.AV_TS_CAT_GRP.CAT_DB_OFFICE_ID,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_ID,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_CATEGORY_DESC,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.GRP_DB_OFFICE_ID,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_ID,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.TS_GROUP_DESC,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_TS_ALIAS_ID,
-                        AV_TS_CAT_GRP.AV_TS_CAT_GRP.SHARED_REF_TS_ID)
-                .from(AV_TS_CAT_GRP.AV_TS_CAT_GRP)
-                .where(whereCond);
+                catGrp.CAT_DB_OFFICE_ID,
+                        catGrp.TS_CATEGORY_ID,
+                        catGrp.TS_CATEGORY_DESC,
+                        catGrp.GRP_DB_OFFICE_ID,
+                        catGrp.TS_GROUP_ID,
+                        catGrp.TS_GROUP_DESC,
+                        catGrp.SHARED_TS_ALIAS_ID,
+                        catGrp.SHARED_REF_TS_ID)
+                .from(catGrp)
+                .where(whereCond)
+                .and(whereCondGrpCat);
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
