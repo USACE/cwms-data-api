@@ -1974,7 +1974,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_create_with_vertical_datum_info_native_other() throws Exception {
+    void test_create_with_vertical_datum_info_other() throws Exception {
         // This test exercises creating a timeseries while providing vertical-datum-info
         // where the native-datum is OTHER and a local-datum-name is supplied (MSL1912),
         // mirroring the cURL example provided in the issue description. See
@@ -1984,15 +1984,13 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         final String officeId = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
         final String tsName = location + ".Elev.Inst.~15Minutes.0.best-MSL1912";
 
-        // Construct request body similar to the provided curl, adjusting office-id to our test account office
-        String body = "{" +
-                "\n  \"begin\": \"2026-02-27T12:30:34.182026Z\"," +
-                "\n  \"end\": \"2026-02-27T13:37:53.366357Z\"," +
-                "\n  \"name\": \"" + tsName + "\"," +
-                "\n  \"office-id\": \"" + officeId + "\"," +
-                "\n  \"units\": \"ft\"," +
-                "\n  \"values\": [\n    [\n      1772196300000,\n      613.7199999999999,\n      0\n    ]\n  ]," +
-                "\n  \"vertical-datum-info\": {\n    \"office\": \"" + officeId + "\",\n    \"unit\": \"ft\",\n    \"location\": \"" + location + "\",\n    \"native-datum\": \"OTHER\",\n    \"elevation\": 600,\n    \"local-datum-name\": \"MSL1912\",\n    \"offsets\": [\n      {\n        \"estimate\": false,\n        \"to-datum\": \"NAVD-88\",\n        \"value\": -0.771\n      },\n      {\n        \"estimate\": true,\n        \"to-datum\": \"NGVD-29\",\n        \"value\": -0.6185\n      }\n    ]\n  }\n}";
+        // Load request body from resource file
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/timeseries/ts_create_other.json");
+        assertNotNull(resource);
+        String body = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        // Update the body with the dynamic values
+        body = body.replace("SPK", officeId);
 
         // Ensure the location exists and has coordinates so offsets logic in DAO has context if needed
         createLocation(location, true, officeId);
@@ -2046,6 +2044,70 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .body("vertical-datum-info.offsets.find { it['to-datum'] == 'NAVD-88' }.estimate", equalTo(false))
             .body("vertical-datum-info.offsets.find { it['to-datum'] == 'NGVD-29' }.value", equalTo(-0.6185f))
             .body("vertical-datum-info.offsets.find { it['to-datum'] == 'NGVD-29' }.estimate", equalTo(true));
+    }
+
+    @Test
+    void test_create_with_vertical_datum_info_native() throws Exception {
+        final String location = "McGregor";
+        final String officeId = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
+        final String tsName = location + ".Elev.Inst.~15Minutes.0.best-NATIVE";
+
+        // Load request body from resource file
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/timeseries/ts_create_other.json");
+        assertNotNull(resource);
+        String body = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        // Update the body with the dynamic values
+        body = body.replace("SPK", officeId);
+        body = body.replace("OTHER", "NATIVE");
+        body = body.replace(location + ".Elev.Inst.~15Minutes.0.best-MSL1912", tsName);
+
+        // Ensure the location exists and has coordinates so offsets logic in DAO has context if needed
+        createLocation(location, true, officeId);
+        updateLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // POST the timeseries with datum=NATIVE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(body)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(DATUM, VerticalDatum.NATIVE.toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Retrieve it back and verify vertical-datum-info echoes expected values
+        String beginIso = java.time.Instant.ofEpochMilli(1772196300000L).toString();
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(UNIT, "ft")
+            .queryParam(NAME, tsName)
+            .queryParam(BEGIN, beginIso)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("vertical-datum-info", notNullValue())
+            .body("vertical-datum-info.location", equalTo(location))
+            .body("vertical-datum-info.office", equalTo(officeId))
+            .body("vertical-datum-info.unit", equalTo("ft"))
+            .body("vertical-datum-info.native-datum", equalTo("NAVD88")); // NAVD88 is the native datum we set in updateLocation
     }
 
     private void updateLocation(String location, boolean active, String officeId) throws SQLException {
