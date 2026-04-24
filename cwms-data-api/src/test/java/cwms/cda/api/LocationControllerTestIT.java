@@ -819,6 +819,32 @@ class LocationControllerTestIT extends DataApiTestIT {
             .contentType(is(test._expectedContentType));
     }
 
+    @Test
+    void test_get_all_locations_without_datum_returns_results() throws Exception {
+        String locationName = "TestLocNoDatum";
+        KeyUser user = KeyUser.SPK_NORMAL;
+        String officeId = user.getOperatingOffice();
+
+        createLocation(locationName, true, officeId, 38.5757, -121.4789, "WGS84", "UTC", "SITE");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAMES, locationName)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(1))
+            .body("[0].name", equalTo(locationName))
+        ;
+    }
+
     enum GetAllLegacyTest
     {
         JSON(Formats.JSON_LEGACY, Formats.JSON),
