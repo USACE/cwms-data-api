@@ -1,6 +1,5 @@
 package cwms.cda.data.dao;
 
-
 import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
@@ -65,13 +64,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -122,13 +119,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public static final String PROP_BASE = "cwms.cda.data.dao.ts";
     private static final long TOTAL_QUERY_TIMEOUT_SECONDS = 30L;
     private static final ExecutorService TOTAL_QUERY_EXECUTOR = Executors.newCachedThreadPool(
-            new ThreadFactory() {
-                @Override
-                public Thread newThread(@NotNull Runnable r) {
-                    Thread thread = new Thread(r, "timeseries-total-query");
-                    thread.setDaemon(true);
-                    return thread;
-                }
+            r -> {
+                Thread thread = new Thread(r, "timeseries-total-query");
+                thread.setDaemon(true);
+                return thread;
             }
     );
 
@@ -159,64 +153,50 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             .build();
     private static final FieldMapping AV_CWMS_TS_ID2_FIELD_MAP = new CwmsTsId2FieldMapping();
     private static final FieldMapping AV_CWMS_TS_ID_FIELD_MAP = new CwmsTsIdFieldMapping();
-    @Nullable
-    private final MetricRegistry metrics;
-    @Nullable
+
+
+    @NotNull
     private final Timer getRequestedTimeSeriesTotalQueryTimer;
-    @Nullable
+    @NotNull
     private final Meter getRequestedTimeSeriesTotalQueryMeter;
-    @Nullable
+    @NotNull
     private final Meter getRequestedTimeSeriesTotalQueryTimeoutMeter;
-    @Nullable
+    @NotNull
     private final Meter getRequestedTimeSeriesTotalQueryErrorMeter;
-    @Nullable
+    @NotNull
     private final Histogram getRequestedTimeSeriesResultsReturnedHistogram;
-    @Nullable
+    @NotNull
     private final Histogram getRequestedTimeSeriesRequestWindowMillisHistogram;
 
-    public TimeSeriesDaoImpl(DSLContext dsl) {
-        this(dsl, null);
-    }
-
-    public TimeSeriesDaoImpl(DSLContext dsl, @Nullable MetricRegistry metrics) {
+    public TimeSeriesDaoImpl(DSLContext dsl, @NotNull MetricRegistry metrics) {
         super(dsl);
 
-        this.metrics = metrics;
-
-        if (metrics != null) {
-            String className = this.getClass().getName();
-            CacheStats stats = isVersionedCache.stats();
-            String hrName = MetricRegistry.name(className, VERSIONED_NAME, "hit-rate");
-            if (metrics.getGauges().get(hrName) == null) {
-                MetricRegistry.MetricSupplier<? extends Gauge> hr = () -> (Gauge<Double>) stats::hitRate;
-                metrics.gauge(hrName, hr);
-            }
-            String mrName = MetricRegistry.name(className,VERSIONED_NAME, "miss-rate");
-            if (metrics.getGauges().get(mrName) == null) {
-                MetricRegistry.MetricSupplier<? extends Gauge> mr = () -> (Gauge<Double>) stats::missRate;
-                metrics.gauge(mrName, mr);
-            }
-
-            getRequestedTimeSeriesTotalQueryTimer = metrics.timer(MetricRegistry.name(className,
-                    "getRequestedTimeSeries", "totalQuery", "time"));
-            getRequestedTimeSeriesTotalQueryMeter = metrics.meter(MetricRegistry.name(className,
-                    "getRequestedTimeSeries", "totalQuery", "count"));
-            getRequestedTimeSeriesTotalQueryTimeoutMeter = metrics.meter(MetricRegistry.name(className,
-                    "getRequestedTimeSeries", "totalQuery", "timeout"));
-            getRequestedTimeSeriesTotalQueryErrorMeter = metrics.meter(MetricRegistry.name(className,
-                    "getRequestedTimeSeries", "totalQuery", "error"));
-            getRequestedTimeSeriesResultsReturnedHistogram = metrics.histogram(MetricRegistry.name(className,
-                    "getRequestedTimeSeries", "results", "returned"));
-            getRequestedTimeSeriesRequestWindowMillisHistogram = metrics.histogram(MetricRegistry.name(className,
-                    "getRequestedTimeSeries", "request", "windowMillis"));
-        } else {
-            getRequestedTimeSeriesTotalQueryTimer = null;
-            getRequestedTimeSeriesTotalQueryMeter = null;
-            getRequestedTimeSeriesTotalQueryTimeoutMeter = null;
-            getRequestedTimeSeriesTotalQueryErrorMeter = null;
-            getRequestedTimeSeriesResultsReturnedHistogram = null;
-            getRequestedTimeSeriesRequestWindowMillisHistogram = null;
+        String className = this.getClass().getName();
+        CacheStats stats = isVersionedCache.stats();
+        String hrName = MetricRegistry.name(className, VERSIONED_NAME, "hit-rate");
+        if (metrics.getGauges().get(hrName) == null) {
+            MetricRegistry.MetricSupplier<? extends Gauge> hr = () -> (Gauge<Double>) stats::hitRate;
+            metrics.gauge(hrName, hr);
         }
+        String mrName = MetricRegistry.name(className, VERSIONED_NAME, "miss-rate");
+        if (metrics.getGauges().get(mrName) == null) {
+            MetricRegistry.MetricSupplier<? extends Gauge> mr = () -> (Gauge<Double>) stats::missRate;
+            metrics.gauge(mrName, mr);
+        }
+
+        getRequestedTimeSeriesTotalQueryTimer = metrics.timer(MetricRegistry.name(className,
+                "getRequestedTimeSeries", "totalQuery", "time"));
+        getRequestedTimeSeriesTotalQueryMeter = metrics.meter(MetricRegistry.name(className,
+                "getRequestedTimeSeries", "totalQuery", "count"));
+        getRequestedTimeSeriesTotalQueryTimeoutMeter = metrics.meter(MetricRegistry.name(className,
+                "getRequestedTimeSeries", "totalQuery", "timeout"));
+        getRequestedTimeSeriesTotalQueryErrorMeter = metrics.meter(MetricRegistry.name(className,
+                "getRequestedTimeSeries", "totalQuery", "error"));
+        getRequestedTimeSeriesResultsReturnedHistogram = metrics.histogram(MetricRegistry.name(className,
+                "getRequestedTimeSeries", "results", "returned"));
+        getRequestedTimeSeriesRequestWindowMillisHistogram = metrics.histogram(MetricRegistry.name(className,
+                "getRequestedTimeSeries", "request", "windowMillis"));
+
     }
 
 
@@ -272,7 +252,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @Override
-    public FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams){
+    public FilteredTimeSeries getTimeseries(String page, int pageSize, TimeSeriesRequestParameters requestParameters, FilteredTimeSeriesParameters filterParams) {
         TimeSeries ts =  getRequestedTimeSeries(page, pageSize, requestParameters, filterParams);
         FilteredTimeSeries fts = new FilteredTimeSeries(ts, filterParams);
         fts.clearTimeSeriesPagination();  // we are wrapping the ts, it doesn't need to serialize its own page, nextPage etc.
@@ -386,9 +366,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Long beginTimeMilli = beginTime.toInstant().toEpochMilli();
         Long endTimeMilli = endTime.toInstant().toEpochMilli();
 
-        if (getRequestedTimeSeriesRequestWindowMillisHistogram != null) {
-            getRequestedTimeSeriesRequestWindowMillisHistogram.update(Math.max(0L, endTimeMilli - beginTimeMilli));
-        }
+        getRequestedTimeSeriesRequestWindowMillisHistogram.update(Math.max(0L, endTimeMilli - beginTimeMilli));
 
         String trim = formatBool(shouldTrim);
         final String startInclusive = "T";
@@ -407,7 +385,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<String> tzName = AV_CWMS_TS_ID2.TIME_ZONE_ID;
 
         Condition filterConditions = noCondition();
-        if(fp != null) {
+        if (fp != null) {
             Map<String, Field<?>> nameToField = new LinkedHashMap<>();
             nameToField.put("value", valueCol);
             nameToField.put("date_time", dateTimeCol);
@@ -437,17 +415,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     trim, startInclusive, endInclusive, previous, next, versionDateMilli, maxVersion,
                     officeId
             ))
-                    .where(filterConditions)
-                    ;
+            .where(filterConditions);
 
-            if (getRequestedTimeSeriesTotalQueryMeter != null) {
-                getRequestedTimeSeriesTotalQueryMeter.mark();
-            }
-
-            totalQueryFuture = TOTAL_QUERY_EXECUTOR.submit(() ->
-                    time(getRequestedTimeSeriesTotalQueryTimer, () ->
-                            dsl.selectCount().from(table(retrieveSelectCount)).fetchOne(0, Integer.class))
-            );
+            getRequestedTimeSeriesTotalQueryMeter.mark();
+            totalQueryFuture = TOTAL_QUERY_EXECUTOR.submit(() -> {
+                try (Timer.Context ignored = getRequestedTimeSeriesTotalQueryTimer.time()) {
+                    return dsl.selectCount().from(DSL.table(retrieveSelectCount)).fetchOne(0, Integer.class);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
             totalQueryDeadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(TOTAL_QUERY_TIMEOUT_SECONDS);
         }
 
@@ -576,9 +553,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
             retVal = timeseries;
 
-            if (getRequestedTimeSeriesResultsReturnedHistogram != null) {
-                getRequestedTimeSeriesResultsReturnedHistogram.update(timeseries.getValues().size());
-            }
+            getRequestedTimeSeriesResultsReturnedHistogram.update(timeseries.getValues().size());
         }
 
         return retVal;
@@ -605,9 +580,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             return totalQueryFuture.get(remainingNanos, TimeUnit.NANOSECONDS);
         } catch (TimeoutException e) {
             totalQueryFuture.cancel(true);
-            if (getRequestedTimeSeriesTotalQueryTimeoutMeter != null) {
-                getRequestedTimeSeriesTotalQueryTimeoutMeter.mark();
-            }
+            getRequestedTimeSeriesTotalQueryTimeoutMeter.mark();
             logger.atWarning().withCause(e).log("Timed out retrieving total count for timeseries %s at office %s "
                             + "for window %s to %s after %d seconds; continuing with unknown total.",
                     names, office, beginTime, endTime, TOTAL_QUERY_TIMEOUT_SECONDS);
@@ -615,17 +588,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         } catch (InterruptedException e) {
             totalQueryFuture.cancel(true);
             Thread.currentThread().interrupt();
-            if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
-                getRequestedTimeSeriesTotalQueryErrorMeter.mark();
-            }
+            getRequestedTimeSeriesTotalQueryErrorMeter.mark();
             logger.atWarning().withCause(e).log("Interrupted retrieving total count for timeseries %s at office %s "
                             + "for window %s to %s; continuing with unknown total.",
                     names, office, beginTime, endTime);
             return null;
         } catch (ExecutionException e) {
-            if (getRequestedTimeSeriesTotalQueryErrorMeter != null) {
-                getRequestedTimeSeriesTotalQueryErrorMeter.mark();
-            }
+            getRequestedTimeSeriesTotalQueryErrorMeter.mark();
             logger.atWarning().withCause(e.getCause()).log("Failed retrieving total count for timeseries %s at office %s "
                             + "for window %s to %s; continuing with unknown total.",
                     names, office, beginTime, endTime);
@@ -667,34 +636,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         );
     }
 
-
-
-    private void time(Timer timer, Runnable r ){
-        if (timer != null) {
-            try (Timer.Context ignored = timer.time()) {
-                r.run();
-            }
-        } else {
-            r.run();
-        }
-
-    }
-
-    private static <R> R time(Timer timer, Callable<R> var1) {
-        if (timer != null) {
-            try (Timer.Context ignored = timer.time()) {
-                return var1.call();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            try {
-                return var1.call();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
 
     private boolean shouldFetchVerticalDatum(String parmPart) {
         // Check if parameter requires vertical datum (e.g., "ELEV")
@@ -857,7 +798,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             tmpQuery = tmpQuery.leftOuterJoin(AV_TS_EXTENTS_UTC)
                                        .on(limiterCode
                                          .eq(AV_TS_EXTENTS_UTC.TS_CODE.coerce(limiterCode)));
-            if(!params.isIncludeVersions()) {
+            if (!params.isIncludeVersions()) {
                 tmpQuery = tmpQuery.and(AV_TS_EXTENTS_UTC.VERSION_TIME.isNull());
             }
         }
@@ -888,8 +829,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 if (params.isIncludeExtents()) {
                     builder.withExtents(new ArrayList<>());
                 }
-                if(includeAliases) {
-                    if(row.get(AV_CWMS_TS_ID2.ALIASED_ITEM) == null) {
+                if (includeAliases) {
+                    if (row.get(AV_CWMS_TS_ID2.ALIASED_ITEM) == null) {
                         tsIdExtentMap.put(officeTsId, builder); //only add non-aliases... aliases get added as a node to each entry later
                     }
                 } else {
@@ -897,7 +838,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
 
             }
-            if(includeAliases) {
+            if (includeAliases) {
                 updateAliasMapping(tsCodeAliasMap, tsIdToCodeMap, row, officeTsId);
             }
 
@@ -909,13 +850,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .withVersionTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME)))
                         .build();
                 TimeseriesCatalogEntry.Builder entryBuilder = tsIdExtentMap.get(officeTsId);
-                if(entryBuilder != null) {
+                if (entryBuilder != null) {
                     entryBuilder.withExtent(extents);
                 }
             }
         });
 
-        if(includeAliases) {
+        if (includeAliases) {
             addAliasesToBuilders(tsIdExtentMap, tsCodeAliasMap, tsIdToCodeMap);
         }
 
@@ -931,9 +872,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @NotNull
     private static Condition getFilterCondition( @Nullable FilteredTimeSeriesParameters ip, FieldResolver resolver) {
         Condition filterConditions = noCondition();
-        if(ip != null) {
+        if (ip != null) {
             String query = ip.getQuery();
-            if(query != null) {
+            if (query != null) {
                 RSQLConditionBuilder builder = RSQLConditionBuilder.create(resolver);
                 Condition condition = builder.buildCondition(query);
                 filterConditions = filterConditions.and(condition);
@@ -962,7 +903,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private void updateAliasMapping(Map<String, Set<TimeSeriesAlias>> tsCodeAliasMap, Map<String, String> tsIdToCodeMap, Record row, String officeTsId) {
         boolean isAlias = row.get(AV_CWMS_TS_ID2.ALIASED_ITEM) != null;
         String tsCode = row.get(AV_CWMS_TS_ID2.TS_CODE).toString();
-        if(isAlias) {
+        if (isAlias) {
             tsCodeAliasMap.computeIfAbsent(tsCode, k -> new HashSet<>())
                 .add(new TimeSeriesAlias.Builder()
                     .withName(row.get(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY) + "-" + row.get(AV_CWMS_TS_ID2.TS_ALIAS_GROUP))
@@ -1010,7 +951,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         retVal.add(cwmsTsIdFields.getIntervalUtcOffset());
         retVal.add(cwmsTsIdFields.getTimeZoneId());
         retVal.add(cwmsTsIdFields.getVerionFlag());
-        if(cwmsTsIdFields.includesAliases()) {
+        if (cwmsTsIdFields.includesAliases()) {
             retVal.add(AV_CWMS_TS_ID2.ALIASED_ITEM);
             retVal.add(AV_CWMS_TS_ID2.TS_CODE);
             retVal.add(AV_CWMS_TS_ID2.TS_ALIAS_CATEGORY);
@@ -1589,10 +1530,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
      * Required attributes of {@link TimeSeries Timeseries} are
      *
      * <ul>
-     *  <li>{@link TimeSeries#getName()} ()}  Timeseries Id}</li>
-     *  <li>{@link TimeSeries#getOfficeId()}  Office ID}</li>
-     *  <li>{@link TimeSeries#getUnits()}  Units}</li>
-     *  <li>{@link TimeSeries#getValues()}  values}
+     *  <li>{@link TimeSeries#getName()}  Timeseries Id</li>
+     *  <li>{@link TimeSeries#getOfficeId()}  Office ID</li>
+     *  <li>{@link TimeSeries#getUnits()}  Units</li>
+     *  <li>{@link TimeSeries#getValues()}  values</li>
      * </ul>
      *
      * Other parameters may be passed in, but will either be ignored or used to validate existing
@@ -1621,7 +1562,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         connection(dsl, connection -> {
             DSLContext dslContext = getDslContext(connection, input.getOfficeId());
 
-            withDefaultDatum(vd, dslContext, (conn)-> {
+            withDefaultDatum(vd, dslContext, (conn) -> {
                 // the code does not need to be created before hand.
                 // do not add a call to create_ts_code
 
@@ -1653,7 +1594,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private void storeWithDefaultDatum(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection,
                                        VerticalDatum vd, Connection connection, Timestamp versionDate) throws Throwable {
         DSLContext dslContext = getDslContext(connection, input.getOfficeId());
-        withDefaultDatum(vd, dslContext, (conn)-> store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
+        withDefaultDatum(vd, dslContext, (conn) -> store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
                 versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection));
     }
 
@@ -1664,13 +1605,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final ZTSV_ARRAY tsvArray = new ZTSV_ARRAY();
 
         if (values != null && !values.isEmpty()) {
-			for (TimeSeries.Record value : values) {
-				Double dataValue = value.getValue();
-				if (dataValue != null && dataValue == -Float.MAX_VALUE) {
-					dataValue = null;
-				}
-				tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
-			}
+            for (TimeSeries.Record value : values) {
+                Double dataValue = value.getValue();
+                if (dataValue != null && dataValue == -Float.MAX_VALUE) {
+                    dataValue = null;
+                }
+                tsvArray.add(new ZTSV_TYPE(value.getDateTime(), dataValue, BigDecimal.valueOf(value.getQualityCode())));
+            }
         }
 
 
