@@ -221,26 +221,22 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     public void addValue(Timestamp dateTime, Double value, int qualityCode) {
-        // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && values.isEmpty()) {
-            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
-        }
-        if (pageSize > 0 && values.size() == pageSize) {
-            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
-        } else {
-            values.add(new Record(dateTime, value, qualityCode));
-        }
+        addValue(new Record(dateTime, value, qualityCode));
     }
 
     public void addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
+        addValue(new Record(dateTime, value, qualityCode, dataEntryDate));
+    }
+
+    public void addValue(Record record) {
         // Set the current page, if not set
         if ((page == null || page.isEmpty()) && (values == null || values.isEmpty())) {
-            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
+            page = encodeCursor(String.format("%d", record.dateTime.getTime()), pageSize, total);
         }
         if (pageSize > 0 && values.size() == pageSize) {
-            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
+            nextPage = encodeCursor(String.format("%d", record.dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            values.add(new Record(dateTime, value, qualityCode, dataEntryDate));
+            values.add(record);
         }
     }
 
