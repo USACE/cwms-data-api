@@ -75,6 +75,7 @@ metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref = "d
 metrics-servlets = { module = "io.dropwizard.metrics:metrics-servlets", version.ref = "dropwizard" }
 metrics-prometheus-client = { module = "io.prometheus:simpleclient_dropwizard", version.ref = "dropwizard_prometheus" }
 metrics-prometheus-servlets = { module = "io.prometheus:simpleclient_servlet", version.ref = "dropwizard_prometheus" }
+password4j = { module = "com.password4j:password4j", version = "1.8.4" }
 
 
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
