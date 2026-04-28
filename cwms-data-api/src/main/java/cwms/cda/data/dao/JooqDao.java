@@ -217,6 +217,12 @@ public abstract class JooqDao<T> extends Dao<T> {
     protected void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
         String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
         String targetName = (targetDatum != null) ? targetDatum.toString() : null;
+        if(targetDatum == VerticalDatum.OTHER) {
+            targetName = "LOCAL";
+        }
+        if(targetDatum == VerticalDatum.NATIVE) {
+            targetName = null;
+        }
         boolean changeDefaultDatum = !Objects.equals(targetName, defaultVertDatum);
         try {
             if (changeDefaultDatum) {
