@@ -63,6 +63,8 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     public static final String AUTH_ERROR_MSG = "Authentication failed. The API Key may be invalid or no longer active.";
     private static final String API_KEY_V1_PREFIX = "ak1_";
     private static final int API_KEY_ID_LENGTH = 12;
+    private static final int API_KEY_SECRET_LENGTH = 256;
+    public static final int API_KEY_TOTAL_LENGTH = API_KEY_ID_LENGTH + API_KEY_SECRET_LENGTH;
     // At this level we just care that the user has permissions in *any* office
     private static final String RETRIEVE_GROUPS_OF_USER =
             ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql", AuthDao.class);
@@ -514,7 +516,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     private static String generateSecretKey(SecureRandom randomSource) {
         return randomSource.ints('0', 'z') // allow a-zA-Z0-9
             .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)) // actually filter to above
-            .limit(256)
+            .limit(API_KEY_SECRET_LENGTH)
             .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
             .toString();
     }
