@@ -50,10 +50,15 @@ import java.util.List;
  */
 public class JsonV2 implements OutputFormatter {
 
+    private static final ObjectMapper OBJECT_MAPPER = buildObjectMapper();
     private final ObjectMapper om;
 
     public JsonV2() {
-        this.om = buildObjectMapper();
+        this.om = OBJECT_MAPPER;
+    }
+
+    public JsonV2(ObjectMapper om) {
+        this.om = om;
     }
 
     @NotNull

@@ -50,7 +50,8 @@ class CdaFeatureManagerProviderTest {
         tempFile.deleteOnExit();
 
         try (FileWriter writer = new FileWriter(tempFile)) {
-            writer.write(CdaFeatures.USE_OBJECT_STORAGE_BLOBS.name() + " = true");
+            writer.write(CdaFeatures.USE_OBJECT_STORAGE_BLOBS.name() + " = true" + System.lineSeparator());
+            writer.write(CdaFeatures.AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT.name() + " = true");
         }
 
         System.setProperty(CdaFeatureManagerProvider.PROPERTIES_FILE, tempFile.getAbsolutePath());
@@ -59,6 +60,7 @@ class CdaFeatureManagerProviderTest {
         FeatureManager manager = provider.getFeatureManager();
 
         assertTrue(manager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS));
+        assertTrue(manager.isActive(CdaFeatures.AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT));
     }
 
     @Test
@@ -73,5 +75,6 @@ class CdaFeatureManagerProviderTest {
         FeatureManager manager = provider.getFeatureManager();
 
         assertFalse(manager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS));
+        assertFalse(manager.isActive(CdaFeatures.AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT));
     }
 }

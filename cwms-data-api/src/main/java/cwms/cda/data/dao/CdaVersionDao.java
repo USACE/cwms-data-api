@@ -26,6 +26,7 @@
 
 package cwms.cda.data.dao;
 
+import com.codahale.metrics.MetricRegistry;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.CdaVersion;
 import java.util.HashMap;
@@ -36,9 +37,11 @@ import org.jooq.exception.DataAccessException;
 
 public final class CdaVersionDao extends JooqDao<CdaVersion> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private final MetricRegistry metrics;
 
-    public CdaVersionDao(DSLContext dsl) {
+    public CdaVersionDao(DSLContext dsl, MetricRegistry metrics) {
         super(dsl);
+        this.metrics = metrics;
     }
 
     /**
@@ -62,7 +65,7 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
     }
 
     private String hasTsDataEntryDateSupport() {
-        TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(super.dsl);
+        TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(super.dsl, metrics);
         boolean supported = false;
         try {
             tsDao.validateEntryDateSupport(true);

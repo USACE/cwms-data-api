@@ -26,7 +26,15 @@ import com.google.common.flogger.FluentLogger;
 public class XMLv2 implements OutputFormatter {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
+    private static final XmlMapper XML_MAPPER = buildXmlMapper();
+    private final XmlMapper om;
+
     public XMLv2() {
+        this.om = XML_MAPPER;
+    }
+
+    public XMLv2(XmlMapper om) {
+        this.om = om;
     }
 
     @Override
@@ -37,9 +45,10 @@ public class XMLv2 implements OutputFormatter {
     @Override
     public String format(CwmsDTOBase dto) {
         try {
-            return buildXmlMapper().writeValueAsString(dto);
+            return om.writeValueAsString(dto);
         } catch (JsonProcessingException ex) {
-            String msg = dto != null ?
+            String msg = dto != null
+                    ?
                     "Error rendering '" + dto + "' to XML"
                     :
                     "Null element passed to formatter";
@@ -51,9 +60,10 @@ public class XMLv2 implements OutputFormatter {
     @Override
     public String format(List<? extends CwmsDTOBase> dtoList) {
         try {
-            return buildXmlMapper().writeValueAsString(dtoList);
+            return om.writeValueAsString(dtoList);
         } catch (JsonProcessingException ex) {
-            String msg = dtoList != null ?
+            String msg = dtoList != null
+                    ?
                     "Error rendering '" + dtoList + "' to XML"
                     :
                     "Null element passed to formatter";
@@ -65,8 +75,7 @@ public class XMLv2 implements OutputFormatter {
     @Override
     public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
         try {
-            XmlMapper retval = buildXmlMapper();
-            return retval.readValue(content, type);
+            return om.readValue(content, type);
         } catch (IOException e) {
             throw new FormattingException("Could not deserialize:" + content, e);
         }
@@ -75,8 +84,7 @@ public class XMLv2 implements OutputFormatter {
     @Override
     public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
         try {
-            XmlMapper retval = buildXmlMapper();
-            return retval.readValue(content, type);
+            return om.readValue(content, type);
         } catch (IOException e) {
             throw new FormattingException("Could not deserialize:" + content, e);
         }

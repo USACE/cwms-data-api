@@ -72,7 +72,7 @@ public final class CdaVersionHandler implements Handler {
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
-            CdaVersionDao dao = new CdaVersionDao(dsl);
+            CdaVersionDao dao = new CdaVersionDao(dsl, metrics);
             CdaVersion cdaVersion = dao.getCdaVersion();
             String serialized = Formats.format(new ContentType(Formats.JSON), cdaVersion);
             ctx.result(serialized);
