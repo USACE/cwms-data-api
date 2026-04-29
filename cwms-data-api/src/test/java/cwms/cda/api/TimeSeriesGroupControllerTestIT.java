@@ -49,6 +49,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
@@ -133,7 +134,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             Configuration configuration = DSL.using(c).configuration();
             TimeSeriesGroupDao groupDao = new TimeSeriesGroupDao(configuration.dsl());
             TimeSeriesCategoryDao categoryDao = new TimeSeriesCategoryDao(configuration.dsl());
-            TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl());
+            TimeSeriesDaoImpl timeSeriesDao = new TimeSeriesDaoImpl(configuration.dsl(), new MetricRegistry());
 
             for (TimeSeriesGroup group : cwmsgroupsToSPKUnassign) {
                 // We can't delete CWMS groups and we don't want to try to unassign "CWMS" assignments
@@ -2380,6 +2381,42 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .body("assigned-time-series.size()", equalTo(1));
 
         // delete category and group gets done by afterEach.
+    }
+
+    @Test
+    void test_get_all_groups_without_assigned_filters_by_office() {
+        String officeId = user.getOperatingOffice();
+
+        // Get all groups for this office with include-assigned=false
+        // This tests the fix where groupOfficeId filter was not being applied when includeAssigned=false
+        Response response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept("application/json")
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam("include-assigned", false)
+        .when()
+            .get("/timeseries/group")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(anyOf(is(200), is(404)))
+        .extract()
+            .response();
+
+        // If we get a 404, that's fine (no groups for this office)
+        // If we get a 200, verify all returned groups are from the specified office
+        if (response.statusCode() == 200) {
+            JsonPath jsonPathEval = response.jsonPath();
+            List<String> officeIds = jsonPathEval.get("office-id");
+
+            if (officeIds != null && !officeIds.isEmpty()) {
+                // All returned groups should be from the specified office
+                for (String returnedOfficeId : officeIds) {
+                    assertThat("Expected all groups to be from office " + officeId + ", but found " + returnedOfficeId,
+                            returnedOfficeId, equalTo(officeId));
+                }
+            }
+        }
     }
 
 }
