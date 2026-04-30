@@ -41,14 +41,14 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * Forced order is used here to allow better error reporting
- * but to let all the tests run and make sure 
+ * but to let all the tests run and make sure
  */
 @Tag("integration")
 @TestMethodOrder(OrderAnnotation.class)
 @TestInstance(Lifecycle.PER_CLASS)
 public class ApiKeyControllerTestIT extends DataApiTestIT {
 
-    
+
     private final String KEY_NAME = "TestKey1";
     private final String EXPIRED_KEY_NAME = "TestKey2-Expired";
 
@@ -76,7 +76,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpCode.CREATED.getStatus()))
                 .body("user-id",is(key.getUserId().toUpperCase()))
                 .body("key-name",is(key.getKeyName()))
-                .body("api-key.size()",is(256))
+                .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
                 .body("created",not(equalTo(null)))
                 .body("expires",is(equalTo(null)))
                 .extract().as(ApiKey.class);
@@ -90,8 +90,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
     void test_api_key_creation_with_expiration(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
         final String keyName = "TestKey1-Expires";
-        
-        
+
+
         final ApiKey key = new ApiKey(theUser.getName(),keyName,null,null,ZonedDateTime.now());
         final ApiKey expiredKey = new ApiKey(key.getUserId(),EXPIRED_KEY_NAME,null,null,ZonedDateTime.now().minusMinutes(1L));
 
@@ -108,7 +108,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpCode.CREATED.getStatus()))
                 .body("user-id",is(key.getUserId().toUpperCase()))
                 .body("key-name",is(key.getKeyName()))
-                .body("api-key.size()",is(256))            
+                .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
                 .body("created",not(equalTo(null)))
                 .body("expires",not(equalTo(null)))
                 .extract().as(ApiKey.class);
@@ -127,7 +127,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpCode.CREATED.getStatus()))
                 .body("user-id",is(expiredKey.getUserId().toUpperCase()))
                 .body("key-name",is(expiredKey.getKeyName()))
-                .body("api-key.size()",is(256))            
+                .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
                 .body("created",not(equalTo(null)))
                 .body("expires",not(equalTo(null)))
                 .extract().as(ApiKey.class);
@@ -135,7 +135,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
 
 
         final String bodyWithSpecificExpiresFormat = "{\"user-id\": \"" + theUser.getName() + "\",\"key-name\": \"foo\",\"api-key\": \"string\",\"expires\": \"2023-09-23T14:20:00.908Z\"}";
-        returnedKey = 
+        returnedKey =
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .spec(authSpec)
@@ -148,7 +148,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpCode.CREATED.getStatus()))
                 .body("user-id",is(expiredKey.getUserId().toUpperCase()))
                 .body("key-name",is("foo"))
-                .body("api-key.size()",is(256))
+                .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
                 .body("created",not(equalTo(null)))
                 .body("expires",not(equalTo(null)))
                 .extract().as(ApiKey.class);
@@ -184,7 +184,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
 	@ArgumentsSource(UserSpecSource.class)
 	@AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
     void test_api_key_listing(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
-        List<ApiKey> keys = 
+        List<ApiKey> keys =
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .spec(authSpec)
@@ -215,12 +215,12 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .statusCode(HttpCode.OK.getStatus());
     }
 
-    
+
     // use api key
     @Test
     @Order(5)
     public void test_key_usage() throws Exception {
-        
+
         createLocation("ApiKey-Test Location",true,"SPK");
         String json = loadResourceAsString("cwms/cda/api/location_create_spk.json");
         Location location = new Location.Builder(Formats.parseContent(Formats.parseHeader(Formats.JSON, Location.class),
@@ -394,7 +394,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 ZonedDateTime expectedExpires = expected.getExpires();
                 if (expectedKeyExpires == null && expectedExpires == null) {
                     return;
-                } else if((expectedKeyExpires != null && expectedExpires != null) 
+                } else if((expectedKeyExpires != null && expectedExpires != null)
                         && expectedExpires.isEqual(expectedKeyExpires)) {
                     return;
                 }
