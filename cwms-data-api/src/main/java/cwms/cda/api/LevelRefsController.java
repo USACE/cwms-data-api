@@ -26,21 +26,10 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CASCADE_DELETE;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
-import static cwms.cda.api.Controllers.EFFECTIVE_DATE_EXACT;
 import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
-import static cwms.cda.api.Controllers.LEVEL_ID;
 import static cwms.cda.api.Controllers.LEVEL_ID_MASK;
-import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
@@ -48,66 +37,29 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION;
-import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.markAndTime;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
-import static cwms.cda.api.Controllers.queryParamAsZdt;
-import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.BeanDescription;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
-import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
-import cwms.cda.data.dto.StatusResponse;
-import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
-import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevelRefs;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
-import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
-import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
-import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.UnsupportedFormatException;
-import cwms.cda.helpers.DateUtils;
-import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.http.HttpResponseException;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -117,17 +69,13 @@ public class LevelRefsController implements Handler {
 
     private final Histogram requestResultSize;
 
-    private static final int DEFAULT_PAGE_SIZE = 100;
+    static final int DEFAULT_PAGE_SIZE = 100;
 
 
     public LevelRefsController(MetricRegistry metrics) {
         this.metrics = metrics;
 
         requestResultSize = this.metrics.histogram((name(this.getClass().getName(), RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
     @OpenApi(
@@ -170,10 +118,10 @@ public class LevelRefsController implements Handler {
             tags = LevelsController.TAG)
     @Override
     public void handle(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+        try (final Timer.Context ignored = markAndTime(metrics, getClass().getName(), GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = new LocationLevelsDaoImpl(dsl);
-            String levelIdMask = queryParamAsClass(ctx, new String[] {LEVEL_ID_MASK, NAME},
+            String levelIdMask = queryParamAsClass(ctx, new String[] {LEVEL_ID_MASK},
                 String.class, null, metrics,
                 name(LevelRefsController.class.getName(), GET_ALL));
             String office = ctx.queryParam(OFFICE);

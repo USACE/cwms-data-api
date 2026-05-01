@@ -1422,7 +1422,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .withOfficeId(r.value1())
                     .withName(r.value2())
                     .build())
-                .withLevelDate(r.value3().toInstant());
+                .withEffectiveDate(r.value3().toInstant());
         }
         var builder = new LocationLevelRefs.Builder(offset, pageSize, total);
         levels.values()

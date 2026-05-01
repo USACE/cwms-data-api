@@ -31,15 +31,13 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 @JsonRootName("location-levels")
-@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class LocationLevelRefs extends CwmsDTOPaginated {
 
     @JsonProperty
@@ -59,7 +57,7 @@ public class LocationLevelRefs extends CwmsDTOPaginated {
     }
 
     public static class Builder {
-        private LocationLevelRefs workingLevels;
+        private final LocationLevelRefs workingLevels;
 
         public Builder(int offset, int pageSize, Integer total) {
             workingLevels = new LocationLevelRefs(offset, pageSize, total);

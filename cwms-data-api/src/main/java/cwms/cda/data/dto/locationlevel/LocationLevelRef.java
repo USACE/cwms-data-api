@@ -27,6 +27,7 @@
 package cwms.cda.data.dto.locationlevel;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -35,14 +36,12 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -88,8 +87,14 @@ public class LocationLevelRef extends CwmsDTOBase {
         private final List<Instant> effectiveDates = new ArrayList<>();
         private CwmsId locationLevelId;
 
-        public Builder withLevelDate(Instant effectiveDate) {
+        @JsonIgnore
+        public Builder withEffectiveDate(Instant effectiveDate) {
             this.effectiveDates.add(effectiveDate);
+            return this;
+        }
+
+        public Builder withEffectiveDates(List<Instant> effectiveDate) {
+            this.effectiveDates.addAll(effectiveDate);
             return this;
         }
 
@@ -98,10 +103,16 @@ public class LocationLevelRef extends CwmsDTOBase {
             return this;
         }
 
+        @JsonIgnore
         public Builder withAlias(String alias) {
             if(alias != null) {
                 this.aliases.add(alias);
             }
+            return this;
+        }
+
+        public Builder withAliases(List<String> alias) {
+            this.aliases.addAll(alias);
             return this;
         }
 
