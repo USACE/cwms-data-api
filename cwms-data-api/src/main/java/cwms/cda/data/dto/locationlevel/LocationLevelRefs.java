@@ -27,7 +27,6 @@
 package cwms.cda.data.dto.locationlevel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -36,13 +35,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 
-@JsonRootName("location-levels")
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class LocationLevelRefs extends CwmsDTOPaginated {
 
     @JsonProperty
     @Schema(description = "List of retrieved location levels ids and effective dates")
-    private List<LocationLevelRef> locationLevels;
+    private List<LocationLevelRef> levels;
 
     @SuppressWarnings("unused") // for JAXB to handle marshalling
     private LocationLevelRefs() {
@@ -52,7 +50,7 @@ public class LocationLevelRefs extends CwmsDTOPaginated {
 
     public LocationLevelRefs(int offset, int pageSize, Integer total) {
         super(Integer.toString(offset), pageSize, total);
-        this.locationLevels = new ArrayList<>();
+        this.levels = new ArrayList<>();
         this.offset = offset;
     }
 
@@ -64,10 +62,10 @@ public class LocationLevelRefs extends CwmsDTOPaginated {
         }
 
         public LocationLevelRefs build() {
-            if (this.workingLevels.locationLevels.size() == this.workingLevels.pageSize) {
+            if (this.workingLevels.levels.size() == this.workingLevels.pageSize) {
 
                 String cursor =
-                        Integer.toString(this.workingLevels.offset + this.workingLevels.locationLevels.size());
+                        Integer.toString(this.workingLevels.offset + this.workingLevels.levels.size());
                 this.workingLevels.nextPage = encodeCursor(cursor,
                         this.workingLevels.pageSize,
                         this.workingLevels.total);
@@ -78,7 +76,7 @@ public class LocationLevelRefs extends CwmsDTOPaginated {
         }
 
         public LocationLevelRefs.Builder add(LocationLevelRef level) {
-            this.workingLevels.locationLevels.add(level);
+            this.workingLevels.levels.add(level);
             return this;
         }
     }
