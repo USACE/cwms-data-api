@@ -42,6 +42,7 @@ import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
@@ -345,6 +346,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
 
+    @MinimumSchema(20261231)
     @Test
     void test_level_refs() throws Exception {
         int levelCount = LevelRefsController.DEFAULT_PAGE_SIZE + 1;
