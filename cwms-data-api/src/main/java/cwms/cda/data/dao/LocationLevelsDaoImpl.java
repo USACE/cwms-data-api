@@ -25,6 +25,7 @@
 package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
+import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static mil.army.usace.hec.metadata.IntervalFactory.equalsName;
 import static mil.army.usace.hec.metadata.IntervalFactory.isRegular;
@@ -42,10 +43,13 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevelRef;
+import cwms.cda.data.dto.locationlevel.LocationLevelRefs;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
@@ -71,6 +75,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -90,7 +95,9 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Record4;
 import org.jooq.Result;
+import org.jooq.Select;
 import org.jooq.SelectLimitPercentAfterOffsetStep;
 import org.jooq.Table;
 import org.jooq.conf.ParamType;
@@ -1329,6 +1336,104 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return retVal;
     }
 
+    @Override
+    public LocationLevelRefs retrieveLocationLevelRefs(String cursor, int pageSize, String levelIdMask, String office,
+        Instant beginZdt, Instant endZdt, boolean includeAliases) {
+
+        if (!supportsNewView()) {
+            throw new UnsupportedOperationException("Location level refs query not yet supported");
+        }
+        Integer total = null;
+        int offset = 0;
+        boolean totalSet = false;
+
+        if (cursor != null && !cursor.isEmpty()) {
+            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+
+            if (parts.length > 2) {
+                offset = Integer.parseInt(parts[0]);
+                if (!"null".equals(parts[1])) {
+                    try {
+                        total = Integer.valueOf(parts[1]);
+                        totalSet = true;
+                    } catch (NumberFormatException e) {
+                        logger.atInfo().log("Could not parse %s", parts[1]);
+                    }
+                }
+                pageSize = Integer.parseInt(parts[2]);
+            }
+        }
+        Condition whereCondition = DSL.noCondition();
+        if (office != null && !office.isEmpty()) {
+            whereCondition = whereCondition.and(ref.OFFICE_ID.eq(office.toUpperCase()));
+        }
+        if (levelIdMask != null && !levelIdMask.isEmpty()) {
+            whereCondition = whereCondition.and(
+                JooqDao.caseInsensitiveLikeRegex(ref.LOCATION_LEVEL_ID, levelIdMask));
+        }
+        if (beginZdt != null) {
+            whereCondition = whereCondition.and(ref.LOCATION_LEVEL_DATE.greaterOrEqual(Timestamp.from(beginZdt)));
+        }
+        if (endZdt != null) {
+            whereCondition = whereCondition.and(ref.LOCATION_LEVEL_DATE.lessThan(Timestamp.from(endZdt)));
+        }
+        Table<?> pagedLocationLevelCodes = dsl.selectDistinct(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID)
+            .from(ref)
+            .where(whereCondition)
+            .orderBy(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID)
+            .offset(offset)
+            .limit(pageSize)
+            .asTable("paged_location_level_codes");
+        Field<String> pagedLocationLevelId = pagedLocationLevelCodes.field(ref.LOCATION_LEVEL_ID);
+        Field<String> pagedOfficeId = pagedLocationLevelCodes.field(ref.OFFICE_ID);
+        Select<Record4<String, String, Timestamp, String>> query;
+        if (includeAliases) {
+            query = dsl.select(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE, aliasView.ALIAS_ID)
+                .from(ref)
+                .join(pagedLocationLevelCodes)
+                .on(ref.LOCATION_LEVEL_ID.eq(pagedLocationLevelId))
+                .leftJoin(aliasView)
+                .on(ref.LOCATION_LEVEL_ID.eq(pagedLocationLevelId))
+                .and(ref.OFFICE_ID.eq(pagedOfficeId))
+                .where(whereCondition);
+        } else {
+            var noop = DSL.val(null, String.class).as(aliasView.ALIAS_ID.getName());
+            query = dsl.select(ref.OFFICE_ID, ref.LOCATION_LEVEL_ID, ref.LOCATION_LEVEL_DATE, noop)
+                .from(ref)
+                .join(pagedLocationLevelCodes)
+                .on(ref.LOCATION_LEVEL_ID.eq(pagedLocationLevelId))
+                .and(ref.OFFICE_ID.eq(pagedOfficeId))
+                .where(whereCondition);
+        }
+
+        if (!totalSet) {
+            total = dsl.fetchCount(dsl.selectDistinct(ref.LOCATION_LEVEL_CODE)
+                .from(ref)
+                .where(whereCondition)
+            );
+        }
+
+        Map<LevelLookup, LocationLevelRef.Builder> levels = new HashMap<>();
+        for (var r : query.fetch()) {
+            var key = new LevelLookup(r.value1(), r.value2(), null, null, null, null);
+            levels.computeIfAbsent(key, k -> new LocationLevelRef.Builder())
+                .withAlias(r.value4())
+                .withLocationLevelId(new CwmsId.Builder()
+                    .withOfficeId(r.value1())
+                    .withName(r.value2())
+                    .build())
+                .withEffectiveDate(r.value3().toInstant());
+        }
+        var builder = new LocationLevelRefs.Builder(offset, pageSize, total);
+        levels.values()
+            .stream()
+            .map(LocationLevelRef.Builder::build)
+            .sorted(comparing((LocationLevelRef l) -> l.getLocationLevelId().getOfficeId())
+                .thenComparing((LocationLevelRef l) -> l.getLocationLevelId().getName()))
+            .forEach(builder::add);
+        return builder.build();
+    }
+
     private static void buildLocationLevelSelectFieldsNewView() {
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.OFFICE_ID);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(ref.LOCATION_LEVEL_ID);
@@ -1867,4 +1972,5 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         LOCATION_ALIAS_FIELDS.add(field(aliasView.CATEGORY_ID.getUnqualifiedName()));
         LOCATION_ALIAS_FIELDS.add(field(aliasView.GROUP_ID.getUnqualifiedName()));
     }
+
 }
