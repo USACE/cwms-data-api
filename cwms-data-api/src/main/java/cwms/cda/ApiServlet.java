@@ -62,6 +62,7 @@ import cwms.cda.api.EntityController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
 import cwms.cda.api.ForecastSpecController;
+import cwms.cda.api.LevelRefsController;
 import cwms.cda.api.LevelsAsTimeSeriesController;
 import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
@@ -237,6 +238,7 @@ import org.owasp.html.PolicyFactory;
     "/units/*",
     "/ratings/*",
     "/levels/*",
+    "/level-refs/*",
     "/basins/*",
     "/streams/*",
     "/stream-locations/*",
@@ -476,6 +478,9 @@ public class ApiServlet extends HttpServlet {
         String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
+        String levelRefsPath = "/level-refs/";
+        get(levelRefsPath, new LevelRefsController(metrics));
+        addCacheControl(levelRefsPath, 5, TimeUnit.MINUTES);
         String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
