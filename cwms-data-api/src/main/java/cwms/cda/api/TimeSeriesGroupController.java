@@ -306,12 +306,15 @@ public class TimeSeriesGroupController implements CrudHandler {
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
             TimeSeriesGroup existingGroup = timeSeriesGroupDao.getTimeSeriesGroup(office, null,
                 null, group.getTimeSeriesCategory().getId(), oldGroupId);
-            if (!existingGroup.getDescription().equalsIgnoreCase(group.getDescription()) || replaceAssignedTs) {
-                existingGroup = updateClearedFields(group, existingGroup, replaceAssignedTs);
+            if (!existingGroup.getDescription().equalsIgnoreCase(group.getDescription())) {
+                existingGroup = updateClearedFields(group, existingGroup);
                 timeSeriesGroupDao.create(existingGroup, false, false);
             }
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(group.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, group);
+            }
+            if (replaceAssignedTs) {
+                timeSeriesGroupDao.unassignAll(group.getTimeSeriesCategory().getId(), group.getId(), office);
             }
             timeSeriesGroupDao.assignTs(group, office);
             ctx.status(HttpServletResponse.SC_OK);
@@ -319,11 +322,11 @@ public class TimeSeriesGroupController implements CrudHandler {
     }
 
     private TimeSeriesGroup updateClearedFields(TimeSeriesGroup groupBody,
-            TimeSeriesGroup existingTimeSeriesGroup, boolean replaceAssignedTs) {
+            TimeSeriesGroup existingTimeSeriesGroup) {
         return new TimeSeriesGroup(new TimeSeriesGroup(existingTimeSeriesGroup.getTimeSeriesCategory(),
             existingTimeSeriesGroup.getOfficeId(), existingTimeSeriesGroup.getId(), groupBody.getDescription(),
             existingTimeSeriesGroup.getSharedAliasId(), existingTimeSeriesGroup.getSharedRefTsId()),
-            replaceAssignedTs ? groupBody.getAssignedTimeSeries() : existingTimeSeriesGroup.getAssignedTimeSeries());
+            existingTimeSeriesGroup.getAssignedTimeSeries());
     }
 
     @OpenApi(
