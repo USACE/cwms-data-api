@@ -225,7 +225,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     ref.LOCATION_LEVEL_COMMENT)
                 .from(ref)
                 .where(whereCondition)
-                .orderBy(ref.LOCATION_ID, ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.LOCATION_LEVEL_DATE)
+                .orderBy(ref.OFFICE_ID, ref.LOCATION_ID, ref.PARAMETER_ID, ref.PARAMETER_TYPE_ID, ref.DURATION_ID, ref.SPECIFIED_LEVEL_ID, ref.LOCATION_LEVEL_DATE)
                 .offset(offset)
                 .limit(pageSize);
 
