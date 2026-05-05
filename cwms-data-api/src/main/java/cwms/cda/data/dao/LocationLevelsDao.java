@@ -25,6 +25,7 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevelRefs;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.TimeSeries;
 import hec.data.level.ILocationLevelRef;
@@ -53,4 +54,7 @@ public interface LocationLevelsDao {
 
     TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end,
                                                  Interval interval, String units);
+
+    LocationLevelRefs retrieveLocationLevelRefs(String cursor, int pageSize, String levelIdMask, String office,
+        Instant beginZdt, Instant endZdt, boolean includeAliases);
 }
