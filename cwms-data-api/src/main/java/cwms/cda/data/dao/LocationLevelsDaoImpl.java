@@ -395,8 +395,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
             if (!totalSet) {
                 total = dsl.fetchCount(dsl.selectDistinct(view.OFFICE_ID, view.LOCATION_LEVEL_ID, view.LEVEL_DATE,
-                        view.CALENDAR_OFFSET, view.TIME_OFFSET, virtView.OFFICE_ID, virtView.LOCATION_LEVEL_ID,
-                        virtView.EFFECTIVE_DATE_UTC)
+                        virtView.OFFICE_ID, virtView.LOCATION_LEVEL_ID, virtView.EFFECTIVE_DATE_UTC)
                     .from(view)
                     .fullOuterJoin(virtView)
                     .on(view.LOCATION_LEVEL_CODE.eq(virtView.LOCATION_LEVEL_CODE))
