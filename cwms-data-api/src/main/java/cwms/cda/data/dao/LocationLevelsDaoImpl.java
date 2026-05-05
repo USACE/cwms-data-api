@@ -241,8 +241,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                         .leftJoin(aliasView)
                         .on(aliasView.DB_OFFICE_ID.eq(pagedRef.field(OFFICE_ID, String.class)))
                         .and(aliasView.LOCATION_ID.eq(pagedRef.field("LOCATION_ID", String.class)))
-                        .and(aliasView.LOCATION_CODE.eq(pagedRef.field("LOCATION_CODE", BigDecimal.class)))
-                        .where(whereCondition))
+                        .and(aliasView.LOCATION_CODE.eq(pagedRef.field("LOCATION_CODE", BigDecimal.class))))
                     .orderBy(field(OFFICE_ID), field(LOCATION_LEVEL_ID),
                         field(LOCATION_LEVEL_DATE), field(CALENDAR_OFFSET), field(TIME_OFFSET)
                     );
@@ -254,7 +253,6 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                     .from(pagedRef)
                     .leftJoin(values)
                     .on(pagedRef.field(LOCATION_LEVEL_CODE, Long.class).eq(values.LOCATION_LEVEL_CODE.cast(Long.class)))
-                    .where(whereCondition)
                     .orderBy(DSL.upper(pagedRef.field(OFFICE_ID, String.class)),
                         DSL.upper(pagedRef.field(LOCATION_LEVEL_ID, String.class)),
                         pagedRef.field(LOCATION_LEVEL_DATE), values.CALENDAR_OFFSET, values.TIME_OFFSET
