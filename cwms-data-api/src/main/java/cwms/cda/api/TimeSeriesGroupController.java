@@ -314,7 +314,8 @@ public class TimeSeriesGroupController implements CrudHandler {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, group);
             }
             if (replaceAssignedTs) {
-                timeSeriesGroupDao.unassignAll(group.getTimeSeriesCategory().getId(), group.getId(), office);
+                timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(),
+                    group.getOfficeId(), office);
             }
             timeSeriesGroupDao.assignTs(group, office);
             ctx.status(HttpServletResponse.SC_OK);
