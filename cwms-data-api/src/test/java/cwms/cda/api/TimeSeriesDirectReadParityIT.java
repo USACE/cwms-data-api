@@ -566,27 +566,35 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                 String rowProjection = includeEntryDate
                     ? ", case when data_entry_date is null then null else round((cast(data_entry_date as date) - date '1970-01-01') * 86400000) end as data_entry_date_ms"
                     : "";
-                String versionDateExpression = versionDate != null
-                    ? toOracleDateExpression(versionDate)
-                    : "null";
-                String maxVersionFlag = versionDate != null ? "'F'" : "'T'";
+                String maxVersionFlag = versionDate != null ? "F" : "T";
                 String sql = "select round((date_time - date '1970-01-01') * 86400000) as date_time_ms,"
                     + " value,"
                     + " quality_code"
                     + rowProjection
                     + " from table(" + functionName + "("
-                    + toSqlStringLiteral(seriesId) + ", "
-                    + toSqlStringLiteral(units) + ", "
-                    + toOracleDateExpression(beginTime) + ", "
-                    + toOracleDateExpression(endTime) + ", "
+                    + "?, "
+                    + "?, "
+                    + "?, "
+                    + "?, "
                     + "'UTC', 'T', 'T', 'T', 'F', 'F', "
-                    + versionDateExpression + ", "
-                    + maxVersionFlag + ", "
-                    + toSqlStringLiteral(OFFICE)
+                    + "?, "
+                    + "?, "
+                    + "?"
                     + "))"
                     + " order by date_time";
 
                 try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, seriesId);
+                    statement.setString(2, units);
+                    statement.setTimestamp(3, Timestamp.from(beginTime));
+                    statement.setTimestamp(4, Timestamp.from(endTime));
+                    if (versionDate != null) {
+                        statement.setTimestamp(5, Timestamp.from(versionDate));
+                    } else {
+                        statement.setNull(5, Types.TIMESTAMP);
+                    }
+                    statement.setString(6, maxVersionFlag);
+                    statement.setString(7, OFFICE);
                     try (ResultSet resultSet = statement.executeQuery()) {
                         List<TimeSeries.Record> rows = new ArrayList<>();
                         while (resultSet.next()) {
@@ -689,19 +697,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         return timeSeries.withValues(values);
     }
 
-    private static String toSqlStringLiteral(String value) {
-        return "'" + value.replace("'", "''") + "'";
-    }
-
     private static String toOracleDateExpression(Instant instant) {
         LocalDateTime utc = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
         return "to_date('" + utc.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            + "', 'yyyy-mm-dd hh24:mi:ss')";
-    }
-
-    private static String toOracleTimestampExpression(Instant instant) {
-        LocalDateTime utc = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-        return "to_timestamp('" + utc.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
             + "', 'yyyy-mm-dd hh24:mi:ss')";
     }
 
