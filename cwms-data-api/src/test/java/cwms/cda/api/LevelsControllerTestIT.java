@@ -1937,7 +1937,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .follow(true)
             .redirects()
             .max(3)
-            .queryParam(LEVEL_ID_MASK, levelId)
+            .queryParam(LEVEL_ID_MASK, "seasonalLoc18.Elev.Ave.1Day.*")
             .get("/levels/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)

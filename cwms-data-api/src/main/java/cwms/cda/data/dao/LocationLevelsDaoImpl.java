@@ -276,16 +276,12 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 result.forEach(row -> addToAliasMapsNewView(aliasMap, row, unit));
                 result.forEach(row -> parseLevelsNewView(row, builderMap, unit, aliasMap, includeAliases));
             } else {
-                final int[] count = {0};
                 try (Stream<Record> recordStream = query.stream()) {
                     recordStream.forEach(r -> {
                             parseLevelsNewView(r, builderMap, unit, Collections.emptyMap(), false);
-                            count[0]++;
                         }
                     );
                 }
-
-                logger.atFine().log("Fetched %d levels", count[0]);
             }
 
             List<LocationLevel> levels = new java.util.ArrayList<>();
