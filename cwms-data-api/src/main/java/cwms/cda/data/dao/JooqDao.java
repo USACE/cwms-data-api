@@ -286,6 +286,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static String toSqlLikePattern(String regex) {
         return regex.replace("\\", "\\\\")
                 .replace("%", "\\%")
+                .replace(".*", "%")
                 .replace("_", "\\_")
                 .replace("*", "%");
     }
