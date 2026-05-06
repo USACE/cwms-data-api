@@ -195,7 +195,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         }
 
         if (supportsNewView()) {
-            Condition whereCondition = field(LOCATION_LEVEL_ID, String.class).isNotNull();
+            Condition whereCondition = DSL.noCondition();
 
             if (office != null && !office.isEmpty()) {
                 whereCondition = whereCondition.and(field(OFFICE_ID, String.class).eq(office.toUpperCase()));
