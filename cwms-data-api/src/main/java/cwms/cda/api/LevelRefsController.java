@@ -110,9 +110,9 @@ public class LevelRefsController implements Handler {
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = ""),
-                    @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV1),
-                    @OpenApiContent(from = LocationLevels.class, type = Formats.DEFAULT),
-                    @OpenApiContent(from = LocationLevels.class, type = Formats.JSON),
+                    @OpenApiContent(from = LocationLevelRefs.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = LocationLevelRefs.class, type = Formats.DEFAULT),
+                    @OpenApiContent(from = LocationLevelRefs.class, type = Formats.JSON),
                 })
             },
             tags = LevelsController.TAG)

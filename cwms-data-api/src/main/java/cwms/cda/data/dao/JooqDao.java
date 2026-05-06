@@ -97,6 +97,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern FIELD_LENGTH_EXCEEDED = Pattern.compile(
             "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)");
+    private static final Pattern REGEX_META_CHARS_EXCEPT_DOT = Pattern.compile("[\\\\^$|?+()\\[\\]{}]");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -247,13 +248,13 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (regex.toUpperCase().startsWith("NOT:")) {
                     String finalRegex = regex.substring(4);
                     if (ctx.family() == ORACLE) {
-                        ctx.visit(DSL.condition("{not regexp_like}({0}, {1}, 'i')", field, DSL.val(finalRegex)));
+                        ctx.visit(caseInsensitiveRegexCondition(field, finalRegex, true));
                     } else {
                         ctx.visit(DSL.upper(field).notLikeRegex(finalRegex.toUpperCase()));
                     }
                 } else {
                     if (ctx.family() == ORACLE) {
-                        ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                        ctx.visit(caseInsensitiveRegexCondition(field, regex, false));
                     } else {
                         ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
                     }
@@ -262,12 +263,31 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
-    protected static Condition filterExact(Field<String> field, String filter) {
-        if (filter == null) {
-            return DSL.noCondition();
+    private static Condition caseInsensitiveRegexCondition(Field<String> field, String regex, boolean negate) {
+        Condition condition;
+        if (isPlainTextPattern(regex)) {
+            condition = DSL.upper(field).eq(regex.toUpperCase());
+        } else if (isSimpleGlobPattern(regex)) {
+            condition = DSL.upper(field).like(toSqlLikePattern(regex).toUpperCase(), '\\');
         } else {
-            return field.eq(filter);
+            condition = DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.inline(regex));
         }
+        return negate ? condition.not() : condition;
+    }
+
+    private static boolean isPlainTextPattern(String regex) {
+        return regex != null && regex.indexOf('*') < 0 && !REGEX_META_CHARS_EXCEPT_DOT.matcher(regex).find();
+    }
+
+    private static boolean isSimpleGlobPattern(String regex) {
+        return regex != null && regex.indexOf('*') >= 0 && !REGEX_META_CHARS_EXCEPT_DOT.matcher(regex).find();
+    }
+
+    private static String toSqlLikePattern(String regex) {
+        return regex.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_")
+                .replace("*", "%");
     }
 
     /**
