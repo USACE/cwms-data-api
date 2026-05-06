@@ -30,8 +30,10 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -482,31 +484,49 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         List<SeedRow> sortedRows = new ArrayList<>(rows);
         sortedRows.sort(Comparator.comparing(seedRow -> seedRow.dateTime));
 
-        for (SeedRow row : sortedRows) {
+        Map<Integer, List<SeedRow>> rowsByYear = new LinkedHashMap<>();
+        for (SeedRow row: sortedRows) {
             int year = OffsetDateTime.ofInstant(row.dateTime, ZoneOffset.UTC).getYear();
-            String sql = "insert into at_tsv_" + year
+            rowsByYear.computeIfAbsent(year, ignored -> new ArrayList<>()).add(row);
+        }
+
+        for (Map.Entry<Integer, List<SeedRow>> entry: rowsByYear.entrySet()) {
+            String sql = "insert into at_tsv_" + entry.getKey()
                 + " (ts_code, date_time, version_date, data_entry_date, value, quality_code, dest_flag)"
                 + " values (?, ?, ?, ?, ?, ?, 0)";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setLong(1, tsCode);
-                statement.setTimestamp(2, Timestamp.from(row.dateTime));
-                statement.setTimestamp(3, Timestamp.from(row.versionDate != null
-                    ? row.versionDate
-                    : Instant.parse("1111-11-11T00:00:00Z")));
-                if (row.dataEntryDate != null) {
-                    statement.setTimestamp(4, Timestamp.from(row.dataEntryDate));
-                } else {
-                    statement.setNull(4, Types.TIMESTAMP);
+                int batchCount = 0;
+                for (SeedRow row: entry.getValue()) {
+                    bindScenarioInsert(statement, tsCode, row);
+                    statement.addBatch();
+                    batchCount++;
+                    if (batchCount % 1000 == 0) {
+                        statement.executeBatch();
+                    }
                 }
-                if (row.value != null) {
-                    statement.setDouble(5, row.value);
-                } else {
-                    statement.setNull(5, Types.DOUBLE);
-                }
-                statement.setInt(6, row.qualityCode);
-                statement.executeUpdate();
+                statement.executeBatch();
             }
         }
+    }
+
+    private static void bindScenarioInsert(PreparedStatement statement, long tsCode, SeedRow row)
+        throws SQLException {
+        statement.setLong(1, tsCode);
+        statement.setTimestamp(2, Timestamp.from(row.dateTime));
+        statement.setTimestamp(3, Timestamp.from(row.versionDate != null
+            ? row.versionDate
+            : Instant.parse("1111-11-11T00:00:00Z")));
+        if (row.dataEntryDate != null) {
+            statement.setTimestamp(4, Timestamp.from(row.dataEntryDate));
+        } else {
+            statement.setNull(4, Types.TIMESTAMP);
+        }
+        if (row.value != null) {
+            statement.setDouble(5, row.value);
+        } else {
+            statement.setNull(5, Types.DOUBLE);
+        }
+        statement.setInt(6, row.qualityCode);
     }
 
     private static void updateScenarioExtents(Connection connection, long tsCode, List<SeedRow> rows)
