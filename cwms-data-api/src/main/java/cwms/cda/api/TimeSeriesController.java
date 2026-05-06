@@ -438,11 +438,10 @@ public class TimeSeriesController implements CrudHandler {
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
                             GET_ALL));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE  },
+            final int pageSize = Controllers.validateTimeSeriesPageSize(queryParamAsClass(ctx,
+                    new String[]{PAGE_SIZE},
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
-                    name(TimeSeriesController.class.getName(), GET_ALL));
-            pageSize = Controllers.validateTimeSeriesPageSize(pageSize);
-            final int validatedPageSize = pageSize;
+                    name(TimeSeriesController.class.getName(), GET_ALL)));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
@@ -474,7 +473,7 @@ public class TimeSeriesController implements CrudHandler {
                 // Execute DAO call with a timeout so we can return a clearer message instead of a generic 500
                 int apiTimeoutMs = Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000);
                 CompletableFuture<TimeSeries> daoFuture = CompletableFuture.supplyAsync(
-                        () -> dao.getTimeseries(cursor, validatedPageSize, requestParameters));
+                        () -> dao.getTimeseries(cursor, pageSize, requestParameters));
                 TimeSeries ts;
                 try {
                     ts = daoFuture.get(apiTimeoutMs, TimeUnit.MILLISECONDS);
