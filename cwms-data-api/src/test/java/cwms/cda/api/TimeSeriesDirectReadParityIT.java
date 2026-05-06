@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -485,15 +486,24 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             int year = OffsetDateTime.ofInstant(row.dateTime, ZoneOffset.UTC).getYear();
             String sql = "insert into at_tsv_" + year
                 + " (ts_code, date_time, version_date, data_entry_date, value, quality_code, dest_flag)"
-                + " values ("
-                + tsCode + ", "
-                + toOracleDateExpression(row.dateTime) + ", "
-                + (row.versionDate != null ? toOracleDateExpression(row.versionDate) : "date '1111-11-11'") + ", "
-                + (row.dataEntryDate != null ? toOracleTimestampExpression(row.dataEntryDate) : "null") + ", "
-                + (row.value != null ? Double.toString(row.value) : "null") + ", "
-                + row.qualityCode
-                + ", 0)";
+                + " values (?, ?, ?, ?, ?, ?, 0)";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setLong(1, tsCode);
+                statement.setTimestamp(2, Timestamp.from(row.dateTime));
+                statement.setTimestamp(3, Timestamp.from(row.versionDate != null
+                    ? row.versionDate
+                    : Instant.parse("1111-11-11T00:00:00Z")));
+                if (row.dataEntryDate != null) {
+                    statement.setTimestamp(4, Timestamp.from(row.dataEntryDate));
+                } else {
+                    statement.setNull(4, Types.TIMESTAMP);
+                }
+                if (row.value != null) {
+                    statement.setDouble(5, row.value);
+                } else {
+                    statement.setNull(5, Types.DOUBLE);
+                }
+                statement.setInt(6, row.qualityCode);
                 statement.executeUpdate();
             }
         }
