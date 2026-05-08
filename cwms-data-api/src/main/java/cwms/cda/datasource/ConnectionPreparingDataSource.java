@@ -23,7 +23,7 @@ public class ConnectionPreparingDataSource extends DelegatingDataSource {
 
         try {
             return getPreparer().prepare(connection);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             try {
                 // If there was some problem preparing the connection
                 // we close the connection in order to return it to
