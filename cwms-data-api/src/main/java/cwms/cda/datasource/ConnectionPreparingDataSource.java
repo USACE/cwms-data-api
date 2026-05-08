@@ -21,9 +21,9 @@ public class ConnectionPreparingDataSource extends DelegatingDataSource {
     public Connection getConnection() throws SQLException {
         Connection connection = getDelegate().getConnection();
 
-        try{
+        try {
             return getPreparer().prepare(connection);
-        } catch (Exception e) {
+        } catch (SQLException e) {
             try {
                 // If there was some problem preparing the connection
                 // we close the connection in order to return it to
