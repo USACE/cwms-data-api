@@ -5,7 +5,8 @@ import useDescriptors from "../hooks/useDescriptors";
 import PropTypes from "prop-types";
 
 export default function TimeSeriesBuilder({ office, setTsids }) {
-  const aliases = useAliases({ office, kind: "PROJECT" });
+  const [locationKind, setLocationKind] = useState("*");
+  const aliases = useAliases({ office, kind: locationKind });
 
   const [location, setLocation] = useState("");
   const [parameter, setParameter] = useState("");
@@ -41,7 +42,7 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
         version;
       setTsids((prev) => (prev.includes(fullTsid) ? prev : [...prev, fullTsid]));
     }
-  }, [location, parameter, type, interval, duration, version]);
+  }, [location, parameter, type, interval, duration, version, setTsids]);
 
   const errors = [aliases.error, descriptors.error].filter(Boolean);
   if (aliases.isLoading) {
@@ -67,6 +68,23 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
 
   return (
     <div className="flex flex-wrap gap-4 my-4">
+      <Dropdown
+        label="Location Kind"
+        value={locationKind}
+        onChange={(value) => {
+          setLocationKind(value);
+          setLocation("");
+        }}
+        options={[
+          { value: "*", label: "All" },
+          { value: "PROJECT", label: "Project" },
+          { value: "LOCK", label: "Lock" },
+          { value: "GAGE", label: "Gage" },
+          { value: "SITE", label: "Site" },
+          { value: "OUTLET", label: "Outlet" },
+        ]}
+        loading={aliases.isLoading}
+      />
       <Dropdown
         label="Location"
         value={location}

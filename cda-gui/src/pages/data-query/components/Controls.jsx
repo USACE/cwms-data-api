@@ -9,8 +9,8 @@ export default function Controls({
   endDateTime,
 }) {
   return (
-    <div className="flex flex-row justify-around">
-      <div className="text-center basis-1/4">
+    <div className="flex flex-col sm:flex-row gap-4 sm:justify-around">
+      <div className="text-center w-full sm:basis-1/3">
         <div className="dropdown-select">
           <Field>
             <Label>Begin Datetime</Label>
@@ -27,7 +27,7 @@ export default function Controls({
           </Field>
         </div>
       </div>
-      <div className="text-center basis-1/4">
+      <div className="text-center w-full sm:basis-1/3">
         <div className="dropdown-select">
           <Field>
             <Label>End Datetime</Label>

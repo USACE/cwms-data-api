@@ -25,7 +25,6 @@ export default function useDescriptors({
       duration,
     ],
     queryFn: async () => {
-      if (!office) return [];
       const like = [
         location || "*",
         parameter || "*",
@@ -33,15 +32,16 @@ export default function useDescriptors({
         interval || "*",
         duration || "*",
       ].join(".");
-      const all = await cataApi.getCatalogWithDataset({
+      const request = {
         dataset: "TIMESERIES",
         excludeEmpty: true,
-        office,
         like,
-      });
+      };
+      if (office) request.office = office;
+      const all = await cataApi.getCatalogWithDataset(request);
       return all;
     },
-    enabled: !!office,
+    enabled: !!location,
     select: (descriptors) => {
       const types = new Set();
       const intervals = new Set();

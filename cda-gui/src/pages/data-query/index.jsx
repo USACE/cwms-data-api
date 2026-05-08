@@ -52,7 +52,7 @@ export default function DataQuery() {
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
   const [office, setOffice] = useState("");
-  const [mode, setMode] = useState("basic");
+  const [mode, setMode] = useState("advanced");
   useEffect(() => {
     // Reset visible list when tsids change
     setVisibleTSIDs(tsids);
@@ -64,10 +64,7 @@ export default function DataQuery() {
   }, [cacheEnabled]);
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(
-        DATA_QUERY_SORT_ASC_KEY,
-        String(sortAscending),
-      );
+      window.localStorage.setItem(DATA_QUERY_SORT_ASC_KEY, String(sortAscending));
     }
   }, [sortAscending]);
 
@@ -157,7 +154,7 @@ export default function DataQuery() {
           .getTimeSeriesRaw(
             {
               name: tsid,
-              office: office,
+              office: office || undefined,
               begin: beginDateTime.format(CDA_DATE_FORMAT),
               end: endDateTime.format(CDA_DATE_FORMAT),
               pageSize: 25000,
@@ -209,7 +206,7 @@ export default function DataQuery() {
     () => ({
       begin: beginDateTime.format("YYYY-MM-DDTHH:mm:ssZZ"),
       end: endDateTime.format("YYYY-MM-DDTHH:mm:ssZZ"),
-      office: office,
+      office: office || undefined,
     }),
     [beginDateTime, endDateTime, office],
   );
@@ -283,8 +280,7 @@ export default function DataQuery() {
     }
   };
   const hasActiveSettings =
-    cacheEnabled !== DEFAULT_CACHE_ENABLED ||
-    sortAscending !== DEFAULT_SORT_ASCENDING;
+    cacheEnabled !== DEFAULT_CACHE_ENABLED || sortAscending !== DEFAULT_SORT_ASCENDING;
 
   if (error)
     return (
@@ -311,16 +307,15 @@ export default function DataQuery() {
         </div>
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex flex-col gap-4 w-4/5 md:w-3/5">
-            <div className={!office ? "text-lg m-auto" : "flex gap-4"}>
-              <label htmlFor="office">Select Office: </label>
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+              <label htmlFor="office">Office: </label>
               <select
                 id="office"
                 value={office}
                 onChange={(e) => {
                   const _office = e.target.value;
                   if (!_office) {
-                    setOffice(null);
-                    setInterval(null);
+                    setOffice("");
                     setTsids([]);
                     return;
                   }
@@ -339,21 +334,20 @@ export default function DataQuery() {
                 ))}
               </select>
 
-              {office && (
-                <Toggle
-                  checked={mode === "advanced"}
-                  onChange={() =>
-                    setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
-                  }
-                  label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
-                />
-              )}
+              <Toggle
+                checked={mode === "advanced"}
+                onChange={() =>
+                  setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
+                }
+                label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
+              />
             </div>
-            {office && (
+            {(office || mode === "advanced") && (
               <>
                 {mode == "advanced" ? (
                   <TimeSeriesDropdown
                     office={office}
+                    setOffice={setOffice}
                     setTsids={setTsids}
                     tsids={tsids}
                   />
@@ -373,7 +367,9 @@ export default function DataQuery() {
                 />
               </>
             )}
-            {!office && <H3 className="text-center mt-4">Select an office to begin</H3>}
+            {!office && mode !== "advanced" && (
+              <H3 className="text-center mt-4">Select an office to begin</H3>
+            )}
           </div>
           <TimeSeriesManager
             tsids={tsids}
@@ -407,9 +403,9 @@ export default function DataQuery() {
             </Button>
             <Button
               onClick={handleRefreshTimeseries}
-              disabled={!tsids.length || !office || isRefreshing}
+              disabled={!tsids.length || isRefreshing}
               className={`mb-4 bg-slate-700 text-white px-4 py-2 rounded ms-2 ${
-                !tsids.length || !office ? "hidden" : ""
+                !tsids.length ? "hidden" : ""
               }`}
             >
               {isRefreshing ? "Refreshing..." : "Refresh Data"}

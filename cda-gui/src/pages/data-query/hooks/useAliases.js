@@ -10,12 +10,15 @@ const cataApi = new CatalogApi(config);
 export default function useAliases({ office, kind, cacheDuration, props }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["aliases", office, kind],
-    queryFn: async () =>
-      cataApi.getCatalogWithDataset({
+    queryFn: async () => {
+      const request = {
         dataset: "LOCATIONS",
-        locationKindLike: kind,
-        office,
-      }),
+        includeAliases: true,
+      };
+      if (kind) request.locationKindLike = kind;
+      if (office) request.office = office;
+      return cataApi.getCatalogWithDataset(request);
+    },
     staleTime: cacheDuration,
     select: (data) => {
       const aliasMap = {};
