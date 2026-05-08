@@ -175,6 +175,14 @@ public class CatalogController implements CrudHandler {
                     description = "Whether to add aliases to the catalog entries. "
                             + "Default is false. If true, the aliases will be added to the "
                             + "catalog entries in the response."),
+            @OpenApiParam(name = SEARCH_TEXT,
+                    description = "This parameter allows the user to specify a text string to "
+                            + "search locations' metadata. The search is performed "
+                            + "against the following fields: base location ID, sub location ID, "
+                            + "combined location ID, public name, long name, description, "
+                            + "map label, nearest city, location kind, and location type. "
+                            + "Note: This parameter is unsupported when dataset is Timeseries."
+            ),
         },
         pathParams = {
             @OpenApiParam(name = "dataset",
@@ -251,6 +259,9 @@ public class CatalogController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
             if (TIMESERIES.equalsIgnoreCase(valDataSet)) {
+                if (searchText != null && !searchText.isBlank()) {
+                    throw new UnsupportedOperationException("Search text is not yet enabled for timeseries.");
+                }
                 TimeSeriesDao tsDao = new TimeSeriesDaoImpl(dsl, metrics);
 
                 boolean includeExtents = ctx.queryParamAsClass(INCLUDE_EXTENTS, Boolean.class)
