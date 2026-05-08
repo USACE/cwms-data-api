@@ -24,8 +24,10 @@ const ts_api = new TimeSeriesApi(v2_config);
 const offices_api = new OfficesApi();
 const DATA_QUERY_CACHE_KEY = "data-query-cache-enabled";
 const DATA_QUERY_SORT_ASC_KEY = "data-query-sort-ascending";
+const DATA_QUERY_INCLUDE_MISSING_TS_KEY = "data-query-include-missing-timeseries";
 const DEFAULT_CACHE_ENABLED = true;
 const DEFAULT_SORT_ASCENDING = false;
+const DEFAULT_INCLUDE_MISSING_TIMESERIES = false;
 
 // const config = cwmsConfigs["SWF"];
 // async function fetchConfig(configUrl) {
@@ -48,6 +50,13 @@ export default function DataQuery() {
     const storedValue = window.localStorage.getItem(DATA_QUERY_SORT_ASC_KEY);
     return storedValue === null ? DEFAULT_SORT_ASCENDING : storedValue === "true";
   });
+  const [includeMissingTimeseries, setIncludeMissingTimeseries] = useState(() => {
+    if (typeof window === "undefined") return DEFAULT_INCLUDE_MISSING_TIMESERIES;
+    const storedValue = window.localStorage.getItem(DATA_QUERY_INCLUDE_MISSING_TS_KEY);
+    return storedValue === null
+      ? DEFAULT_INCLUDE_MISSING_TIMESERIES
+      : storedValue === "true";
+  });
   //   const [location, setLocation] = useState(null);
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
@@ -67,6 +76,14 @@ export default function DataQuery() {
       window.localStorage.setItem(DATA_QUERY_SORT_ASC_KEY, String(sortAscending));
     }
   }, [sortAscending]);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(
+        DATA_QUERY_INCLUDE_MISSING_TS_KEY,
+        String(includeMissingTimeseries),
+      );
+    }
+  }, [includeMissingTimeseries]);
 
   const toggleTSID = (tsid) =>
     setVisibleTSIDs((prev) =>
@@ -280,7 +297,9 @@ export default function DataQuery() {
     }
   };
   const hasActiveSettings =
-    cacheEnabled !== DEFAULT_CACHE_ENABLED || sortAscending !== DEFAULT_SORT_ASCENDING;
+    cacheEnabled !== DEFAULT_CACHE_ENABLED ||
+    sortAscending !== DEFAULT_SORT_ASCENDING ||
+    includeMissingTimeseries !== DEFAULT_INCLUDE_MISSING_TIMESERIES;
 
   if (error)
     return (
@@ -302,6 +321,8 @@ export default function DataQuery() {
             setCacheEnabled={setCacheEnabled}
             sortAscending={sortAscending}
             setSortAscending={setSortAscending}
+            includeMissingTimeseries={includeMissingTimeseries}
+            setIncludeMissingTimeseries={setIncludeMissingTimeseries}
             active={hasActiveSettings}
           />
         </div>
@@ -350,6 +371,7 @@ export default function DataQuery() {
                     setOffice={setOffice}
                     setTsids={setTsids}
                     tsids={tsids}
+                    includeMissingTimeseries={includeMissingTimeseries}
                   />
                 ) : (
                   <TimeSeriesBuilder

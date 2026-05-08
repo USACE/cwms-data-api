@@ -19,18 +19,20 @@ const catalogApi = new CatalogApi(
   }),
 );
 
-function getFreshnessColor(lastUpdateIso) {
-  if (!lastUpdateIso) return "gray";
+function getFreshnessColor(latestTimeIso) {
+  if (!latestTimeIso) return "gray";
   const now = dayjs();
-  const updated = dayjs(lastUpdateIso);
-  const diffHours = now.diff(updated, "hour");
-  const diffDays = now.diff(updated, "day");
-  if (diffHours <= 24) return "green";
-  if (diffDays <= 7) return "yellow";
-  return "red";
+  const latestTime = dayjs(latestTimeIso);
+  return now.diff(latestTime, "hour", true) <= 1 ? "green" : "yellow";
 }
 
-export default function TimeSeriesDropdown({ office, setOffice, tsids, setTsids }) {
+export default function TimeSeriesDropdown({
+  office,
+  setOffice,
+  tsids,
+  setTsids,
+  includeMissingTimeseries,
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 400);
 
@@ -40,12 +42,12 @@ export default function TimeSeriesDropdown({ office, setOffice, tsids, setTsids 
     isError,
     error,
   } = useQuery({
-    queryKey: ["tsid-catalog", office, debouncedSearchTerm],
+    queryKey: ["tsid-catalog", office, debouncedSearchTerm, includeMissingTimeseries],
     queryFn: async () => {
       if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return [];
       const request = {
         dataset: "TIMESERIES",
-        excludeEmpty: false,
+        excludeEmpty: !includeMissingTimeseries,
         includeAliases: true,
         like: `*${debouncedSearchTerm}*`,
         pageSize: 500,
@@ -97,7 +99,7 @@ export default function TimeSeriesDropdown({ office, setOffice, tsids, setTsids 
             ) : (
               suggestions.map((entry, idx) => {
                 const suggestion_color = getFreshnessColor(
-                  entry.extents?.[0]?.lastUpdate,
+                  entry.extents?.[0]?.latestTime,
                 );
                 return (
                   <ComboboxOption
@@ -140,4 +142,5 @@ TimeSeriesDropdown.propTypes = {
   setOffice: PropTypes.func.isRequired,
   tsids: PropTypes.array.isRequired,
   setTsids: PropTypes.func.isRequired,
+  includeMissingTimeseries: PropTypes.bool.isRequired,
 };
