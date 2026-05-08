@@ -164,30 +164,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final FieldMapping AV_CWMS_TS_ID2_FIELD_MAP = new CwmsTsId2FieldMapping();
     private static final FieldMapping AV_CWMS_TS_ID_FIELD_MAP = new CwmsTsIdFieldMapping();
 
-    private static final class DirectReadMetadata {
-        private final long tsCode;
-        private final String tsId;
-        private final String officeId;
-        private final String units;
-        private final long intervalMinutes;
-        private final long intervalUtcOffset;
-        private final String timeZoneId;
-        private final String versionFlag;
-
-        private DirectReadMetadata(long tsCode, String tsId, String officeId, String units,
-                                   long intervalMinutes, long intervalUtcOffset,
-                                   String timeZoneId, String versionFlag) {
-            this.tsCode = tsCode;
-            this.tsId = tsId;
-            this.officeId = officeId;
-            this.units = units;
-            this.intervalMinutes = intervalMinutes;
-            this.intervalUtcOffset = intervalUtcOffset;
-            this.timeZoneId = timeZoneId;
-            this.versionFlag = versionFlag;
-        }
-    }
-
     @NotNull
     private final Timer getRequestedTimeSeriesTotalQueryTimer;
     @NotNull
@@ -2418,6 +2394,30 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             public DeleteOptions build() {
                 return new DeleteOptions(this);
             }
+        }
+    }
+
+    private static final class DirectReadMetadata {
+        private final long tsCode;
+        private final String tsId;
+        private final String officeId;
+        private final String units;
+        private final long intervalMinutes;
+        private final long intervalUtcOffset;
+        private final String timeZoneId;
+        private final String versionFlag;
+
+        private DirectReadMetadata(long tsCode, String tsId, String officeId, String units,
+                                   long intervalMinutes, long intervalUtcOffset,
+                                   String timeZoneId, String versionFlag) {
+            this.tsCode = tsCode;
+            this.tsId = tsId;
+            this.officeId = officeId;
+            this.units = units;
+            this.intervalMinutes = intervalMinutes;
+            this.intervalUtcOffset = intervalUtcOffset;
+            this.timeZoneId = timeZoneId;
+            this.versionFlag = versionFlag;
         }
     }
 
