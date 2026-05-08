@@ -129,7 +129,7 @@ dependencies {
     implementation(libs.swagger.core) {
         exclude group: "jakarta.xml.bind", module: "*"
     }
-
+    implementation(libs.password4j)
     implementation 'cz.jirutka.rsql:rsql-parser:2.1.0'
 
     compileOnly(libs.javaee.web.api)
@@ -272,6 +272,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-DwarContext=/" + context
+    jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
     // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
