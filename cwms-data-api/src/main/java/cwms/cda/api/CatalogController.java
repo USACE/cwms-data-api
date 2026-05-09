@@ -44,6 +44,8 @@ public class CatalogController implements CrudHandler {
     public static final boolean INCLUDE_EXTENTS_DEFAULT = true;
     public static final boolean INCLUDE_VERSIONS_DEFAULT = true;
     public static final boolean EXCLUDE_EMPTY_DEFAULT = true;
+    private static final int MAX_SEARCH_TEXT_LENGTH = 128;
+    private static final int MAX_SEARCH_TEXT_TOKENS = 10;
 
     private final MetricRegistry metrics;
 
@@ -177,11 +179,13 @@ public class CatalogController implements CrudHandler {
                             + "catalog entries in the response."),
             @OpenApiParam(name = SEARCH_TEXT,
                     description = "This parameter allows the user to specify a text string to "
-                            + "search locations' metadata. The search is performed "
-                            + "against the following fields: base location ID, sub location ID, "
-                            + "combined location ID, public name, long name, description, "
-                            + "map label, nearest city, location kind, and location type. "
-                            + "Note: This parameter is unsupported when dataset is Timeseries."
+                        + "search locations' metadata. The search is performed "
+                        + "against the following fields: base location ID, sub location ID, "
+                        + "combined location ID, public name, long name, description, "
+                        + "map label, nearest city, location kind, and location type. "
+                        + "Search text must be no longer than " + MAX_SEARCH_TEXT_LENGTH
+                        + " characters, and contain no more than " + MAX_SEARCH_TEXT_TOKENS
+                        + " terms. Note: This parameter is unsupported when dataset is Timeseries."
             ),
         },
         pathParams = {
@@ -253,8 +257,8 @@ public class CatalogController implements CrudHandler {
                     String.class, null, metrics, name(CatalogController.class.getName(), GET_ONE));
             boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
                     .getOrDefault(false);
-            String searchText = ctx.queryParamAsClass(SEARCH_TEXT, String.class)
-                .getOrDefault(null);
+            String searchText = validateSearchText(ctx.queryParamAsClass(SEARCH_TEXT, String.class)
+                .getOrDefault(null));
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
@@ -336,6 +340,34 @@ public class CatalogController implements CrudHandler {
         if (!notSupported.isEmpty()) {
             throw new UnsupportedParametersException(List.copyOf(notSupported));
         }
+    }
+
+    private static String validateSearchText(String searchText) {
+        if (searchText == null) {
+            return null;
+        }
+
+        String trimmed = searchText.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException(SEARCH_TEXT + " must not be blank");
+        }
+
+        if (trimmed.length() > MAX_SEARCH_TEXT_LENGTH) {
+            throw new IllegalArgumentException(SEARCH_TEXT + " must be no longer than "
+                    + MAX_SEARCH_TEXT_LENGTH + " characters");
+        }
+
+        if (!trimmed.matches(".*[\\p{Alnum}].*")) {
+            throw new IllegalArgumentException(SEARCH_TEXT + " must contain at least one letter or digit");
+        }
+
+        String[] tokens = trimmed.split("\\s+");
+        if (tokens.length > MAX_SEARCH_TEXT_TOKENS) {
+            throw new IllegalArgumentException(SEARCH_TEXT + " must contain no more than "
+                    + MAX_SEARCH_TEXT_TOKENS + " terms");
+        }
+
+        return trimmed;
     }
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
