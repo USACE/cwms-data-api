@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [11]
+        jdk: [11, 21, 25]
         # place holder for now and leaving commented but in place. General scheme target tests again the current release, the next release, the previous release, and latest development.
         # at this time every possible instance of concern is on 25.07.01, once 26.02.17 is finalized it becomes release and 25.07.01 becomes previous.
         # next-release will be comment out until such time as a RC gets made
@@ -48,6 +48,7 @@ jobs:
         id: thebuild
         run: ./gradlew clean build --info --init-script init.gradle
       - name: integration tests
+        if: matrix.jdk == 11
         run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
       - name: Create matrix job badge
         if: success() || failure() # always run even if the previous step fails

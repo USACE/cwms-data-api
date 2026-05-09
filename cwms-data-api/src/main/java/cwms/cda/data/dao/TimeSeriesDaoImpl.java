@@ -74,7 +74,29 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jooq.*;
+import org.jooq.CommonTableExpression;
+import org.jooq.Condition;
+import org.jooq.Cursor;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Record10;
+import org.jooq.Record3;
+import org.jooq.Record4;
+import org.jooq.Record7;
+import org.jooq.Result;
+import org.jooq.SQL;
+import org.jooq.Select;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectHavingStep;
+import org.jooq.SelectJoinStep;
+import org.jooq.SelectOnConditionStep;
+import org.jooq.SelectSeekStep2;
+import org.jooq.Table;
+import org.jooq.TableField;
+import org.jooq.TableLike;
+import org.jooq.TableOnConditionStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -342,7 +364,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         // put all those columns together as "valid"
         CommonTableExpression<Record7<BigDecimal, String, String, String, String, BigDecimal,
-                String>> valid =
+                        String>> valid =
                 name("valid").fields("tscode", "tsid", "office_id", "loc_part", "units",
                                 "interval", "parm_part")
                         .as(
