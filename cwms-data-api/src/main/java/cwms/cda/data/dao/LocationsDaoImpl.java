@@ -42,6 +42,7 @@ import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 
@@ -726,7 +727,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
     }
 
-    private static Condition buildWhereCondition(CatalogRequestParameters params) {
+    private Condition buildWhereCondition(CatalogRequestParameters params) {
         String idLike = params.getIdLike();
         FieldMapping fieldMapping = null;
         if (params.includeAliases()) {
@@ -775,6 +776,9 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         String textSearch = params.getSearchText();
         if (textSearch != null && !textSearch.isBlank()) {
+            if(!supportsSearchDocColumn(fieldMapping)) {
+                throw new IllegalArgumentException("Text search is not supported yet supported");
+            }
             condition = condition.and(
                 DSL.condition(
                     "CONTAINS({0}, ?) > 0",
@@ -785,6 +789,22 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         return condition;
+    }
+
+    private boolean supportsSearchDocColumn(FieldMapping mapping) {
+        if (HAS_SEARCH_COLUMN != null) {
+            return HAS_SEARCH_COLUMN;
+        }
+
+        Record searchDocSupport = dsl.select(asterisk())
+            .from(table("ALL_TAB_COLUMNS"))
+            .where(field("TABLE_NAME").eq(mapping.getTable().getName()))
+            .and(field("COLUMN_NAME").eq(mapping.getSearchDoc().getName()))
+            .and(field("OWNER").eq("CWMS_20"))
+            .fetchOne();
+
+        HAS_SEARCH_COLUMN = searchDocSupport != null;
+        return HAS_SEARCH_COLUMN;
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation,
