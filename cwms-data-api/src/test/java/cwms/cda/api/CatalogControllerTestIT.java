@@ -13,6 +13,7 @@ import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.json.JsonV2;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -792,6 +793,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         assertTrue(List.of(parts).containsAll(List.of(INCLUDE_EXTENTS, EXCLUDE_EMPTY)));
     }
 
+    @MinimumSchema(20261231)
     @Test
     void test_timeseries_unsupported_search_text() {
         given()
@@ -806,6 +808,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_IMPLEMENTED));
     }
 
+    @MinimumSchema(20261231)
     @Test
     void test_location_search_text_basic() {
         given()
@@ -821,6 +824,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.name", hasItem("Pine Flat-Outflow"));
     }
 
+    @MinimumSchema(20261231)
     @Test
     void test_location_search_text_on_location_kind() {
         given()
@@ -836,6 +840,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.name", hasItem("Paonia"));
     }
 
+    @MinimumSchema(20261231)
     @Test
     void test_location_search_text_combines_with_location_kind_filter() {
         given()
@@ -855,6 +860,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries[0].name", is("Flat Project"));
     }
 
+    @MinimumSchema(20261231)
     @Test
     void test_location_search_text_no_matches() {
         given()
