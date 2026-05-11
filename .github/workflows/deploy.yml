@@ -17,7 +17,8 @@ on:
 jobs:
   # Deploy CDA nightly. Keeps everyone on their toes with new updates and keeps the containers
   deploy:
-    environment: {{inputs.environment}}
+    name: Deploy
+    environment: ${{ inputs.environment }}
     permissions:
       id-token: write
       contents: read
