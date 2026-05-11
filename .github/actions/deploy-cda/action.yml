@@ -1,0 +1,87 @@
+name: Deploy CDA
+description: Deploys CDA to appropriate registry given the required inputs
+inputs:
+  tag:
+    type: string
+    required: true
+  api_image:
+    type: string
+    required: true
+  migration_image:
+    type: string
+    required: true
+  region:
+    type: string
+    required: true
+  iam_role:
+    type: string
+    required: true
+  token:
+    type: string
+    required: false
+  activation_tag:
+    type: string
+    required: true
+  activate:
+    type: boolean
+    required: true
+    default: false
+
+
+runs:
+  using: "composite"
+  permissions:
+    id-token: write # This is required for requesting the JWT
+    contents: read # This is required for actions/checkout
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        aws-region: ${{ inputs.region }}
+        role-to-assume: ${{ inputs.iam_role }}
+        output-credentials: true
+  # Hello from AWS: WhoAmI
+    - name: Sts GetCallerIdentity
+      run: |
+        aws sts get-caller-identity
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        mask-password: 'true'
+    - name: Push API Image to ECR Repo
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: cwms-wmes-data-api
+        IMAGE_TAG: ${{input.tag}}
+        ACTIVE_TAG: ${{input.activation_tag}}
+        ACTIVATE: ${{input.activate}}
+        IMAGE: ghcr.io/usace/cwms-data-api
+      run: |
+        docker pull ${IMAGE}:${{IMAGE_TAG}}
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        if [ "${ACTIVATE}" == "true" ]; then
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        }
+    - name: Push API Migration Image to ECR Repo
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: cwms-wmes-schema_installer
+        IMAGE_TAG: ${{input.tag}}
+        ACTIVE_TAG: ${{input.activation_tag}}
+        ACTIVATE: ${{input.activate}}
+        IMAGE: ghcr.io/usace/cwms-data-api-schema-migration
+      run: |
+        docker pull ${IMAGE}:${{IMAGE_TAG}}
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        if [ "${ACTIVATE}" == "true" ]; then
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        }
+    - name: ECR Logout
+      if: always()
+      run: docker logout ${{ steps.login-ecr.outputs.registry }}
+  # TODO after verification this works: create or consume appropriate schema_installer image
