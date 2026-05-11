@@ -644,7 +644,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .from(table)
                 .where(condition);
             logger.atFiner().log("%s", lazy(() -> count.getSQL(ParamType.INLINED)));
-            total = count.fetchOne().value1();
+            total = count.fetchOne(1, int.class);
         } else {
             cursorLocation = catPage.getCursorId();
             cursorOffice = catPage.getCurOffice();
@@ -779,13 +779,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             if(!supportsSearchDocColumn(fieldMapping)) {
                 throw new IllegalArgumentException("Text search is not supported yet supported");
             }
-            condition = condition.and(
-                DSL.condition(
-                    "CONTAINS({0}, ?) > 0",
-                    fieldMapping.getSearchDoc(),
-                    textSearch
-                )
+            Field<Integer> containsScore = DSL.field(
+                "CONTAINS({0}, {1})",
+                Integer.class,
+                fieldMapping.getSearchDoc(),
+                DSL.inline(textSearch)
             );
+
+            condition = condition.and(containsScore.gt(0));
         }
 
         return condition;
