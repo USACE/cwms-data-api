@@ -35,11 +35,11 @@ Key points
      - Always include ``date-time`` and ``value``; include units in the value column header as parentheses (e.g., ``value (ft)``)
      - Units should exist in exactly one canonical location in all modes. Conditionally adding them as metadata comments will cause confusion over the inconsistency
    * - Optional columns
-     - Optional (off by default): ``time-series-id``, ``office-id``, ``version-date``, ``data-entry-date``, ``quality``
-     - Everything except ``date-time`` and ``value`` (with units in the header) is optional. Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices. Given units are in the `value` header, clients will need to handle this appropriately to determine the correct column index.
+     - Optional (off by default): ``quality-code``, ``data-entry-date``
+     - Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices. Given units are in the `value` header, clients will need to handle this appropriately to determine the correct column index.
    * - Metadata fields
-     - May be emitted as top-of-payload comments (``metadata-format=comments``) or as actual columns (``metadata-format=columns``)
-     - The following fields can be treated as metadata comments at top-of-payload rather than columns: ``time-series-id``, ``office-id``, ``version-date``. These are optional (off by default). It is assumed that the only comments in the payload will be metadata comments, and as such, clients can parse out metadata by reading comment lines until the first non-comment line is reached.
+     - Emitted as top-of-payload comments (``metadata-format=comments``)
+     - The following fields can be treated as metadata comments at top-of-payload: ``time-series-id``, ``office-id``, ``version-date``. These are optional (off by default). It is assumed that the only comments in the payload will be metadata comments, and as such, clients can parse out metadata by reading comment lines until the first non-comment line is reached. Metadata will not be provided as columns.
    * - Units location
      - Express units only in the value column header via parentheses (e.g., ``value (cfs)``)
      - Do not include units as a separate column or in metadata comments. This avoids the anti-pattern of dual representation; units live in exactly one canonical location. Custom deserialization may be required to extract units from the header, which is preferable to duplicate representations.
@@ -69,7 +69,7 @@ Key points
      - Comma-only CSV follows RFC 4180 compliance. Tab/Pipe/semicolon delimiters will not be supported.
    * - Record structure
      - One row per record
-     - A record is a single date-time and value pair; ``quality-code`` and ``data-entry-date`` may be included as optional columns. ``version-date`` is also an attribute of the record but is covered under the optional metadata comments.
+     - A record is a single date-time and value pair; ``quality-code`` and ``data-entry-date`` may be included as optional columns. ``version-date`` is also an attribute of the record but is covered under the optional metadata comments, not as a column.
    * - Single TS per payload
      - Do not mix multiple time-series IDs in one payload
      - Ensures a payload represents exactly one time-series.
@@ -87,7 +87,7 @@ Example CSVs
       2021-06-23T00:00:00Z, 2.0
       2021-06-24T00:00:00Z, 3.0
 
-2. All optionals turned on, with metadata-as-comments turned on:
+2. All optionals turned off, with metadata-as-comments turned on:
 
    .. code-block:: text
 
@@ -100,15 +100,15 @@ Example CSVs
       2021-06-23T00:00:00Z, 2.0
       2021-06-24T00:00:00Z, 3.0
 
-3. All optionals turned on, with metadata-as-comments not turned on:
+3. All optionals turned on (quality and data-entry-date), with metadata-as-comments turned off:
 
    .. code-block:: text
 
-      time-series-id, office-id, date-time, value (cfs), version-date, data-entry-date, quality-code
-      ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-21T00:00:00Z, 0.0, aggregate, 2021-06-21T00:05:00Z, 5
-      ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-22T00:00:00Z, 1.0, aggregate, 2021-06-22T00:05:00Z, 5
-      ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-23T00:00:00Z, 2.0, aggregate, 2021-06-23T00:05:00Z, 5
-      ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI, SWT, 2021-06-24T00:00:00Z, 3.0, aggregate, 2021-06-24T00:05:00Z, 5
+      date-time, value (cfs), data-entry-date, quality-code
+      2021-06-21T00:00:00Z, 0.0, 2021-06-21T00:05:00Z, 5
+      2021-06-22T00:00:00Z, 1.0, 2021-06-22T00:05:00Z, 5
+      2021-06-23T00:00:00Z, 2.0, 2021-06-23T00:05:00Z, 5
+      2021-06-24T00:00:00Z, 3.0, 2021-06-24T00:05:00Z, 5
 
 Decision Status
 ===============
