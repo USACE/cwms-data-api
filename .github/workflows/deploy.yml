@@ -1,4 +1,4 @@
-name: Deploy On demand
+name: Deploy
 on:
   workflow_dispatch:
     inputs:
@@ -24,6 +24,8 @@ jobs:
       contents: read
     runs-on: ubuntu-latest
     steps:
+      - name: checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
       - name: Deploy
         uses: ./.github/workflows/deploy.yml
         with:
