@@ -644,7 +644,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .from(table)
                 .where(condition);
             logger.atFiner().log("%s", lazy(() -> count.getSQL(ParamType.INLINED)));
-            total = count.fetchOne(1, int.class);
+            total = count.fetchOne(0, int.class);
         } else {
             cursorLocation = catPage.getCursorId();
             cursorOffice = catPage.getCurOffice();
