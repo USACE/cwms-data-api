@@ -30,9 +30,6 @@ inputs:
 
 runs:
   using: "composite"
-  permissions:
-    id-token: write # This is required for requesting the JWT
-    contents: read # This is required for actions/checkout
   steps:
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v6
@@ -42,6 +39,7 @@ runs:
         output-credentials: true
   # Hello from AWS: WhoAmI
     - name: Sts GetCallerIdentity
+      shell: bash
       run: |
         aws sts get-caller-identity
     - name: Login to Amazon ECR
@@ -57,6 +55,7 @@ runs:
         ACTIVE_TAG: ${{input.activation_tag}}
         ACTIVATE: ${{input.activate}}
         IMAGE: ghcr.io/usace/cwms-data-api
+      shell: bash
       run: |
         docker pull ${IMAGE}:${{IMAGE_TAG}}
         docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -73,6 +72,7 @@ runs:
         ACTIVE_TAG: ${{input.activation_tag}}
         ACTIVATE: ${{input.activate}}
         IMAGE: ghcr.io/usace/cwms-data-api-schema-migration
+      shell: bash
       run: |
         docker pull ${IMAGE}:${{IMAGE_TAG}}
         docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -83,5 +83,6 @@ runs:
         }
     - name: ECR Logout
       if: always()
+      shell: bash
       run: docker logout ${{ steps.login-ecr.outputs.registry }}
   # TODO after verification this works: create or consume appropriate schema_installer image
