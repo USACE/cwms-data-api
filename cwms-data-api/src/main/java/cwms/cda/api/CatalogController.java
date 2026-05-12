@@ -225,7 +225,7 @@ public class CatalogController implements CrudHandler {
                     + "catalog entries in the response."),
             @OpenApiParam(name = SEARCH_TEXT,
                 description = "This parameter allows the user to specify a text string to "
-                    + "search locations' metadata. The search is performed "
+                    + "search locations' metadata. The search is case insensitive and is performed "
                     + "against the following fields: base location ID, sub location ID, "
                     + "combined location ID, public name, long name, description, "
                     + "map label, nearest city, location kind, and location type. "

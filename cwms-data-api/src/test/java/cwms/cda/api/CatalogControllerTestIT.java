@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dao.DeleteRule;
@@ -793,7 +794,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         assertTrue(List.of(parts).containsAll(List.of(INCLUDE_EXTENTS, EXCLUDE_EMPTY)));
     }
 
-    @MinimumSchema(20261231)
+    @MinimumSchema(LATEST_SCHEMA)
     @Test
     void test_timeseries_unsupported_search_text() {
         given()
@@ -804,11 +805,11 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .get("/catalog/" + TIMESERIES)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_IMPLEMENTED));
     }
 
-    @MinimumSchema(20261231)
+    @MinimumSchema(LATEST_SCHEMA)
     @Test
     void test_location_search_text_basic() {
         given()
@@ -824,7 +825,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.name", hasItem("Pine Flat-Outflow"));
     }
 
-    @MinimumSchema(20261231)
+    @MinimumSchema(LATEST_SCHEMA)
     @Test
     void test_location_search_text_on_location_kind() {
         given()
@@ -840,7 +841,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.name", hasItem("Paonia"));
     }
 
-    @MinimumSchema(20261231)
+    @MinimumSchema(LATEST_SCHEMA)
     @Test
     void test_location_search_text_combines_with_location_kind_filter() {
         given()
@@ -860,7 +861,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries[0].name", is("Flat Project"));
     }
 
-    @MinimumSchema(20261231)
+    @MinimumSchema(LATEST_SCHEMA)
     @Test
     void test_location_search_text_no_matches() {
         given()
