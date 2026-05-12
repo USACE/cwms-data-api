@@ -373,9 +373,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
 
     public void unassignAll(String categoryId, String groupId, String office) {
-        dsl.transaction((Configuration config) -> {
-            unassignAll(config, categoryId, groupId, office);
-        });
+        dsl.transaction((Configuration config) ->
+            unassignAll(config, categoryId, groupId, office)
+        );
     }
 
     // This may not be that useful in practice.  Typically groups either below to an office like SPK or to CWMS.
@@ -402,12 +402,13 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
     public void unassignForOffice( String categoryId, String groupId, String office, String assignmentOffice) {
         connection(dsl, conn -> {
-            DSLContext dslContext = getDslContext(conn, office);
+            DSLContext dslContext = getDslContext(conn, assignmentOffice);
             unassignForOffice(dslContext.configuration(), categoryId, groupId, office, assignmentOffice);
         });
     }
 
-    public static void unassignForOffice(Configuration config, String categoryId, String groupId, String office, String assignmentOffice) {
+    public static void unassignForOffice(Configuration config, String categoryId, String groupId,
+            String office, String assignmentOffice) {
         if (office != null && !"CWMS".equals(office)) {
             CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(config, assignmentOffice);
         }

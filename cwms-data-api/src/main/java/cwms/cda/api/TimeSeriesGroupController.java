@@ -25,12 +25,36 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CWMS_OFFICE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.GROUP_ID;
+import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.IGNORE_NULLS;
+import static cwms.cda.api.Controllers.INCLUDE_ASSIGNED;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.TimeSeriesGroup;
@@ -47,7 +71,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -281,15 +304,30 @@ public class TimeSeriesGroupController implements CrudHandler {
             boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
                 .getOrDefault(false);
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
+            TimeSeriesGroup existingGroup = timeSeriesGroupDao.getTimeSeriesGroup(office, null,
+                null, group.getTimeSeriesCategory().getId(), oldGroupId);
+            if (!existingGroup.getDescription().equalsIgnoreCase(group.getDescription())) {
+                existingGroup = updateClearedFields(group, existingGroup);
+                timeSeriesGroupDao.create(existingGroup, false, false);
+            }
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(group.getId())) {
                 timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, group);
             }
             if (replaceAssignedTs) {
-                timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(), group.getOfficeId(), office);
+                timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(),
+                    group.getOfficeId(), office);
             }
             timeSeriesGroupDao.assignTs(group, office);
             ctx.status(HttpServletResponse.SC_OK);
         }
+    }
+
+    private TimeSeriesGroup updateClearedFields(TimeSeriesGroup groupBody,
+            TimeSeriesGroup existingTimeSeriesGroup) {
+        return new TimeSeriesGroup(new TimeSeriesGroup(existingTimeSeriesGroup.getTimeSeriesCategory(),
+            existingTimeSeriesGroup.getOfficeId(), existingTimeSeriesGroup.getId(), groupBody.getDescription(),
+            existingTimeSeriesGroup.getSharedAliasId(), existingTimeSeriesGroup.getSharedRefTsId()),
+            existingTimeSeriesGroup.getAssignedTimeSeries());
     }
 
     @OpenApi(
@@ -303,7 +341,8 @@ public class TimeSeriesGroupController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the time series group to be deleted"),
             @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
-                        description = "Specifies whether to unassign time series in this group before deleting. Default: false"),
+                        description = "Specifies whether to unassign time series in this group before deleting. "
+                            + "Default: false"),
         },
         method = HttpMethod.DELETE,
         tags = {TAG}
