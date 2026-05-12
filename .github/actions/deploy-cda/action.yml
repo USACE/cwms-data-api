@@ -57,7 +57,7 @@ runs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         if [ "${ACTIVATE}" == "true" ]; then
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
-        }
+        fi
     - name: Push API Migration Image to ECR Repo
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -74,7 +74,7 @@ runs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         if [ "${ACTIVATE}" == "true" ]; then
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
-        }
+        fi
     - name: ECR Logout
       if: always()
       shell: bash
