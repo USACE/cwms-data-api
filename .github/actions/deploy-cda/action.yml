@@ -4,12 +4,6 @@ inputs:
   tag:
     type: string
     required: true
-  api_image:
-    type: string
-    required: true
-  migration_image:
-    type: string
-    required: true
   region:
     type: string
     required: true
@@ -51,9 +45,9 @@ runs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: cwms-wmes-data-api
-        IMAGE_TAG: ${{input.tag}}
-        ACTIVE_TAG: ${{input.activation_tag}}
-        ACTIVATE: ${{input.activate}}
+        IMAGE_TAG: ${{inputs.tag}}
+        ACTIVE_TAG: ${{inputs.activation_tag}}
+        ACTIVATE: ${{inputs.activate}}
         IMAGE: ghcr.io/usace/cwms-data-api
       shell: bash
       run: |
@@ -68,9 +62,9 @@ runs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         ECR_REPOSITORY: cwms-wmes-schema_installer
-        IMAGE_TAG: ${{input.tag}}
-        ACTIVE_TAG: ${{input.activation_tag}}
-        ACTIVATE: ${{input.activate}}
+        IMAGE_TAG: ${{inputs.tag}}
+        ACTIVE_TAG: ${{inputs.activation_tag}}
+        ACTIVATE: ${{inputs.activate}}
         IMAGE: ghcr.io/usace/cwms-data-api-schema-migration
       shell: bash
       run: |
