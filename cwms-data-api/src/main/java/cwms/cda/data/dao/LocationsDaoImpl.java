@@ -776,9 +776,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
         String textSearch = params.getSearchText();
         if (textSearch != null && !textSearch.isBlank()) {
-            if(!supportsSearchDocColumn(fieldMapping)) {
-                throw new IllegalArgumentException("Text search is not supported yet supported");
-            }
             Field<Integer> containsScore = DSL.field(
                 "CONTAINS({0}, {1})",
                 Integer.class,
@@ -790,22 +787,6 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
 
         return condition;
-    }
-
-    private boolean supportsSearchDocColumn(FieldMapping mapping) {
-        if (HAS_SEARCH_COLUMN != null) {
-            return HAS_SEARCH_COLUMN;
-        }
-
-        Record searchDocSupport = dsl.select(asterisk())
-            .from(table("ALL_TAB_COLUMNS"))
-            .where(field("TABLE_NAME").eq(mapping.getTable().getName()))
-            .and(field("COLUMN_NAME").eq(mapping.getSearchDoc().getName()))
-            .and(field("OWNER").eq("CWMS_20"))
-            .fetchOne();
-
-        HAS_SEARCH_COLUMN = searchDocSupport != null;
-        return HAS_SEARCH_COLUMN;
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation,
