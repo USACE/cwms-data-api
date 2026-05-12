@@ -727,7 +727,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         }
     }
 
-    private Condition buildWhereCondition(CatalogRequestParameters params) {
+    private static Condition buildWhereCondition(CatalogRequestParameters params) {
         String idLike = params.getIdLike();
         FieldMapping fieldMapping = null;
         if (params.includeAliases()) {
