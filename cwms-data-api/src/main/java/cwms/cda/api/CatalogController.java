@@ -92,6 +92,7 @@ public class CatalogController implements CrudHandler {
         "SOUNDEX");
     private static final Pattern TOKENIZE_PATTERN = Pattern.compile("\"[^\"]+\"|\\S+");
     private static final Pattern NORMALIZE_PATTERN = Pattern.compile("^[()]+|[()]+$");
+    private static final Pattern ALNUM_PATTERN = Pattern.compile(".*\\p{Alnum}.*");
 
     private final MetricRegistry metrics;
 
@@ -432,7 +433,7 @@ public class CatalogController implements CrudHandler {
                 + MAX_SEARCH_TEXT_LENGTH + " characters");
         }
 
-        if (!trimmed.matches(".*\\p{Alnum}.*")) {
+        if (!ALNUM_PATTERN.matcher(trimmed).matches()) {
             throw new IllegalArgumentException(SEARCH_TEXT + " must contain at least one letter or digit");
         }
 
