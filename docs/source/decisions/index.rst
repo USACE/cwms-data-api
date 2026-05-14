@@ -24,3 +24,4 @@ Some decisions may also be a proposal and marked appropriately.
     Authorization Middleware <./0005-data-authorization-middleware.md>
     CDA Authorization Filtering <./0006-cda-authorization-filtering.md>
     Access Management Clients <./0007-access-management-clients.md>
+    Timeseries CSV Format <./0008-timeseries-csv-format.rst>
