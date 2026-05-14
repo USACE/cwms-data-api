@@ -62,6 +62,7 @@ import cwms.cda.data.dto.catalog.LocationCatalogEntry;
 import cwms.cda.helpers.ZoneIdHelper;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -296,7 +297,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     }
                 retVal = buildLocation(null, locs, true);
             } else {
-                Record loc = dslContext.select(AV_LOC.asterisk())
+                var loc = dslContext.select(AV_LOC.asterisk())
                         .from(AV_LOC)
                         .where(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase())
                                 .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
@@ -644,7 +645,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .from(table)
                 .where(condition);
             logger.atFiner().log("%s", lazy(() -> count.getSQL(ParamType.INLINED)));
-            total = count.fetchOne(0, int.class);
+            try {
+                total = count.fetchOne(0, int.class);
+            } catch (DataAccessException e) {
+                if (isOracleTextQuerySyntaxError(e)) {
+                    throw invalidSearchTextException(textSearch, e);
+                }
+                throw e;
+            }
         } else {
             cursorLocation = catPage.getCursorId();
             cursorOffice = catPage.getCurOffice();
@@ -724,8 +732,31 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 })
                 .collect(toList());
             return new Catalog(cursorLocation, total, pageSize, entries, params);
+        } catch (DataAccessException e) {
+            if (isOracleTextQuerySyntaxError(e)) {
+                throw new IllegalArgumentException(
+                    "Invalid search-text query syntax. The search-text value could not be parsed by Oracle Text: "
+                        + textSearch, e);
+            }
+            throw e;
         }
     }
+
+    private static boolean isOracleTextQuerySyntaxError(DataAccessException e) {
+        if(!(e.getCause() instanceof SQLException)) {
+            return false;
+        }
+        SQLException sqlException = (SQLException) e.getCause();
+        return sqlException != null
+            && sqlException.getErrorCode() == 30600;
+    }
+
+    private static IllegalArgumentException invalidSearchTextException(String searchText, DataAccessException cause) {
+        return new IllegalArgumentException(
+            "Invalid search-text query syntax. The search-text value could not be parsed: "
+                + searchText, cause);
+    }
+
 
     private static Condition buildWhereCondition(CatalogRequestParameters params) {
         String idLike = params.getIdLike();
@@ -780,13 +811,19 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 "CONTAINS({0}, {1})",
                 Integer.class,
                 fieldMapping.getSearchDoc(),
-                DSL.inline(textSearch)
+                DSL.inline(escapeOracleTextQuery(textSearch))
             );
 
             condition = condition.and(containsScore.gt(0));
         }
 
         return condition;
+    }
+
+    private static String escapeOracleTextQuery(String query) {
+        //Loses support for `cat -dog` but since location ids have hyphens that seems like a fine
+        //tradeoff. Workaround is to do `cat NOT dog`
+        return query.replace("-", "\\-");
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation,

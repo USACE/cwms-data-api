@@ -868,7 +868,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSON)
             .queryParam(OFFICE, OFFICE)
-            .queryParam(SEARCH_TEXT, "zzzzzzzzzz-not-a-location")
+            .queryParam(SEARCH_TEXT, "zzzzzzzzzz-fake-location")
         .when()
             .get("/catalog/" + LOCATIONS)
         .then()
