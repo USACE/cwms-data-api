@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -40,7 +41,7 @@ public final class TimeSeriesReadBenchmark {
     private static final DateTimeFormatter ORACLE_DATE_TIME_FORMAT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
     private static final String ACCEPT_JSON_V2 = "application/json;version=2";
-    private static final String NON_VERSIONED_DATE_SQL = "date '1111-11-11'";
+    private static final Instant NON_VERSIONED_DATE = Instant.parse("1111-11-11T00:00:00Z");
 
     private TimeSeriesReadBenchmark() {
     }
@@ -231,13 +232,14 @@ public final class TimeSeriesReadBenchmark {
             String sql = "insert /*+ APPEND */ into at_tsv_" + segment.year
                     + " (ts_code, date_time, version_date, data_entry_date, value, quality_code, dest_flag) "
                     + "select ?, to_date(?, 'yyyy-mm-dd hh24:mi:ss') + numtodsinterval(level - 1, 'MINUTE'), "
-                    + NON_VERSIONED_DATE_SQL + ", systimestamp, ? + level - 1, 0, 0 "
+                    + "?, systimestamp, ? + level - 1, 0, 0 "
                     + "from dual connect by level <= ?";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setLong(1, tsCode);
                 statement.setString(2, ORACLE_DATE_TIME_FORMAT.format(segment.startTime));
-                statement.setLong(3, segment.valueStart);
-                statement.setInt(4, segment.count);
+                statement.setTimestamp(3, Timestamp.from(NON_VERSIONED_DATE));
+                statement.setLong(4, segment.valueStart);
+                statement.setInt(5, segment.count);
                 statement.executeUpdate();
             }
         }
@@ -245,8 +247,9 @@ public final class TimeSeriesReadBenchmark {
 
     private static void updateTsExtents(Connection connection, long tsCode) throws SQLException {
         try (PreparedStatement statement = connection.prepareStatement(
-                "begin cwms_ts.update_ts_extents(?, " + NON_VERSIONED_DATE_SQL + "); end;")) {
+                "begin cwms_ts.update_ts_extents(?, ?); end;")) {
             statement.setLong(1, tsCode);
+            statement.setTimestamp(2, Timestamp.from(NON_VERSIONED_DATE));
             statement.execute();
         }
     }
