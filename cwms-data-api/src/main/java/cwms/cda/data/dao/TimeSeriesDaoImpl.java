@@ -81,6 +81,7 @@ import mil.army.usace.hec.metadata.IntervalOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.*;
+import org.jooq.Record;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -707,6 +708,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String[] tsIdParts = splitTimeSeriesId(tsId);
         String metadataOfficeId = metadata.officeId;
         String metadataUnits = metadata.units;
+        String nativeUnits = metadata.nativeUnits;
         String locPart = getTimeSeriesIdPart(tsIdParts, 0);
         String parmPart = getTimeSeriesIdPart(tsIdParts, 1);
         String intervalPart = getTimeSeriesIdPart(tsIdParts, 3);
@@ -725,8 +727,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         // Pagination happens after regular-interval gap rows are merged
         //  fetch the full raw window first
-        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, metadataUnits,
-                requestParameters, includeEntryDate);
+        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, nativeUnits,
+                metadataUnits, requestParameters, includeEntryDate);
         long effectiveIntervalOffset = intervalOffset;
         if (isRegularSeries(intervalMinutes, intervalPart)) {
             effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts, rawRows);
@@ -807,6 +809,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 valid.field("tsid", String.class).as("tsid"),
                                 valid.field("office_id", String.class).as("office_id"),
                                 valid.field("units", String.class).as("units"),
+                                tsIdView.UNIT_ID.as("native_units"),
                                 valid.field("interval", BigDecimal.class).as("interval"),
                                 tsIdView.INTERVAL_UTC_OFFSET.as("interval_utc_offset"),
                                 tsIdView.TIME_ZONE_ID.as("time_zone_id"),
@@ -823,6 +826,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 record.getValue("tsid", String.class),
                 record.getValue("office_id", String.class),
                 record.getValue("units", String.class),
+                record.getValue("native_units", String.class),
                 record.getValue("interval", BigDecimal.class) == null
                         ? 0L
                         : record.getValue("interval", BigDecimal.class).longValue(),
@@ -835,7 +839,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 record.getValue("version_flag", String.class)));
     }
 
-    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId, String units,
+    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId, String nativeUnits,
+                                                                 String requestedUnits,
                                                                  TimeSeriesRequestParameters requestParameters,
                                                                  boolean includeEntryDate) {
         ZonedDateTime beginTime = requestParameters.getBeginTime();
@@ -851,12 +856,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         );
         Field<BigDecimal> normalizedQuality = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
                 qualityForNormalization).as("quality_norm");
+        Field<Double> convertedValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
+                view.VALUE, view.UNIT_ID, DSL.val(requestedUnits, String.class)).as(VALUE);
 
         Condition baseCondition = view.ALIASED_ITEM.isNull()
                 .and(view.TS_CODE.eq(tsCode))
                 .and(view.OFFICE_ID.eq(officeId))
-                // Invalid unit requests surface as a database error rather than an empty result set.
-                .and(view.UNIT_ID.equalIgnoreCase(units))
+                .and(view.UNIT_ID.equalIgnoreCase(nativeUnits))
                 .and(view.DATE_TIME.ge(beginTimestamp))
                 .and(view.DATE_TIME.le(endTimestamp))
                 .and(view.START_DATE.le(endTimestamp))
@@ -864,9 +870,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         ResultQuery<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
         if (versionDate != null) {
-            query = buildVersionedRowsQuery(view, normalizedQuality, baseCondition, versionDate, includeEntryDate);
+            query = buildVersionedRowsQuery(view, convertedValue, normalizedQuality, baseCondition, versionDate,
+                    includeEntryDate);
         } else {
-            query = buildMaxVersionRowsQuery(view, normalizedQuality, baseCondition, includeEntryDate);
+            query = buildMaxVersionRowsQuery(view, convertedValue, normalizedQuality, baseCondition, includeEntryDate);
         }
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
@@ -885,6 +892,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
             AV_TSV_DQU view,
+            Field<Double> value,
             Field<BigDecimal> normalizedQuality,
             Condition baseCondition,
             ZonedDateTime versionDate,
@@ -897,7 +905,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         return dsl.select(
                         view.DATE_TIME,
-                        view.VALUE,
+                        value,
                         normalizedQuality,
                         dataEntryDateField)
                 .from(view)
@@ -907,12 +915,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
             AV_TSV_DQU view,
+            Field<Double> value,
             Field<BigDecimal> normalizedQuality,
             Condition baseCondition,
             boolean includeEntryDate) {
         var rankedRows = dsl.select(
                         view.DATE_TIME.as(DATE_TIME),
-                        view.VALUE.as(VALUE),
+                        value,
                         normalizedQuality,
                         includeEntryDate
                                 ? view.DATA_ENTRY_DATE.as(DATA_ENTRY_DATE)
@@ -2402,18 +2411,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         private final String tsId;
         private final String officeId;
         private final String units;
+        private final String nativeUnits;
         private final long intervalMinutes;
         private final long intervalUtcOffset;
         private final String timeZoneId;
         private final String versionFlag;
 
-        private DirectReadMetadata(long tsCode, String tsId, String officeId, String units,
+        private DirectReadMetadata(long tsCode, String tsId, String officeId, String units, String nativeUnits,
                                    long intervalMinutes, long intervalUtcOffset,
                                    String timeZoneId, String versionFlag) {
             this.tsCode = tsCode;
             this.tsId = tsId;
             this.officeId = officeId;
             this.units = units;
+            this.nativeUnits = nativeUnits;
             this.intervalMinutes = intervalMinutes;
             this.intervalUtcOffset = intervalUtcOffset;
             this.timeZoneId = timeZoneId;
