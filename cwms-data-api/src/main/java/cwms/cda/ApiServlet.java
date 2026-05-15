@@ -105,6 +105,7 @@ import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
+import cwms.cda.api.auth.userlists.UserListMembersController;
 import cwms.cda.api.auth.users.roles.AddRoleController;
 import cwms.cda.api.auth.users.roles.DeleteRolesController;
 import cwms.cda.api.auth.users.roles.GetRolesController;
@@ -672,6 +673,9 @@ public class ApiServlet extends HttpServlet {
         String userProfilePath = "/user/profile";
         get(userProfilePath, new UserProfileController(metrics), userRoles);
         cdaAccessManager.addCustomAuthorizer(userProfilePath, ApiServlet::hasAnyRole);
+        String userListMembersPath = "/user/list/{user-list-id}/members";
+        get(userListMembersPath, new UserListMembersController(metrics), userRoles);
+        cdaAccessManager.addCustomAuthorizer(userListMembersPath, ApiServlet::hasAnyRole);
         post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
         delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
 
