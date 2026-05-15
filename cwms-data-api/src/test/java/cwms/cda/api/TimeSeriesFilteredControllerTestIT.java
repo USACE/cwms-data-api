@@ -15,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.features.CdaFeatures;
 import cwms.cda.formatters.Formats;
+import fixtures.StackTraceFeatureExtension;
 import fixtures.TestAccounts;
 import io.restassured.RestAssured;
 import io.restassured.filter.log.LogDetail;
@@ -29,41 +29,15 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Test;
-import org.togglz.core.context.FeatureContext;
-import org.togglz.core.manager.FeatureManager;
 
 @Tag("integration")
 class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
     static FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String JSON_FILE = "/cwms/cda/api/lrl/1hour.json";
-
-    static class StackTraceFeatureExtension implements BeforeEachCallback, AfterEachCallback {
-        private boolean wasActive;
-
-        @Override
-        public void beforeEach(ExtensionContext context) {
-            FeatureManager featureManager = FeatureContext.getFeatureManager();
-            wasActive = featureManager.isActive(CdaFeatures.INCLUDE_ERROR_STACK_TRACES);
-            featureManager.enable(CdaFeatures.INCLUDE_ERROR_STACK_TRACES);
-        }
-
-        @Override
-        public void afterEach(ExtensionContext context) {
-            FeatureManager featureManager = FeatureContext.getFeatureManager();
-            if (wasActive) {
-                featureManager.enable(CdaFeatures.INCLUDE_ERROR_STACK_TRACES);
-            } else {
-                featureManager.disable(CdaFeatures.INCLUDE_ERROR_STACK_TRACES);
-            }
-        }
-    }
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
