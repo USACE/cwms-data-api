@@ -25,7 +25,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -537,19 +536,21 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             .collect(Collectors.toCollection(LinkedHashSet::new));
 
         if (distinctVersionDates.isEmpty()) {
-            updateTsExtents(connection, tsCode, "date '1111-11-11'");
+            updateTsExtents(connection, tsCode, Instant.parse("1111-11-11T00:00:00Z"));
             return;
         }
 
         for (Instant versionDate : distinctVersionDates) {
-            updateTsExtents(connection, tsCode, toOracleDateExpression(versionDate));
+            updateTsExtents(connection, tsCode, versionDate);
         }
     }
 
-    private static void updateTsExtents(Connection connection, long tsCode, String versionDateExpression)
+    private static void updateTsExtents(Connection connection, long tsCode, Instant versionDate)
         throws SQLException {
-        String sql = "begin cwms_ts.update_ts_extents(" + tsCode + ", " + versionDateExpression + "); end;";
+        String sql = "begin cwms_ts.update_ts_extents(?, ?); end;";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, tsCode);
+            statement.setTimestamp(2, Timestamp.from(versionDate));
             statement.execute();
         }
     }
@@ -695,12 +696,6 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             ));
         }
         return timeSeries.withValues(values);
-    }
-
-    private static String toOracleDateExpression(Instant instant) {
-        LocalDateTime utc = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
-        return "to_date('" + utc.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            + "', 'yyyy-mm-dd hh24:mi:ss')";
     }
 
     private static final class SeedRow {
