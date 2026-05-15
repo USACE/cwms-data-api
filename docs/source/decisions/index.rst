@@ -27,3 +27,4 @@ Some decisions may also be a proposal and marked appropriately.
     Timeseries CSV Format <./0008-timeseries-csv-format.rst>
     Handling Releases <./0009-code-changes-and-releases.rst>
     Vertical Datum Policy <./00010-vertical-datum.rst>
+    Location Kind Persistence <./0012-location-kind-persistence.rst>
