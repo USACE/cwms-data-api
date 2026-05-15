@@ -2,16 +2,22 @@ package cwms.cda.api;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -279,5 +285,17 @@ class TimeSeriesControllerTest extends ControllerTest {
 
     }
 
+    @Test
+    void testRecentOpenApiResponseUsesRecentValue() throws NoSuchMethodException {
+        Method handle = TimeSeriesRecentController.class.getMethod("handle", Context.class);
+        OpenApi openApi = handle.getAnnotation(OpenApi.class);
+        OpenApiResponse okResponse = Arrays.stream(openApi.responses())
+                .filter(response -> Controllers.STATUS_200.equals(response.status()))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(1, okResponse.content().length);
+        assertEquals(RecentValue.class, okResponse.content()[0].from());
+    }
 
 }
