@@ -128,7 +128,7 @@ jobs:
           username: ${{ secrets.registry_user != null && secrets.registry_user || secrets.ALT_REG_USER }}
           password: ${{ secrets.registry_password != null && secrets.registry_password || secrets.ALT_REG_PASSWORD }}
       - name: Build and push
-        uses: docker/build-push-action@v6.18.0
+        uses: docker/build-push-action@v7.1.0
         with:
           context: "."
           # This is not conditional on pull_request as we want access to these if we are manually running it.
