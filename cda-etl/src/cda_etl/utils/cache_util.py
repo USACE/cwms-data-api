@@ -56,4 +56,10 @@ def _get_cache_path(*args):
 
 
 def put_in_cache(value, *args):
-    pass
+    path = _get_cache_path(*args)
+
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    with open(path, "w", encoding="utf-8") as file:
+        json.dump(value, file, indent=2)

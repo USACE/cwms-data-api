@@ -19,7 +19,7 @@
 import os
 import sys
 from datetime import datetime
-from cda_etl.config import Config
+from config import Config
 
 def test_config():
     os.environ["SOURCE_CDA_URL"] = "http://source"
@@ -48,5 +48,3 @@ def test_config():
         assert str(e) == "MAX_THREADS must be a number"
         print("Test invalid MAX_THREADS passed (exception raised)")
 
-if __name__ == "__main__":
-    test_config()

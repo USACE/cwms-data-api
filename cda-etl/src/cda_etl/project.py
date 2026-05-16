@@ -17,12 +17,58 @@
 #  SOFTWARE.
 from dataclasses import dataclass
 import logging
+import utils.threading_util as threading_util
+import utils.cache_util as cache_util
+import location
+import cwms
 logger = logging.getLogger(__name__)
 
 @dataclass
 class ProjectData:
     project_ids: list[str]
 
-def process(config, session_manager, location_data):
-    return ProjectData([])
+def process(config, session_manager):
+    return process_projects(config.projects, session_manager)
+
+
+def process_projects(projects, session_manager):
+    # Make sure we have project locations downloaded
+    location.process_locations(projects, session_manager)
+
+    # Retrieval
+    session_manager.use_source_session()
+    retrieval_results = threading_util.execute_tasks(_retrieve_one_project, projects)
+
+    # Storage
+    session_manager.use_dest_session()
+    storage_data = threading_util.execute_tasks(_store_one_project, retrieval_results)
+
+    results = storage_data
+
+    return ProjectData(results)
+
+
+def _retrieve_one_project(project):
+    # Split out office id based on dot notation
+    splits = project.split(".")
+
+    if len(splits) != 2:
+        logger.warning(f"Invalid location format: {project}\nExpected [officeid].[locationid]")
+        return None
+
+    office_id = splits[0]
+    project_id = splits[1]
+
+    cache_data = cache_util.get_from_cache(office_id, project_id)
+    if cache_data:
+        return cache_data
+    else:
+        project_data = cwms.get_project(office_id, project_id).json
+        cache_util.put_in_cache(project_data, office_id, project_id)
+        return project_data
+
+
+def _store_one_project(project_data):
+    cwms.store_project(project_data)
+    return project_data
 

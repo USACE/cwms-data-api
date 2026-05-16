@@ -15,19 +15,35 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
-import cwms
+import logging
+import traceback
+from concurrent.futures import as_completed, ThreadPoolExecutor
 
-from config import Config
+logger = logging.getLogger(__name__)
+
+EXECUTOR: ThreadPoolExecutor
+
+def init_executor(max_workers):
+    global EXECUTOR
+    EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
 
 
-class SessionManager:
-    config: Config
+def execute_tasks(task_func, items):
+    """
+    Executes a task function for each item in a list using the provided executor.
+    Returns a dictionary mapping futures to items.
+    """
+    futures_to_items = {
+        EXECUTOR.submit(task_func, item): item
+        for item in items
+    }
 
-    def __init__(self, config):
-        self.config = config
-
-    def use_source_session(self):
-        cwms.init_session(api_root=self.config.source_cda_url, api_key=self.config.source_cda_api_key)
-
-    def use_dest_session(self):
-        cwms.init_session(api_root=self.config.dest_cda_url, api_key=self.config.dest_cda_api_key)
+    results = []
+    for future in as_completed(futures_to_items):
+        item = futures_to_items[future]
+        if future.exception():
+            logger.warning(f"Exception occurred for {item}: {future.exception()}")
+        elif future.result():
+            result = future.result()
+            results.append([item, result])
+    return results

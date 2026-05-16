@@ -66,3 +66,12 @@ tasks.register('runEtl', Exec) {
         }
     }
 }
+
+tasks.register('runEtlUnitTests', Exec) {
+    dependsOn 'installRequirements'
+    group 'verification'
+    executable pythonCmd
+    args '-m', 'pytest'
+    workingDir projectDir
+    environment 'PYTHONPATH', 'src/cda_etl'
+}

@@ -22,6 +22,7 @@ import os
 import location
 import project
 import timeseries
+import utils.threading_util
 from datetime import datetime
 from config import Config
 from session_manager import SessionManager
@@ -30,13 +31,14 @@ logger = logging.getLogger(__name__)
 
 def pipeline(config, session_manager):
     location_data = location.process(config, session_manager)
-    project_data = project.process(config, session_manager, location_data)
-    timeseries.process(config, session_manager, location_data)
+    project_data = project.process(config, session_manager)
+    timeseries.process(config, session_manager)
 
 
 def init():
     config = Config()
     session_manager = SessionManager(config)
+    utils.threading_util.init_executor(config.max_threads)
     return config, session_manager
 
 

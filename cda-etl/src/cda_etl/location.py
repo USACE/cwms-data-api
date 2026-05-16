@@ -16,11 +16,11 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 import logging
 import cwms
-import traceback
-import utils.cache_util as util
+import utils.cache_util as cache_util
+import utils.threading_util as threading_util
 
 logger = logging.getLogger(__name__)
 
@@ -30,36 +30,24 @@ class LocationData:
 
 
 def process(config, session_manager):
-    return process_locations(config.locations, config.max_threads, session_manager)
+    return process_locations(config.locations, session_manager)
 
 
-def process_locations(locations, max_threads, session_manager):
-    session_manager.use_source_session()
-
+def process_locations(locations, session_manager):
     # Retrieval
-    results = []
-    with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        future_to_location = {
-            executor.submit(retrieve_one_location, location): location
-            for location in locations
-        }
+    session_manager.use_source_session()
+    retrieval_results = threading_util.execute_tasks(_retrieve_one_location, locations)
 
-        for future in as_completed(future_to_location):
-            location, id = future_to_location[future]
-            try:
-                result = future.result()
-                if result:
-                    results.append(result)
-                else:
-                    logger.warning(f"Location {id} not found")
-            except Exception as e:
-                logger.warning(f"Exception while retrieving location {id}: {e}")
-                traceback.print_exc()
+    # Storage
+    session_manager.use_dest_session()
+    storage_data = threading_util.execute_tasks(_store_one_location, retrieval_results)
+
+    results = storage_data
 
     return LocationData(results)
 
 
-def retrieve_one_location(location):
+def _retrieve_one_location(location):
     # Split out office id based on dot notation
     splits = location.split(".")
 
@@ -70,9 +58,15 @@ def retrieve_one_location(location):
     office_id = splits[0]
     location_id = splits[1]
 
-    util.get_from_cache(office_id, location_id)
+    cache_data = cache_util.get_from_cache(office_id, location_id)
+    if cache_data:
+        return cache_data
+    else:
+        location_data = cwms.get_location(location_id, office_id).json
+        cache_util.put_in_cache(location_data, office_id, location_id)
+        return location_data
 
-    return cwms.get_location(location_id, office_id).json, location
 
-
-def store_one_location(location_data, location_id):
+def _store_one_location(location_data):
+    cwms.store_location(location_data)
+    return location_data

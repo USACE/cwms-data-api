@@ -1,1 +1,4 @@
 cwms-python
+pytest
+pytest-mock
+pytest-cov
