@@ -1,8 +1,8 @@
 # Releases and Deployments
 
 (NOTE: except for dev/develop) this procedure is not in place, at least for deployments. Up to test will work, but is not active. The
-current process is not easily shared and is getting replace within the next few months so we will not spend time documenting them.
-However, developers authorized to generated a release that should go to one of the environents can still use this process to prepare
+current process is not easily shared and is getting replaced within the next few months so we will not spend time documenting them.
+However, developers authorized to generate a release that should go to one of the environments can still use this process to prepare
 release for that manual deployment.
 
 Releases are anything publish to the (releases)[https://github.com/usace/cwms-data-api/releases] page and can be uses for a local 
@@ -13,12 +13,12 @@ Additionally deployments are made from a specific release, except for the dev en
 made without a release.
 
 
-For deployments there are github action "environemnts" that hold appropriate secrets and properties for values specific to that given
+For deployments there are github action "environments" that hold appropriate secrets and properties for values specific to that given
 environment. Github actions that perform deployments are environment aware and will use them as required.
 
 ## Naming
 
-Calendar Version is used in this project. Previous attempts are SemVer ened up, to say the least, non-sensical. There were
+Calendar Version is used in this project. Previous attempts with SemVer ended up, to say the least, non-sensical. There were
 too many changes too fast, and continue to be. Additionally the database schema backing the API uses Calender Versioning as well 
 and the use of the same here makes it more obivious how out-of-sync they may be.
 
@@ -57,7 +57,7 @@ To create a release perform the following steps
 1. Go to the (releases)[https://github.com/usace/cwms-data-api/releases] and draft a new release (unless directly releasing or deploying) the `develop` target, that release already exists
 1. If deploying/releasing develop directly, skip the following steps. The process is different.
 2. Select "draft new release"
-3. If tagging the current state of develop follow github release prodecures to create a tag in the CalVer format and select "create new tag" and use the same name for the release as the tag.
+3. If tagging the current state of develop follow github release procedures to create a tag in the CalVer format and select "create new tag" and use the same name for the release as the tag.
 4. Publish release. Unless a prod release, check the pre-release box.
 5. NOTE: the details will be filled in by the triggered github actions.
 
@@ -74,7 +74,7 @@ Go to the repositories "actions" tab and find the Nightly Releases - Build actio
 ## Deploying Develop
 
 Deployment of develop can be done without the initial release step. The process is the same as generating a release for develop except
-that the Nightly Releases - Schedule action is used. This action will build the release and they deploy it.
+that the Nightly Releases - Schedule action is used. This action will build the release and then deploy it.
 
 
 ## Deployments in general
@@ -82,7 +82,7 @@ that the Nightly Releases - Schedule action is used. This action will build the 
 Deployments in the various environment are expected to work. However, Each environment may be targetting a different database schema
 version. 
 
-The projects automated tests target the latest developemnt version of the database, the current release version of the database, and
+The projects automated tests target the latest development version of the database, the current release version of the database, and
 the previous release version of the database, and the next version of the database. The main (README.md)[README.md] will show the
 compatility of the API with each schema version as shown below:
 
