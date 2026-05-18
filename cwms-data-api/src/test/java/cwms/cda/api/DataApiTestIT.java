@@ -349,6 +349,7 @@ public class DataApiTestIT {
                 horizontalDatum,
                 office)
                 .withActive(active)
+                .withVerticalDatum("NGVD29")
                 .build();
         if (LocationCleanup.locationsCreated.contains(loc)) {
             return; // we already have this location registered
