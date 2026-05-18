@@ -94,7 +94,7 @@ Otherwise use the defined checkstyle format for new code.
 
 1. Use the JOOQ wrapper. Generally the wrapper provides sufficiently reasonable query generation.
    However, _DO NOT_ be afraid to say, "that looks terrible", and tweak it until it generates something better.
-   a. If the query you're making has nested queries name the queries. Example  
+   a. If the query you're making has nested queries, name the queries. Example  
     `sql
        select a.* from (select col1,col2 from a_table) a;
        `
