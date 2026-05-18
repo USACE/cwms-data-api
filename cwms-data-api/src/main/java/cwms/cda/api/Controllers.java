@@ -258,6 +258,13 @@ public final class Controllers {
 
     }
 
+    public static int validateTimeSeriesPageSize(int pageSize) {
+        if (pageSize < -1) {
+            throw new IllegalArgumentException(PAGE_SIZE + " must be -1, 0, or a positive integer");
+        }
+        return pageSize;
+    }
+
     /**
      * Marks a meter and starts a timer.
      *
