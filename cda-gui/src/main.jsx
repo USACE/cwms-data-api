@@ -27,6 +27,7 @@ const queryClient = new QueryClient();
 const routeComponents = {
   home: Home,
   "swagger-ui": SwaggerUI,
+  "swagger-docs": () => <div>Hello?</div>,
   "data-query": DataQuery,
   regexp: Regexp,
   "filter-expressions": FilterExpressions,
@@ -41,11 +42,12 @@ const router = createBrowserRouter(
       element: <Layout />,
       errorElement: <ErrorFallback />,
       children: [
-        ...routePaths.map(({ id, index, path }) => {
+        ...routePaths.map((route) => {
+          const { id, index, path } = route;
           const Component = routeComponents[id];
           return index
-            ? { index: true, element: <Component /> }
-            : { path, element: <Component /> };
+            ? { index: true, element: <Component />, loader: route.loader }
+            : { path: path, element: <Component />, loader: route.loader };
         }),
         { path: "*", element: <NotFound /> },
       ],
