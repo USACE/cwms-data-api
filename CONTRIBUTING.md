@@ -98,7 +98,7 @@ Otherwise use the defined checkstyle format for new code.
     `sql
        select a.* from (select col1,col2 from a_table) a;
        `
-   Otherwise JOOQ creates a new name each time the query is run which can starved the shared memory.
+   Otherwise JOOQ creates a new name each time the query is run which can starve the shared memory.
 
 2. Joins are your friend. They are a much better friend IF you let the database do them for you. Do not pull data into java just to do a join. Write the appropriate SQL.
 3. Whenever possible limit by office first.
