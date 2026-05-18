@@ -144,3 +144,9 @@ However it MUST be explicit on each request.
 
 If expanding the functionality of the Base class, do not depend on the SQL wrappers. Either use direct JDBC, or [JDBI3](https://jdbi.org/)
 This is to isolate specific possible errors with various APIs and reduces points of failure in initial setup for traceability.
+
+
+
+# Releasing and Deploying new versios
+
+See (Release and Deployments)[RELEASE_DEPLOY.md] for information about how releases are created and what the different naming means.
