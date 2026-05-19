@@ -45,7 +45,6 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.RecentValue;
-import cwms.cda.data.dto.Tsv;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -117,7 +116,7 @@ public class TimeSeriesRecentController implements Handler {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(isArray = true, from = Tsv.class, type = Formats.JSON)}),
+                    @OpenApiContent(isArray = true, from = RecentValue.class, type = Formats.JSON)}),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the timeseries group(s) were not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "

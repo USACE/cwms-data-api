@@ -145,7 +145,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 } catch (NotFoundException e) {
                     LOGGER.atConfig().withCause(e).log("Group not found");
                 } catch (DataAccessException e) {
-                    LOGGER.atInfo().withCause(e).log("Failed to unassign ts from %s that are in group owned by:%s", assignOffice, group.getOfficeId());
+                    LOGGER.atInfo().withCause(e).log("Failed to unassign ts from %s that are in group owned by %s", assignOffice, group.getOfficeId());
                 }
             }
             cwmsgroupsToSPKUnassign.clear();
@@ -1010,7 +1010,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "IntegrationTesting",
+        TimeSeriesGroup newGroup = new TimeSeriesGroup(cat, officeId, "test_rename_group_new", "Test group rename",
             "sharedTsAliasId2", timeSeriesId);
         String newGroupXml = Formats.format(contentType, newGroup);
         //Rename Group
@@ -1051,7 +1051,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("office-id", equalTo(newGroup.getOfficeId()))
             .body("id", equalTo(newGroup.getId()))
-            .body("description", equalTo(newGroup.getDescription()))
+            .body("description", equalTo("Test group rename"))
             .body("assigned-time-series[0].timeseries-id", equalTo(timeSeriesId))
             .body("assigned-time-series[0].alias-id", equalTo("AliasId"))
             .body("assigned-time-series[0].ref-ts-id", equalTo(timeSeriesId));
@@ -1222,6 +1222,26 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK));
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
+            .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + group.getId())
+            .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", equalTo(group.getOfficeId()))
+            .body("id", equalTo(group.getId()))
+            .body("description", equalTo(group.getDescription()))
+            .body("assigned-time-series.size()", equalTo(0));
         //Delete Group
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -1519,16 +1539,18 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         // Create Category
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(json)
-                .header("Authorization", user.toHeaderValue())
-                .when()
-                .post("/timeseries/category")
-                .then()
-                .statusCode(anyOf(is(HttpServletResponse.SC_CREATED), is(HttpServletResponse.SC_CONFLICT)))
-                ;
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(json)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .post("/timeseries/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(anyOf(is(HttpServletResponse.SC_CREATED), is(HttpServletResponse.SC_CONFLICT)))
+            ;
 
         TimeSeriesGroup districtGroup = new TimeSeriesGroup(category, CWMS_OFFICE, "Default", "All Time Series", null, null);
 
@@ -1539,15 +1561,17 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
 
         // Create Group
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .contentType(Formats.JSON)
-                .body(json1)
-                .header("Authorization", user.toHeaderValue())
-                .when()
-                .post("/timeseries/group")
-                .then()
-                .statusCode(anyOf(is(HttpServletResponse.SC_CREATED), is(HttpServletResponse.SC_CONFLICT)))
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(json1)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(anyOf(is(HttpServletResponse.SC_CREATED), is(HttpServletResponse.SC_CONFLICT)))
         ;
 
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
