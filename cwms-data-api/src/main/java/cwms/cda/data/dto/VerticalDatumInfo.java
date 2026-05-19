@@ -1,27 +1,54 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import cwms.cda.data.dao.VerticalDatum;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.formatters.xml.XMLv2;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @JsonRootName("vertical-datum-info")
 @JsonDeserialize(builder = VerticalDatumInfo.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 public class VerticalDatumInfo extends CwmsDTOBase {
+
+    @JacksonXmlProperty(isAttribute = true)
     String office;
 
+    @JacksonXmlProperty(isAttribute = true)
     String unit;
     String location;
 
     String nativeDatum;
     Double elevation;
 
+    String localDatumName;
+
     // Serialize empty arrays in the xml
     @JsonInclude(JsonInclude.Include.ALWAYS)
+    @JacksonXmlElementWrapper(useWrapping = false)
+    @JacksonXmlProperty(localName = "offset")
     VerticalDatumInfo.Offset[] offsets = new Offset[0];
 
     private VerticalDatumInfo() {
@@ -51,8 +78,72 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         return offsets;
     }
 
+    public String getLocalDatumName() {
+        return localDatumName;
+    }
+
+    @JsonIgnore
+    public VerticalDatumInfo.Offset getOffsetForDatum(VerticalDatum convertTo) {
+        VerticalDatumInfo.Offset retVal = null;
+        VerticalDatumInfo.Offset[] offsets = getOffsets();
+        for (VerticalDatumInfo.Offset offset : offsets) {
+            if (offset.isForDatum(convertTo.toString())) {
+                retVal = offset;
+                break;
+            }
+        }
+        return retVal;
+    }
+
+    @JsonIgnore
+    public VerticalDatumInfo convertedTo(VerticalDatumInfo.Offset convertToOffset) {
+        VerticalDatum convertTo = VerticalDatum.getVerticalDatum(convertToOffset.getToDatum());
+        Double offsetValue = convertToOffset.getValue();
+        return new VerticalDatumInfo.Builder()
+                .from(this)
+                .withElevation(getElevation() + offsetValue)
+                .withNativeDatum(convertToOffset.getToDatum())
+                .withOffsets(buildConvertedOffsets(convertTo, convertToOffset))
+                .build();
+    }
+
+    private VerticalDatumInfo.Offset[] buildConvertedOffsets(VerticalDatum convertTo, VerticalDatumInfo.Offset convertToOffset) {
+        List<Offset> newOffsets = new ArrayList<>();
+
+        //add the reverse offset
+        Double conversionFactor = convertToOffset.getValue();
+        double convertToOffsetToOriginal = -conversionFactor;
+        VerticalDatumInfo.Offset reverseOffset = new VerticalDatumInfo.Offset(convertToOffset.isEstimate(), getNativeDatum(), convertToOffsetToOriginal);
+        newOffsets.add(reverseOffset);
+
+        //add the other offsets, adjusted
+        VerticalDatumInfo.Offset[] offsets = getOffsets();
+        //if contains a zero offset, we will mimic that for the converted datum by adding a zero offset (the datum we converted to)
+        boolean hasZeroOffset = Arrays.stream(offsets)
+                .anyMatch(offset -> offset.getValue() == 0.0);
+        for (VerticalDatumInfo.Offset offset : offsets) {
+            String toDatum = offset.getToDatum();
+            Set<String> existingDatums = newOffsets.stream().map(Offset::getToDatum)
+                    .collect(Collectors.toSet());
+            if(!existingDatums.contains(offset.getToDatum())) {
+                if (!offset.isForDatum(convertTo.toString())) {
+                    Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
+                    boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
+                    VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
+                    newOffsets.add(newOffset);
+                } else if(hasZeroOffset) {
+                    //this is the one we converted to, its now zero offset
+                    VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(false, toDatum, 0.0);
+                    newOffsets.add(newOffset);
+                }
+            }
+        }
+        return newOffsets.toArray(new VerticalDatumInfo.Offset[]{});
+    }
+
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
     public static class Offset {
+        @JacksonXmlProperty(isAttribute = true)
         boolean estimate;
 
         String toDatum;
@@ -78,6 +169,17 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             this.estimate = isEstimate;
             this.toDatum = toDatum;
             this.value = value;
+        }
+
+        @JsonIgnore
+        public boolean isForDatum(String verticalDatum) {
+            if(verticalDatum == null && toDatum == null) {
+                return true;
+            }
+            if(verticalDatum == null || toDatum == null) {
+                return false;
+            }
+            return toDatum.replaceAll("-", "").equalsIgnoreCase(verticalDatum.replaceAll("-", ""));
         }
 
         @Override
@@ -118,6 +220,7 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         this.nativeDatum = builder.nativeDatum;
         this.elevation = builder.elevation;
         this.offsets = builder.offsets;
+        this.localDatumName = builder.localDatumName;
     }
 
     @JsonPOJOBuilder
@@ -129,6 +232,8 @@ public class VerticalDatumInfo extends CwmsDTOBase {
         String nativeDatum;
         Double elevation;
         Offset[] offsets = new Offset[0];
+
+        String localDatumName = null;
 
 
         public VerticalDatumInfo.Builder withOffice(String office) {
@@ -156,14 +261,34 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             return this;
         }
 
+        @JacksonXmlElementWrapper(useWrapping = false)
+        @JacksonXmlProperty(localName = "offset")
         public VerticalDatumInfo.Builder withOffsets(VerticalDatumInfo.Offset[] offsets) {
             this.offsets = offsets;
             return this;
         }
 
-        public VerticalDatumInfo.Builder withOffset(boolean isEstimate, String toDatum,
-                                                    Double value) {
+        public VerticalDatumInfo.Builder withOffset(boolean isEstimate, String toDatum, Double value) {
             this.offsets = new Offset[]{new Offset(isEstimate, toDatum, value)};
+            return this;
+        }
+
+        public VerticalDatumInfo.Builder withLocalDatumName(String localDatumName) {
+            this.localDatumName = localDatumName;
+            return this;
+        }
+
+        @JsonIgnore
+        public Builder from(VerticalDatumInfo vdi) {
+            if(vdi != null) {
+                this.office = vdi.getOffice();
+                this.unit = vdi.getUnit();
+                this.location = vdi.getLocation();
+                this.nativeDatum = vdi.getNativeDatum();
+                this.elevation = vdi.getElevation();
+                this.offsets = vdi.getOffsets();
+                this.localDatumName = vdi.getLocalDatumName();
+            }
             return this;
         }
 

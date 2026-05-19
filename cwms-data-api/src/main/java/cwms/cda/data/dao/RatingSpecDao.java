@@ -24,13 +24,19 @@
 
 package cwms.cda.data.dao;
 
-import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
-import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
+import static com.google.common.flogger.LazyArgs.lazy;
 
+import static cwms.cda.data.dto.rating.RatingSpec.Builder.buildIndependentRoundingSpecs;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.rating.RatingSpecs;
+
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -40,43 +46,44 @@ import java.sql.Types;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import com.google.common.flogger.FluentLogger;
+
 import java.util.stream.Collectors;
-import static java.util.stream.Collectors.toList;
 import java.util.stream.Stream;
 import javax.sql.rowset.CachedRowSet;
 import javax.sql.rowset.RowSetProvider;
+
+import cwms.cda.formatters.FormattingException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.ResultQuery;
 import org.jooq.conf.ParamType;
-import usace.cwms.db.dao.util.OracleTypeMap;
+import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING;
 import usace.cwms.db.jooq.codegen.tables.AV_RATING_SPEC;
 
 public class RatingSpecDao extends JooqDao<RatingSpec> {
     public static final Calendar GMT_CALENDAR = getGmtCalendar();
-    private static final Logger logger = Logger.getLogger(RatingSpecDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String SPECIFICATION_ID = "SPECIFICATION_ID";
     public static final String LOCATION_ID = "LOCATION_ID";
@@ -107,69 +114,8 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         super(dsl);
     }
 
-    public Collection<RatingSpec> retrieveRatingSpecs(String office, String specIdMask) {
-
-        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
-        AV_RATING ratView = AV_RATING.AV_RATING;
-
-        // We don't want to also check AV_RATING_SPEC.ALIASED_ITEM b/c we
-        // don't care whether the specs returned are an alias or not.
-        // We do want to exclude the aliased ratings b/c we only want one
-        // copy of each matching rating.
-
-        Condition condition = ratView.ALIASED_ITEM.isNull();
-
-        if (office != null) {
-            condition = condition.and(specView.OFFICE_ID.eq(office));
-        }
-
-        if (specIdMask != null) {
-            Condition likeRegex = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID, specIdMask);
-            condition = condition.and(likeRegex);
-        }
-
-        ResultQuery<? extends Record> query = dsl.select(specView.RATING_SPEC_CODE,
-                        specView.OFFICE_ID, specView.RATING_ID, specView.TEMPLATE_ID,
-                        specView.LOCATION_ID, specView.VERSION, specView.SOURCE_AGENCY,
-                        specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
-                        specView.AUTO_ACTIVATE_FLAG,
-                        specView.AUTO_MIGRATE_EXT_FLAG, specView.IND_ROUNDING_SPECS,
-                        specView.DEP_ROUNDING_SPEC, specView.DATE_METHODS, specView.DESCRIPTION,
-                        ratView.RATING_SPEC_CODE, ratView.EFFECTIVE_DATE)
-                .from(specView)
-                .leftOuterJoin(ratView)
-                .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
-                .where(condition)
-                .fetchSize(DEFAULT_FETCH_SIZE);
-
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
-
-        Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
-        try (Stream<? extends Record> stream = query.fetchStream()) {
-            stream.forEach(rec -> {
-                RatingSpec template = buildRatingSpec(rec);
-
-                Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
-                ZonedDateTime effective = toZdt(effectiveDate);
-
-                List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-                if (effective != null) {
-                    list.add(effective);
-                }
-            });
-        }
-
-        return map.entrySet().stream()
-                .map(entry -> new RatingSpec.Builder()
-                        .fromRatingSpec(entry.getKey())
-                        .withEffectiveDates(entry.getValue())
-                        .build())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-
-    public RatingSpecs retrieveRatingSpecs(String cursor, int pageSize, String office,
-                                           String specIdMask) {
+    @NotNull
+    public RatingSpecs retrieveRatingSpecs(String cursor, int pageSize, String office, String specIdMask) {
         Integer total = null;
         int offset = 0;
 
@@ -182,151 +128,125 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                     try {
                         total = Integer.valueOf(parts[1]);
                     } catch (NumberFormatException e) {
-                        logger.log(Level.INFO, "Could not parse " + parts[1]);
+                        logger.atInfo().log("Could not parse %s", parts[1]);
                     }
                 }
                 pageSize = Integer.parseInt(parts[2]);
             }
         }
 
-        Set<RatingSpec> retval = getRatingSpecs(office, specIdMask, offset, pageSize);
-
-        RatingSpecs.Builder builder = new RatingSpecs.Builder(offset, pageSize, total);
-        builder.specs(new ArrayList<>(retval));
-        return builder.build();
-    }
-
-    @NotNull
-    public Set<RatingSpec> getRatingSpecs(String office, String specIdMask, int firstRow,
-                                          int pageSize) {
-        Set<RatingSpec> retVal;
-
         AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
         AV_RATING ratView = AV_RATING.AV_RATING;
 
-        // We don't want to also check AV_RATING_SPEC.ALIASED_ITEM b/c we
-        // don't care whether the specs returned are an alias or not.
-        // We do want to exclude the aliased ratings b/c we only want one
-        // copy of each matching rating.
-        Condition condition = ratView.ALIASED_ITEM.isNull();
+        // Conditions that define WHICH SPECS match
+        Condition specCondition = specView.TEMPLATE_ID.notLike("%Stage-Offset%")
+            .and(specView.TEMPLATE_ID.notLike("%Stage-Shift%"))
+            .and(specView.ALIASED_ITEM.isNull());
 
         if (office != null) {
-            condition = condition.and(specView.OFFICE_ID.eq(office));
+            specCondition = specCondition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
         }
 
         if (specIdMask != null) {
             Condition maskRegex = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID, specIdMask);
-            condition = condition.and(maskRegex);
+            specCondition = specCondition.and(maskRegex);
         }
 
-        ResultQuery<? extends Record> query = dsl.select(specView.RATING_SPEC_CODE,
-                        specView.OFFICE_ID, specView.RATING_ID, specView.DATE_METHODS,
-                        specView.TEMPLATE_ID, specView.LOCATION_ID, specView.VERSION,
-                        specView.SOURCE_AGENCY, specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
-                        specView.AUTO_ACTIVATE_FLAG, specView.AUTO_MIGRATE_EXT_FLAG,
-                        specView.IND_ROUNDING_SPECS, specView.DEP_ROUNDING_SPEC,
-                        specView.DESCRIPTION, specView.ALIASED_ITEM,
-                        ratView.RATING_SPEC_CODE, ratView.EFFECTIVE_DATE)
-                .from(specView)
-                .leftOuterJoin(ratView)
-                .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
-                .where(condition)
-                .orderBy(specView.OFFICE_ID, specView.TEMPLATE_ID, ratView.RATING_ID,
-                        ratView.EFFECTIVE_DATE)
-                .limit(pageSize)
-                .offset(firstRow);
-
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
-
-        Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
-        try (Stream<? extends Record> stream = query.fetchStream()) {
-            stream.forEach(rec -> {
-                RatingSpec template = buildRatingSpec(rec);
-
-                Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
-                ZonedDateTime effective = toZdt(effectiveDate);
-
-                List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-                if (effective != null) {
-                    list.add(effective);
-                }
-            });
+        if (total == null) {
+            total = dsl.fetchCount(specView, specCondition);
         }
 
-        retVal = map.entrySet().stream()
-                .map(entry -> new RatingSpec.Builder()
-                        .fromRatingSpec(entry.getKey())
-                        .withEffectiveDates(entry.getValue())
-                        .build())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        return retVal;
-    }
+        var specPage = dsl
+            .select(
+                specView.RATING_SPEC_CODE,
+                specView.OFFICE_ID, specView.RATING_ID, specView.DATE_METHODS,
+                specView.TEMPLATE_ID, specView.LOCATION_ID, specView.VERSION,
+                specView.SOURCE_AGENCY, specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
+                specView.AUTO_ACTIVATE_FLAG, specView.AUTO_MIGRATE_EXT_FLAG,
+                specView.IND_ROUNDING_SPECS, specView.DEP_ROUNDING_SPEC,
+                specView.DESCRIPTION, specView.ALIASED_ITEM
+            )
+            .from(specView)
+            .where(specCondition)
+            .orderBy(specView.OFFICE_ID, specView.RATING_ID)
+            .limit(pageSize)
+            .offset(offset)
+            .asTable("spec_page");
 
+        Field<Long> spSpecCode = specPage.field(specView.RATING_SPEC_CODE);
+        Field<String> spOfficeId = specPage.field(specView.OFFICE_ID);
+        Field<String> spRatingId = specPage.field(specView.RATING_ID);
 
-    public Optional<RatingSpec> retrieveRatingSpec(String office, String specId) {
-        Set<RatingSpec> retVal;
-
-        AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
-        AV_RATING ratView = AV_RATING.AV_RATING;
-
-        Condition condition = ratView.ALIASED_ITEM.isNull();
-
-        if (specId != null) {
-            condition = condition.and(specView.RATING_ID.eq(specId));
-        }
-
-        if (office != null) {
-            condition = condition.and(specView.OFFICE_ID.eq(office));
-        }
+        Field<List<ZonedDateTime>> effectiveDates =
+            DSL.multiset(
+                    dsl.select(ratView.EFFECTIVE_DATE)
+                       .from(ratView)
+                       .where(ratView.RATING_SPEC_CODE.eq(spSpecCode))
+                       .and(ratView.ALIASED_ITEM.isNull())
+                       .orderBy(ratView.EFFECTIVE_DATE)
+                )
+               .convertFrom(r ->
+                   r.getValues(ratView.EFFECTIVE_DATE).stream()
+                    .map(RatingSpecDao::toZdt)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList())
+               )
+               .as("effective_dates");
 
         ResultQuery<? extends Record> query = dsl.select(
-                        specView.RATING_SPEC_CODE,
-                        specView.OFFICE_ID, specView.RATING_ID, specView.TEMPLATE_ID,
-                        specView.LOCATION_ID, specView.VERSION, specView.SOURCE_AGENCY,
-                        specView.ACTIVE_FLAG, specView.AUTO_UPDATE_FLAG,
-                        specView.AUTO_ACTIVATE_FLAG, specView.AUTO_MIGRATE_EXT_FLAG,
-                        specView.IND_ROUNDING_SPECS, specView.DEP_ROUNDING_SPEC,
-                        specView.DATE_METHODS, specView.DESCRIPTION,
-                        ratView.RATING_SPEC_CODE, ratView.EFFECTIVE_DATE
-                )
-                .from(specView)
-                .leftOuterJoin(ratView)
-                .on(specView.RATING_SPEC_CODE.eq(ratView.RATING_SPEC_CODE))
-                .where(condition)
-                .orderBy(specView.OFFICE_ID, specView.RATING_ID, ratView.EFFECTIVE_DATE)
-                .fetchSize(DEFAULT_FETCH_SIZE);
+                spSpecCode,
+                spOfficeId,
+                spRatingId,
+                specPage.field(specView.DATE_METHODS),
+                specPage.field(specView.TEMPLATE_ID),
+                specPage.field(specView.LOCATION_ID),
+                specPage.field(specView.VERSION),
+                specPage.field(specView.SOURCE_AGENCY),
+                specPage.field(specView.ACTIVE_FLAG),
+                specPage.field(specView.AUTO_UPDATE_FLAG),
+                specPage.field(specView.AUTO_ACTIVATE_FLAG),
+                specPage.field(specView.AUTO_MIGRATE_EXT_FLAG),
+                specPage.field(specView.IND_ROUNDING_SPECS),
+                specPage.field(specView.DEP_ROUNDING_SPEC),
+                specPage.field(specView.DESCRIPTION),
+                specPage.field(specView.ALIASED_ITEM),
+                effectiveDates
+            )
+            .from(specPage)
+            .orderBy(spOfficeId, spRatingId)
+            .fetchSize(DEFAULT_FETCH_SIZE);
 
-        logger.fine(() -> query.getSQL(ParamType.INLINED));
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
-        Map<RatingSpec, List<ZonedDateTime>> map = new LinkedHashMap<>();
-        try (Stream<? extends Record> stream = query.fetchStream()) {
-            stream.forEach(rec -> {
+        List<RatingSpec> specs = query.fetch()
+            .stream()
+            .map(rec -> {
                 RatingSpec template = buildRatingSpec(rec);
+                List<ZonedDateTime> dates = rec.get(effectiveDates);
+                return new RatingSpec.Builder()
+                    .fromRatingSpec(template)
+                    .withEffectiveDates(dates == null ? List.of() : dates)
+                    .build();
+            })
+            .collect(toList());
 
-                Timestamp effectiveDate = rec.get(ratView.EFFECTIVE_DATE);
-                ZonedDateTime effective = toZdt(effectiveDate);
-
-                List<ZonedDateTime> list = map.computeIfAbsent(template, k -> new ArrayList<>());
-                if (effective != null) {
-                    list.add(effective);
-                }
-            });
-        }
-
-        retVal = map.entrySet().stream()
-                .map(entry -> new RatingSpec.Builder()
-                        .fromRatingSpec(entry.getKey())
-                        .withEffectiveDates(entry.getValue())
-                        .build())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        // There should only be one key in the map
-        if (retVal.size() > 1) {
-            throw new IllegalStateException("More than one rating spec found for id: " + specId);
-        }
-
-        return retVal.stream().findFirst();
+        RatingSpecs.Builder builder = new RatingSpecs.Builder(offset, pageSize, total);
+        builder.withSpecs(specs);
+        return builder.build();
     }
+
+
+        public Optional<RatingSpec> retrieveRatingSpec(String office, String specId) {
+            RatingSpecs ratingSpecs = retrieveRatingSpecs(null, 1, office, specId);
+            List<RatingSpec> specs = ratingSpecs.getSpecs();
+            if(specs.size() > 1) {
+                throw new IllegalStateException("More than one rating spec found for specId: " + specId);
+            } else if(specs.isEmpty()) {
+                return Optional.empty();
+            } else {
+                return Optional.of(specs.get(0));
+            }
+        }
 
     public static ZonedDateTime toZdt(final Timestamp time) {
         if (time != null) {
@@ -387,7 +307,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
 
     public void delete(String office, DeleteMethod deleteMethod, String ratingSpecId) {
         String deleteAction;
-        switch(deleteMethod) {
+        switch (deleteMethod) {
             case DELETE_ALL:
                 deleteAction = DeleteRule.DELETE_ALL.getRule();
                 break;
@@ -399,54 +319,91 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
                 break;
             default:
                 throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
-                    + deleteMethod);
+                        + deleteMethod);
         }
         dsl.connection(c ->
-            CWMS_RATING_PACKAGE.call_DELETE_SPECS(
-                getDslContext(c,office).configuration(),
-                ratingSpecId,
-                deleteAction,
-                office)
+                CWMS_RATING_PACKAGE.call_DELETE_SPECS(
+                        getDslContext(c, office).configuration(),
+                        ratingSpecId,
+                        deleteAction,
+                        office)
         );
     }
 
+    public void create(RatingSpec spec, boolean failIfExists) {
+        String xml = null;
+        try {
+            xml = RatingSpecXmlUtils.toPlSqlXml(spec);
+            create(xml, failIfExists);
+        } catch (JsonProcessingException ex) {
+            String msg = spec != null ?
+                    "Error rendering '" + spec + "' to XML"
+                    :
+                    "Null element passed to formatter";
+            logger.atWarning().withCause(ex).log(msg);
+            throw new FormattingException(msg, ex);
+        }
+    }
+
+    // In my tests this method wouldn't fail if the input was
+    // mostly right, it just wouldn't create anything.
     public void create(String xml, boolean failIfExists) {
         final String office = RatingDao.extractOfficeFromXml(xml);
         dsl.connection(c ->
-            CWMS_RATING_PACKAGE.call_STORE_SPECS__3(
-                getDslContext(c,office).configuration(),
-                xml,
-                formatBool(failIfExists))
+                CWMS_RATING_PACKAGE.call_STORE_SPECS__3(
+                        getDslContext(c, office).configuration(),
+                        xml,
+                        formatBool(failIfExists))
         );
     }
 
+    /**
+     * Retrieve effective dates for specs matching the specIdMask and officeIdMask within the given date range.
+     * NOTE: This makes a separate query to get the list of non-aliased spec ids for the officeIdMask, so that aliased specs can be skipped.
+     */
     public RatingEffectiveDatesMap retrieveSpecEffectiveDates(String officeIdMask, String specIdMask, Instant begin, Instant end) {
+        //set of non-alias spec ids used to filter out aliased specs
+        Map<String, List<String>> officeToRatingIdsNoAliasesMap = getRatingIds(officeIdMask, "*", false);
         return connectionResult(dsl, conn -> {
             //office->spec->dates
             NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap = new TreeMap<>();
-            ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end);
-            OracleTypeMap.checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
-            while(rs.next()) {
-                String officeId = rs.getString(OFFICE_ID);
-                String specId = rs.getString(SPECIFICATION_ID);
-                Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
-                Instant date = timestamp.toInstant();
-                NavigableSet<Instant> dateList = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>())
-                        .computeIfAbsent(specId, k -> new TreeSet<>());
-                dateList.add(date);
+            //instantiate empty Instant list for each office/spec combination so that specs with no effective dates are included in the final result
+            for (Map.Entry<String, List<String>> entry : officeToRatingIdsNoAliasesMap.entrySet()) {
+                String officeId = entry.getKey();
+                List<String> specIds = entry.getValue();
+                NavigableMap<String, NavigableSet<Instant>> specMap = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>());
+                for (String specId : specIds) {
+                    specMap.put(specId, new TreeSet<>());
+                }
             }
-            return buildRatingEffectiveDatesMap(specDateMap);
+            try (ResultSet rs = catRatings(conn, officeIdMask, specIdMask, begin, end)) {
+                checkMetaData(rs.getMetaData(), RATINGS_COLUMN_LIST, "Ratings");
+                while (rs.next()) {
+                    String officeId = rs.getString(OFFICE_ID);
+                    String specId = rs.getString(SPECIFICATION_ID);
+                    List<String> ratingIdsNoAliases = officeToRatingIdsNoAliasesMap.get(officeId);
+                    if (ratingIdsNoAliases != null && !ratingIdsNoAliases.contains(specId)) { // skip aliased specs based on queried list of rating ids not including aliases
+                        continue;
+                    }
+                    Timestamp timestamp = rs.getTimestamp(EFFECTIVE_DATE, GMT_CALENDAR);
+                    Instant date = timestamp.toInstant();
+                    NavigableSet<Instant> dateList = specDateMap.computeIfAbsent(officeId, k -> new TreeMap<>())
+                            .computeIfAbsent(specId, k -> new TreeSet<>());
+                    dateList.add(date);
+                }
+                return buildRatingEffectiveDatesMap(specDateMap);
+            }
         });
     }
 
     //package scoped for unit testing
     static RatingEffectiveDatesMap buildRatingEffectiveDatesMap(NavigableMap<String, NavigableMap<String, NavigableSet<Instant>>> specDateMap) {
         Map<String, List<RatingSpecEffectiveDates>> officeToSpecDatesMap = new LinkedHashMap<>(specDateMap.size());
-        for(Map.Entry<String, NavigableMap<String, NavigableSet<Instant>>> entry : specDateMap.entrySet()) {
+        for (Map.Entry<String, NavigableMap<String, NavigableSet<Instant>>> entry : specDateMap.entrySet()) {
             String officeId = entry.getKey();
             List<RatingSpecEffectiveDates> specEffectiveDatesForOffice = new ArrayList<>();
             NavigableMap<String, NavigableSet<Instant>> specMap = entry.getValue();
-            for(Map.Entry<String, NavigableSet<Instant>> specEntry : specMap.entrySet()) {
+            for (Map.Entry<String, NavigableSet<Instant>> specEntry : specMap.entrySet()) {
                 String specId = specEntry.getKey();
                 NavigableSet<Instant> dateList = specEntry.getValue();
                 if (dateList.isEmpty()) {
@@ -474,8 +431,7 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         CachedRowSet output = RowSetProvider.newFactory()
                 .createCachedRowSet();
 
-        try (CallableStatement statement = conn.prepareCall("{CALL CWMS_20.CWMS_RATING.CAT_RATINGS(?, ?, ?, ?, ?, ?)}"))
-        {
+        try (CallableStatement statement = conn.prepareCall("{CALL CWMS_20.CWMS_RATING.CAT_RATINGS(?, ?, ?, ?, ?, ?)}")) {
             statement.registerOutParameter(1, Types.REF_CURSOR);
             statement.setString(2, specIdMask);
             statement.setTimestamp(3, pEffectiveDateStart, GMT_CALENDAR);
@@ -489,5 +445,36 @@ public class RatingSpecDao extends JooqDao<RatingSpec> {
         }
 
         return output;
+    }
+
+    private Map<String, List<String>> getRatingIds(String office, String templateIdMask, boolean includeAliases) {
+        return connectionResult(dsl, conn -> {
+            AV_RATING_SPEC specView = AV_RATING_SPEC.AV_RATING_SPEC;
+            Condition condition = DSL.noCondition();
+
+            if (office != null && !office.isEmpty() && !office.equals("*")) {
+                condition = condition.and(specView.OFFICE_ID.eq(office.toUpperCase()));
+            }
+
+            if (templateIdMask != null) {
+                Condition ratingIdLike = JooqDao.caseInsensitiveLikeRegex(specView.RATING_ID,
+                        templateIdMask);
+                condition = condition.and(ratingIdLike);
+            }
+
+            if (!includeAliases) {
+                condition = condition.and(specView.ALIASED_ITEM.isNull());
+            }
+
+            Field<String> officeField = specView.OFFICE_ID;
+            Field<String> idField = specView.RATING_ID;
+
+            return DSL.using(conn)
+                    .selectDistinct(officeField, idField)
+                    .from(specView)
+                    .where(condition)
+                    .orderBy(officeField, idField)
+                    .fetchGroups(officeField, idField);
+        });
     }
 }

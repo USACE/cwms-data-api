@@ -1,20 +1,43 @@
 package cwms.cda.helpers;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class DatabaseHelpers {
-    public static Connection setSession(Connection conn, HttpServletRequest request) throws SQLException{
-        String sessionKey = (String)request.getSession(false).getAttribute("SESSION_KEY");
-        try (
-            CallableStatement setSession = conn.prepareCall("call cwms_env.set_session_id(?)");
-        ){
-            setSession.setString(1,sessionKey);
-            setSession.execute();
-            return conn;
+
+    
+    public static enum SCHEMA_VERSION {
+        V2025_07_01(250701, "25.07.01"),
+        LATEST_DEV(999999, "99.99.99"),
+        BYPASS(-1, "Bypass")
+        ;
+
+        private final int numeric;
+        private final String text;
+
+        SCHEMA_VERSION(int numeric, String text)
+        {
+            this.numeric = numeric;
+            this.text = text;
+        }
+
+        public int numeric() {
+            return this.numeric;
+        }
+
+        public String text() {
+            return this.text;
+        }
+
+        public static SCHEMA_VERSION fromNumeric(int value)
+        {
+            for(var tmp: SCHEMA_VERSION.values())
+            {
+                if (tmp.numeric == value)
+                {
+                    return tmp;
+                }
+            }
+            throw new IllegalArgumentException(
+                "Numeric Value " + value + " does not match an available version enumeration.");
         }
     }
 }

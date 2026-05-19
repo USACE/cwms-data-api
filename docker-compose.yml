@@ -1,6 +1,11 @@
 volumes:
   oracle_data_1:
   auth_data:
+  minio_data:
+    driver: local
+  minio_config:
+    driver: local
+
 services:
   db:
     image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
@@ -9,7 +14,7 @@ services:
       - ORACLE_PASSWORD=badSYSpassword
       - CWMS_PASSWORD=simplecwmspasswD1
       - OFFICE_ID=HQ
-      - OFFICE_EROC=s0
+      - OFFICE_EROC=q0
     ports:
       - "1525:1521"
     healthcheck:
@@ -28,11 +33,12 @@ services:
       - SYS_PASSWORD=badSYSpassword
       # set to HQ/q0 for any national system work
       - OFFICE_ID=HQ
-      - OFFICE_EROC=s0
+      - OFFICE_EROC=q0
       - INSTALLONCE=1
       - QUIET=1
+      - API_KEY=testkey12345677
     command: >
-      sh -xc "sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/setup_sql/users $$OFFICE_EROC"
+      sh -xc "sqlplus CWMS_20/$$CWMS_PASSWORD@$$DB_HOST_PORT$$DB_NAME @/setup_sql/users $$OFFICE_EROC $$API_KEY"
     volumes:
       - ./compose_files/sql:/setup_sql:ro
     depends_on:
@@ -50,6 +56,10 @@ services:
         condition: service_completed_successfully
       traefik:
         condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-setup:
+        condition: service_completed_successfully
     image: cwms-rest-api:local-dev
     build:
       target: api
@@ -64,7 +74,7 @@ services:
       - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
-      - CDA_JDBC_USERNAME=s0webtest
+      - CDA_JDBC_USERNAME=q0webtest
       - CDA_JDBC_PASSWORD=simplecwmspasswD1
       - CDA_POOL_INIT_SIZE=5
       - CDA_POOL_MAX_ACTIVE=10
@@ -77,6 +87,14 @@ services:
       - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
       - cwms.dataapi.access.openid.useAltWellKnown=true
       - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
+      - cwms.dataapi.access.openid.clientId=cwms
+      # values are not actually used in the local keycloak, however it does fail and leaves them in place for various testing.
+      - cwms.dataapi.access.openid.idpHint=federation-eams,login.gov
+      - blob.store.endpoint=http://minio:9000
+      - blob.store.region=docker
+      - blob.store.bucket=cwms-test
+      - blob.store.accessKey=cda_user
+      - blob.store.secretKey=cda_password
     expose:
       - 7000
       - 5005
@@ -93,10 +111,10 @@ services:
       - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 
   auth:
-    image: quay.io/keycloak/keycloak:19.0.1
-    command: ["start-dev", "--features-disabled=admin2","--import-realm"]
+    image: quay.io/keycloak/keycloak:26.5
+    command: ["start-dev", "--import-realm"]
     healthcheck:
-      test: "/usr/bin/curl -If localhost:${APP_PORT:-8081}/auth/health/ready || exit 1"
+      test: "/healthcheck.sh"
       interval: 5s
       timeout: 1s
       retries: 100
@@ -114,6 +132,7 @@ services:
       - KC_HTTP_RELATIVE_PATH=/auth
     volumes:
       - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./compose_files/keycloak/healthcheck.sh:/healthcheck.sh:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
@@ -127,13 +146,13 @@ services:
 
   # Proxy for HTTPS for OpenID
   traefik:
-    image: "traefik:v3.3.3"
+    image: "traefik:v3.6.2"
     ports:
       - "${APP_PORT:-8081}:80"
     expose:
       - "8080"
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     healthcheck:
       test: traefik healthcheck --ping
     command:
@@ -142,8 +161,52 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--ping"
-      - "--log.level=DEBUG"
+      - "--log.level=WARN"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"
       - "traefik.http.routers.traefik.service=api@internal"
+
+  minio:
+    container_name: minio_server
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    volumes:
+      - minio_data:/data
+      - minio_config:/root/.minio
+    ports:
+      - '${FORWARD_MINIO_API_PORT0:-9000}:9000'
+      - '${FORWARD_MINIO_PORT:-9001}:9001'
+      - '${FORWARD_MINIO_API_PORT2:-9002}:9002'
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          cpus: "0.5"
+          memory: 1G
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
+  minio-setup:
+    image: minio/mc:latest
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 minio_admin saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE;
+      /usr/bin/mc admin user add myminio cda_user cda_password;
+      /usr/bin/mc mb --ignore-existing myminio/cwms-test;
+      /usr/bin/mc admin policy attach myminio readwrite --user cda_user;
+      exit 0;
+      "

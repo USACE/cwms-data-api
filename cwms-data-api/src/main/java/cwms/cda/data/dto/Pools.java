@@ -9,7 +9,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

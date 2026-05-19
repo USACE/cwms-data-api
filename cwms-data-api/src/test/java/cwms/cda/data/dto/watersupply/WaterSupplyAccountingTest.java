@@ -33,7 +33,7 @@ import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -187,19 +187,19 @@ class WaterSupplyAccountingTest {
     private Map<Instant, List<PumpTransfer>> buildTestPumpAccountingList() {
         Map<Instant, List<PumpTransfer>> retMap = new TreeMap<>();
         List<PumpTransfer> pumpMap = new ArrayList<>();
-        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 1.0, "Added water to the system"));
-        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 2.0, "Removed excess water"));
-        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 3.0, "Daily water release"));
+        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 1.0, "cms", "Added water to the system"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 2.0, "cms", "Removed excess water"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 3.0, "cms", "Daily water release"));
         retMap.put(Instant.ofEpochMilli(1668979048000L), pumpMap);
         pumpMap = new ArrayList<>();
-        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 4.0, "Pump transfer for the day"));
-        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 5.0, "Excess water transfer"));
-        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 6.0, "Water returned to the river"));
+        pumpMap.add(new PumpTransfer(PumpType.IN, "Pipeline", 4.0, "cms", "Pump transfer for the day"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 5.0, "cms", "Excess water transfer"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 6.0, "cms", "Water returned to the river"));
         retMap.put(Instant.ofEpochMilli(1669065448000L), pumpMap);
         pumpMap = new ArrayList<>();
-        pumpMap.add(new PumpTransfer(PumpType.IN,"Pipeline", 7.0, "Pump transfer for the day"));
-        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 8.0, "Excess water transfer"));
-        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 9.0, "Water returned to the river"));
+        pumpMap.add(new PumpTransfer(PumpType.IN,"Pipeline", 7.0, "cms", "Pump transfer for the day"));
+        pumpMap.add(new PumpTransfer(PumpType.OUT, "Pipeline", 8.0, "cms", "Excess water transfer"));
+        pumpMap.add(new PumpTransfer(PumpType.BELOW, "River", 9.0, "cms", "Water returned to the river"));
         retMap.put(Instant.ofEpochMilli(1669151848000L), pumpMap);
         return retMap;
     }

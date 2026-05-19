@@ -52,31 +52,18 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public final class PropertyController implements CrudHandler {
+public final class PropertyController extends BaseCrudHandler {
     
     static final String TAG = "Properties";
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
-
 
     public PropertyController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
-            pathParams = {
-            },
             queryParams = {
                 @OpenApiParam(name = OFFICE_MASK, description = "Filters properties to the specified office mask"),
-                @OpenApiParam(name = CATEGORY_ID, description = "Filters properties to the specified category mask"),
+                @OpenApiParam(name = CATEGORY_ID_MASK, description = "Filters properties to the specified category mask"),
                 @OpenApiParam(name = NAME_MASK, description = "Filters properties to the specified name mask"),
             },
             responses = {
@@ -105,7 +92,7 @@ public final class PropertyController implements CrudHandler {
             String serialized = Formats.format(contentType, properties, Property.class);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
         }
     }
 
@@ -149,7 +136,7 @@ public final class PropertyController implements CrudHandler {
             String serialized = Formats.format(contentType, property);
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
         }
     }
 
@@ -184,6 +171,10 @@ public final class PropertyController implements CrudHandler {
     }
 
     @OpenApi(
+            pathParams = {
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the name of the property to be " +
+                        "updated."),
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = Property.class, type = Formats.JSON)
@@ -198,6 +189,7 @@ public final class PropertyController implements CrudHandler {
     )
     @Override
     public void update(Context ctx, String name) {
+        logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Property.class);

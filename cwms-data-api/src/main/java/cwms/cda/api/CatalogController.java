@@ -30,16 +30,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
+import cwms.cda.api.errors.UnsupportedParametersException;
 
 public class CatalogController implements CrudHandler {
 
-    private static final Logger logger = Logger.getLogger(CatalogController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String TAG = "Catalog";
     public static final boolean INCLUDE_EXTENTS_DEFAULT = true;
+    public static final boolean INCLUDE_VERSIONS_DEFAULT = true;
     public static final boolean EXCLUDE_EMPTY_DEFAULT = true;
 
     private final MetricRegistry metrics;
@@ -62,19 +65,19 @@ public class CatalogController implements CrudHandler {
     @OpenApi(tags = {TAG}, ignore = true)
     @Override
     public void create(Context ctx) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
     public void delete(Context ctx, @NotNull String entry) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
     public void getAll(Context ctx) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).result("cannot perform this action");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -83,7 +86,11 @@ public class CatalogController implements CrudHandler {
                     description = "This end point can return a lot of data, this "
                             + "identifies where in the request you are."
             ),
-
+            @OpenApiParam(name = CURSOR, deprecated = true,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response. Deprecated, use " + PAGE + " instead."),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description = "How many entries per page returned. Default 500."
@@ -102,11 +109,13 @@ public class CatalogController implements CrudHandler {
             ),
             @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                            + "matching against the timeseries category id"
+                            + "matching against the timeseries category id. Note: This parameter is "
+                            + "unsupported when dataset is Locations."
             ),
             @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                            + "matching against the timeseries group id"
+                            + "matching against the timeseries group id. Note: This parameter is "
+                            + "unsupported when dataset is Locations."
             ),
             @OpenApiParam(name = LOCATION_CATEGORY_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> "
@@ -122,8 +131,16 @@ public class CatalogController implements CrudHandler {
                             + "items with no bounding office set will not be present in results."),
             @OpenApiParam(name = INCLUDE_EXTENTS, type = Boolean.class,
                     description = "Whether the returned catalog entries should include timeseries "
-                        + "extents. Only valid for TIMESERIES. "
+                        + "extents. Only valid for TIMESERIES. Note: This parameter is "
+                            + "unsupported when dataset is Locations."
                         + "Default is " + INCLUDE_EXTENTS_DEFAULT + "."),
+            @OpenApiParam(name = INCLUDE_VERSIONS, type = Boolean.class,
+                description = "Whether the returned catalog entries should include timeseries "
+                    + "versions in the extents block. "
+                    + "Only used when include-extents is enabled, otherwise it is ignored. "
+                    + "Only valid for TIMESERIES. Note: This parameter is "
+                    + "unsupported when dataset is Locations."
+                    + "Default is " + INCLUDE_VERSIONS_DEFAULT + "."),
             @OpenApiParam(name = EXCLUDE_EMPTY, type = Boolean.class,
                     description = "Specifies "
                         + "whether Timeseries that have empty extents "
@@ -131,7 +148,8 @@ public class CatalogController implements CrudHandler {
                         + "'empty' is defined as VERSION_TIME, EARLIEST_TIME, LATEST_TIME "
                         + "and LAST_UPDATE all being null. This parameter does not control "
                         + "whether the extents are returned to the user, only whether matching "
-                        + "timeseries are excluded. Only valid for TIMESERIES. "
+                        + "timeseries are excluded. Only valid for TIMESERIES. Note: This parameter is "
+                            + "unsupported when dataset is Locations."
                         + "Default is " + EXCLUDE_EMPTY_DEFAULT + "."),
             @OpenApiParam(name = LOCATION_KIND_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> matching "
@@ -235,6 +253,8 @@ public class CatalogController implements CrudHandler {
 
                 boolean includeExtents = ctx.queryParamAsClass(INCLUDE_EXTENTS, Boolean.class)
                         .getOrDefault(INCLUDE_EXTENTS_DEFAULT);
+                boolean includeVersions = ctx.queryParamAsClass(INCLUDE_VERSIONS, Boolean.class)
+                    .getOrDefault(INCLUDE_VERSIONS_DEFAULT);
                 boolean excludeExtents = ctx.queryParamAsClass(EXCLUDE_EMPTY, Boolean.class)
                         .getOrDefault(EXCLUDE_EMPTY_DEFAULT);
 
@@ -247,6 +267,7 @@ public class CatalogController implements CrudHandler {
                         .withTsGroupLike(tsGroupLike)
                         .withBoundingOfficeLike(boundingOfficeLike)
                         .withIncludeExtents(includeExtents)
+                        .withIncludeVersions(includeVersions)
                         .withExcludeEmpty(excludeExtents)
                         .withLocationKind(locationKind)
                         .withLocationType(locationType)
@@ -258,7 +279,7 @@ public class CatalogController implements CrudHandler {
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
 
                 warnAboutNotSupported(ctx, new String[]{TIMESERIES_CATEGORY_LIKE,
-                        TIMESERIES_GROUP_LIKE, EXCLUDE_EMPTY, INCLUDE_EXTENTS});
+                        TIMESERIES_GROUP_LIKE, EXCLUDE_EMPTY, INCLUDE_EXTENTS, INCLUDE_VERSIONS});
 
                 CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
                         .withUnitSystem(unitSystem)
@@ -271,6 +292,7 @@ public class CatalogController implements CrudHandler {
                         .withLocationType(locationType)
                         .withFilterBaseLocations(filterBaseLocations)
                         .withNegateLocationKindLike(negateLocationKind)
+                        .withIncludeAliases(includeAliases)
                         .build();
 
                 LocationsDao dao = new LocationsDaoImpl(dsl);
@@ -284,7 +306,7 @@ public class CatalogController implements CrudHandler {
                 final CdaError re = new CdaError("Cannot create catalog of requested "
                         + "information");
 
-                logger.info(() -> re + " with url:" + ctx.fullUrl());
+                logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
                 ctx.json(re).status(HttpCode.NOT_FOUND);
             }
         }
@@ -298,15 +320,14 @@ public class CatalogController implements CrudHandler {
         notSupported.retainAll(queryParamMap.keySet());
 
         if (!notSupported.isEmpty()) {
-            throw new IllegalArgumentException("The following parameters are not yet "
-                    + "supported for this method: " + notSupported);
+            throw new UnsupportedParametersException(List.copyOf(notSupported));
         }
     }
 
     @OpenApi(tags = {"Catalog"}, ignore = true)
     @Override
     public void update(Context ctx, @NotNull String entry) {
-        ctx.status(HttpCode.NOT_IMPLEMENTED).json(CdaError.notImplemented());
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 }

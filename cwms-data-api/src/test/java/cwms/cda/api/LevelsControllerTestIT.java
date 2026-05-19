@@ -25,9 +25,14 @@
 package cwms.cda.api;
 
 import cwms.cda.ApiServlet;
+import cwms.cda.data.dao.LocationCategoryDao;
+import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.data.dto.AssignedLocation;
+import cwms.cda.data.dto.LocationCategory;
+import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.TimeSeries;
@@ -37,6 +42,7 @@ import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
@@ -101,19 +107,20 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void test_location_level() throws Exception {
-        createLocation("level_as_single_value", true, OFFICE);
+    @ParameterizedTest
+    @ValueSource(strings = {"SPK", "SWT", "MVP"})
+    void test_location_level(String office) throws Exception {
+        createLocation("level_as_single_value", true, office);
         String levelId = "level_as_single_value.Stor.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
         LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
-                .withOfficeId(OFFICE)
+                .withOfficeId(office)
                 .withLevelUnitsId("ac-ft")
                 .withConstantValue(1.0)
                 .build();
         levelList.add(level);
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
-            DSLContext dsl = dslContext(c, OFFICE);
+            DSLContext dsl = dslContext(c, office);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             dao.storeLocationLevel(level);
         });
@@ -123,7 +130,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .queryParam("office", OFFICE)
+            .queryParam("office", office)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
         .when()
             .redirects().follow(true)
@@ -143,7 +150,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .queryParam("office", OFFICE)
+            .queryParam("office", office)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
             .queryParam(UNIT, "ac-ft")
         .when()
@@ -156,6 +163,43 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("level-units-id",equalTo("ac-ft"))
             .body("constant-value",equalTo(1.0F));
+
+        // test modified effective date
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", office)
+            .queryParam(EFFECTIVE_DATE, time.plusDays(1L).toInstant().toString())
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("level-units-id",equalTo("ac-ft"))
+            .body("constant-value",equalTo(1.0F));
+
+        // test modified effective date using exact match
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam("office", office)
+            .queryParam(EFFECTIVE_DATE, time.plusDays(1L).toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
+            .queryParam(UNIT, "ac-ft")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @Test
@@ -301,9 +345,89 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertEquals("1Day", response.path("levels[1].duration-id"));
     }
 
+
+    @MinimumSchema(20261231)
+    @Test
+    void test_level_refs() throws Exception {
+        int levelCount = LevelRefsController.DEFAULT_PAGE_SIZE + 1;
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+
+        for (int i = 0; i < levelCount; i++) {
+            String locId = String.format("test_level_refs_loc_%03d", i);
+            String parameterId = i % 2 == 0 ? "Flow" : "Stor";
+            String unitsId = i % 2 == 0 ? "cms" : "ac-ft";
+            double constantValue = i + 1.0;
+            String levelId = locId + "." + parameterId + ".Ave.1Day.Regulating";
+
+            createLocation(locId, true, OFFICE);
+            CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+                LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+                    .withOfficeId(OFFICE)
+                    .withLevelUnitsId(unitsId)
+                    .withConstantValue(constantValue)
+                    .build();
+                levelList.add(level);
+                DSLContext dsl = dslContext(c, OFFICE);
+                LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+                dao.storeLocationLevel(level);
+            });
+        }
+
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, "test_level_refs_loc_*")
+            .queryParam(BEGIN, "2020-06-01T00:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/level-refs/")
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"), is(100));
+        String nextPage = response.path("next-page");
+        assertThat(nextPage, notNullValue());
+
+        assertEquals(OFFICE, response.path("levels[0].location-level-id.office-id"));
+        assertEquals("test_level_refs_loc_000.Flow.Ave.1Day.Regulating",
+            response.path("levels[0].location-level-id.name"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[0].effective-dates[0]"));
+
+        response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, "test_level_refs_loc_*")
+            .queryParam(BEGIN, "2020-06-01T00:00:00Z")
+            .queryParam(PAGE, nextPage)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/level-refs/")
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"), is(1));
+        assertThat(response.path("next-page"), nullValue());
+
+        assertEquals(OFFICE, response.path("levels[0].location-level-id.office-id"));
+        assertEquals("test_level_refs_loc_100.Flow.Ave.1Day.Regulating",
+            response.path("levels[0].location-level-id.name"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[0].effective-dates[0]"));
+    }
+
     @Test
     void test_level_as_timeseries() throws Exception {
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         createLocation("level_as_timeseries", true, OFFICE);
         String levelId = "level_as_timeseries.Flow.Ave.1Day.Regulating";
         ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
@@ -330,7 +454,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
-                .header("Authorization", user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(BEGIN, time.toInstant().toString())
                 .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
@@ -370,7 +493,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                         .log().ifValidationFails(LogDetail.ALL,true)
                         .accept(Formats.JSONV2)
                         .contentType(Formats.JSONV2)
-                        .header("Authorization", user.toHeaderValue())
                         .queryParam(Controllers.OFFICE, OFFICE)
                         .queryParam(BEGIN, time.toInstant().toString())
                         .queryParam(END, time.plusDays(effectiveDateCount).toInstant().toString())
@@ -450,7 +572,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
@@ -472,7 +593,6 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
@@ -968,6 +1088,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -984,6 +1105,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "ft")
         .when()
             .redirects().follow(true)
@@ -1001,6 +1123,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "EN")
         .when()
             .redirects().follow(true)
@@ -1019,6 +1142,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "ft3")
         .when()
             .redirects().follow(true)
@@ -1137,6 +1261,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1154,6 +1279,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1171,6 +1297,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1335,6 +1462,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1352,6 +1480,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1369,6 +1498,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1525,6 +1655,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(UNIT, "SI")
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1542,6 +1673,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .queryParam("office", OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
+            .queryParam(EFFECTIVE_DATE_EXACT, true)
             .queryParam(UNIT, "ft3")
         .when()
             .redirects().follow(true)
@@ -1561,6 +1693,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertThat(response.path("constituents[0].attribute-id"), equalTo("Stage"));
         assertThat(response.path("constituents[1].name"), equalTo(existingSpec));
         assertThat(response.path("constituents[1].type"), equalTo("RATING"));
+        assertThat(response.path("expiration-date"), equalTo(Instant.ofEpochMilli(1685689200000L).toString()));
 
         // Delete the level
         switch (deletionMethod) {
@@ -1674,7 +1807,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         ZonedDateTime levelDate = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         List<SeasonalValueBean> values = new ArrayList<>();
         int numValues = 12;
-        for (int i = 1; i <= numValues; i++) {
+        for (int i = 0; i < numValues; i++) {
             values.add(new SeasonalValueBean.Builder()
                 .withValue(i + 1.0)
                 .withOffsetMonths(i)
@@ -1687,6 +1820,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .withIntervalOrigin(intervalOrigin)
                 .withSeasonalValues(values)
                 .withInterpolateString("T")
+                .withExpirationDate(levelDate.plusYears(50))
                 .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1725,7 +1859,94 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
+            .body("interval-months", equalTo(12))
             .body("seasonal-values.size()", is(numValues));
+    }
+
+    @Test
+    void testRetrieveAllSeasonalLevel() throws Exception {
+        String locName = "seasonalLoc18";
+        createLocation(locName, true, OFFICE);
+        String levelId = String.format("%s.Elev.Ave.1Day.Top of Spillway", locName);
+        ZonedDateTime intervalOrigin = ZonedDateTime.ofInstant(Instant.parse("2012-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        ZonedDateTime levelDate = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        List<SeasonalValueBean> values = new ArrayList<>();
+        int numValues = 12;
+        for (int i = 0; i < numValues; i++) {
+            values.add(new SeasonalValueBean.Builder()
+                .withValue(i + 1.0)
+                .withOffsetMonths(i)
+                .build());
+        }
+        SeasonalLocationLevel level = new SeasonalLocationLevel.Builder(levelId, levelDate)
+            .withOfficeId(OFFICE)
+            .withLevelUnitsId("ft")
+            .withIntervalMonths(12)
+            .withIntervalOrigin(intervalOrigin)
+            .withSeasonalValues(values)
+            .withInterpolateString("T")
+            .withExpirationDate(levelDate.plusYears(50))
+            .build();
+
+        String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Created Location Level"))
+            .body(IDENTIFIER, equalTo(levelId));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, levelDate.toInstant().toString())
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .get("/levels/{level-id}", levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
+            .body("seasonal-values.size()", is(numValues));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, levelDate.toInstant().toString())
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .queryParam(LEVEL_ID_MASK, "seasonalLoc18.Elev.Ave.1Day.*")
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
+            .body("levels[0].seasonal-values.size()", is(numValues))
+            .body("total", is(1));
     }
 
     @Test
@@ -1735,11 +1956,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = String.format("%s.Elev.Ave.1Day.Regulating", locName);
         String tsId = String.format("%s.Elev.Ave.1Day.1Week.Regulating", locName);
         createTimeseries(OFFICE, tsId);
-        ZonedDateTime time = ZonedDateTime.now();
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         TimeSeriesLocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time, tsId)
             .withOfficeId(OFFICE)
             .withLevelUnitsId("ft")
             .withInterpolateString("T")
+            .withExpirationDate(time.plusYears(50))
             .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1778,6 +2000,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(time.plusYears(50).toInstant().toString()))
             .body("seasonal-time-series-id", equalTo(tsId));
     }
 
@@ -1786,11 +2009,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String locName = "constLocation123";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Elev.Ave.1Day.Regulating", locName);
-        ZonedDateTime time = ZonedDateTime.now();
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
         ConstantLocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
             .withOfficeId(OFFICE)
             .withLevelUnitsId("ft")
             .withConstantValue(8675.309)
+            .withExpirationDate(time.plusYears(50))
             .build();
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
@@ -1830,6 +2054,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
+            .body("expiration-date", equalTo(time.plusYears(50).toInstant().toString()))
             .body("constant-value", equalTo(8675.309f));
     }
 
@@ -1919,6 +2144,250 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("levels.size()", is(1))
             .body("levels[0].constant-value", equalTo(1.0f))
+        ;
+    }
+
+    @Test
+    void test_get_aliases() throws Exception {
+        String locationName = "TestBaseLocationLevel";
+        String controlLocationName = "TestBaseLocLevelControl";
+        createLocation(controlLocationName, true, OFFICE);
+        createLocation(locationName, true, OFFICE);
+
+        String categoryName = "TestAliasesCategory";
+        String groupName1 = "TestAliasesGroup";
+        String groupName2 = "TestAliasesGroup2";
+        String sharedLocAlias1 = "TESTBASELOCALIAS";
+        String sharedLocAlias2 = "LEVELALIAS";
+
+        String levelId1 = locationName + ".Stor.Ave.1Day.Regulating";
+        String levelId2 = locationName + ".Elev.Ave.1Day.USGS";
+        String controlLevelId = controlLocationName + ".Elev.Ave.1Day.USGS";
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            LocationLevel level1 = new ConstantLocationLevel.Builder(levelId1, time)
+                .withOfficeId(OFFICE)
+                .withLevelUnitsId("ac-ft")
+                .withConstantValue(12.0)
+                .build();
+            LocationLevel level2 = new ConstantLocationLevel.Builder(levelId2, time)
+                .withOfficeId(OFFICE)
+                .withLevelUnitsId("m")
+                .withConstantValue(123.0)
+                .build();
+            LocationLevel level3 = new ConstantLocationLevel.Builder(controlLevelId, time)
+                .withOfficeId(OFFICE)
+                .withLevelUnitsId("m")
+                .withConstantValue(25.0)
+                .build();
+            levelList.add(level1);
+            levelList.add(level2);
+            levelList.add(level3);
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            dao.storeLocationLevel(level1);
+            dao.storeLocationLevel(level2);
+            dao.storeLocationLevel(level3);
+
+            LocationCategory category = new LocationCategory(OFFICE, categoryName, "A test category");
+            LocationCategoryDao catDao = new LocationCategoryDao(dsl);
+            try {
+                catDao.delete(category.getId(), true, OFFICE);
+            } catch (Exception e) {
+                // ignore
+            }
+            catDao.create(category);
+
+            LocationGroupDao groupDao = new LocationGroupDao(dsl);
+            LocationGroup baseGroup1 = new LocationGroup(category, OFFICE, groupName1, "A test group",
+                sharedLocAlias1, null, 0);
+            LocationGroup baseGroup2 = new LocationGroup(category, OFFICE, groupName2, "Another test group",
+                sharedLocAlias2, null, 0);
+
+            groupDao.create(baseGroup1);
+            groupDao.create(baseGroup2);
+            List<AssignedLocation> locations = new ArrayList<>();
+            AssignedLocation assignedLocation = new AssignedLocation(locationName, OFFICE, sharedLocAlias1, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group = new LocationGroup(baseGroup1, locations);
+            groupDao.assignLocs(group, OFFICE);
+
+            locations = new ArrayList<>();
+            assignedLocation = new AssignedLocation(locationName, OFFICE, sharedLocAlias2, null, null);
+            locations.add(assignedLocation);
+            LocationGroup group2 = new LocationGroup(baseGroup2, locations);
+            groupDao.assignLocs(group2, OFFICE);
+        });
+
+        // verify that the control level can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, controlLevelId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].constant-value", equalTo(25.0f))
+            .body("levels[0].location-level-id", equalTo(controlLevelId))
+            .body("levels[0].aliases", nullValue())
+        ;
+
+        // verify that the aliased levels can be retrieved
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, locationName + ".*")
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(2))
+            .body("levels[0].location-level-id", isOneOf(levelId1, levelId2))
+            .body("levels[1].location-level-id", isOneOf(levelId1, levelId2))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[1].aliases", notNullValue())
+            .body("levels[1].aliases.size()", is(2))
+            .body("levels[1].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[1].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+        ;
+
+        // verify the results for a single level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, levelId1)
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].location-level-id", is(levelId1))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            ;
+
+        // verify the results for a single level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, levelId2)
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+            .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].location-level-id", is(levelId2))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+        ;
+
+        // verify the results for a single level
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, levelId2)
+            .queryParam(INCLUDE_ALIASES, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(1))
+            .body("levels[0].location-level-id", is(levelId2))
+            .body("levels[0].aliases", notNullValue())
+            .body("levels[0].aliases.size()", is(2))
+            .body("levels[0].aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+            .body("levels[0].aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("levels[0].aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
+        ;
+
+        // verify that alias as level-id mask does not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, sharedLocAlias1)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(0))
+        ;
+
+        // verify that alias as level-id mask will not return results
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "SI")
+            .queryParam(LEVEL_ID_MASK, sharedLocAlias2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("levels.size()", is(0))
         ;
     }
 

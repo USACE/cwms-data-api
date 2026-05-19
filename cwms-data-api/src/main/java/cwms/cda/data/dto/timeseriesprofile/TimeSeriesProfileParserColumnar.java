@@ -19,7 +19,7 @@ import cwms.cda.formatters.json.JsonV1;
  * See {@link TimeSeriesProfileParser} for more information on serialization
  *      and type handling.
  */
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.JSON, Formats.DEFAULT})
 @JsonDeserialize(builder = TimeSeriesProfileParserColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

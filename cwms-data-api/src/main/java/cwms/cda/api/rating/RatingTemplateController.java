@@ -51,8 +51,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +59,7 @@ import org.jooq.DSLContext;
 
 
 public class RatingTemplateController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(RatingTemplateController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final String TAG = "Ratings";
     private final MetricRegistry metrics;
@@ -138,7 +137,7 @@ public class RatingTemplateController implements CrudHandler {
         } catch (Exception ex) {
             CdaError re =
                     new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
@@ -155,7 +154,7 @@ public class RatingTemplateController implements CrudHandler {
                             + " the template whose data is to be included in the response")
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                    @OpenApiParam(name = OFFICE, description = "Specifies the "
                             + "owning office of the Rating Templates whose data is to be included"
                             + " in the response. If this field is not specified, matching rating "
                             + "information from all offices shall be returned."),
@@ -194,7 +193,7 @@ public class RatingTemplateController implements CrudHandler {
             } else {
                 CdaError re = new CdaError("Unable to find Rating Template based on "
                         + "parameters given");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
         }
@@ -235,7 +234,7 @@ public class RatingTemplateController implements CrudHandler {
         String retval;
 
 
-        if (contentType.contains(Formats.XMLV2)) {
+        if (contentType.contains(Formats.XMLV2) || contentType.contains(Formats.XML)) {
             retval = body;
         } else if (contentType.contains(Formats.JSONV2)) {
             retval = translateJsonToXml(body);
@@ -259,8 +258,7 @@ public class RatingTemplateController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(Context ctx, String locationCode) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of
-        // generated methods, choose Tools | Templates.
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -282,9 +280,9 @@ public class RatingTemplateController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(DELETE)){
             DSLContext dsl = getDslContext(ctx);
 
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             RatingTemplateDao ratingDao = new RatingTemplateDao(dsl);
-            JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
+            JooqDao.DeleteMethod method = requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
             ratingDao.delete(office, method, ratingTemplateId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

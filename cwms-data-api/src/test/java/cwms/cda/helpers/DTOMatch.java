@@ -25,8 +25,11 @@
 package cwms.cda.helpers;
 
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
+import cwms.cda.data.dto.Entity;
+import cwms.cda.data.dto.ParameterLegacy;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -294,7 +297,25 @@ public final class DTOMatch {
                 () -> assertEquals(first.getCountyName(), second.getCountyName()),
                 () -> assertEquals(first.getTimezoneName(), second.getTimezoneName()),
                 () -> assertEquals(first.getOfficeId(), second.getOfficeId()),
-                () -> assertEquals(first.getLocationType(), second.getLocationType())
+                () -> assertEquals(first.getLocationType(), second.getLocationType()),
+                () -> {
+                        if (first.getAliases().isPresent() && second.getAliases().isPresent()) {
+                            assertEquals(first.getAliases().get().size(), second.getAliases().get().size(),
+                                "Alias list sizes do not match");
+                            for (LocationAlias alias : first.getAliases().get()) {
+                                boolean matched = false;
+                                for (LocationAlias alias2 : second.getAliases().get()) {
+                                    if (alias.equals(alias2)) {
+                                        matched = true;
+                                        break;
+                                    }
+                                }
+                                assertTrue(matched, "Aliases do not match");
+                            }
+                        } else if (first.getAliases().isPresent() || second.getAliases().isPresent()) {
+                            fail("One of the LocationAlias lists is null");
+                        }
+                }
         );
     }
 
@@ -487,6 +508,18 @@ public final class DTOMatch {
         );
     }
 
+    public static void assertMatch(ParameterLegacy first, ParameterLegacy second) {
+        assertAll(
+                () -> assertEquals(first.getAbstractParam(), second.getAbstractParam(), "Abstract parameter does not match"),
+                () -> assertEquals(first.getName(), second.getName(), "Parameter name does not match"),
+                () -> assertEquals(first.getOffice(), second.getOffice(), "Office does not match"),
+                () -> assertEquals(first.getDefaultEnglishUnit(), second.getDefaultEnglishUnit(), "Default English unit does not match"),
+                () -> assertEquals(first.getDefaultSiUnit(), second.getDefaultSiUnit(), "Default SI unit does not match"),
+                () -> assertEquals(first.getLongName(), second.getLongName(), "Long name does not match"),
+                () -> assertEquals(first.getDescription(), second.getDescription(), "Description does not match")
+        );
+    }
+
     public static void assertMatch(SupplementalStreamflowMeasurement first, SupplementalStreamflowMeasurement second) {
         assertAll(
                 () -> assertEquals(first.getChannelFlow(), second.getChannelFlow(), DEFAULT_DELTA, "Channel flow does not match"),
@@ -619,6 +652,15 @@ public final class DTOMatch {
         assertAll(
             () -> assertEquals(first.getRatingSpecId(), second.getRatingSpecId(), "Rating Spec ID does not match"),
             () -> assertEquals(first.getEffectiveDates(), second.getEffectiveDates(), "Effective dates doe not match")
+        );
+    }
+
+    public static void assertMatch(Entity first, Entity second) {
+        assertAll(
+            () -> assertMatch(first.getId(), second.getId()),
+            () -> assertEquals(first.getCategoryId(), second.getCategoryId(), "Entity category Ids do not match"),
+            () -> assertEquals(first.getParentEntityId(), second.getParentEntityId(), "Entity parent Ids do not match"),
+            () -> assertEquals(first.getLongName(), second.getLongName(), "Entity long names do not match")
         );
     }
 

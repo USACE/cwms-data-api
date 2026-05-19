@@ -1,7 +1,13 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
+
 plugins {
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
     id 'war'
+    id 'com.github.node-gradle.node' version '7.1.0'
+    id "org.openapi.generator" version "7.15.0"
+    id 'com.gradleup.shadow' version '8.3.10'
 }
 
 configurations {
@@ -11,6 +17,8 @@ configurations {
     baseLibs
     tomcatLibs
     testImplementation.extendsFrom(tomcatLibs)
+    jooqCodegenLatest
+    jooqCodegenLegacy
 }
 
 configurations.implementation {
@@ -30,25 +38,6 @@ dependencies {
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
     implementation(libs.jaxb.impl)
-    implementation(libs.cwms.db.dao) {
-        exclude group: "com.oracle", module: "*"
-        exclude group: "com.oracle.database.jdbc", module: "*"
-        exclude group: "org.jooq.pro", module: "*"
-        exclude group: "org.jooq", module: "jooq"
-        exclude group: "log4j", module: "log4j"
-        exclude group: "org.slf4j", module: "slf4j-log4j12"
-        exclude group: "mil.army.usace.hec", module: "cwms-db-codegen"
-    }
-    implementation(libs.cwms.db.jooq.base){
-        exclude group: "com.oracle", module: "*"
-        exclude group: "com.oracle.database.jdbc", module: "*"
-        exclude group: "org.jooq.pro", module: "*"
-        exclude group: "org.jooq", module: "jooq"
-        exclude group: "log4j", module: "log4j"
-        exclude group: "org.slf4j", module: "slf4j-log4j12"
-        exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
-
-    }
     implementation(libs.cwms.db.jooq.codegen) { 
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
@@ -57,7 +46,35 @@ dependencies {
         exclude group: "log4j", module: "log4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
         exclude group: "org.jooq.pro-java-8", module: "jooq"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
+    //Adding a shaded version of the previous schemas codegen
+    //Due to the way jOOQ generates UDT's, any changes to members of the UDT
+    //means it is not backwards compatible (the bind indexes get messed up)
+    //We could also use this mechanism to shade a 'latest' version of the schema codegen
+    //to allow for work not yet merged into a schema release/rc
+    jooqCodegenLatest(libs.cwms.db.jooq.codegen.latest) {
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
+        exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.jooq.pro-java-8", module: "jooq"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
+    }
+    jooqCodegenLegacy(libs.cwms.db.jooq.codegen.legacy) {
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
+        exclude group: "org.jooq.pro", module: "*"
+        exclude group: "org.jooq", module: "jooq"
+        exclude group: "log4j", module: "log4j"
+        exclude group: "org.slf4j", module: "slf4j-log4j12"
+        exclude group: "org.jooq.pro-java-8", module: "jooq"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
+    }
+    implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-legacy.jar"))
+    implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-latest.jar"))
 
     implementation(libs.slf4j)
 
@@ -85,6 +102,7 @@ dependencies {
     implementation(libs.cwms.ratings.io.xml)
     implementation(libs.cwms.ratings.io.jdbc) {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
+        exclude group: "org.jooq.pro-java-11", module: "jooq"
     }
 
     implementation(libs.jooq) {
@@ -96,6 +114,8 @@ dependencies {
 
     // https://mvnrepository.com/artifact/de.grundid.opendatalab/geojson-jackson
     implementation(libs.geojson.jackson)
+
+    implementation(libs.jackson.datatype.jdk8)
 
     implementation(libs.javalin.core) {
         exclude group: "org.eclipse.jetty"
@@ -109,7 +129,7 @@ dependencies {
     implementation(libs.swagger.core) {
         exclude group: "jakarta.xml.bind", module: "*"
     }
-
+    implementation(libs.password4j)
     implementation 'cz.jirutka.rsql:rsql-parser:2.1.0'
 
     compileOnly(libs.javaee.web.api)
@@ -132,6 +152,7 @@ dependencies {
     testRuntimeOnly(libs.junit.jupiter.engine)
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.jaxb.impl)
+    testImplementation(libs.openapi.spec.validation)
 
     baseLibs(libs.oracle.jdbc.driver)
 
@@ -153,34 +174,28 @@ dependencies {
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
 
-    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")
+    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")    
 
-    webjars(libs.swagger.ui) {
-        transitive = false
-    }
+    webjars(project(":cda-gui"))
 
 
     // override versions
     implementation(libs.bundles.overrides)
+
+    testImplementation(libs.bundles.java.parser)
+    implementation(libs.togglz.core)
+    implementation(libs.minio)
 }
 
 task extractWebJars(type: Copy) {
-    doFirst {
-        project.mkdir("$buildDir/extra/swagger-ui")
-    }
+    dependsOn configurations.webjars
     from zipTree(configurations.webjars.singleFile)
     into file("$buildDir/extra")
     includeEmptyDirs false
-    eachFile {
-        path -= ~/^.+?\/.+?\/.+?\/.+?\/.+?\//
-    }
-    exclude "**/index.html*"
-    include "/META-INF/resources/webjars/swagger-ui/**"
     includeEmptyDirs = false
 }
 
 war {
-    //dependsOn extractInfo
     dependsOn extractWebJars
     from "$buildDir/extra"
     from "src/resources/"
@@ -246,6 +261,7 @@ task run(type: JavaExec) {
     mainClass = "fixtures.TomcatServer"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
 
     def context = project.findProperty("cda.war.context") ?: "spk-data"
 
@@ -256,6 +272,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-DwarContext=/" + context
+    jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
     // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
@@ -264,7 +281,7 @@ task run(type: JavaExec) {
 }
 
 task integrationTests(type: Test) {
-    dependsOn test
+//    dependsOn test
     dependsOn generateConfig
     dependsOn war
 
@@ -277,6 +294,34 @@ task integrationTests(type: Test) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
+    jvmArgs += "-DwarContext=/cwms-data"
+    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
+    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
+    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+}
+
+task timeseriesReadBenchmark(type: JavaExec) {
+    group "verification"
+    description = "Run the local time-series read benchmark harness"
+    dependsOn generateConfig
+    dependsOn war
+    dependsOn testClasses
+
+    workingDir = projectDir
+    classpath = sourceSets.test.runtimeClasspath
+    classpath += configurations.baseLibs
+    classpath += configurations.tomcatLibs
+
+    mainClass = "helpers.TimeSeriesReadBenchmark"
+
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("benchmark.") }
+
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
@@ -331,3 +376,91 @@ task generateTimeSeriesSamples(type: JavaExec) {
     args user
     args password
 }
+
+tasks.register("executeOpenAPIConversion", Test) {
+    group 'documentation'
+    dependsOn generateConfig
+    dependsOn war
+
+    useJUnitPlatform() {
+        includeTags "openapi"
+    }
+
+    classpath += configurations.baseLibs
+    // The before all extension will take care of these properties
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
+    jvmArgs += "-DwarContext=/cwms-data"
+    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
+    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
+    jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
+    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+}
+
+if (JavaVersion.current() >= JavaVersion.VERSION_11) {
+
+    tasks.register('validateOpenApiSpec', ValidateTask) {
+        group 'documentation'
+        dependsOn executeOpenAPIConversion
+        inputSpec.set("$rootDir/cwms-data-api/build/openapi.json")
+    }
+
+    tasks.register('generateOpenApiDoc', GenerateTask) {
+        group 'documentation'
+        dependsOn executeOpenAPIConversion
+        validateSpec = true
+        inputSpec = "$rootDir/cwms-data-api/build/openapi.json"
+        outputDir = "$rootDir/cda-client/build/generated/openApi"
+        configFile = "$rootDir/cda-client/openapi.config.json"
+        generatorName = "typescript-fetch"
+        globalProperties.set([
+                modelDocs             : "true",
+                modelTests            : "false",
+                apiDocs               : "true",
+                apiTests              : "false",
+                enabledPostProcessFile: "false"
+        ])
+        ignoreFileOverride = "$rootDir/cda-client/.openapi-generator-ignore"
+    }
+
+    tasks.register('compileTypeScriptOpenApiSpec', NpxTask) {
+        group 'documentation'
+        dependsOn npmInstall
+        dependsOn generateOpenApiDoc
+        dependsOn validateOpenApiSpec
+        command = "npm"
+        args = ["run", "build"]
+        inputs.files('package.json', 'package-lock.json')
+        inputs.dir(fileTree("$rootDir/cda-client/node_modules").exclude(".cache"))
+        outputs.dir('dist')
+    }
+
+    node {
+        nodeProjectDir = file("$rootDir/cda-client/")
+    }
+}
+
+tasks.register('shadeCodegenLegacy', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier.set('codegen-legacy')
+    configurations = [project.configurations.jooqCodegenLegacy]
+    //See comment above on why shading is needed. Using 'codegen_shadow' as a
+    //suitably obnoxious package name so that imports don't get confused.
+    //We can also shade a 'codegen_latest' in the future if needed.
+    relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_legacy'
+}
+tasks.compileJava.dependsOn(tasks.shadeCodegenLegacy)
+
+tasks.register('shadeCodegenLatest', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    archiveClassifier.set('codegen-latest')
+    configurations = [project.configurations.jooqCodegenLatest]
+    //See comment above on why shading is needed. Using 'codegen_shadow' as a
+    //suitably obnoxious package name so that imports don't get confused.
+    //We can also shade a 'codegen_latest' in the future if needed.
+    relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_latest'
+}
+tasks.compileJava.dependsOn(tasks.shadeCodegenLegacy)
+tasks.compileJava.dependsOn(tasks.shadeCodegenLatest)

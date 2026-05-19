@@ -19,8 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -34,9 +33,17 @@ import javax.xml.stream.XMLStreamWriter;
  * overrides.
  */
 public class XMLv2Office implements OutputFormatter {
-    private static final Logger logger = Logger.getLogger(XMLv2Office.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+    private static final XmlMapper XML_MAPPER = buildXmlMapper();
+    private final XmlMapper om;
+
+    public XMLv2Office(XmlMapper om) {
+        this.om = om;
+    }
 
     public XMLv2Office() {
+        this.om = XML_MAPPER;
     }
 
     @Override
@@ -47,13 +54,14 @@ public class XMLv2Office implements OutputFormatter {
     @Override
     public String format(CwmsDTOBase dto) {
         try {
-            return buildXmlMapper().writeValueAsString(dto);
+            return om.writeValueAsString(dto);
         } catch (JsonProcessingException ex) {
-            String msg = dto != null ?
+            String msg = dto != null
+                    ?
                     "Error rendering '" + dto + "' to XML"
                     :
                     "Null element passed to formatter";
-            logger.log(Level.WARNING, msg, ex);
+            logger.atWarning().withCause(ex).log(msg);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }
@@ -91,7 +99,7 @@ public class XMLv2Office implements OutputFormatter {
                     "Error rendering '" + dtoList + "' to XML"
                     :
                     "Null element passed to formatter";
-            logger.log(Level.WARNING, msg, ex);
+            logger.atWarning().withCause(ex).log(msg);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }
@@ -107,13 +115,8 @@ public class XMLv2Office implements OutputFormatter {
     }
 
     private static @NotNull XmlMapper buildXmlMapper() {
-        return buildXmlMapper(true);
-    }
 
-    private static @NotNull XmlMapper buildXmlMapper(boolean useWrapper) {
-        
-        XmlMapper retval = XmlMapper.builder()
-                                    .build();
+        XmlMapper retval = XmlMapper.builder().build();
         retval.findAndRegisterModules();
         retval.registerModule(new JacksonXmlModule());
         // Without these two disables an Instant gets written as 3333333.335000000
@@ -122,8 +125,9 @@ public class XMLv2Office implements OutputFormatter {
         retval.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         retval.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         retval.registerModule(new JavaTimeModule());
-        
+
         retval.addMixIn(TimeSeries.class, TimeSeriesXmlMixin.class);
         return retval;
     }
+
 }

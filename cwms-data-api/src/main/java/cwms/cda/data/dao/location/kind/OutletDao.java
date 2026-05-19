@@ -76,12 +76,15 @@ public class OutletDao extends JooqDao<Outlet> {
 
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
             List<LocationGroup> groups = locGroupDao.getLocationGroups(config, null, officeId,
-                    null, Outlet.RATING_LOC_GROUP_CATEGORY, projectId);
-
-            return CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLETS(config, locRef)
-                                      .stream()
-                                      .map(struct -> mapToOutlet(struct, groups))
-                                      .collect(Collectors.toList());
+                null, Outlet.RATING_LOC_GROUP_CATEGORY, projectId);
+            var outlets = CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLETS(config, locRef);
+            if(outlets == null)
+            {
+                return List.of();
+            }
+            return outlets.stream()
+                .map(struct -> mapToOutlet(struct, groups))
+                .collect(Collectors.toList());
         });
     }
 

@@ -12,6 +12,13 @@ BUILDDIR      = build
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
+livehtml:
+    # use the following command if you want to watch for changes in the 'docs/build/html' directory
+# 	sphinx-autobuild docs/build/html --open-browser
+
+    # use the following command if you want to watch for changes in the 'source' directory
+	sphinx-autobuild source build/html --open-browser
+
 .PHONY: help Makefile
 
 # Catch-all target: route all unknown targets to Sphinx using the new

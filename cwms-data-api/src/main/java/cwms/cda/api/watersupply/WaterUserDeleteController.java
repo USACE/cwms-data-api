@@ -50,11 +50,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterUserDeleteController extends WaterSupplyControllerBase implements Handler {
+public final class WaterUserDeleteController extends WaterSupplyControllerBase {
 
 
     public WaterUserDeleteController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(

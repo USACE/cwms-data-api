@@ -20,24 +20,24 @@
 
 package cwms.cda.api.location.kind;
 
+import static cwms.cda.api.Controllers.*;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.sql.Timestamp;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.Controllers.GET_ALL;
 
 public class GateChangeDeleteController extends BaseHandler {
 
@@ -53,6 +53,10 @@ public class GateChangeDeleteController extends BaseHandler {
                             "Gate Changes whose data is to be included in the response."),
             },
             queryParams = {
+                    @OpenApiParam(name = TIMEZONE, description = "This field specifies a default "
+                            + "timezone to be used if the format of the "
+                            + BEGIN + " and " + END + " parameters do not include "
+                            + "offset or time zone information. Defaults to UTC."),
                     @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                     @OpenApiParam(name = END, required = true, description = "The end of the time window."),
                     @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class, description = "A flag "
@@ -66,6 +70,7 @@ public class GateChangeDeleteController extends BaseHandler {
             tags = {OutletController.TAG},
             method = HttpMethod.DELETE
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
     public void handle(@NotNull Context context) throws Exception {
         String office = context.pathParam(OFFICE);

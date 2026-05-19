@@ -14,9 +14,9 @@ import { useDebounce } from "use-debounce";
 // Catalog client
 const catalogApi = new CatalogApi(
   new Configuration({
-    basePath: import.meta.env.CDA_URL,
+    basePath: import.meta.env.VITE_CDA_API_ROOT,
     headers: { accept: "application/json;version=2" },
-  })
+  }),
 );
 
 function getFreshnessColor(lastUpdateIso) {
@@ -42,8 +42,7 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
   } = useQuery({
     queryKey: ["tsid-catalog", office, debouncedSearchTerm],
     queryFn: async () => {
-      if (!debouncedSearchTerm || debouncedSearchTerm.length < 3 || !office)
-        return [];
+      if (!debouncedSearchTerm || debouncedSearchTerm.length < 3 || !office) return [];
       const { entries } = await catalogApi.getCatalogWithDataset({
         dataset: "TIMESERIES",
         excludeEmpty: false,
@@ -67,7 +66,9 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
             if ((value.match(/\./g) || []).length === 5) {
               setTsids((prev) => (prev.includes(value) ? prev : [...prev, value]));
             } else {
-              alert("TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version");
+              alert(
+                "TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version",
+              );
             }
           }}
         >
@@ -75,6 +76,11 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="px-3 py-2 border rounded w-full"
             placeholder="Search TSID (e.g. Location.Elev.Inst.1Hour.0.Version)"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            name="tsid-search"
           />
           <ComboboxOptions className="bg-white border mt-1 max-h-60 overflow-auto">
             {loading ? (
@@ -83,7 +89,9 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
               <li className="p-2 text-red-600">Error: {error.message}</li>
             ) : (
               suggestions.map((entry, idx) => {
-                const suggestion_color = getFreshnessColor(entry.extents?.[0]?.lastUpdate);
+                const suggestion_color = getFreshnessColor(
+                  entry.extents?.[0]?.lastUpdate,
+                );
                 return (
                   <ComboboxOption key={idx} value={entry.name} as={Fragment}>
                     {({ active }) => (
@@ -95,10 +103,10 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
                             suggestion_color === "green"
                               ? "bg-green-500"
                               : suggestion_color === "yellow"
-                              ? "bg-yellow-400"
-                              : suggestion_color === "gray"
-                              ? "bg-gray-500"
-                              : "bg-red-500"
+                                ? "bg-yellow-400"
+                                : suggestion_color === "gray"
+                                  ? "bg-gray-500"
+                                  : "bg-red-500"
                           }`}
                         />
                         {entry.name}

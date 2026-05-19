@@ -15,6 +15,7 @@ import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.InternalServerErrorResponse;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -22,14 +23,21 @@ import java.io.InputStream;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 
 public class XMLv1 implements OutputFormatter {
-    private static final Logger logger = Logger.getLogger(XMLv1.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+    private static final XmlMapper XML_MAPPER = buildObjectMapper();
+    private final XmlMapper om;
 
     public XMLv1() {
+        // default to using the shared static instance.
+        this.om = XML_MAPPER;
+    }
 
+    public XMLv1(XmlMapper om) {
+        this.om = om;
     }
 
     @Override
@@ -40,17 +48,18 @@ public class XMLv1 implements OutputFormatter {
     @Override
     public String format(CwmsDTOBase dto) {
         try {
-            XmlMapper xmlMapper = buildObjectMapper();
+
             if (dto instanceof Office) {
-                return xmlMapper.writeValueAsString(new XMLv1Office(Collections.singletonList((Office)dto)));
+                return om.writeValueAsString(new XMLv1Office(Collections.singletonList((Office)dto)));
             }
-            return xmlMapper.writeValueAsString(dto);
+            return om.writeValueAsString(dto);
         } catch (IOException ex) {
-            String msg = dto != null ?
+            String msg = dto != null
+                    ?
                     "Error rendering '" + dto + "' to XML"
                     :
                     "Null element passed to formatter";
-            logger.log(Level.WARNING, msg, ex);
+            logger.atWarning().withCause(ex).log(msg);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }
@@ -59,13 +68,13 @@ public class XMLv1 implements OutputFormatter {
     @SuppressWarnings("unchecked") // we're ALWAYS checking before conversion in this function
     public String format(List<? extends CwmsDTOBase> dtoList) {
         try {
-            XmlMapper xmlMapper = buildObjectMapper();
+
             if (!dtoList.isEmpty() && dtoList.get(0) instanceof Office) {
-                return xmlMapper.writeValueAsString(new XMLv1Office((List<Office>) dtoList));
+                return om.writeValueAsString(new XMLv1Office((List<Office>) dtoList));
             }
-            return xmlMapper.writeValueAsString(dtoList);
+            return om.writeValueAsString(dtoList);
         } catch (Exception err) {
-            logger.log(Level.WARNING, "Error doing XML format of office list", err);
+            logger.atWarning().withCause(err).log("Error doing XML format of office list");
             throw new InternalServerErrorResponse("Invalid Parameters");
         }
     }
@@ -73,8 +82,7 @@ public class XMLv1 implements OutputFormatter {
     @Override
     public <T extends CwmsDTOBase> T parseContent(String content, Class<T> type) {
         try {
-            XmlMapper retval = buildObjectMapper();
-            return retval.readValue(content, type);
+            return om.readValue(content, type);
         } catch (IOException e) {
             throw new FormattingException("Could not deserialize:" + content, e);
         }
@@ -83,8 +91,7 @@ public class XMLv1 implements OutputFormatter {
     @Override
     public <T extends CwmsDTOBase> T parseContent(InputStream content, Class<T> type) {
         try {
-            XmlMapper retval = buildObjectMapper();
-            return retval.readValue(content, type);
+            return om.readValue(content, type);
         } catch (IOException e) {
             throw new FormattingException("Could not deserialize:" + content, e);
         }
@@ -93,7 +100,25 @@ public class XMLv1 implements OutputFormatter {
     public static @NotNull XmlMapper buildObjectMapper() {
         XmlMapper retval = new XmlMapper();
 
+        Set<Object> preModules = retval.getRegisteredModuleIds();
+
+        // findAndRegisterModules searches the classpath and service-loads modules that it finds.
+        // This isn't the most performant and it also has the downside that if you call
+        // buildObjectMapper() from inside ForkJoinPool you may not get the Thread Context ClassLoader
+        // and so the service loader may find a different version of Module class and throw exceptions
+        // "not a subtype" when it tries to register it.
         retval.findAndRegisterModules();
+
+        // The purpose of determining the modules that get automatically added is to Log them
+        // and create a list of modules that should be manually registered.
+        // once all the modules are being manually registered we can
+        // remove the findAndRegisterModules call.
+        Set<Object> postModules = retval.getRegisteredModuleIds();
+        Set<Object> newModules = postModules.stream()
+                .filter(module -> !preModules.contains(module))
+                .collect(java.util.stream.Collectors.toSet());
+        logger.atFine().log("These Modules got added by findAndRegisterModules: %s", newModules);
+
         // Without these two disables an Instant gets written as 3333333.335000000
         retval.disable(SerializationFeature.WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS);
         retval.disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS);

@@ -1,0 +1,18 @@
+{
+  "office-id" : "SWT",
+  "rating-id" : "ARBU.Elev;Stor.Linear.Production",
+  "template-id" : "Elev;Stor.Linear",
+  "location-id" : "ARBU",
+  "version" : "Production",
+  "in-range-method" : "NEAREST",
+  "out-range-low-method" : "LINEAR",
+  "out-range-high-method" : "LOWER",
+  "active" : true,
+  "auto-update" : false,
+  "auto-activate" : false,
+  "auto-migrate-extension" : false,
+  "independent-rounding-specs" : [ {
+    "value" : "2222233332"
+  } ],
+  "dependent-rounding-spec" : "2222233332"
+}

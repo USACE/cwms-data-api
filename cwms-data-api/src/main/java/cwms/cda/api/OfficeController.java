@@ -1,7 +1,6 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
@@ -21,7 +20,6 @@ import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OfficeFormatV1;
-import cwms.cda.formatters.xml.XMLv1Office;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -29,6 +27,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +83,6 @@ public class OfficeController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A list of offices.",
                 content = {
-                    @OpenApiContent(from = OfficeFormatV1.class, type = ""),
                     @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSON),
                     @OpenApiContent(from = OfficeFormatV1.class, isArray = true, type = Formats.JSONV1),
                     @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
@@ -161,7 +159,7 @@ public class OfficeController implements CrudHandler {
 
                 requestResultSize.update(result.length());
             } else {
-                Map<String, String> map = new HashMap<>();
+                Map<String, Serializable> map = new HashMap<>();
                 map.put(OFFICE, "An office with that name does not exist");
                 CdaError re = new CdaError("Not Found", map);
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);

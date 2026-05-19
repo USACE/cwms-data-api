@@ -49,7 +49,13 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.Nullable;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Result;
+import org.jooq.SelectConditionStep;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_project.CAT_PROJECT;
 import usace.cwms.db.jooq.codegen.tables.AV_PROJECT;
@@ -136,6 +142,12 @@ public class ProjectDao extends JooqDao<Project> {
         final String cursorOffice;
         final String cursorProjectId;
         int total;
+
+        if(office != null){
+            office = office.toUpperCase();
+        }
+        String finalOffice = office;
+
         if (cursor == null || cursor.isEmpty()) {
             cursorOffice = null;
             cursorProjectId = null;
@@ -143,8 +155,8 @@ public class ProjectDao extends JooqDao<Project> {
             Condition whereClause =
                     JooqDao.caseInsensitiveLikeRegexNullTrue(AV_PROJECT.AV_PROJECT.PROJECT_ID,
                             projectIdMask);
-            if (office != null) {
-                whereClause = whereClause.and(AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(office));
+            if (finalOffice != null) {
+                whereClause = whereClause.and(AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(finalOffice));
             }
 
             SelectConditionStep<Record1<Integer>> count =
@@ -162,13 +174,13 @@ public class ProjectDao extends JooqDao<Project> {
 
         // There are lots of ways the variables can be null or not so we need to build the query
         // based on the parameters.
-        String query = buildTableQuery(office, projectIdMask, cursorOffice != null || cursorProjectId != null);
+        String query = buildTableQuery(finalOffice, projectIdMask, cursorOffice != null || cursorProjectId != null);
 
         int finalPageSize = pageSize;
         List<Project> projs = connectionResult(dsl, c -> {
             List<Project> projects;
             try (PreparedStatement ps = c.prepareStatement(query)) {
-                fillTableQueryParameters(ps, cursorOffice, cursorProjectId, office, projectIdMask, finalPageSize);
+                fillTableQueryParameters(ps, cursorOffice, cursorProjectId, finalOffice, projectIdMask, finalPageSize);
 
                 try (ResultSet resultSet = ps.executeQuery()) {
                     projects = new ArrayList<>();

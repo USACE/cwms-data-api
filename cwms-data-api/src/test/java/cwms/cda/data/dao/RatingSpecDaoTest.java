@@ -32,7 +32,8 @@ class RatingSpecDaoTest {
         DSLContext lrl = getDslContext(getConnection(), OFFICE_ID);
 
         RatingSpecDao dao = new RatingSpecDao(lrl);
-        Collection<RatingSpec> ratingSpecs = dao.retrieveRatingSpecs(OFFICE_ID, "^ARTH");
+        Collection<RatingSpec> ratingSpecs = dao.retrieveRatingSpecs(null, 1000, OFFICE_ID, "^ARTH")
+            .getSpecs();
         assertNotNull(ratingSpecs);
         assertFalse(ratingSpecs.isEmpty());
 

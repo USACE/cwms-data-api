@@ -13,6 +13,7 @@ export default function DataTabs({
   timeseriesParams,
   begin,
   end,
+  sortAscending,
 }) {
   if (!tsids || !tsids.length) return null;
   if (isLoading) return <Skeleton type="card" className="w-full h-[500px]" />;
@@ -25,7 +26,7 @@ export default function DataTabs({
           content: (
             <div
               key={`cwms-${tsids.join(
-                ","
+                ",",
               )}-${begin.toISOString()}-${end.toISOString()}`}
               className="relative z-10 bg-white"
             >
@@ -38,7 +39,7 @@ export default function DataTabs({
                   dateFormat="YYYY-MM-DD HH:mm:ss"
                   interval="5"
                   missingString="---"
-                  sortAscending
+                  sortAscending={sortAscending}
                   trim
                   pageSize={1000000}
                   tableOptions={{
@@ -116,4 +117,5 @@ DataTabs.propTypes = {
   timeseriesParams: PropTypes.array,
   begin: PropTypes.object.isRequired,
   end: PropTypes.object.isRequired,
+  sortAscending: PropTypes.bool.isRequired,
 };

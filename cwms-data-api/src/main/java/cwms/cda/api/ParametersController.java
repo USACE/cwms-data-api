@@ -4,7 +4,6 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.FORMAT;
 import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
@@ -27,15 +26,12 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class ParametersController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(ParametersController.class.getName());
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -53,41 +49,42 @@ public class ParametersController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void create(Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+    public void create(@NotNull Context ctx) {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(Context ctx, String id) {
-        ctx.status(HttpServletResponse.SC_NOT_FOUND);
+    public void delete(@NotNull Context ctx, @NotNull String id) {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
 
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = FORMAT, deprecated = true, required = false, description = "Specifies the"
-                            + " encoding format of the response. Valid value for the format field"
-                            + " for this URI are:"
-                            + "\n* `tab`"
-                            + "\n* `csv`"
-                            + "\n* `xml`"
-                            + "\n* `json` (default)"),
-                    @OpenApiParam(name = OFFICE, description = "Specifies the"
-                            + " owning office of the parameters whose data is to be included in the "
-                            + "response. If this field is not specified, the session user's default office will be"
-                            + " used."),
-            },
-            responses = {
-                @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSONV2),
-                    @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSON)
-                }),
-            },
-            tags = {"Parameters"}
+        queryParams = {
+            @OpenApiParam(name = FORMAT, deprecated = true, description = "Specifies the"
+                + " encoding format of the response. Valid value for the format field"
+                + " for this URI are:"
+                + "\n* `tab` (deprecated)"
+                + "\n* `csv` (deprecated)"
+                + "\n* `xml`"
+                + "\n* `json` (default)"
+                + "\n\nSee <a href=\"legacy-format/\">this page</a> for more information about accept header usage."),
+            @OpenApiParam(name = OFFICE, description = "Specifies the"
+                + " owning office of the parameters whose data is to be included in the "
+                + "response. If this field is not specified, the session user's default office will be"
+                + " used."),
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200, content = {
+                @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSONV2),
+                @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSON)
+            }),
+        },
+        tags = {"Parameters"}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
         try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             ParameterDao dao = new ParameterDao(dsl);
@@ -101,26 +98,19 @@ public class ParametersController implements CrudHandler {
             boolean isLegacyVersion = version.equals("1");
 
             String results;
-            if (format.isEmpty() && !isLegacyVersion)
-            {
+            if (format.isEmpty() && !isLegacyVersion) {
                 List<Parameter> params = dao.getParametersV2(office);
                 results = Formats.format(contentType, params, Parameter.class);
                 ctx.contentType(contentType.toString());
-            }
-            else
-            {
-                if (isLegacyVersion)
-                {
+            } else {
+                if (isLegacyVersion) {
                     format = Formats.getLegacyTypeFromContentType(contentType);
                 }
 
                 results = dao.getParameters(format);
-                if (isLegacyVersion)
-                {
+                if (isLegacyVersion) {
                     ctx.contentType(contentType.toString());
-                }
-                else
-                {
+                } else {
                     ctx.contentType(contentType.getType());
                 }
             }
@@ -129,26 +119,19 @@ public class ParametersController implements CrudHandler {
             ctx.result(results);
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
-        } catch (Exception ex) {
-            CdaError re = new CdaError("Failed to process request");
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String id) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
-            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-        }
-    }
-
-    @OpenApi(ignore = true)
-    @Override
-    public void update(Context ctx, String id) {
+    public void getOne(@NotNull Context ctx, @NotNull String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
+    }
 
+    @OpenApi(ignore = true)
+    @Override
+    public void update(@NotNull Context ctx, @NotNull String id) {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 }

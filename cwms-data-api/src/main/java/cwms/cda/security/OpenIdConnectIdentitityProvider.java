@@ -45,7 +45,8 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
     public static final String WELL_KNOWN_PROPERTY = "cwms.dataapi.access.openid.wellKnownUrl";
-    public static final String ALT_AUTH_URL = "cwms.dataapi.access.openid.altAuthUrl";
+    public static final String CLIENT_ID = "cwms.dataapi.access.openid.clientId";
+    public static final String IDP_HINT = "cwms.dataapi.access.openid.idpHint";
     public static final String ISSUER_PROPERTY = "cwms.dataapi.access.openid.issuer";
     public static final String TIMEOUT_PROPERTY = "cwms.dataapi.access.openid.timeout";
     public static final String AUTHORIZATION = "Authorization";
@@ -64,7 +65,8 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
         String wellKnownUrl = System.getProperty(WELL_KNOWN_PROPERTY,System.getenv(WELL_KNOWN_PROPERTY));
         String issuer = System.getProperty(ISSUER_PROPERTY,System.getenv(ISSUER_PROPERTY));
         String timeoutStr = System.getProperty(TIMEOUT_PROPERTY,System.getenv(TIMEOUT_PROPERTY));
-        String altAuthUrl = System.getProperty(ALT_AUTH_URL, System.getenv(ALT_AUTH_URL));
+        String clientId = System.getProperty(CLIENT_ID, System.getenv(CLIENT_ID));
+        String idpHint = System.getProperty(IDP_HINT, System.getenv(IDP_HINT));
         int timeout = 3600; 
         if (timeoutStr != null && !timeoutStr.isEmpty()) {
             timeout = Integer.parseInt(timeoutStr);
@@ -73,7 +75,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             if (wellKnownUrl == null || wellKnownUrl.isEmpty()) {
                 throw new IOException("OpenID Connect well-known URL is not set.");
             }
-            config = new OpenIDConfig(new URL(wellKnownUrl), altAuthUrl);
+            config = new OpenIDConfig(new URL(wellKnownUrl), clientId, idpHint);
             jwtParser = Jwts.parserBuilder()
                         .requireIssuer(issuer)
                         .setSigningKeyResolver(new UrlResolver(config.getJwksUrl(),timeout))
@@ -113,6 +115,10 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
                 throw new CwmsAuthException("Not Authorized",HttpServletResponse.SC_UNAUTHORIZED);
             }
         } catch (NumberFormatException | JwtException ex) {
+            log.atFine().withCause(ex).log(
+                "JWT validation failed for bearer token from issuer configuration '%s'",
+                System.getProperty(ISSUER_PROPERTY, System.getenv(ISSUER_PROPERTY))
+            );
             throw new CwmsAuthException("JWT not valid",ex,HttpServletResponse.SC_UNAUTHORIZED);
         }
     }

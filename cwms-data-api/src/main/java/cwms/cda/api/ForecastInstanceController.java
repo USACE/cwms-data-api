@@ -33,22 +33,13 @@ import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public final class ForecastInstanceController implements CrudHandler {
+public final class ForecastInstanceController extends BaseCrudHandler {
 
     public static final String TAG = "Forecast";
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
     private static final int KILO_BYTE_LIMIT = Integer.parseInt(System.getProperty("cda.api.forecast.file.max.length.kB", "64"));
 
     public ForecastInstanceController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -128,9 +119,9 @@ public final class ForecastInstanceController implements CrudHandler {
                 @OpenApiParam(name = NAME, description = "Specifies the "
                         + "spec id of the forecast spec whose forecast instance data is to be "
                         + "included in the response. Default will be all names."),
-                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
-                        + "designator of the forecast spec whose forecast instance data to be included "
-                        + "in the response. "),
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the designator of the forecast spec to filter the "
+                        + "forecast instance data in the response. "
+                        + "This parameter is an exact-match string; if not provided, no filter is applied. Default is no filter."),
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -148,7 +139,7 @@ public final class ForecastInstanceController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
-            String designatorMask = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
+            String designatorMask = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
             String name = ctx.queryParam(NAME);
 
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
@@ -172,7 +163,7 @@ public final class ForecastInstanceController implements CrudHandler {
             String result = Formats.format(contentType, instances, ForecastInstance.class);
 
             ctx.result(result).contentType(contentType.toString());
-            requestResultSize.update(result.length());
+            updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (URISyntaxException e) {
@@ -242,7 +233,7 @@ public final class ForecastInstanceController implements CrudHandler {
             String result = Formats.format(contentType, instance);
 
             ctx.result(result).contentType(contentType.toString());
-            requestResultSize.update(result.length());
+            updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (URISyntaxException e) {
@@ -271,6 +262,7 @@ public final class ForecastInstanceController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
+        logUnusedPathParameter(ctx, NAME, "Body contains information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             ForecastInstance forecastInstance = deserializeForecastInstance(ctx);
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));

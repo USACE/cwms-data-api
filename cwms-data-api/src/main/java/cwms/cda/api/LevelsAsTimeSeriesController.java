@@ -50,15 +50,10 @@ import java.time.ZonedDateTime;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-public class LevelsAsTimeSeriesController implements Handler {
-    private final MetricRegistry metrics;
+public class LevelsAsTimeSeriesController extends BaseHandler {
 
     public LevelsAsTimeSeriesController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -113,7 +108,7 @@ public class LevelsAsTimeSeriesController implements Handler {
             tags = LevelsController.TAG
     )
     public void handle(Context ctx) {
-
+        logUnusedPathParameter(ctx, LEVEL_ID, "Body contains required information");
         try (final Timer.Context timeContext = markAndTime("getLevelAsTimeSeries")) {
             DSLContext dsl = getDslContext(ctx);
             Validator<String> pathParam = ctx.pathParamAsClass(LEVEL_ID, String.class);

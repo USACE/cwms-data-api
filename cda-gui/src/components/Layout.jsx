@@ -26,13 +26,13 @@ export default function Layout() {
           GitHub <FaGithub />
         </Button>
       }
-        usaceLinks={footerLinks}
-        externalLinks={externalLinks}
-        facebookUrl="http://www.facebook.com/USACEHQ"
-        twitterUrl="http://twitter.com/USACEHQ"
-        youtubeUrl="http://www.youtube.com/CORPSCONNECTION"
-        flickrUrl="http://www.flickr.com/photos/usacehq"
-        linkedInUrl="https://www.linkedin.com/company/us-army-corps-of-engineers/posts/?feedView=all"
+      usaceLinks={footerLinks}
+      externalLinks={externalLinks}
+      facebookUrl="http://www.facebook.com/USACEHQ"
+      twitterUrl="http://twitter.com/USACEHQ"
+      youtubeUrl="http://www.youtube.com/CORPSCONNECTION"
+      flickrUrl="http://www.flickr.com/photos/usacehq"
+      linkedInUrl="https://www.linkedin.com/company/us-army-corps-of-engineers/posts/?feedView=all"
     >
       <Container className="mt-2">
         <Breadcrumbs />

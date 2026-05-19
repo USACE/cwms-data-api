@@ -12,7 +12,7 @@ By default the oracle-free faststart image is used. Be aware that this means tha
 be persistent between restarts or if you call `docker-compose down`. 
 
 As this docker-compose file is intended for local development, changing to a persistent data is left
-as an excercise to the reader. It should not be difficult, you will need to verify all the oracle database
+as an exercise to the reader. It should not be difficult, you will need to verify all the oracle database
 (SID, Service Names) match in the various services.
 
 ## What is provided.
@@ -23,26 +23,25 @@ as an excercise to the reader. It should not be difficult, you will need to veri
 
 The following users and permissions are available:
 
-| User                  | Password    | Office | Permissions            |
-| --------------------- | ----------- | ------ | ---------------------- |
-| l2hectest.1234567890  | l2hectest   | SPK    | General User           |
-| l1hectest             | l1hectest   | SPL    | No permissions         |
-| m5hectest             | m5hectest   | SWT    | General User           |
-| q0hecoidc             | q0hecoidc   | N/A    | Only exists in keycloak|
+| User                 | Password  | Office | Permissions             |
+|----------------------|-----------|--------|-------------------------|
+| l2hectest.1234567890 | l2hectest | SPK    | General User            |
+| l1hectest            | l1hectest | SPL    | No permissions          |
+| m5hectest            | m5hectest | SWT    | General User            |
+| q0hecoidc            | q0hecoidc | N/A    | Only exists in keycloak |
 
 
 ## Inventory of services
 
 
-|service|host-port|container-port|description|test urls|
-|----|--|---|--|--|
-|[traefik]()|8081|8081|entry point - web traffic|http://localhost:8081
-|db||1521|oracle database|
-|[api](./cwms-data-api/src/docker/Dockerfile)||7000|tomcat CWMS Data API |
-|[auth](./compose_files/keycloak/Dockerfile)||8080|authentication-token service (keycloak)|
-|db_install|||connects to db and installs CWMS schema|
-|db_webuser_ permissions|||connects to db and sets permissions |
-
+| service                                      | host-port | container-port | description                             | test urls             |
+|----------------------------------------------|-----------|----------------|-----------------------------------------|-----------------------|
+| [traefik]()                                  | 8081      | 8081           | entry point - web traffic               | http://localhost:8081 |
+| db                                           |           | 1521           | oracle database                         |                       |
+| [api](./cwms-data-api/src/docker/Dockerfile) |           | 7000           | tomcat CWMS Data API                    |                       |
+| [auth](./compose_files/keycloak/Dockerfile)  |           | 8080           | authentication-token service (keycloak) |                       |
+| db_install                                   |           |                | connects to db and installs CWMS schema |                       |
+| db_webuser_ permissions                      |           |                | connects to db and sets permissions     |                       |
 
 Traefik uses port 8081 by default, if this conflicts with existing services on your machine it can
 be changed by setting the APP_PORT variable.

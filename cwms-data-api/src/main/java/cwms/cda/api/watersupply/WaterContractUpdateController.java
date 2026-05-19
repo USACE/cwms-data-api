@@ -56,10 +56,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterContractUpdateController extends WaterSupplyControllerBase implements Handler {
+public final class WaterContractUpdateController extends WaterSupplyControllerBase {
 
     public WaterContractUpdateController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(
@@ -96,6 +96,10 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
 
     @Override
     public void handle(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, PROJECT_ID, "Body contains required information.");
+        logUnusedPathParameter(ctx, OFFICE, "Body contains required information.");
+        logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
+
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
             String contractName = ctx.pathParam(CONTRACT_NAME);

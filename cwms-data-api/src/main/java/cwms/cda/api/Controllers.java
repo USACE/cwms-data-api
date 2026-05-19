@@ -96,6 +96,7 @@ public final class Controllers {
     public static final String NAME = "name";
     public static final String CASCADE_DELETE = "cascade-delete";
     public static final String DATUM = "datum";
+    public static final String SINCE = "since";
     public static final String BEGIN = "begin";
     public static final String END = "end";
     public static final String TIMEZONE = "timezone";
@@ -110,6 +111,7 @@ public final class Controllers {
     public static final String TEMPLATE_ID_MASK = "template-id-mask";
     public static final String STORE_TEMPLATE = "store-template";
     public static final String REPLACE_BASE_CURVE = "replace-base-curve";
+    public static final String EFFECTIVE_DATE_EXACT = "use-exact-effective-date";
 
     public static final String TIMESERIES_ID_REGEX = "timeseries-id-regex";
     public static final String TIMESERIES_ID = "timeseries-id";
@@ -121,6 +123,10 @@ public final class Controllers {
     public static final String CATEGORY_ID = "category-id";
     public static final String CATEGORY_ID_MASK = "category-id-mask";
     public static final String VERSION_DATE = "version-date";
+    public static final String LONG_NAME = "long-name";
+    public static final String MATCH_NULL_PARENTS = "match-null-parents";
+    public static final String ENTITY_ID = "entity-id";
+    public static final String PARENT_ENTITY_ID = "parent-entity-id";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
@@ -141,6 +147,7 @@ public final class Controllers {
 
     public static final String LOCATION_ID = "location-id";
     public static final String SOURCE_ENTITY = "source-entity";
+    public static final String SOURCE_ENTITY_LIKE = "source-entity-like";
     public static final String FORECAST_DATE = "forecast-date";
     public static final String ISSUE_DATE = "issue-date";
     public static final String LOCATION_KIND_LIKE = "location-kind-like";
@@ -210,12 +217,14 @@ public final class Controllers {
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
     public static final String INCLUDE_EXTENTS = "include-extents";
+    public static final String INCLUDE_VERSIONS = "include-versions";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
     public static final String DEFAULT_VALUE = "default-value";
     public static final String CATEGORY = "category";
     public static final String PREFIX = "prefix";
     public static final String PROJECT_LIKE = "project-like";
 
+    public static final String USERNAME_LIKE = "username-like";
     public static final String APPLICATION_ID = "application-id";
     public static final String REVOKE_EXISTING = "revoke-existing";
     public static final String REVOKE_TIMEOUT = "revoke-timeout";
@@ -235,6 +244,7 @@ public final class Controllers {
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
     public static final String QUERY = "query";
+    public static final String INCLUDE_ROLES = "include-roles";
 
 
     static {
@@ -245,6 +255,13 @@ public final class Controllers {
 
     private Controllers() {
 
+    }
+
+    public static int validateTimeSeriesPageSize(int pageSize) {
+        if (pageSize < -1) {
+            throw new IllegalArgumentException(PAGE_SIZE + " must be -1, 0, or a positive integer");
+        }
+        return pageSize;
     }
 
     /**

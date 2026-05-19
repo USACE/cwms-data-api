@@ -1,24 +1,28 @@
 package cwms.cda.api;
 
+import static cwms.cda.api.BinaryTimeSeriesController.REPLACE_ALL;
+import static cwms.cda.api.Controllers.BLOB_ID;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static io.restassured.RestAssured.given;
+import static java.util.stream.Collectors.toMap;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ResponseBody;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URIBuilder;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-
-import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,14 +32,18 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-
-import static cwms.cda.api.BinaryTimeSeriesController.REPLACE_ALL;
-import static cwms.cda.api.Controllers.BLOB_ID;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static io.restassured.RestAssured.given;
-import static java.util.stream.Collectors.toMap;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
@@ -54,6 +62,28 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         random.nextBytes(LARGE_BYTES);
     }
 
+    @AfterEach
+    void tearDown() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSONV2)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.BEGIN, BEGIN_STR)
+                .queryParam(Controllers.END, END_STR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .delete("/timeseries/binary/" + tsId)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
     @BeforeEach
     void setup() throws Exception {
         tsId = locationId + ".Flow.Inst.1Hour.0." + Instant.now().getEpochSecond() + (int)(Math.random() * 100);
@@ -61,8 +91,9 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
 
-    @Test
-    void test_get_create_get() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings ={Formats.JSONV2, Formats.DEFAULT})
+    void test_get_create_get(String format) throws IOException {
 
         // Structure of test:
         // 1)Retrieve a binary time series and assert that it does not exist
@@ -74,7 +105,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -117,7 +148,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -133,6 +164,24 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .body("binary-values.size()", equalTo(3))
         ;
 
+        // Delete the binary time series
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, OFFICE)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.BEGIN, BEGIN_STR)
+                .queryParam(Controllers.END, END_STR)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .delete("/timeseries/binary/" + tsId)
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
     }
 
@@ -226,8 +275,9 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         return om.writeValueAsString(bts);
     }
 
-    @Test
-    void test_create_get_delete_get() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_delete_get(String format) throws IOException {
 
         // Structure of test:
         //
@@ -246,7 +296,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
@@ -265,7 +315,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -285,7 +335,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Delete the binary time series
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, OFFICE)
         .when()
@@ -309,7 +359,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Retrieve the binary time series and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -372,8 +422,9 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_create_get_delete_get_lrts() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_delete_get_lrts(String format) throws Exception {
 
         // Structure of test:
         //
@@ -393,29 +444,35 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         // Step 1)
         // Try to create the binary time series without LRTS header set
+        
+        var assertThat = 
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization", user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/binary/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
 
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .body(tsData)
-            .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, false)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/binary/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
 
         // Step 2)
         // Create the binary time series
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
@@ -436,7 +493,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
@@ -458,7 +515,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Retrieve the binary time series without the header and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header(ApiServlet.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, legacyTsIdentifier)
@@ -480,7 +537,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Delete the binary time series
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .header("Authorization", user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
@@ -505,7 +562,8 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         // Retrieve the binary time series and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -523,15 +581,16 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_create_get_update_get() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_get_update_get(String format) throws IOException {
 
         // Structure of test:
         // 1)Retrieve bts and make sure its empty
         // 2)Create the binary time series
         // 3)Retrieve the binary time series and assert that it exists
         // 4)Update the binary time series
-        // 5)Retrieve the binary time series and assert that it does not exist
+        // 5)Retrieve the binary time series and assert that value has updated
 
 
         // Step 1)
@@ -539,7 +598,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -565,7 +624,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
@@ -583,7 +642,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -606,7 +665,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam("replace-all", "true")
             .contentType(Formats.JSONV2)
             .body(tsData)
@@ -623,10 +682,10 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         String newValue = "bmV3VmFsdWU=";
         // Step 5)
-        // Retrieve the binary time series and assert that it does not exist
+        // Retrieve the binary time series and assert that it has new value
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -642,6 +701,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .body("binary-values.size()", equalTo(3))
             .body("binary-values[1].binary-value", equalTo(newValue))
         ;
+
     }
 
     @NotNull
@@ -666,21 +726,23 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         return om.writeValueAsString(bts);
     }
 
-    @Test
-    void test_large_data_url() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_large_data_url(String format) throws Exception {
 
         // Structure of test:
         // 1)Retrieve a binary time series and assert that it does not exist
         // 2)Create the binary time series with a large binary value
         // 3)Retrieve the binary time series and assert that it gives me back a new url to retrieve with
         // 4)Retrieve the single value from the new url
+        // 5)Delete the binary time series
 
         // Step 1)
         // Retrieve a binary time series and assert that it does not exist
         //Read
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -705,7 +767,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
@@ -723,7 +785,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         String valueUrl = given()
                             .log().ifValidationFails(LogDetail.ALL, true)
-                            .accept(Formats.JSONV2)
+                            .accept(format)
                             .queryParam(Controllers.OFFICE, OFFICE)
                             .queryParam(Controllers.NAME, tsId)
                             .queryParam(Controllers.BEGIN, BEGIN_STR)
@@ -760,7 +822,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                 .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
         ResponseBody body = given()
                                 .log().ifValidationFails(LogDetail.ALL, true)
-                                .accept(Formats.JSONV2)
+                                .accept(format)
                                 .queryParams(params)
                                 .basePath("")
                             .when()
@@ -771,7 +833,6 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                                 .log().ifValidationFails(LogDetail.ALL, true)
                             .assertThat()
                                 .statusCode(is(HttpServletResponse.SC_OK))
-                                .header("Transfer-Encoding", equalTo("chunked"))
                                 .contentType(equalTo("application/octet-stream"))
                                 .extract()
                                 .response()
@@ -786,6 +847,26 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             }
             assertArrayEquals(LARGE_BYTES, buffer.toByteArray());
         }
+
+        // Step 5)
+        // Delete the binary time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.BEGIN, BEGIN_STR)
+            .queryParam(Controllers.END, END_STR)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .delete("/timeseries/binary/" + tsId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
 }

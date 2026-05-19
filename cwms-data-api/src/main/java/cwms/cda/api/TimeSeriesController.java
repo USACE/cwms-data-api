@@ -6,6 +6,7 @@ import static cwms.cda.api.Controllers.*;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.NotFoundException;
@@ -15,6 +16,8 @@ import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
 import cwms.cda.data.dao.TimeSeriesRequestParameters;
+import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -37,8 +40,8 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
@@ -48,7 +51,7 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(TimeSeriesController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries";
     public static final String STORE_RULE_DESC = "The business rule to use "
             + "when merging the incoming with existing data\n"
@@ -119,6 +122,7 @@ public class TimeSeriesController implements CrudHandler {
 
     static {
         JavalinValidation.register(StoreRule.class, StoreRule::getStoreRule);
+        JavalinValidation.register(VerticalDatum.class, VerticalDatum::getVerticalDatum);
     }
 
     private Timer.Context markAndTime(String subject) {
@@ -137,17 +141,22 @@ public class TimeSeriesController implements CrudHandler {
                     required = true
             ),
             queryParams = {
-                @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                        + "the time zone of the version-date field (unless "
-                        + "otherwise specified). If this field is not specified, the default time zone "
-                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
-                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS,  type = Boolean.class, description = "Flag indicating if "
                         + "timeseries should be created as Local Regular Time Series. "
                         + "'True' or 'False', default is 'False'"),
                 @OpenApiParam(name = STORE_RULE, type = StoreRule.class,  description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description = "A flag "
-                        + "to ignore the protected data quality when storing data. 'True' or 'False'")
+                        + "to ignore the protected data quality when storing data. 'True' or 'False'"
+                        + ", default is " + TimeSeriesDaoImpl.OVERRIDE_PROTECTION),
+                @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
+                        + "time-series includes an explicit vertical-datum-info attribute "
+                        + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is not provided it is assumed that the data is in the as-stored "
+                        + "datum and no conversion is necessary.  "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
+                        + "and should be converted to the as-stored datum before being saved.")
             },
             method = HttpMethod.POST,
             path = "/timeseries",
@@ -162,16 +171,22 @@ public class TimeSeriesController implements CrudHandler {
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
                 .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
+        VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                .getOrDefault(null);
+
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
-            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection);
+
+            vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
+
+            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -307,8 +322,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `Other`  Any units returned in the response to the units URI "
                         + "request that is appropriate for the requested parameters."),
                 @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of a "
-                        + "time series trace to be selected. " + TIME_FORMAT_DESC +
-                        "If field is empty, query will return a max aggregate for the timeseries. "
+                        + "time series trace to be selected. " + TIME_FORMAT_DESC
+                        + "If field is empty, query will return a max aggregate for the timeseries. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2),
                 @OpenApiParam(name = DATUM,  description = "Specifies the "
                         + "elevation datum of the response. This field affects only elevation"
@@ -321,13 +336,13 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = BEGIN,  description = "Specifies the "
                         + "start of the time window for data to be included in the response. "
                         + "If this field is not specified, any required time window begins 24"
-                        + " hours prior to the specified or default end time. " +
-                        TIME_FORMAT_DESC),
+                        + " hours prior to the specified or default end time. "
+                        + TIME_FORMAT_DESC),
                 @OpenApiParam(name = END,  description = "Specifies the "
                         + "end of the time window for data to be included in the response. If"
                         + " this field is not specified, any required time window ends at the"
-                        + " current time. " +
-                        TIME_FORMAT_DESC),
+                        + " current time. "
+                        + TIME_FORMAT_DESC),
                 @OpenApiParam(name = TIMEZONE,  description = "Specifies "
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified).  "
@@ -339,7 +354,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "offset and timezone."),
                 @OpenApiParam(name = Controllers.TRIM, type = Boolean.class, description = "Specifies "
                         + "whether to trim missing values from the beginning and end of the "
-                        + "retrieved values. "
+                        + "retrieved values. When true and values are returned, the response "
+                        + BEGIN + " and " + END + " fields reflect the returned data window. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                         + "Default is true."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
@@ -349,7 +365,9 @@ public class TimeSeriesController implements CrudHandler {
                         + "\n* `csv`"
                         + "\n* `xml`"
                         + "\n* `wml2` (only if name field is specified)"
-                        + "\n* `json` (default)"),
+                        + "\n* `json` (default)"
+                        + "\n\nSee <a href=\"legacy-format/\">this page</a> for more "
+                        + "information about accept header usage."),
                 @OpenApiParam(name = INCLUDE_ENTRY_DATE, type = Boolean.class, description = "Specifies "
                     + "whether to include the data entry date of each value in the response. Including the data entry "
                     + "date will increase the size of the array containing each data value from three to four, "
@@ -358,10 +376,17 @@ public class TimeSeriesController implements CrudHandler {
                         + "of data as a series of pages. This parameter is used to describes the "
                         + "current location in the response stream.  This is an opaque "
                         + "value, and can be obtained from the 'next-page' value in the response."),
+                @OpenApiParam(name = CURSOR, deprecated = true,
+                        description = "This end point can return a lot of data, this "
+                        + "identifies where in the request you are. This is an opaque"
+                        + " value, and can be obtained from the 'next-page' value in "
+                        + "the response. Deprecated, use " + PAGE + " instead."),
                 @OpenApiParam(name = PAGE_SIZE,
                         type = Integer.class,
                         description = "How many entries per page returned. "
-                                + "Default " + DEFAULT_PAGE_SIZE + ".")
+                                + "Default " + DEFAULT_PAGE_SIZE + ". Use 0 to return an empty values array, "
+                                + "or -1 to return the entire window in one response without a next-page cursor. "
+                                + "Values less than -1 are invalid.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -413,9 +438,10 @@ public class TimeSeriesController implements CrudHandler {
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
                             GET_ALL));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE  },
+            final int pageSize = Controllers.validateTimeSeriesPageSize(queryParamAsClass(ctx,
+                    new String[]{PAGE_SIZE},
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
-                    name(TimeSeriesController.class.getName(), GET_ALL));
+                    name(TimeSeriesController.class.getName(), GET_ALL)));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
@@ -433,11 +459,6 @@ public class TimeSeriesController implements CrudHandler {
 
             if (version != null && version.equals("2")) {
 
-                if (datum != null) {
-                    throw new IllegalArgumentException(String.format("Datum is not supported for:%s and %s",
-                            Formats.JSONV2, Formats.XMLV2));
-                }
-
                 String office = requiredParam(ctx, OFFICE);
                 TimeSeriesRequestParameters requestParameters = new TimeSeriesRequestParameters.Builder()
                         .withNames(names)
@@ -449,7 +470,32 @@ public class TimeSeriesController implements CrudHandler {
                         .withShouldTrim(trim.getOrDefault(true))
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+                // Execute DAO call with a timeout so we can return a clearer message instead of a generic 500
+                int apiTimeoutMs = Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000);
+                CompletableFuture<TimeSeries> daoFuture = CompletableFuture.supplyAsync(
+                        () -> dao.getTimeseries(cursor, pageSize, requestParameters));
+                TimeSeries ts;
+                try {
+                    ts = daoFuture.get(apiTimeoutMs, TimeUnit.MILLISECONDS);
+                } catch (java.util.concurrent.TimeoutException ex) {
+                    daoFuture.cancel(true);
+                    cwms.cda.api.errors.CdaError re = new cwms.cda.api.errors.CdaError("Request is taking too long; try narrowing the date range.");
+                    ctx.status(HttpServletResponse.SC_REQUEST_TIMEOUT);
+                    ctx.json(re);
+                    return;
+                } catch (InterruptedException ex) {
+                    daoFuture.cancel(true);
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ex);
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    throw unwrapExecutionException(ex);
+                }
+
+                if(datum != null) { //this will be null for non-elevation ts
+                    // user has requested a specific vertical datum
+                    VerticalDatum vd = VerticalDatum.valueOf(datum);  // the users request
+                    ts = TimeSeriesVerticalDatumConverter.convertToVerticalDatum(ts, vd);
+                }
 
                 results = Formats.format(contentType, ts);
 
@@ -482,15 +528,27 @@ public class TimeSeriesController implements CrudHandler {
             requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
-            logger.log(Level.WARNING, re.toString(), e);
+            logger.atSevere().withCause(e).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_NOT_FOUND);
             ctx.json(re);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         }
+    }
+
+    static RuntimeException unwrapExecutionException(java.util.concurrent.ExecutionException ex) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof RuntimeException) {
+            // CDA ApplicationException extends RuntimeException.
+            throw (RuntimeException) cause;
+        }
+        if (cause instanceof Error) {
+            throw (Error) cause;
+        }
+        return new RuntimeException(cause);
     }
 
     private void addLinkHeader(@NotNull Context ctx, TimeSeries ts, ContentType contentType) {
@@ -511,7 +569,7 @@ public class TimeSeriesController implements CrudHandler {
 
             ctx.header("Link", linkValue.toString());
         } catch (URISyntaxException ex) {
-            logger.log(Level.WARNING, null, ex);
+            logger.atWarning().withCause(ex).log("Failed to build Link header");
         }
     }
 
@@ -520,7 +578,7 @@ public class TimeSeriesController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String id) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+            ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
         }
 
     }
@@ -537,15 +595,19 @@ public class TimeSeriesController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                @OpenApiParam(name = TIMEZONE, description = "Specifies "
-                        + "the time zone of the version-date field (unless "
-                        + "otherwise specified). If this field is not specified, the default time zone "
-                        + "of UTC shall be used.\r\nIgnored if version-date was specified with "
-                        + "offset and timezone."),
                 @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                 @OpenApiParam(name = STORE_RULE,  type = StoreRule.class, description = STORE_RULE_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
-                        "A flag to ignore the protected data quality when storing data.  \"'true' or 'false'\"")
+                        "A flag to ignore the protected data quality when storing data.  \"'true' or 'false'\""),
+                @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
+                        + "time-series includes an explicit vertical-datum-info attribute "
+                        + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is not provided it is assumed that the data is in the as-stored "
+                        + "datum and no conversion is necessary.  "
+                        + "If the input timeseries does not include vertical-datum-info and "
+                        + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
+                        + "and should be converted to the as-stored datum before being saved.")
             },
             method = HttpMethod.PATCH,
             path = "/timeseries/{timeseries}",
@@ -566,12 +628,16 @@ public class TimeSeriesController implements CrudHandler {
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
                     .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
-            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection);
+            VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
+                    .getOrDefault(null);
+            vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
+
+            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }

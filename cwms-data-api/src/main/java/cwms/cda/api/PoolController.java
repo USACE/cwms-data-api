@@ -1,7 +1,6 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
 import static cwms.cda.api.Controllers.ANY_MASK;
 import static cwms.cda.api.Controllers.BOTTOM_MASK;
 import static cwms.cda.api.Controllers.CURSOR;
@@ -15,6 +14,7 @@ import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.PARAMETER_ID;
 import static cwms.cda.api.Controllers.POOL_ID;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RESULTS;
@@ -24,6 +24,7 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.TOP_MASK;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -42,13 +43,13 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class PoolController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(PoolController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 100;
 
     private final MetricRegistry metrics;
@@ -84,6 +85,11 @@ public class PoolController implements CrudHandler {
                             + " in the request you are. This is an opaque value, and can be"
                             + " obtained from the 'next-page' value in the response."
             ),
+            @OpenApiParam(name = CURSOR, deprecated = true,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response. Deprecated, use " + PAGE + " instead."),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description =
@@ -100,7 +106,7 @@ public class PoolController implements CrudHandler {
             tags = {"Pools"})
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);
@@ -180,14 +186,14 @@ public class PoolController implements CrudHandler {
             description = "Retrieves requested Pool", tags = {"Pools"})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);
 
             // These are required
-            String office = ctx.queryParam(OFFICE);
-            String projectId = ctx.queryParam(PROJECT_ID);
+            String office = requiredParam(ctx, OFFICE);;
+            String projectId = requiredParam(ctx, PROJECT_ID);
 
             // These are optional
             String bottomMask =
@@ -207,10 +213,7 @@ public class PoolController implements CrudHandler {
 
             if (pool == null) {
                 CdaError re = new CdaError("Unable to find pool based on parameters given");
-                logger.info(() -> {
-                    String fullUrl = ctx.fullUrl();
-                    return re + System.lineSeparator() + "for request " + fullUrl;
-                });
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
@@ -230,18 +233,18 @@ public class PoolController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void create(@NotNull Context ctx) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
     public void delete(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 }

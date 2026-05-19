@@ -17,7 +17,7 @@ export default [
       {
         id: "swagger-schema",
         text: "Swagger Docs Schema",
-        href: "swagger-docs",
+        href: "/swagger-docs",
       },
     ],
   },
@@ -38,6 +38,11 @@ export default [
     text: "Help",
     href: "#",
     children: [
+      {
+        id: "read-the-docs",
+        text: "User Documentation",
+        href: "https://cwms-data-api.readthedocs.io/latest",
+      },
       {
         id: "github-wiki",
         text: "Wiki",
@@ -62,6 +67,11 @@ export default [
         id: "times",
         text: "Timestamps (times)",
         href: "timestamps",
+      },
+      {
+        id: "legacy",
+        text: "Legacy Formats",
+        href: "legacy-format",
       },
     ],
   },

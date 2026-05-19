@@ -3,21 +3,19 @@ package cwms.cda.api.users;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
-import java.util.Optional;
-import java.util.logging.Logger;
 
-
+import cwms.cda.api.Controllers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import cwms.cda.ApiServlet;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
@@ -32,7 +30,6 @@ import io.restassured.specification.RequestSpecification;
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
 public class UserManagementTestIT extends DataApiTestIT {
-    private static final Logger logger = Logger.getLogger(UserManagementTestIT.class.getName());
     
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
@@ -194,6 +191,100 @@ public class UserManagementTestIT extends DataApiTestIT {
         final User m5hectest = users.stream().filter(u -> u.getUserName().equals("M5HECTEST")).findFirst().orElse(null);
         assertNotNull(m5hectest, "Could not retrieve expected user.");
         assertTrue(m5hectest.getRoles().get("SWT").contains("TS ID Creator"));
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_list_users_pagination_regex_filter(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        final ArrayList<User> users = new ArrayList<User>();
+        Users tmp = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .spec(authSpec)
+                .queryParam(Controllers.USERNAME_LIKE, "l2hectest.*")
+                .queryParam("page-size", 2)
+        .when()
+                .get("/users")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .statusCode(is(HttpCode.OK.getStatus()))
+                .extract().as(Users.class);
+
+        users.addAll(tmp.getUsers());
+        assertNotNull(tmp.getNextPage(), "Expected multiple pages of results for pagination test with regex filter.");
+
+        while (tmp.getNextPage() != null) {
+            tmp = given()
+                    .log().ifValidationFails(LogDetail.ALL, true)
+                    .spec(authSpec)
+                    .queryParam("page",tmp.getNextPage())
+            .when()
+                    .get("/users")
+            .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .statusCode(is(HttpCode.OK.getStatus()))
+                    .extract().as(Users.class);
+            users.addAll(tmp.getUsers());
+        }
+
+        assertEquals(tmp.getTotal(), users.size(), "Returned user size does not match provided total.");
+        final User l2hectest = users.stream().filter(u -> u.getUserName().equals("L2HECTEST")).findFirst().orElse(null);
+        assertNotNull(l2hectest, "Could not retrieve expected user.");
+        assertTrue(l2hectest.getRoles().get("SPK").contains("TS ID Creator"));
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_list_users_username_regex_filter(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+
+        Users users = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam(Controllers.USERNAME_LIKE, "*")
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .extract().as(Users.class);
+
+        assertNotNull(users);
+        assertNotNull(users.getUsers());
+        assertFalse(users.getUsers().isEmpty(), "Expected at least one user returned for regex filter");
+
+
+        users = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam(Controllers.USERNAME_LIKE, "^M5HECTEST$")
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .extract().as(Users.class);
+
+        assertNotNull(users);
+        assertNotNull(users.getUsers());
+        assertFalse(users.getUsers().isEmpty(), "Expected at least one user returned for regex filter");
+        // Ensure the filtered list contains only the expected username
+        users.getUsers().forEach(u -> assertEquals("M5HECTEST", u.getUserName()));
+
+        users = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam(Controllers.USERNAME_LIKE, "M3DOESNTEXIST")
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .extract().as(Users.class);
+
+        assertNotNull(users);
+        assertNotNull(users.getUsers());
+        assertTrue(users.getUsers().isEmpty(), "Expected no users returned for regex filter");
     }
 
 

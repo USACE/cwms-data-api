@@ -31,7 +31,6 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
-import cwms.cda.api.rating.RatingEffectiveDatesController;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -53,19 +52,23 @@ import cwms.cda.api.BinaryTimeSeriesController;
 import cwms.cda.api.BinaryTimeSeriesValueController;
 import cwms.cda.api.BlobController;
 import cwms.cda.api.CatalogController;
+import cwms.cda.api.CdaVersionHandler;
 import cwms.cda.api.ClobController;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.CountyController;
 import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.EmbankmentController;
+import cwms.cda.api.EntityController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
 import cwms.cda.api.ForecastSpecController;
+import cwms.cda.api.LevelRefsController;
 import cwms.cda.api.LevelsAsTimeSeriesController;
 import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
 import cwms.cda.api.LocationController;
 import cwms.cda.api.LocationGroupController;
+import cwms.cda.api.LocationKindController;
 import cwms.cda.api.LookupTypeController;
 import cwms.cda.api.MeasurementTimeExtentsGetController;
 import cwms.cda.api.OfficeController;
@@ -73,28 +76,21 @@ import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
-import cwms.cda.api.errors.RateException;
-import cwms.cda.api.rating.RateTimeSeriesController;
-import cwms.cda.api.rating.RateValuesController;
-import cwms.cda.api.rating.RatingController;
-import cwms.cda.api.rating.RatingLatestController;
-import cwms.cda.api.rating.RatingMetadataController;
-import cwms.cda.api.rating.RatingSpecController;
-import cwms.cda.api.rating.RatingTemplateController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
+import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
+import cwms.cda.api.TimeSeriesFilteredController;
 import cwms.cda.api.TimeSeriesGroupController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
-import cwms.cda.api.TimeSeriesFilteredController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.TurbineChangesDeleteController;
 import cwms.cda.api.TurbineChangesGetController;
@@ -109,15 +105,8 @@ import cwms.cda.api.auth.users.roles.AddRoleController;
 import cwms.cda.api.auth.users.roles.DeleteRolesController;
 import cwms.cda.api.auth.users.roles.GetRolesController;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.AlreadyExists;
+import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.DeleteConflictException;
-import cwms.cda.api.errors.FieldException;
-import cwms.cda.api.errors.InvalidItemException;
-import cwms.cda.api.errors.JsonFieldsException;
-import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.api.errors.RequiredQueryParameterException;
-import cwms.cda.api.errors.ValueTooLongException;
 import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
@@ -136,11 +125,17 @@ import cwms.cda.api.project.ProjectLockRevokeDeny;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
+import cwms.cda.api.rating.RateTimeSeriesController;
+import cwms.cda.api.rating.RateValuesController;
+import cwms.cda.api.rating.RatingController;
+import cwms.cda.api.rating.RatingEffectiveDatesController;
+import cwms.cda.api.rating.RatingLatestController;
+import cwms.cda.api.rating.RatingMetadataController;
+import cwms.cda.api.rating.RatingSpecController;
+import cwms.cda.api.rating.RatingTemplateController;
 import cwms.cda.api.rating.ReverseRateTimeSeriesController;
 import cwms.cda.api.rating.ReverseRateValuesController;
-import cwms.cda.api.LocationKindController;
-import cwms.cda.api.watersupply.AccountingCatalogController;
-import cwms.cda.api.watersupply.AccountingCreateController;
+import cwms.cda.api.rss.RssHandler;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileCreateController;
@@ -153,6 +148,8 @@ import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserDeleteController;
+import cwms.cda.api.watersupply.AccountingCatalogController;
+import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
 import cwms.cda.api.watersupply.WaterContractController;
 import cwms.cda.api.watersupply.WaterContractCreateController;
@@ -168,13 +165,10 @@ import cwms.cda.api.watersupply.WaterUserCreateController;
 import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.rss.QueueManager;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
-import cwms.cda.security.CwmsAuthException;
-import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
@@ -196,7 +190,6 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -207,7 +200,6 @@ import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -222,6 +214,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
+import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 
@@ -239,11 +232,13 @@ import org.owasp.html.PolicyFactory;
     "/counties/*",
     "/location/*",
     "/locations/*",
+    "/entity/*",
     "/parameters/*",
     "/timezones/*",
     "/units/*",
     "/ratings/*",
     "/levels/*",
+    "/level-refs/*",
     "/basins/*",
     "/streams/*",
     "/stream-locations/*",
@@ -264,11 +259,13 @@ import org.owasp.html.PolicyFactory;
     "/embankments/*",
     "/user/*",
     "/users/*",
-    "/roles/*"
+    "/roles/*",
+    "/version/*",
+    "/rss/*"
 })
 public class ApiServlet extends HttpServlet {
 
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
@@ -359,22 +356,12 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
-                .exception(UnsupportedFormatException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getMessage());
-                    logger.atInfo().withCause(e).log(re.toString());
-                    ctx.status(HttpServletResponse.SC_NOT_ACCEPTABLE).json(re);
-                })
-                .exception(FormattingException.class, (fe, ctx) -> {
-                    final CdaError re = new CdaError("Formatting error:" + fe.getMessage());
-
-                    if (fe.getCause() instanceof IOException) {
-                        ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    } else {
-                        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                .exception(ApplicationException.class, (e, ctx) -> {
+                    CdaError re = new CdaError(e.getCdaErrorMessage(), e.getSource(), e.getDetails());
+                    if (e.getLoggerLevel().isPresent()) {
+                        logger.at(e.getLoggerLevel().get()).withCause(e).log(re.toString());
                     }
-                    logger.atSevere().withCause(fe)
-                            .log("%s for request: %s", re, ctx.fullUrl());
-                    ctx.json(re);
+                    ctx.status(e.getCdaHttpErrorCode()).json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {
                     final CdaError re = CdaError.notImplemented();
@@ -383,117 +370,37 @@ public class ApiServlet extends HttpServlet {
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request", e.getDetails());
+                    CdaError re = new CdaError("Bad Request",
+                        "User Input", new HashMap<>(e.getDetails()));
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
-                })
-                .exception(RequiredQueryParameterException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request", e.getDetails());
-                    logger.atInfo().withCause(e).log(re.toString());
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
                     CdaError re = new CdaError("Bad Request");
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
-                .exception(InvalidItemException.class, (e, ctx) -> {
-                    CdaError re;
-                    String message = e.getMessage();
-                    if (message != null) {
-                        Map<String, Object> details = new LinkedHashMap<>();
-                        details.put("message", message);
-
-                        re = new CdaError("Bad Request.", details);
-                    } else {
-                        re = new CdaError("Bad Request.");
-                    }
-
-                    logger.atInfo().withCause(e).log(re.toString());
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                })
-                .exception(AlreadyExists.class, (e, ctx) -> {
-                    CdaError re;
-                    if (e.getMessage() == null || e.getMessage().isEmpty()) {
-                        re = new CdaError("Already exists");
-                    } else {
-                        Map<String, String> details = new HashMap<>();
-                        details.put("message", e.getMessage());
-                        re = new CdaError("Already exists", details);
-                    }
-                    logger.atInfo().withCause(e).log(re.toString());
-                    ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
-                })
-                .exception(DeleteConflictException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Cannot perform requested delete. "
-                            + "Data is referenced elsewhere in CWMS.", e.getDetails());
-                    logger.atInfo().withCause(e).log(re.toString(), e);
-                    ctx.status(HttpServletResponse.SC_CONFLICT).json(re);
-                })
-                .exception(NotFoundException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Not Found.");
-                    logger.atInfo().withCause(e).log(re.toString());
-                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
-                })
-                .exception(RateException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Error performing rate function: " + e.getMessage());
-                    logger.atInfo().withCause(e).log(re.toString());
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                })
-                .exception(FieldException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getMessage(), e.getDetails(), true);
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                })
                 .exception(DateTimeException.class, (e, ctx) -> {
                     CdaError re = new CdaError(e.getMessage());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
-                .exception(ValueTooLongException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getMessage(), e.isSuppressIncidentId());
-                    logger.atInfo().withCause(e).log(re.toString());
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                })
-                .exception(JsonFieldsException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getMessage(), e.getDetails(), true);
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
-                })
-                .exception(MissingRolesException.class, (e,ctx) -> {
-                    CdaError re = new CdaError(e.getMessage(), true);
-                    if (logger.atFine().isEnabled()) {
-                        logger.atFine().withCause(e).log(e.getMessage());
-                    } else {
-                        logger.atInfo().log(e.getMessage());
-                    }
+                .exception(DataAccessException.class, (e, ctx) -> {
+                    // Whatever Dao is causing this exception to be thrown should be modified.
+                    // The preferred pattern is for the Dao to catch DataAccessExceptions exceptions
+                    // and for the dao to inspect the Oracle error code or error message as necessary
+                    // to transform DataAccessExceptions (and their SQLException causes)
+                    // into specific and appropriate exceptions with
+                    // messages that are helpful and meaningful to end-users.
 
-                    ctx.status(e.getAuthFailCode()).json(re);
-                })
-                .exception(CwmsAuthException.class, (e,ctx) -> {
-                    CdaError re;
-                    switch (e.getAuthFailCode()) {
-                        case 401: {
-                            String msg = !e.suppressMessage() ? e.getLocalizedMessage() : "Invalid User";
-                            re = new CdaError(msg, true);
-                            break;
-                        }
-                        case 403:
-                            re = new CdaError("Not Authorized", true);
-                            break;
-                        default:
-                            re = new CdaError("Unknown auth error.");
-                    }
-
-                    if (logger.atFine().isEnabled()) {
-                        logger.atFine().withCause(e).log(e.getMessage());
-                    } else {
-                        Throwable cause = e.getCause();
-                        String extra = "";
-                        if (cause != null) {
-                            extra = ": "+ cause.getMessage();
-                        }
-                        logger.atInfo().log(e.getMessage() + extra);
-                    }
-
-                    ctx.status(e.getAuthFailCode()).json(re);
+                    // CdaError does not include the Oracle exception message b/c this block catches
+                    // all unhandled DataAccessExceptions and we don't know what is in the message
+                    // it is unknown if the message would be safe/appropriate for users to see.
+                    CdaError errResponse = new CdaError("Database Error");
+                    logger.atWarning().withCause(e).log("error on request[%s]: %s",
+                                                        errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
+                    ctx.status(500);
+                    ctx.contentType(ContentType.APPLICATION_JSON.toString());
+                    ctx.json(errResponse);
                 })
                 .exception(Exception.class, (e, ctx) -> {
                     CdaError errResponse = new CdaError("System Error");
@@ -504,7 +411,14 @@ public class ApiServlet extends HttpServlet {
                     ctx.json(errResponse);
                 })
                 .routes(this::configureRoutes)
+                .options("/*", ctx -> {
+                    // Respond with a 200 OK status for preflight checks.
+                    // It is expected that the firewall in front of the API
+                    // will handle any CORS headers.
+                    ctx.status(200);
+                })
                 .javalinServlet();
+        QueueManager.ensureRssSubscribers(cwms);
         logger.atInfo().log("Javalin initialized.");
     }
 
@@ -528,7 +442,8 @@ public class ApiServlet extends HttpServlet {
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
-        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), new RouteRole[]{new Role(CAC_USER), new Role(CWMS_USERS_ROLE)});
+        crud("/auth/keys/{key-name}",new ApiKeyController(metrics), new RouteRole[]{new Role(CAC_USER),
+            new Role(CWMS_USERS_ROLE)});
         cdaCrudCache("/location/category/{category-id}",
                 new LocationCategoryController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/location/group/{group-id}",
@@ -536,6 +451,16 @@ public class ApiServlet extends HttpServlet {
         get("/locations/with-kinds/", new LocationKindController(metrics));
         cdaCrudCache("/locations/{location-id}",
                 new LocationController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+
+        VerticalDatumController vdiController = new VerticalDatumController(metrics);
+        String vdiPath = format("/location/{%s}/vertical-datum", Controllers.LOCATION_ID);
+        get(vdiPath, ctx -> vdiController.getOne(ctx, ctx.pathParam(Controllers.LOCATION_ID)));
+        addCacheControl(vdiPath, 5, TimeUnit.MINUTES);
+        post(vdiPath, vdiController::create, requiredRoles);
+        patch(vdiPath, ctx -> vdiController.update(ctx, ctx.pathParam(Controllers.LOCATION_ID)), requiredRoles);
+        delete(vdiPath, ctx -> vdiController.delete(ctx, ctx.pathParam(Controllers.LOCATION_ID)), requiredRoles);
+        cdaCrudCache("/entity/{entity-id}",
+                new EntityController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         cdaCrudCache("/states/{state}",
                 new StateController(metrics), requiredRoles, 60, TimeUnit.MINUTES);
         cdaCrudCache("/counties/{county}",
@@ -553,6 +478,9 @@ public class ApiServlet extends HttpServlet {
         String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
+        String levelRefsPath = "/level-refs/";
+        get(levelRefsPath, new LevelRefsController(metrics));
+        addCacheControl(levelRefsPath, 5, TimeUnit.MINUTES);
         String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
@@ -577,9 +505,9 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(textBinaryValuePath, 1, TimeUnit.DAYS);
 
         String timeSeriesProfilePath = "/timeseries/profile/";
-        get(format( "%s{%s}/{%s}", timeSeriesProfilePath, Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
+        get(format("%s{%s}/{%s}", timeSeriesProfilePath, Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
                 new TimeSeriesProfileController(metrics));
-        delete(format( "%s/{%s}/{%s}", timeSeriesProfilePath, Controllers.LOCATION_ID,
+        delete(format("%s/{%s}/{%s}", timeSeriesProfilePath, Controllers.LOCATION_ID,
                         Controllers.PARAMETER_ID), new TimeSeriesProfileDeleteController(metrics),
                 requiredRoles);
         get(format(timeSeriesProfilePath, Controllers.LOCATION_ID, Controllers.PARAMETER_ID),
@@ -587,10 +515,10 @@ public class ApiServlet extends HttpServlet {
         post(timeSeriesProfilePath, new TimeSeriesProfileCreateController(metrics), requiredRoles);
 
         String timeSeriesProfileParserPath = "/timeseries/profile-parser/";
-        get(format( "%s{%s}/{%s}/", timeSeriesProfileParserPath, Controllers.LOCATION_ID,
+        get(format("%s{%s}/{%s}/", timeSeriesProfileParserPath, Controllers.LOCATION_ID,
                 Controllers.PARAMETER_ID), new TimeSeriesProfileParserController(metrics));
         post(timeSeriesProfileParserPath, new TimeSeriesProfileParserCreateController(metrics), requiredRoles);
-        delete(format( "%s{%s}/{%s}/", timeSeriesProfileParserPath, Controllers.LOCATION_ID,
+        delete(format("%s{%s}/{%s}/", timeSeriesProfileParserPath, Controllers.LOCATION_ID,
                         Controllers.PARAMETER_ID), new TimeSeriesProfileParserDeleteController(metrics),
                 requiredRoles);
         get(timeSeriesProfileParserPath, new TimeSeriesProfileParserCatalogController(metrics));
@@ -607,7 +535,7 @@ public class ApiServlet extends HttpServlet {
 
         cdaCrudCache("/timeseries/category/{category-id}",
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/identifier-descriptor/{name}",
+        cdaCrudCache(String.format("/timeseries/identifier-descriptor/{%s}", Controllers.TIMESERIES_ID),
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/timeseries/group/{group-id}",
                 new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
@@ -638,7 +566,7 @@ public class ApiServlet extends HttpServlet {
         String measTimeExtents = measurements + "time-extents";
         get(measTimeExtents,new MeasurementTimeExtentsGetController(metrics));
         addCacheControl(measTimeExtents, 5, TimeUnit.MINUTES);
-        cdaCrudCache(format( "%s{%s}", measurements, LOCATION_ID),
+        cdaCrudCache(format("%s{%s}", measurements, LOCATION_ID),
                 new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
@@ -706,6 +634,9 @@ public class ApiServlet extends HttpServlet {
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles);
 
         addUserManagementHandlers();
+
+        get("/version/", new CdaVersionHandler(metrics), requiredRoles);
+        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics), requiredRoles);
     }
 
     private void addUserManagementHandlers() {
@@ -861,6 +792,7 @@ public class ApiServlet extends HttpServlet {
             });
         }
     }
+
     /**
      * This method is very similar to the ApiBuilder.crud method but the specified roles
      * are only required for the post, patch and delete methods.  getOne and getAll are always
@@ -954,7 +886,8 @@ public class ApiServlet extends HttpServlet {
         authenticator.getActiveProviders().forEach(identityProvider -> {
             components.addSecuritySchemes(identityProvider.getName(),identityProvider.getScheme());
             SecurityRequirement req = new SecurityRequirement();
-            if (!identityProvider.getName().equalsIgnoreCase("guestauth") && !identityProvider.getName().equalsIgnoreCase("noauth")) {
+            if (!identityProvider.getName().equalsIgnoreCase("guestauth")
+                    && !identityProvider.getName().equalsIgnoreCase("noauth")) {
                 req.addList(identityProvider.getName());
                 secReqs.add(req);
             }

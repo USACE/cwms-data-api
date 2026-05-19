@@ -1,0 +1,13 @@
+{
+  "spec-id": "SPK-Daily-UKY-Test",
+  "office-id": "SPK",
+  "source-entity-id": "USACE",
+  "designator": "designator",
+  "description": "3-day forecast of pool elevation and outflow for flood control projects in the Upper Kentucky watershed",
+  "time-series-ids": [
+    "TsBinTestLoc.Elev.Inst.~1Day.0.SPK-cavi-fct",
+    "TsBinTestLoc.Flow-Outflow.Inst.~1Day.0.SPK-cavi-fct",
+    "TsBinTestLoc2.Elev.Inst.~1Day.0.SPK-cavi-fct",
+    "TsBinTestLoc2.Flow-Outflow.Inst.~1Day.0.SPK-cavi-fct"
+  ]
+}

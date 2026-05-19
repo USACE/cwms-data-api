@@ -7,16 +7,22 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 
 public interface IdentityProvider {
     public static final String PRINCIPAL_KEY = "principal";
+
     /**
-     * Key used in OpenAPI definition to distinguish Auth types
-     * @return
+     * Key used in OpenAPI definition to distinguish Auth types.
+     *
+     * @return name
      */
     String getName();
+
     boolean canAuth(Context ctx);
+
     Principal authenticate(Context ctx);
+
     /**
-     * Define the OpenAPI V3 Security Scheme for this manager
-     * @return
+     * Define the OpenAPI V3 Security Scheme for this manager.
+     *
+     * @return SecurityScheme
      */
     SecurityScheme getScheme();
 }

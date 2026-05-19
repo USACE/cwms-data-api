@@ -57,6 +57,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import static org.hamcrest.Matchers.*;
 
 @Tag("integration")
@@ -72,7 +75,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     private static final String IDENTIFIER = "identifier";
 
     @BeforeAll
-    public static void setup() throws SQLException {
+    static void setup() throws SQLException {
         String testLoc = "StreamLoc321"; // match the stream location name in the json file
         createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
         TEST_STREAM_LOC_IDS.add(testLoc);
@@ -99,7 +102,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         for (Stream stream : TEST_STREAMS) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -134,9 +137,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         }
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     @MinimumSchema(MINIMUM_SCHEMA)
-    void test_create_retrieve_delete_measurement() throws IOException {
+    void test_create_retrieve_delete_measurement(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurement.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -148,7 +152,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Create the Measurement
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .contentType(Formats.JSON)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
@@ -170,7 +174,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Retrieve the Measurement and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(Controllers.OFFICE_MASK, measurement.getId().getOfficeId())
                 .queryParam(Controllers.ID_MASK, measurement.getLocationId())
                 .queryParam(Controllers.MIN_NUMBER, number)
@@ -229,7 +233,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Delete the Measurement
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, measurement.getId().getOfficeId())
                 .queryParam(Controllers.MIN_NUMBER, number)
@@ -249,7 +253,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Retrieve the Measurement and assert that it does not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, measurement.getId().getOfficeId())
                 .queryParam(Controllers.ID_MASK, measurement.getLocationId())
                 .queryParam(Controllers.MIN_NUMBER, number)
@@ -265,9 +269,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     @MinimumSchema(MINIMUM_SCHEMA)
-    void test_create_retrieve_delete_measurement_multiple() throws IOException {
+    void test_create_retrieve_delete_measurement_multiple(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -281,7 +286,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Create the Measurements
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .contentType(Formats.JSON)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
@@ -300,7 +305,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Retrieve the Measurements and assert that they exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(Controllers.OFFICE_MASK, measurement1.getId().getOfficeId())
                 .queryParam(Controllers.ID_MASK, measurement1.getLocationId())
                 .queryParam(Controllers.UNIT_SYSTEM, UnitSystem.EN.getValue())
@@ -394,7 +399,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Retrieve the Measurements Extents and assert that they exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(Controllers.OFFICE_MASK, measurement1.getId().getOfficeId())
         .when()
                 .redirects().follow(true)
@@ -413,7 +418,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Delete the Measurements
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE_ID)
         .when()
@@ -431,7 +436,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         // Retrieve the Measurements and assert that they do not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, OFFICE_ID)
                 .queryParam(Controllers.ID_MASK, measurement1.getLocationId())
                 .queryParam(Controllers.UNIT_SYSTEM, UnitSystem.EN.getValue())

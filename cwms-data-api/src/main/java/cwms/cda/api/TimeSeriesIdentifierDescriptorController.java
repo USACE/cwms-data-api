@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Hydrologic Engineering Center
+ * Copyright (c) 2025 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +50,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +58,7 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(TimeSeriesIdentifierDescriptorController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries Identifier";
 
     private static final int DEFAULT_PAGE_SIZE = 500;
@@ -92,7 +91,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             @OpenApiParam(name = TIMESERIES_ID_REGEX, description = "A case insensitive RegExp "
                     + "that will be applied to the timeseries-id field. If this field is "
                     + "not specified the results will not be constrained by timeseries-id."),
-
+            @OpenApiParam(name = INCLUDE_ALIASES, type = Boolean.class, description = "Specifies whether to include "
+                    + "aliased items as content in the results. Default is false."),
             @OpenApiParam(name = PAGE,
                     description = "This end point can return a lot of data, this "
                             + "identifies where in the request you are. This is an opaque"
@@ -110,23 +110,27 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the time series identifier descriptors were not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
-                            + "implemented")}, description = "Returns CWMS timeseries identifier descriptor"
-            + "Data", tags = {TAG})
+                            + "implemented")},
+            description = "Returns CWMS timeseries identifier descriptor"
+                    + "Data. Currently includes aliased items in results.",
+            tags = {TAG}
+    )
     @Override
     public void getAll(Context ctx) {
         String cursor = ctx.queryParamAsClass(PAGE, String.class).getOrDefault("");
         int pageSize =
                 ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
 
-        try (final Timer.Context ignored = markAndTime(GET_ALL)){
+        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             String office = ctx.queryParam(OFFICE);
             String idRegex = ctx.queryParam(TIMESERIES_ID_REGEX);
+            boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class).getOrDefault(false);
 
             TimeSeriesIdentifierDescriptors descriptors =
-                    dao.getTimeSeriesIdentifiers(cursor, pageSize, office, idRegex);
+                    dao.getTimeSeriesIdentifiers(cursor, pageSize, office, idRegex, includeAliases);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             if (Formats.DEFAULT.equals(formatHeader)) {
@@ -166,15 +170,17 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "inputs provided the timeseries identifier descriptor was not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
-            description = "Retrieves requested timeseries identifier descriptor", tags = {TAG})
+            description = "Retrieves requested timeseries identifier descriptor",
+            tags = {TAG}
+    )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String timeseriesId) {
 
-        try (final Timer.Context ignored = markAndTime(GET_ONE)){
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             if (Formats.DEFAULT.equals(formatHeader)) {
@@ -195,7 +201,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             } else {
                 CdaError re = new CdaError("Unable to find identifier based on parameters "
                         + "given");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                logger.atInfo().log("%s%s for request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
         }
@@ -250,12 +256,20 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = TIMESERIES_ID, description = "A new timeseries-id.  "
                             + "If specified a rename operation will be performed and "
                             + SNAP_FORWARD + ", " + SNAP_BACKWARD + ", and " + ACTIVE + " must not be provided"),
-                    @OpenApiParam(name = INTERVAL_OFFSET, type = Long.class, description = "The offset into the data interval in minutes.  "
+                    @OpenApiParam(name = INTERVAL_OFFSET, type = Long.class,
+                            description = "The offset into the data interval in minutes.  "
                             + "If specified and a new timeseries-id is also specified both will be passed to a "
                             + "rename operation.  May also be passed to update operation."),
-                    @OpenApiParam(name = SNAP_FORWARD, type = Long.class, description = "The new snap forward tolerance in minutes. This specifies how many minutes before the expected data time that data will be considered to be on time."),
-                    @OpenApiParam(name = SNAP_BACKWARD, type = Long.class, description = "The new snap backward tolerance in minutes. This specifies how many minutes after the expected data time that data will be considered to be on time."),
-                    @OpenApiParam(name = ACTIVE, type = Boolean.class, description = "'True' or 'true' if the time series is active")
+                    @OpenApiParam(name = SNAP_FORWARD, type = Long.class,
+                            description = "The new snap forward tolerance in minutes. "
+                            + "This specifies how many minutes before the expected data time "
+                            + "that data will be considered to be on time."),
+                    @OpenApiParam(name = SNAP_BACKWARD, type = Long.class,
+                            description = "The new snap backward tolerance in minutes. "
+                            + "This specifies how many minutes after the expected data time "
+                            + "that data will be considered to be on time."),
+                    @OpenApiParam(name = ACTIVE, type = Boolean.class,
+                            description = "'True' or 'true' if the time series is active")
             }, tags = {TAG}
     )
     @Override
@@ -278,7 +292,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
         }
         
 
-        try (final Timer.Context ignored = markAndTime(UPDATE)){
+        try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
@@ -299,7 +313,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = TIMESERIES_ID, required = true, description = "The timeseries-id of the timeseries to be deleted. "),
+                    @OpenApiParam(name = TIMESERIES_ID, required = true,
+                            description = "The timeseries-id of the timeseries to be deleted. "),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -308,19 +323,20 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
-            method = HttpMethod.DELETE, tags = {TAG}
-           )
+            method = HttpMethod.DELETE,
+            tags = {TAG}
+    )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 
-        JooqDao.DeleteMethod method = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class).get();
+        JooqDao.DeleteMethod method =requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
 
         String office = requiredParam(ctx, OFFICE);
 
-        try (final Timer.Context ignored = markAndTime(DELETE)){
+        try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            logger.log(Level.FINE, "Deleting timeseries:{0} from office:{1}", new Object[]{timeseriesId, office});
+            logger.atFine().log("Deleting timeseries:%s from office:%s", timeseriesId, office);
             TimeSeriesIdentifierDescriptorDao dao = new TimeSeriesIdentifierDescriptorDao(dsl);
             dao.delete(office, timeseriesId, method);
 
@@ -328,7 +344,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         } catch (DataAccessException ex) {
             CdaError re = new CdaError("Internal Error");
-            logger.log(Level.SEVERE, re.toString(), ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 

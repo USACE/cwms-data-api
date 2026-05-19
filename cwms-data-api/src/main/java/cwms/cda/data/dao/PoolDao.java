@@ -1,14 +1,17 @@
 package cwms.cda.data.dao;
 
+import static java.util.stream.Collectors.toList;
+
+import cwms.cda.data.dto.Pool;
+import cwms.cda.data.dto.PoolNameType;
+import cwms.cda.data.dto.Pools;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import cwms.cda.data.dto.Pool;
-import cwms.cda.data.dto.Pools;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -16,16 +19,12 @@ import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.exception.TooManyRowsException;
 import org.jooq.impl.DSL;
-
-import usace.cwms.db.dao.ifc.pool.PoolNameType;
 import usace.cwms.db.jooq.codegen.packages.CWMS_POOL_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_pool.RETRIEVE_POOL;
 import usace.cwms.db.jooq.codegen.tables.AV_POOL;
 
-import static java.util.stream.Collectors.toList;
-
 public class PoolDao extends JooqDao<Pool> {
-	private static Logger logger = Logger.getLogger(PoolDao.class.getName());
+	private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
 	public PoolDao(DSLContext dsl) {
 		super(dsl);
@@ -39,14 +38,16 @@ public class PoolDao extends JooqDao<Pool> {
 		List<String> types = getTypes(includeExplicit, includeImplicit);
 		Condition condition = getCondition(projectIdMask, poolNameMask, bottomLevelMask, topLevelMask, officeIdMask, types);
 
-		return dsl.select(DSL.asterisk()).from(view)
-				.where(condition)
-				.orderBy(view.DEFINITION_TYPE,
-						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
-				.stream()
-				.map(r -> toPool(r, true))
-				.collect(toList());
-	}
+        try (Stream<Record> recordStream = dsl.select(DSL.asterisk()).from(view)
+                .where(condition)
+                .orderBy(view.DEFINITION_TYPE,
+                        DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
+                .stream()) {
+            return recordStream
+                    .map(r -> toPool(r, true))
+                    .collect(toList());
+        }
+    }
 
 	@NotNull
 	private List<String> getTypes(boolean includeExplicit, boolean includeImplicit) {
@@ -182,7 +183,7 @@ public class PoolDao extends JooqDao<Pool> {
 		if (cursor != null && !cursor.isEmpty()) {
 			String[] parts = Pools.decodeCursor(cursor);
 
-			logger.fine( () -> "decoded cursor: " + Arrays.toString(parts));
+ 		logger.atFine().log("decoded cursor: %s", Arrays.toString(parts));
 
 			if (parts.length > 2) {
 				offset = Integer.parseInt(parts[0]);
@@ -190,7 +191,7 @@ public class PoolDao extends JooqDao<Pool> {
 					try {
 						total = Integer.valueOf(parts[1]);
 					} catch(NumberFormatException e){
-						logger.log(Level.INFO, "Could not parse " + parts[1]);
+    		logger.atInfo().log("Could not parse %s", parts[1]);
 					}
 				}
 				pageSize = Integer.parseInt(parts[2]); // Why are we taking pageSize as an arg and also pulling it from cursor?
@@ -200,15 +201,18 @@ public class PoolDao extends JooqDao<Pool> {
 		List<String> types = getTypes(includeExplicit, includeImplicit);
 		Condition condition = getCondition(projectIdMask, poolNameMask, bottomLevelMask, topLevelMask, officeIdMask, types);
 
-		List<Pool> pools = dsl.select(DSL.asterisk()).from(view)
-				.where(condition)
-				.orderBy(view.DEFINITION_TYPE,
-						DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
-				.offset(offset)
-				.limit(pageSize)
-				.stream().map(r -> toPool(r, true)).collect(toList());
+		List<Pool> pools;
+        try (Stream<Record> recordStream = dsl.select(DSL.asterisk()).from(view)
+                .where(condition)
+                .orderBy(view.DEFINITION_TYPE,
+                        DSL.upper(view.OFFICE_ID), DSL.upper(view.PROJECT_ID), view.ATTRIBUTE, DSL.upper(view.POOL_NAME))
+                .offset(offset)
+                .limit(pageSize)
+                .stream()) {
+            pools = recordStream.map(r -> toPool(r, true)).collect(toList());
+        }
 
-		Pools.Builder builder = new Pools.Builder(offset, pageSize, total);
+        Pools.Builder builder = new Pools.Builder(offset, pageSize, total);
 		builder.addAll(pools);
 		return builder.build();
 	}
