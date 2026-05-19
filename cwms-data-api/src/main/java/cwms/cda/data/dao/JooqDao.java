@@ -388,8 +388,8 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20001, 20025, 20034, 01403);
-            List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND", "no data found",
+            List<Integer> codes = Arrays.asList(20001, 20025, 20034, 1403);
+            List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
