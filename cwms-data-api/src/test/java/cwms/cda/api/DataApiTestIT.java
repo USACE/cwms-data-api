@@ -359,11 +359,12 @@ public class DataApiTestIT {
 
         db.connection(c -> {
             try {
+                CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
                 new LocationsDaoImpl(DSL.using(c)).storeLocation(loc, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, "cwms_20");
+        });
     }
 
     protected static void createLocationWithVerticalDatum(String location, boolean active, String office, VerticalDatum verticalDatum) throws SQLException
