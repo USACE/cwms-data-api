@@ -27,7 +27,7 @@ portions):
 
 | environment | tag/branch  | description |
 | ------------ | ---- | ----- |
-| dev          | tag -> `\d\d\d\d\.\d\d\.\d\d-dev[a-z]+` | Tagged can be deployed to the dev environment if desired. That deployment will be overridden by the scheduled nightly build and deploy action. These tags are most useful for downstream testing |
+| dev          | tag -> `\d\d\d\d\.\d\d\.\d\d-dev[a-z]+` | Tagged can be deployed to the dev environment if desired. That deployment will be overridden by the scheduled nightly build and deploy action. These tags are most useful for downstream testing of a specific change. |
 | test | tag -> `\d\d\d\d\.\d\d\.\d\d-test[a-z]+` | Releases with this tag and be pushed to the test environment. The `[a-z]+` section is used for times where an additional deployment is required within a day, such as a simple bug fix. |
 | prod | tag -> `\d\d\d\d\.\d\d\.\d\d(-[a-z]+)?` | Production releases, tags matching this environment can be deployed to production. Most downstream usages should target these releases if not running tests in a matrix. |
 | n/a | branch -> develop | The current develop branch is "released" and deployed nightly. OCI Images are tagged with the `develop` , `sha-<sha hash>`,  `develop-YYYY.MM.DD-HHMMSS`, and  `develop-YYYY.MM.DD`  |
