@@ -3,9 +3,7 @@
 _The React+Vite project for CDA_
 
 ## Setup
-
 Setup the project by running:
-
 1. `cd cda-gui`
 2. `npm install` (With nodejs installed)
 
@@ -15,11 +13,11 @@ To run the project in dev:
 `npm run dev`
 
 ## Production Files
-
 To build the project:
 `npm run build`
 
 To see the available scripts for this project, including how to run and deploy, look at the `package.json` file.
+
 
 ## Formatting
 

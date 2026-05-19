@@ -64,7 +64,10 @@ export default function DataQuery() {
   }, [cacheEnabled]);
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(DATA_QUERY_SORT_ASC_KEY, String(sortAscending));
+      window.localStorage.setItem(
+        DATA_QUERY_SORT_ASC_KEY,
+        String(sortAscending),
+      );
     }
   }, [sortAscending]);
 
@@ -280,7 +283,8 @@ export default function DataQuery() {
     }
   };
   const hasActiveSettings =
-    cacheEnabled !== DEFAULT_CACHE_ENABLED || sortAscending !== DEFAULT_SORT_ASCENDING;
+    cacheEnabled !== DEFAULT_CACHE_ENABLED ||
+    sortAscending !== DEFAULT_SORT_ASCENDING;
 
   if (error)
     return (
