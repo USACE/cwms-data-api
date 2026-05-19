@@ -136,7 +136,8 @@ public abstract class JooqDao<T> extends Dao<T> {
         DSLContext retVal;
 
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null
+            && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
 
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
                 connection -> setClientInfo(ctx, connection),
@@ -387,8 +388,8 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20001, 20025, 20034);
-            List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
+            List<Integer> codes = Arrays.asList(20001, 20025, 20034, 01403);
+            List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND", "no data found",
                     " does not exist.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
@@ -471,15 +472,21 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        NotFoundException exception = new NotFoundException(cause);
+        NotFoundException exception;
+        if (input.getMessage().contains("ASSIGN_LOC_GROUPS")) {
+            exception = new NotFoundException("Location group contains assigned locations that do not exist.", cause);
+        } else {
+            exception = new NotFoundException(cause);
 
-        String localizedMessage = cause.getLocalizedMessage();
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split("\n");
-            if (parts.length > 1) {
-                exception = new NotFoundException(parts[0], cause);
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    exception = new NotFoundException(parts[0], cause);
+                }
             }
         }
+
         return exception;
     }
 
