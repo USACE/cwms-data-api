@@ -22,77 +22,44 @@ import utils.cache_util as cache_util
 import cwms
 
 logger = logging.getLogger(__name__)
-
-class TsRetrievalData:
-    office_id: str
-    ts_id: str
-
-    def __init__(self, office_id, ts_id, begin, end):
-        self.office_id = office_id
-        self.ts_id = ts_id
-        self.begin = begin
-        self.end = end
-
-class TsCacheData:
-
-    def __init__(self, ts_data):
-        self.ts_data = ts_data
+DATE_TIME_FORMAT = "%Y-%m-%d %H.%M.%S"
 
 
-def process(config, session_manager):
-    return process_timeseries(config.timeseries, config.start_time, config.end_time, session_manager)
-
-
-def process_timeseries(timeseries, begin, end, session_manager):
-
-    invalid_ts = []
-    ts_ids_to_split = {}
-    for ts in timeseries:
-        splits = ts.split(".")
-        if len(splits) != 7:
-            invalid_ts.append(ts)
-        else:
-            ts_ids_to_split[f"{splits[1]}.{splits[2]}.{splits[3]}.{splits[4]}.{splits[5]}.{splits[6]}"] = splits
-
-    locations_to_retrieve = []
-    ts_info = []
-    for id, splits in ts_ids_to_split.items():
-        locations_to_retrieve.append(f"{splits[0]}.{splits[1]}")
-        ts_info.append([splits[0], id, begin, end])
+def cache_timeseries(timeseries, begin, end):
+    locations, ts_info = _validate_and_split_timeseries(timeseries, begin, end)
 
     # Make sure we have project locations downloaded
-    location.process_locations(locations_to_retrieve, session_manager)
+    location.cache_locations(locations)
 
     # Retrieval of Identifier
-    session_manager.use_source_session()
-    retrieval_results = threading_util.execute_tasks(_retrieve_one_ts_identifier, ts_info)
-
-    # Storage of Identifier
-    session_manager.use_dest_session()
-    threading_util.execute_tasks(_store_one_ts_id, retrieval_results)
+    threading_util.execute_tasks(_retrieve_one_ts_identifier, ts_info)
 
     # Retrieval of Data
-    session_manager.use_source_session()
-    retrieval_results = threading_util.execute_tasks(_retrieve_one_ts_data, ts_info)
+    threading_util.execute_tasks(_retrieve_one_ts_data, ts_info)
+
+
+def store_cached_timeseries(timeseries, begin, end):
+    locations, ts_info = _validate_and_split_timeseries(timeseries, begin, end)
+    location.store_cached_locations(locations)
+
+    # Storage of Identifier
+    threading_util.execute_tasks(_store_one_ts_id, ts_info)
 
     # Storage of Data
-    session_manager.use_dest_session()
-    results = threading_util.execute_tasks(_store_one_ts_id, retrieval_results)
-
-    return TsCacheData(results)
+    threading_util.execute_tasks(_store_one_ts_data, ts_info)
 
 
 def _retrieve_one_ts_identifier(ts_info):
     office_id = ts_info[0]
     ts_id = ts_info[1]
 
-    cache_data = cache_util.get_from_cache(office_id, ts_id, "id")
+    cache_data = cache_util.get_from_cache(office_id, "Timeseries Identifiers", ts_id, "id")
     if cache_data:
-        return cache_data
+        logger.debug(f"Cached Timeseries Identifier for {office_id}.{ts_id}")
     else:
-        data = cwms.get_timeseries_identifier(office_id, ts_id).json
-        cache_util.put_in_cache(data, office_id, ts_id, "id")
-        return data
+        logger.debug(f"Fetching Timeseries Identifier for {office_id}.{ts_id}")
+        data = cwms.get_timeseries_identifier(ts_id, office_id).json
+        cache_util.put_in_cache(data, office_id, "Timeseries Identifiers", ts_id, "id")
 
 
 def _retrieve_one_ts_data(ts_info):
@@ -100,20 +67,59 @@ def _retrieve_one_ts_data(ts_info):
     ts_id = ts_info[1]
     begin = ts_info[2]
     end = ts_info[3]
+    begin_str = begin.strftime(DATE_TIME_FORMAT)
+    end_str = end.strftime(DATE_TIME_FORMAT)
 
-    cache_data = cache_util.get_from_cache(office_id, ts_id, begin, end, "data")
+    cache_data = cache_util.get_from_cache(office_id, "Timeseries", ts_id, begin_str, end_str, "data")
     if cache_data:
-        return cache_data
+        logger.debug(f"Cached Timeseries Data for {office_id}.{ts_id} from {begin_str} to {end_str}")
     else:
+        logger.debug(f"Fetching Timeseries Data for {office_id}.{ts_id} from {begin_str} to {end_str}")
         data = cwms.get_timeseries(ts_id, office_id, begin=begin, end=end).json
-        cache_util.put_in_cache(data, office_id, ts_id, begin, end, "data")
-        return data
+        cache_util.put_in_cache(data, office_id, "Timeseries", ts_id, begin_str, end_str, "data")
 
 
-def _store_one_ts_id(ts_id_data):
-    cwms.store_timeseries_identifier(ts_id_data)
-    return ts_id_data
+def _store_one_ts_id(ts_info):
 
-def _store_one_ts_data(ts_data):
-    cwms.store_timeseries(ts_data)
-    return ts_data
+    office_id = ts_info[0]
+    ts_id = ts_info[1]
+
+    cache_data = cache_util.get_from_cache(office_id, "Timeseries Identifiers", ts_id, "id")
+    cwms.store_timeseries_identifier(cache_data)
+
+def _store_one_ts_data(ts_info):
+    office_id = ts_info[0]
+    ts_id = ts_info[1]
+    begin = ts_info[2]
+    end = ts_info[3]
+    begin_str = begin.strftime(DATE_TIME_FORMAT)
+    end_str = end.strftime(DATE_TIME_FORMAT)
+
+    cache_data = cache_util.get_from_cache(office_id, "Timeseries", ts_id, begin_str, end_str, "data")
+    cwms.store_timeseries(cache_data)
+
+
+def _validate_and_split_timeseries(timeseries, begin, end):
+    # Validation
+    invalid_ts = []
+    ts_ids_to_split = {}
+    for ts in timeseries:
+        splits = ts.split(".")
+        if len(splits) != 7:
+            logger.warning(f"Invalid time series identifier '{ts}' encountered.  Expected format is '[office_id].[location].[parameter].[parameter_type].[interval].[duration].[version]'")
+            invalid_ts.append(ts)
+        else:
+            logger.debug(f"Valid time series identifier '{ts}'")
+            ts_ids_to_split[f"{splits[1]}.{splits[2]}.{splits[3]}.{splits[4]}.{splits[5]}.{splits[6]}"] = splits
+
+    if not ts_ids_to_split:
+        logger.warning("No valid time series identifiers found for processing")
+        return
+
+    locations = []
+    ts_info = []
+    for id, splits in ts_ids_to_split.items():
+        locations.append(f"{splits[0]}.{splits[1]}")
+        ts_info.append([splits[0], id, begin, end])
+
+    return locations, ts_info

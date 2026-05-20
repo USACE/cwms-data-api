@@ -30,9 +30,18 @@ from session_manager import SessionManager
 logger = logging.getLogger(__name__)
 
 def pipeline(config, session_manager):
-    location_data = location.process(config, session_manager)
-    project_data = project.process(config, session_manager)
-    timeseries.process(config, session_manager)
+    session_manager.use_source_session()
+
+    # Read and cache data
+    location.cache_locations(config.locations)
+    project.cache_projects(config.projects)
+    timeseries.cache_timeseries(config.timeseries, config.start_time, config.end_time)
+
+    session_manager.use_dest_session()
+    # Store cached data, so we're not keeping it all in memory
+    location.store_cached_locations(config.locations)
+    project.store_cached_projects(config.projects)
+    timeseries.store_cached_timeseries(config.timeseries, config.start_time, config.end_time)
 
 
 def init():

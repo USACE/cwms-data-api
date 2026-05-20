@@ -15,7 +15,6 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
-from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import cwms
@@ -24,49 +23,66 @@ import utils.threading_util as threading_util
 
 logger = logging.getLogger(__name__)
 
-@dataclass
-class LocationData:
-    location_ids: list[str]
+
+def get_valid_locations(locations):
+    location_ids = []
+    index = 0
+    for location in locations:
+        splits = location.split(".")
+        if len(splits) != 2:
+            logger.warning(f"Invalid location at {index}: {location}\nExpected [officeid].[locationid]")
+        else:
+            logger.debug(f"Valid location found at {index}: {location}, splits: {splits}")
+            location_ids.append(splits)
+        index += 1
+
+    if not location_ids:
+        logger.warning("No valid locations provided for processing")
+    return location_ids
 
 
-def process(config, session_manager):
-    return process_locations(config.locations, session_manager)
+def cache_locations(locations):
+    # Validation
+    location_ids = get_valid_locations(locations)
 
+    if not location_ids:
+        logger.warning("No valid locations found for retrieving")
+        return
 
-def process_locations(locations, session_manager):
     # Retrieval
-    session_manager.use_source_session()
-    retrieval_results = threading_util.execute_tasks(_retrieve_one_location, locations)
+    threading_util.execute_tasks(_retrieve_one_location, location_ids)
+
+
+def store_cached_locations(locations):
+    location_ids = get_valid_locations(locations)
+
+    if not location_ids:
+        logger.warning("No valid locations found for retrieving")
+        return
 
     # Storage
-    session_manager.use_dest_session()
-    storage_data = threading_util.execute_tasks(_store_one_location, retrieval_results)
-
-    results = storage_data
-
-    return LocationData(results)
+    threading_util.execute_tasks(_store_one_location, location_ids)
 
 
 def _retrieve_one_location(location):
-    # Split out office id based on dot notation
-    splits = location.split(".")
+    office_id = location[0]
+    location_id = location[1]
 
-    if len(splits) != 2:
-        logger.warning(f"Invalid location format: {location}\nExpected [officeid].[locationid]")
-        return None
-
-    office_id = splits[0]
-    location_id = splits[1]
-
-    cache_data = cache_util.get_from_cache(office_id, location_id)
+    logger.debug(f"Retrieving location data for office {office_id} and location {location_id}")
+    cache_data = cache_util.get_from_cache(office_id, "Locations", location_id)
     if cache_data:
-        return cache_data
+        logger.debug(f"Location data found in cache for office {office_id} and location {location_id}")
     else:
+        logger.debug(f"Location data not found in cache for office {office_id} and location {location_id}")
         location_data = cwms.get_location(location_id, office_id).json
-        cache_util.put_in_cache(location_data, office_id, location_id)
-        return location_data
+        cache_util.put_in_cache(location_data, office_id, "Locations", location_id)
 
 
-def _store_one_location(location_data):
-    cwms.store_location(location_data)
-    return location_data
+def _store_one_location(location):
+    office_id = location[0]
+    location_id = location[1]
+    location_data = cache_util.get_from_cache(office_id, "Locations", location_id)
+    if location_data:
+        cwms.store_location(location_data)
+    else:
+        logger.warning(f"Location data not found in cache for office {office_id} and location {location_id}")

@@ -34,7 +34,9 @@ def get_from_cache(*args):
         return None
 
     with open(path, 'r') as f:
-        return json.load(f)
+        return f.read()
+
+
 
 
 def _get_cache_path(*args):

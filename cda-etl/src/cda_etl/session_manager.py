@@ -16,6 +16,8 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 import cwms
+import logging
+logger = logging.getLogger(__name__)
 
 from config import Config
 
@@ -30,4 +32,5 @@ class SessionManager:
         cwms.init_session(api_root=self.config.source_cda_url, api_key=self.config.source_cda_api_key)
 
     def use_dest_session(self):
+        logger.debug(f"Initializing destination session with URL: {self.config.dest_cda_url} and api_key: {self.config.dest_cda_api_key}")
         cwms.init_session(api_root=self.config.dest_cda_url, api_key=self.config.dest_cda_api_key)

@@ -15,7 +15,6 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
-from dataclasses import dataclass
 import logging
 import utils.threading_util as threading_util
 import utils.cache_util as cache_util
@@ -23,52 +22,60 @@ import location
 import cwms
 logger = logging.getLogger(__name__)
 
-@dataclass
-class ProjectData:
-    project_ids: list[str]
 
-def process(config, session_manager):
-    return process_projects(config.projects, session_manager)
-
-
-def process_projects(projects, session_manager):
+def cache_projects(projects):
     # Make sure we have project locations downloaded
-    location.process_locations(projects, session_manager)
+    location.cache_locations(projects)
+
+    # Validation
+    project_ids = location.get_valid_locations(projects)
+
+    if not project_ids:
+        logger.warning("No valid project identifiers found for processing")
+        return
 
     # Retrieval
-    session_manager.use_source_session()
-    retrieval_results = threading_util.execute_tasks(_retrieve_one_project, projects)
+    cwms.api.API_VERSION = 1
+    threading_util.execute_tasks(_retrieve_one_project, project_ids)
+    cwms.api.API_VERSION = 2
+
+
+def store_cached_projects(projects):
+    # Validation
+    project_ids = location.get_valid_locations(projects)
+
+    if not project_ids:
+        logger.warning("No valid project identifiers found for processing")
+        return
+
+    location.store_cached_locations(projects)
 
     # Storage
-    session_manager.use_dest_session()
-    storage_data = threading_util.execute_tasks(_store_one_project, retrieval_results)
-
-    results = storage_data
-
-    return ProjectData(results)
+    threading_util.execute_tasks(_store_one_project, project_ids)
 
 
 def _retrieve_one_project(project):
-    # Split out office id based on dot notation
-    splits = project.split(".")
+    office_id = project[0]
+    project_id = project[1]
 
-    if len(splits) != 2:
-        logger.warning(f"Invalid location format: {project}\nExpected [officeid].[locationid]")
-        return None
-
-    office_id = splits[0]
-    project_id = splits[1]
-
-    cache_data = cache_util.get_from_cache(office_id, project_id)
+    logger.debug(f"API_VERSION before retrieving {project_id}: {cwms.api.API_VERSION}")
+    logger.debug(f"Retrieving project data for office {office_id} and project {project_id}")
+    cache_data = cache_util.get_from_cache(office_id, "Projects", project_id)
     if cache_data:
-        return cache_data
+        logger.debug(f"Project data found in cache for office {office_id} and project {project_id}")
     else:
+        logger.debug(f"Project data not found in cache for office {office_id} and project {project_id}, retrieving from CWMS")
         project_data = cwms.get_project(office_id, project_id).json
-        cache_util.put_in_cache(project_data, office_id, project_id)
-        return project_data
+        cache_util.put_in_cache(project_data, office_id, "Projects", project_id)
 
 
-def _store_one_project(project_data):
-    cwms.store_project(project_data)
-    return project_data
+def _store_one_project(project):
+    office_id = project[0]
+    project_id = project[1]
+    logger.debug(f"API_VERSION before retrieving {project_id}: {cwms.api.API_VERSION}")
+    project_data = cache_util.get_from_cache(office_id, "Projects", project_id)
+    if project_data:
+        cwms.store_project(project_data)
+    else:
+        logger.warning(f"Project data not found in cache for office {office_id} and location {project_id}")
 

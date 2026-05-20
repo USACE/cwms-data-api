@@ -49,7 +49,7 @@ def test_process_projects(mock_session_manager, mocker):
     mock_execute.side_effect = [retrieval_results, storage_results]
     
     projects = ["SWT.TestProj"]
-    result = project.process_projects(projects, mock_session_manager)
+    result = project.cache_projects(projects, mock_session_manager)
     
     assert mock_session_manager.use_source_session.called
     assert mock_session_manager.use_dest_session.called

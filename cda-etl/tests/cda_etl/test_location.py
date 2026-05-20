@@ -51,7 +51,7 @@ def test_process_locations(mock_session_manager, mocker):
     mock_execute.side_effect = [retrieval_results, storage_results]
     
     locations = ["SWT.TestLoc"]
-    result = location.process_locations(locations, mock_session_manager)
+    result = location.cache_locations(locations, mock_session_manager)
     
     assert mock_session_manager.use_source_session.called
     assert mock_session_manager.use_dest_session.called

@@ -38,12 +38,9 @@ def execute_tasks(task_func, items):
         for item in items
     }
 
-    results = []
     for future in as_completed(futures_to_items):
         item = futures_to_items[future]
         if future.exception():
             logger.warning(f"Exception occurred for {item}: {future.exception()}")
         elif future.result():
-            result = future.result()
-            results.append([item, result])
-    return results
+            logger.debug(f"No error on execution for {item}")
