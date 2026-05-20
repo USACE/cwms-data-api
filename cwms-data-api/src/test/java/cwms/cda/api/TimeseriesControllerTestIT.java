@@ -1710,28 +1710,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         ;
     }
 
-    private static void deleteLocation(String location, String officeId) throws SQLException {
-        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection(c-> {
-            try(PreparedStatement stmt = c.prepareStatement("declare\n"
-                    + "    p_location varchar2(64) := ?;\n"
-                    + "    p_office varchar2(10) := ?;\n"
-                    + "begin\n"
-                    + "cwms_loc.delete_location(\n"
-                    + "        p_location_id   => p_location,\n"
-                    + "        p_delete_action => cwms_util.delete_all,\n"
-                    + "        p_db_office_id  => p_office);\n"
-                    + "end;")) {
-                stmt.setString(1, location);
-                stmt.setString(2, officeId);
-                stmt.execute();
-
-            } catch (SQLException ex) {
-                throw new RuntimeException("Unable to delete location",ex);
-            }
-        }, "cwms_20");
-    }
-
     @ParameterizedTest
     @EnumSource(GetAllTest.class)
     void test_lrl_1day_content_type_aliasing(GetAllTest test) throws Exception
