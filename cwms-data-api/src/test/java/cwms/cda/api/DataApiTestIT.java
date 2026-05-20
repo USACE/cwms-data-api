@@ -31,7 +31,6 @@ import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.DeleteRule;
-import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dao.basin.BasinDao;
@@ -340,8 +339,7 @@ public class DataApiTestIT {
      * @param horizontalDatum horizontal reference for this location, such as WGS84
      * @param kind            Arbitrary string define purpose of location
      */
-    protected static void createLocation(String location, boolean active, String office, Double latitude,
-        Double longitude, String horizontalDatum, String timeZone, String kind) throws SQLException {
+    protected static void createLocation(String location, boolean active, String office, Double latitude, Double longitude, String horizontalDatum, String timeZone, String kind) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         Location loc = new Location.Builder(location,
                 kind,
@@ -351,20 +349,27 @@ public class DataApiTestIT {
                 horizontalDatum,
                 office)
                 .withActive(active)
-                .withVerticalDatum("NGVD29")
                 .build();
         if (LocationCleanup.locationsCreated.contains(loc)) {
             return; // we already have this location registered
         }
 
-        db.connection(c -> {
-            try {
-                CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
-                new LocationsDaoImpl(DSL.using(c)).storeLocation(loc, false);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(createLocationQuery)) {
+                stmt.setString(1, location);
+                stmt.setString(2, active ? "T" : "F");
+                stmt.setString(3, office);
+                stmt.setString(4, timeZone);
+                stmt.setDouble(5, latitude);
+                stmt.setDouble(6, longitude);
+                stmt.setString(7, horizontalDatum);
+                stmt.setString(8, kind);
+                stmt.execute();
+                LocationCleanup.locationsCreated.add(loc);
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to create location", ex);
             }
-        });
+        }, "cwms_20");
     }
 
     protected static void createLocationWithVerticalDatum(String location, boolean active, String office, VerticalDatum verticalDatum) throws SQLException
