@@ -567,7 +567,9 @@ public final class Location extends CwmsDTO {
         validator.required(getTimezoneName(), "timezone-name");
         validator.required(getOfficeId(), "office-id");
         validator.required(getHorizontalDatum(), "horizontal-datum");
-        validator.required(getLongitude(), "longitude");
-        validator.required(getLatitude(), "latitude");
+        if (getName().split("-").length == 1) {
+            validator.required(getLongitude(), "longitude");
+            validator.required(getLatitude(), "latitude");
+        }
     }
 }
