@@ -9,11 +9,11 @@ plugins {
 def npmCacheDir = layout.buildDirectory.dir("npm-cache")
 
 tasks.withType(NpmTask).configureEach {
-    environment "npm_config_cache", npmCacheDir.get().asFile.absolutePath
+    environment.put("npm_config_cache", npmCacheDir.get().asFile.absolutePath)
 }
 
 tasks.withType(NpxTask).configureEach {
-    environment "npm_config_cache", npmCacheDir.get().asFile.absolutePath
+    environment.put("npm_config_cache", npmCacheDir.get().asFile.absolutePath)
 }
 
 task buildGui(type:NpxTask) {

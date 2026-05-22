@@ -7,7 +7,9 @@ import {
 } from "../cwmsjs/dist/index.js";
 
 if (!global.fetch) {
-  throw new Error("This smoke test expects a Node.js runtime with native fetch support.");
+  throw new Error(
+    "This smoke test expects a Node.js runtime with native fetch support.",
+  );
 }
 
 async function runStep(name, fn) {
@@ -19,29 +21,30 @@ async function runStep(name, fn) {
 
 async function main() {
   const packageJson = JSON.parse(
-    await readFile(new URL("../cwmsjs/package.json", import.meta.url), "utf8")
+    await readFile(new URL("../cwmsjs/package.json", import.meta.url), "utf8"),
   );
   const rootPackageJson = JSON.parse(
-    await readFile(new URL("../package.json", import.meta.url), "utf8")
+    await readFile(new URL("../package.json", import.meta.url), "utf8"),
   );
 
   let expectedVersion = process.env.EXPECTED_CWMSJS_VERSION;
-  try {
-    const rawSpec = JSON.parse(
-      await readFile(new URL("../cwms-swagger-raw.json", import.meta.url), "utf8")
-    );
-    expectedVersion = `${rootPackageJson.version}-${rawSpec?.info?.version}`;
-  } catch {}
+  if (!expectedVersion && process.env.CDA_CLIENT_VERSION_SUFFIX) {
+    expectedVersion = `${rootPackageJson.version}-${process.env.CDA_CLIENT_VERSION_SUFFIX}`;
+  }
 
   if (!expectedVersion) {
-    throw new Error(
-      "Unable to determine expected cwmsjs version. Run buildApi first or set EXPECTED_CWMSJS_VERSION."
+    const rawSpec = JSON.parse(
+      await readFile(
+        new URL("../cwms-swagger-raw.json", import.meta.url),
+        "utf8",
+      ),
     );
+    expectedVersion = `${rootPackageJson.version}-${rawSpec?.info?.version}`;
   }
 
   if (packageJson.version !== expectedVersion) {
     throw new Error(
-      `cwmsjs version mismatch. Expected ${expectedVersion}, found ${packageJson.version}.`
+      `cwmsjs version mismatch. Expected ${expectedVersion}, found ${packageJson.version}.`,
     );
   }
 
@@ -56,7 +59,9 @@ async function main() {
 
   await runStep("offices", async () => {
     const offices = await officesApi.getOffices();
-    console.log(`  offices returned: ${offices?.offices?.length ?? offices?.length ?? 0}`);
+    console.log(
+      `  offices returned: ${offices?.offices?.length ?? offices?.length ?? 0}`,
+    );
   });
 
   await runStep("catalog", async () => {

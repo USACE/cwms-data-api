@@ -22,15 +22,15 @@
     "us army corps of engineers"
   ],
   "license": "MIT License",
-  "main": "./build/generated/openApi/dist/index.js",
+  "main": "./cwmsjs/dist/index.js",
   "type": "commonjs",
   "exports": {
-    ".": "./build/generated/openApi/dist/index.js"
+    ".": "./cwmsjs/dist/index.js"
   },
-  "typings": "./build/generated/openApi/dist/index.d.ts",
+  "typings": "./cwmsjs/dist/index.d.ts",
   "scripts": {
     "build": "npm run buildApi && npm run buildDocs",
-    "buildApi": "npm run buildSpec && npm run openapi && npm run modPackage && npm run postGenerate && cd cwmsjs && npm install && npm run build",
+    "buildApi": "npm run modPackage && npm run postGenerate && cd cwmsjs && npm install && npm run build",
     "buildDocs": "npm run docs && npm run examples",
     "buildSpec": "npm run getSpec && npm run modSpec",
     "clean": "shx mkdir -p ./cwmsjs && shx rm -r ./cwmsjs",
@@ -40,8 +40,7 @@
     "modPackage": "node ./scripts/package-updates/modPackage.js",
     "modSpec": "node ./scripts/spec-updates/modSpec.js",
     "postGenerate": "node ./scripts/postGenerate.js",
-    "link": "cd cwmsjs && npm link && cd ../tests && npm link cwmsjs",
-    "openapi": "npx @openapitools/openapi-generator-cli generate -g typescript-fetch -o ./cwmsjs -i cwms-swagger-mod.json -c openapi.config.json"
+    "link": "cd cwmsjs && npm link && cd ../tests && npm link cwmsjs"
   },
   "dependencies": {
     "es6-promise": "^4.2.4",

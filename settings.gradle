@@ -15,4 +15,4 @@ include ":cwms-data-api"
 include ":cda-gui"
 include ":docs"
 project(":docs").projectDir = file("docs")
-include ":cda-client"
+include ":clients:typescript"
