@@ -15,9 +15,24 @@ function writeJson(relativePath, value) {
   );
 }
 
+function getVersionSuffixArg() {
+  const prefix = "--version-suffix=";
+  const value = process.argv.find((arg) => arg.startsWith(prefix));
+  return value ? value.slice(prefix.length) : process.argv[2];
+}
+
 function getVersionSuffix() {
-  const rawSpec = readJson("cwms-swagger-raw.json");
-  return rawSpec?.info?.version || new Date().toISOString().slice(0, 10).replace(/-/g, ".");
+  const explicitVersion =
+    getVersionSuffixArg() ||
+    process.env.CDA_CLIENT_VERSION_SUFFIX ||
+    process.env.CWMSJS_VERSION_SUFFIX;
+  if (explicitVersion) {
+    return explicitVersion;
+  }
+
+  throw new Error(
+    "Missing version suffix. Set CDA_CLIENT_VERSION_SUFFIX or pass --version-suffix=<version>.",
+  );
 }
 
 function main() {
@@ -39,7 +54,10 @@ function main() {
   delete nextPackage.publishConfig;
 
   writeJson("cwmsjs/package.json", nextPackage);
-  fs.copyFileSync(path.join(rootDir, "README.md"), path.join(rootDir, "cwmsjs", "README.md"));
+  fs.copyFileSync(
+    path.join(rootDir, "README.md"),
+    path.join(rootDir, "cwmsjs", "README.md"),
+  );
 }
 
 main();
