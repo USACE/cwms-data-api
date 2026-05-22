@@ -584,11 +584,11 @@ public class ApiServlet extends HttpServlet {
                                           Controllers.PROJECT_ID, NAME);
         String virtualOutletCreatePath = "/projects/virtual-outlets";
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        post(gateChangeCreatePath, new GateChangeCreateController(metrics));
+        post(gateChangeCreatePath, new GateChangeCreateController(metrics), requiredRoles);
         get(gateChangePath, new GateChangeGetAllController(metrics));
-        delete(gateChangePath, new GateChangeDeleteController(metrics));
+        delete(gateChangePath, new GateChangeDeleteController(metrics), requiredRoles);
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
+        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics), requiredRoles);
 
         get("/projects/locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
@@ -619,6 +619,12 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
+        /**
+         * The POST handlers for /ratings/rate-* intentionally do not have 
+         * require roles. Instead they are rate limited if not authenticated.
+         * POST is used as sending a body with GET is not standard and we cannot
+         * be sure clients, or future servers, would correctly support that.
+         */
         String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
         post(rateValues, new RateValuesController(metrics));
         String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
