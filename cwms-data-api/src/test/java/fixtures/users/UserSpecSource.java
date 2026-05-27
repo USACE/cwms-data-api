@@ -2,6 +2,7 @@ package fixtures.users;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -17,6 +18,8 @@ import fixtures.users.annotation.AuthType.UserType;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 
+import static cwms.cda.ApiServlet.CWMS_USERS_ROLE;
+
 public class UserSpecSource implements ArgumentsProvider {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -26,15 +29,8 @@ public class UserSpecSource implements ArgumentsProvider {
      * @return
      */
     public static ArrayList<Arguments> userSpecsValidPrivsWithGuest(String office) {
-        final ArrayList<Arguments> list = new ArrayList<>();
+        final ArrayList<Arguments> list = userSpecsValidPrivs(office);
         list.add(specificUser(TestAccounts.KeyUser.GUEST));
-        Stream.of(TestAccounts.KeyUser.values())
-              .filter(u -> u.getRoles().length > 0)
-              .filter(u -> office.isEmpty() || u.getOperatingOffice().equals(office))
-              .forEach(u -> {
-                list.add(apiKeyUser(u));
-                list.add(cwmsAaaUser(u));
-              });
         return list;
     }
 
@@ -42,6 +38,7 @@ public class UserSpecSource implements ArgumentsProvider {
         final ArrayList<Arguments> list = new ArrayList<>();
         Stream.of(TestAccounts.KeyUser.values())
               .filter(u -> u.getRoles().length > 0)
+              .filter(u -> Arrays.stream(u.getRoles()).anyMatch(CWMS_USERS_ROLE::equalsIgnoreCase))
               .filter(u -> office.isEmpty() || u.getOperatingOffice().equals(office))
               .forEach(u -> {
                 list.add(apiKeyUser(u));
