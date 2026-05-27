@@ -1,0 +1,927 @@
+{
+  "levels": [
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Flow.Inst.0.Action"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z",
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Flow.Inst.0.Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z",
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Flow.Inst.0.NWS Action"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Flow.Inst.0.NWS Major Flood"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Flow.Inst.0.NWS Minor Flood"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Flow.Inst.0.NWS Moderate Flood"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Stage.Inst.0.Action"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Stage.Inst.0.Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Stage.Inst.0.NWS Action"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Stage.Inst.0.NWS Major Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Stage.Inst.0.NWS Minor Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Stage.Inst.0.NWS Moderate Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Temp-Water.Inst.0.ODFW-THRESHOLD-PUB"
+      },
+      "effective-dates": [
+        "1977-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AGNO.Temp-Water.Max.1Day.ODFW-THRESHOLD-PUB"
+      },
+      "effective-dates": [
+        "1977-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.Action"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z",
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.COORD-BIOP-PUB"
+      },
+      "effective-dates": [
+        "2008-01-01T08:00:00Z",
+        "2015-01-01T08:00:00Z",
+        "2016-01-01T08:00:00Z",
+        "2021-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z",
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.HD531-Minimum-PUB"
+      },
+      "effective-dates": [
+        "1948-10-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.NMFS-BIOP-PUB"
+      },
+      "effective-dates": [
+        "2008-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.NWS Action"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.NWS Major Flood"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.NWS Minor Flood"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Flow.Inst.0.NWS Moderate Flood"
+      },
+      "effective-dates": [
+        "2020-01-01T08:00:00Z",
+        "2023-01-01T00:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Stage.Inst.0.Action"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Stage.Inst.0.Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Stage.Inst.0.NWS Action"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Stage.Inst.0.NWS Major Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Stage.Inst.0.NWS Minor Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALBO.Stage.Inst.0.NWS Moderate Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Elev.Inst.0.Bottom of Flood Control"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Elev.Inst.0.Bottom of Normal"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Elev.Inst.0.Spillway Crest"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Elev.Inst.0.Streambed"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Elev.Inst.0.Top of Dam"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Elev.Inst.0.Top of Flood Control"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Elev.Inst.0.Top of Normal"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Stor.Inst.0.Bottom of Flood Control"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Stor.Inst.0.Bottom of Normal"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Stor.Inst.0.Streambed"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Stor.Inst.0.Top of Flood Control"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "ALF.Stor.Inst.0.Top of Normal"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Elev.Inst.0.Spillway Crest"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Elev.Inst.0.Streambed"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Elev.Inst.0.Top of Dam"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Elev.Inst.0.Top of Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Elev.Inst.0.Top of Max Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Stor.Inst.0.Spillway Crest"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Stor.Inst.0.Streambed"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Stor.Inst.0.Top of Dam"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Stor.Inst.0.Top of Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AMF.Stor.Inst.0.Top of Max Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Bottom of Conservation"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Bottom of Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Bottom of Power"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Max Non-Damaging"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Spillway Crest"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Streambed"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Top of Dam"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Top of Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Top of Max Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Elev.Inst.0.Top of Normal"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Bottom of Conservation"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Bottom of Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Bottom of Power"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Max Non-Damaging"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Spillway Crest"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Streambed"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Top of Dam"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Top of Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Top of Max Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "AND.Stor.Inst.0.Top of Normal"
+      },
+      "effective-dates": [
+        "1900-01-01T07:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-Copper.Elev.Inst.0.Toe of Ramp"
+      },
+      "effective-dates": [
+        "1900-01-01T16:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-FrenchGulch.Elev.Inst.0.Toe of Ramp"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-HartTish.Elev.Inst.0.Toe of Ramp"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell1-Port2.Elev.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell1-Port2.Height.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell1-Port2.Width.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell1-Port4.Elev.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell1-Port4.Height.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell1-Port4.Width.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port1.Elev.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port1.Height.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port1.Width.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port3.Elev.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port3.Height.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port3.Width.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port5.Elev.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port5.Height.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP-WetWell2-Port5.Width.Inst.0.0"
+      },
+      "effective-dates": [
+        "1980-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Area.Inst.0.Drainage"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev-Forebay-05Percentile.Const.1Day.CENWP-30year-thru2023-STATS"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev-Forebay-25Percentile.Const.1Day.CENWP-30year-thru2023-STATS"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev-Forebay-75Percentile.Const.1Day.CENWP-30year-thru2023-STATS"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev-Forebay-95Percentile.Const.1Day.CENWP-30year-thru2023-STATS"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev-Forebay.Ave.1Day.CENWP-30year-thru2023-STATS"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev-Forebay.Max.1Day.CENWP-30year-thru2023-STATS"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev-Forebay.Min.1Day.CENWP-30year-thru2023-STATS"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev.Inst.0.Bottom of Conservation"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev.Inst.0.Bottom of Flood"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    },
+    {
+      "location-level-id": {
+        "office-id": "NWDP",
+        "name": "APP.Elev.Inst.0.Bottom of Flood Control"
+      },
+      "effective-dates": [
+        "1900-01-01T08:00:00Z"
+      ]
+    }
+  ],
+  "next-page": "MTAwfHwzMTU5fHwxMDA=",
+  "page": "MHx8MzE1OXx8MTAw",
+  "page-size": 100,
+  "total": 3159
+}

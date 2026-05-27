@@ -5,8 +5,9 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.TimeSeries;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,8 +17,6 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
-
-import com.google.common.flogger.FluentLogger;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import org.jooq.Result;
@@ -107,7 +106,7 @@ public class TimeSeriesDaoTest {
         String officeId = "LRL";
         try (Connection connection = getConnection()) {
             DSLContext lrl = getDslContext(connection, officeId);
-            TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl);
+            TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl, new MetricRegistry());
 
             //			String tsId858 = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST858";
             //			BigDecimal tsCode = retrieveTsCode(connection, tsId858);
@@ -134,7 +133,7 @@ public class TimeSeriesDaoTest {
         String officeId = "LRL";
         try (Connection connection = getConnection()) {
             DSLContext lrl = getDslContext(connection, officeId);
-            TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl);
+            TimeSeriesDao dao = new TimeSeriesDaoImpl(lrl, new MetricRegistry());
 
             String tsId = TIME_SERIES_ID;
             // Do I need to somehow check whether the location exists?  Its not going to exist if I add the millis to it...

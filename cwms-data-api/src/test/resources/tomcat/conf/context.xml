@@ -16,7 +16,7 @@
               testWhileIdle="true"
               timeBetweenEvictionRunsMillis="5000"
               logValidationErrors="true"
-              suspectTimeout="15"
+              suspectTimeout="8"
               jdbcInterceptors="QueryTimeoutInterceptor(queryTimeout=600);StatementFinalizer(trace=true);StatementCache(callable=true);SlowQueryReport(threshold=5000);ResetAbandonedTimer"
               logAbandoned="true"
               maxAge="3600000"

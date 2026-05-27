@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/generate-sitemap.mjs",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "prepare": "cd .. && husky cda-gui/.husky",
@@ -29,7 +29,7 @@
     "react-dom": "^18.2.0",
     "react-icons": "^5.0.1",
     "react-router-dom": "^7.1.2",
-    "swagger-ui-dist": "^5.17.7",
+    "swagger-ui-dist": "^5.29.5",
     "use-debounce": "^10.0.5"
   },
   "devDependencies": {

@@ -42,27 +42,29 @@ public class TestAccounts {
 
         private final String name; // username
         private final String edipi; // CAC # value
-        private final String apikey; //
+        private final String keyName;
         private final String jSessionId;
         private final String password; // used for Keycloak login to get JWT
+        //Non-final because we are using the key generation apikey to generate secure keys, even in test harness
+        private String apiKey;
         /**
          * Primary operating office for this user. Tests may use other offices and assign more privs as needed.
          */
         private final String operatingOffice;
         private final String[] roles;
 
-        private KeyUser(String name, String password, String edipi, String key, String jSessionId, String operatingOffice, String... roles) {
+        private KeyUser(String name, String password, String edipi, String keyName, String jSessionId, String operatingOffice, String... roles) {
             this.name = name;
             this.edipi = edipi;
             this.password = password;
-            this.apikey = key;
+            this.keyName = keyName;
             this.jSessionId = jSessionId;
             this.operatingOffice = operatingOffice;
             this.roles = roles;
         }
 
         public String toHeaderValue() {
-            return String.format("apikey %s",apikey);
+            return String.format("apikey %s", getApikey());
         }
 
         public String getJSessionId() {
@@ -82,7 +84,11 @@ public class TestAccounts {
         }
 
         public String getApikey() {
-            return apikey;
+            return apiKey;
+        }
+
+        public String getKeyName() {
+            return keyName;
         }
 
         public String getOperatingOffice() {
@@ -98,11 +104,16 @@ public class TestAccounts {
             StringBuilder sb = new StringBuilder("User{");
             sb.append("UserName=").append(this.name).append(",")
               .append("EDIPI=").append(this.edipi).append(",")
-              .append("Key=").append(this.apikey).append(",")
+              .append("KeyName=").append(this.keyName).append(",")
+              .append("Key=").append(this.apiKey).append(",")
               .append("JESSIONID=").append(this.jSessionId).append(",")
               .append("Password=").append(this.password).append(",");
             sb.append("Roles[").append(String.join(",",roles)).append("}");
             return sb.toString();
+        }
+
+        public void setApiKey(String key) {
+            this.apiKey = key;
         }
     }
 }

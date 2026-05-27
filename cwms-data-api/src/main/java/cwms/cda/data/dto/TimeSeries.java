@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,14 +69,16 @@ public class TimeSeries extends CwmsDTOPaginated {
     @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
-            description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+            description = "The start time represented by the values in this response, in ISO-8601 format with offset and timezone ('"
+                    + ZONED_DATE_TIME_FORMAT + "'). When trim=true and values are returned, this reflects the first returned value."
     )
     ZonedDateTime begin;
 
     @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
-            description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+            description = "The end time represented by the values in this response, in ISO-8601 format with offset and timezone ('"
+                    + ZONED_DATE_TIME_FORMAT + "'). When trim=true and values are returned, this reflects the last returned value."
     )
     ZonedDateTime end;
 
@@ -221,32 +224,38 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     public void addValue(Timestamp dateTime, Double value, int qualityCode) {
-        // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && values.isEmpty()) {
-            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
-        }
-        if (pageSize > 0 && values.size() == pageSize) {
-            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
-        } else {
-            values.add(new Record(dateTime, value, qualityCode));
-        }
+        addValue(new Record(dateTime, value, qualityCode));
     }
 
     public void addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
-        // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && (values == null || values.isEmpty())) {
-            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
+        addValue(new Record(dateTime, value, qualityCode, dataEntryDate));
+    }
+
+    public void addValue(Record record) {
+        // Only paged responses expose cursors. page-size=-1 requests the entire window.
+        if (pageSize > 0 && (page == null || page.isEmpty()) && (values == null || values.isEmpty())) {
+            page = encodeCursor(String.format("%d", record.dateTime.getTime()), pageSize, total);
         }
         if (pageSize > 0 && values.size() == pageSize) {
-            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
+            nextPage = encodeCursor(String.format("%d", record.dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            values.add(new Record(dateTime, value, qualityCode, dataEntryDate));
+            values.add(record);
         }
     }
 
     public TimeSeries withValues(List<Record> values) {
         this.values.clear();
         this.values.addAll(values);
+        return this;
+    }
+
+    public TimeSeries alignWindowToReturnedValues(boolean trim) {
+        if (!trim || values == null || values.isEmpty()) {
+            return this;
+        }
+
+        begin = values.get(0).getDateTime().toInstant().atZone(ZoneOffset.UTC);
+        end = values.get(values.size() - 1).getDateTime().toInstant().atZone(ZoneOffset.UTC);
         return this;
     }
 

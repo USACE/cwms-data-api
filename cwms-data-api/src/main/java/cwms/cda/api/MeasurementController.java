@@ -216,9 +216,9 @@ public final class MeasurementController implements CrudHandler {
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the measurements to delete"),
-                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window to delete. " +
+                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. " +
                             TIME_FORMAT_DESC),
-                    @OpenApiParam(name = END, required = true, description = "The end of the time window to delete." +
+                    @OpenApiParam(name = END, description = "The end of the time window to delete." +
                             TIME_FORMAT_DESC),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                             + "to be used if the format of the " + BEGIN + "and " + END

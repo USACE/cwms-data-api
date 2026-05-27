@@ -24,20 +24,22 @@ RUN apk --no-cache upgrade && \
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.112/bin/apache-tomcat-9.0.112.tar.gz && \
-    echo "fc55589f28bf6659928167461c741649b6005b64285dd81df05bb5ee40f4c6de59b8ee3af84ff756ae1513fc47f5f73070e29313b555e27f096f25881c69841d *apache-tomcat-9.0.112.tar.gz" > checksum.txt && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.118/bin/apache-tomcat-9.0.118.tar.gz && \
+    echo "737367433486757ccd687329d99b1188506cdec57a53a29b415173909c38cdf9da4fc9fd73b8cd17cd0a8def8610ad43bab8e84393dc904a0bd1121da8cab2fc *apache-tomcat-9.0.118.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-9.0.112 /usr/local/tomcat/ && \
+    mv apache-tomcat-9.0.118 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
-    echo "<html><body>Nothing to see here</body></html>" > /usr/local/tomcat/webapps/ROOT/index.html
+    printf "<%% response.sendRedirect(\"/cwms-data/\"); %%>\n" > /usr/local/tomcat/webapps/ROOT/index.jsp && \
+    printf "User-agent: *\nAllow: /cwms-data/\nDisallow: /cwms-data/auth/\nDisallow: /cwms-data/catalog/\nDisallow: /cwms-data/timeseries/\nDisallow: /cwms-data/swagger-docs\nDisallow: /auth/\nSitemap: https://cwms-data.usace.army.mil/sitemap.xml\n" > /usr/local/tomcat/webapps/ROOT/robots.txt
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 
 FROM tomcat_base AS api
 
+COPY --from=builder /builddir/cda-gui/dist/sitemap.xml /usr/local/tomcat/webapps/ROOT/sitemap.xml
 COPY --from=builder /builddir/cwms-data-api/build/docker/cda/ /usr/local/tomcat
 COPY --from=builder /builddir/cwms-data-api/build/docker/context.xml /usr/local/tomcat/conf
 COPY --from=builder /builddir/cwms-data-api/build/docker/server.xml /usr/local/tomcat/conf
@@ -56,6 +58,9 @@ ENV cwms.dataapi.access.providers="KeyAccessManager,OpenID"
 ENV cwms.dataapi.access.openid.wellKnownUrl="https://<prefix>/.well-known/openid-configuration"
 ENV cwms.dataapi.access.openid.issuer="<issuer>"
 ENV cwms.dataapi.access.openid.timeout="604800"
+# Putting default values here to easy configuration
+ENV cwms.dataapi.access.openid.clientId=cwms
+ENV cwms.dataapi.access.openid.idpHint=federation-eams
 #ENV cwms.dataapi.access.openid.altAuthUrl="https://identityc-test.cwbi.us/auth/realms/cwbi"
 
 # used to simplify redeploy in certain contexts. Update to match -<marker> in image label

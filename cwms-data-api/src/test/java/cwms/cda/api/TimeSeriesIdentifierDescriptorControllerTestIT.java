@@ -65,6 +65,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -81,23 +82,26 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
     void tearDown() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
-
         for (TimeSeriesIdentifierDescriptor ts : tsDescriptors) {
-            given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .queryParam("office", OFFICE)
-                .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
-                .header("Authorization", user.toHeaderValue())
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/timeseries/identifier-descriptor/" + ts.getTimeSeriesId())
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            for (boolean lrts : new boolean[]{true, false})
+            {
+                given()
+                        .log().ifValidationFails(LogDetail.ALL,true)
+                        .accept(Formats.JSONV2)
+                        .contentType(Formats.JSONV2)
+                        .queryParam("office", OFFICE)
+                        .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
+                        .header("Authorization", user.toHeaderValue())
+                        .header(ApiServlet.IS_NEW_LRTS, lrts)
+                    .when()
+                        .redirects().follow(true)
+                        .redirects().max(3)
+                        .delete("/timeseries/identifier-descriptor/" + ts.getTimeSeriesId())
+                    .then()
+                        .log().ifValidationFails(LogDetail.ALL,true)
+                    ;  // not asserting anything - this is cleanup, we don't care if it was found or not.
+            }
+
         }
         for (TimeSeriesGroup group : tsGroups) {
             ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
@@ -245,7 +249,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
     void test_create_delete_new_LRTS_identifier(String format) throws JsonProcessingException, SQLException {
 
         createLocation("Alder Springs",true,"SPK");
-        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.12HoursLocal\\.0\\.DescriptorTEST_LRTS*";
+        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.12HoursLocal\\.0\\.DescriptorTEST_LRTS.*";
 
         // Check that we don't have any ts like this in the catalog.
         List<String> names = getIdsLike(OFFICE, likePattern);
@@ -257,6 +261,8 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         String tsId = "Alder Springs.Precip-Cumulative.Inst.12HoursLocal.0.DescriptorTEST_LRTS1";
         TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
         String serializedTs = om.writeValueAsString(ts);
+
+        tsDescriptors.add(ts);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -276,7 +282,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // Check that we have the right number of ts like this in the catalog.
-        names = getIdsLike(OFFICE, likePattern);
+        names = getIdsLike(OFFICE, likePattern, true);
         assertFalse(names.isEmpty());
         assertEquals(1, names.size());
         String name = names.get(0);
@@ -290,6 +296,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .queryParam("office", OFFICE)
             .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
             .header("Authorization", user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -300,7 +307,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_OK));
 
         // Check that we don't have any ts like this in the catalog.
-        names = getIdsLike(OFFICE, likePattern);
+        names = getIdsLike(OFFICE, likePattern, true);
         Assertions.assertTrue(names.isEmpty());
 
         // Try to store it again, but this time with the new LRTS flag set to false.
@@ -393,6 +400,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
+            tsDescriptors.add(ts);
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
@@ -408,7 +416,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-            tsDescriptors.add(ts);
         }
 
         // Add TS with differing ID to verify we don't get it back
@@ -416,6 +423,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
         String serializedTs = om.writeValueAsString(ts);
 
+        tsDescriptors.add(ts);
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
@@ -431,7 +439,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
-        tsDescriptors.add(ts);
 
         // Check that we have the right number of ts like this in the catalog.
         names = getIdsLike(OFFICE, likePattern);
@@ -524,7 +531,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
     }
 
 
-    @Test
+    @RepeatedTest(2)
     void testAliasedTimeSeries() throws Exception {
         // Test Structure
         //
@@ -535,7 +542,8 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         // 5. Retrieve with aliases
 
         createLocation("Alder Springs", true, "SPK");
-        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_ALIASES.*";
+        final String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_ALIASES.*";
+        final String formatPattern = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ALIASES%d";
 
         // Check that we don't have any ts like this in the catalog.
         List<String> names = getIdsLike(OFFICE, likePattern);
@@ -547,10 +555,11 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         // Create a bunch of ts and store them.
         int count = 8;
         for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ALIASES%d", i);
+            String tsId = String.format(formatPattern, i);
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
+            tsDescriptors.add(ts);
             given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.JSONV2)
@@ -566,7 +575,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-            tsDescriptors.add(ts);
         }
 
         // Check that we have the right number of ts like this in the catalog.
@@ -662,6 +670,24 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("descriptors[0].aliases.size()", greaterThan(0));
+
+
+        // get by path single
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
+            .queryParam(Controllers.EXCLUDE_EMPTY, false)
+            .queryParam(Controllers.INCLUDE_ALIASES, true)
+        .when()
+            .get("/timeseries/identifier-descriptor/{timeseries-id}", String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ALIASES%d",0))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("aliases.size()", greaterThan(0));
+
     }
 
     @Test
@@ -691,6 +717,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
+            tsDescriptors.add(ts);
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
@@ -706,7 +733,6 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
-            tsDescriptors.add(ts);
         }
 
         // Check that we have the right number of ts like this in the catalog.
@@ -831,10 +857,10 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         return builder.build();
     }
 
-
-
-
     private static List<String> getIdsLike( String officeId, String likePattern) {
+        return getIdsLike(officeId, likePattern, false);
+    }
+    private static List<String> getIdsLike( String officeId, String likePattern, boolean lrtsFlag) {
         List<String> retval = new ArrayList<>();
 
         int pageSize = 8000;
@@ -843,6 +869,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
+                .header(ApiServlet.IS_NEW_LRTS, lrtsFlag)
                 .queryParam(Controllers.PAGE_SIZE, pageSize)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.LIKE, likePattern)

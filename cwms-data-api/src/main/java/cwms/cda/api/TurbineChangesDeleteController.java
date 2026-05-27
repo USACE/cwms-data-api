@@ -26,29 +26,22 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.Controllers.SINCE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.StatusResponse;
-import cwms.cda.data.dto.location.kind.TurbineChange;
-import cwms.cda.formatters.ContentType;
-import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.time.Instant;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -99,6 +92,7 @@ public final class TurbineChangesDeleteController implements Handler {
                 + "inputs provided the project was not found.")
         }
     )
+    @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     public void handle(@NotNull Context ctx) throws Exception {
         String projectId = ctx.pathParam(NAME);
         String office = ctx.pathParam(OFFICE);

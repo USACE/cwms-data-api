@@ -12,22 +12,53 @@ export default function SwaggerUI() {
     document.title = "CWMS Data API for Data Retrieval - Swagger UI";
     // Begin Swagger UI call region
     // TODO: add endpoint that dynamic returns swagger generated doc
-    SwaggerUIBundle({
+
+    const ui = SwaggerUIBundle({
       url: getBasePath() + "/swagger-docs",
+
       dom_id: "#swagger-ui",
       deepLinking: false,
       presets: [SwaggerUIBundle.presets.apis],
       plugins: [SwaggerUIBundle.plugins.DownloadUrl],
       requestInterceptor: (req) => {
-        // Add a cache-busting query param
-        const sep = req.url.includes("?") ? "&" : "?";
-        req.url = `${req.url}${sep}_cb=${Date.now()}`;
-
-        // Also ask intermediaries not to serve from cache
-        req.headers["Cache-Control"] = "no-cache, no-store, max-age=0";
-        req.headers["Pragma"] = "no-cache";
-
+        // Only alter cache behavior for same-origin API requests. External systems,
+        // like keycloak, may reject unexpected request changes.
+        const origin = window.location.origin;
+        const re = new RegExp(`^${origin}.*`);
+        if (re.test(req.url)) {
+          // Control browser 'fetch' behavior
+          req.cache = "no-store";
+          // Ensure headers exist first
+          req.headers = req.headers ?? {};
+          // Reverse/forward proxies, intermediary, service worker caches
+          req.headers["Cache-Control"] = "no-cache, no-store, max-age=0";
+          req.headers["Pragma"] = "no-cache";
+        }
         return req;
+      },
+      onComplete: () => {
+        const spec = JSON.parse(ui.spec().get("spec"));
+        for (const schemeName in spec.components.securitySchemes) {
+          const scheme = spec.components.securitySchemes[schemeName];
+          if (scheme.type === "openIdConnect") {
+            let additionalParams = null;
+            let hints = scheme["x-kc_idp_hint"];
+            if (hints) {
+              additionalParams = {
+                // Since getting the interface to allow users to choose
+                // is likely impossible, we will assume the first in the list
+                // is the "primary" auth system
+                kc_idp_hint: hints.values[0],
+              };
+            }
+            ui.initOAuth({
+              clientId: scheme["x-oidc-client-id"],
+              usePkceWithAuthorizationCodeGrant: true,
+              additionalQueryStringParams: additionalParams,
+            });
+            break;
+          }
+        }
       },
     });
   }, []);

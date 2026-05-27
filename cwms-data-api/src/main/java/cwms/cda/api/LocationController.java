@@ -25,8 +25,27 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.NAMES;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -39,6 +58,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
@@ -63,7 +83,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -73,6 +92,9 @@ import org.jooq.exception.DataAccessException;
 
 public class LocationController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+    public static final String LOCATIONS_TAG = "Locations";
+
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -144,11 +166,10 @@ public class LocationController implements CrudHandler {
             },
             description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
                     + "retrieving lists of locations and can filter on additional fields.",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
@@ -196,17 +217,12 @@ public class LocationController implements CrudHandler {
             addDeprecatedContentTypeWarning(ctx, contentType);
 
             ctx.status(HttpServletResponse.SC_OK);
-
-        } catch (Exception ex) {
-            CdaError re = new CdaError("failed to process request");
-            logger.atSevere().withCause(ex).log("%s", re.toString());
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to get")
+                @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to get")
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -234,7 +250,7 @@ public class LocationController implements CrudHandler {
                         + "inputs provided the location was not found.")
             },
             description = "Returns CWMS Location Data",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
@@ -281,7 +297,7 @@ public class LocationController implements CrudHandler {
             description = "Create new CWMS Location",
             method = HttpMethod.POST,
             path = "/locations",
-            tags = {"Locations"}
+            tags = {LOCATIONS_TAG}
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -308,18 +324,18 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to update")
+                @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to update")
             },
             requestBody = @OpenApiRequestBody(
-                    content = {
-                        @OpenApiContent(from = Location.class, type = Formats.XML),
-                        @OpenApiContent(from = Location.class, type = Formats.JSON)
-                    },
-                    required = true),
+                content = {
+                    @OpenApiContent(from = Location.class, type = Formats.XML),
+                    @OpenApiContent(from = Location.class, type = Formats.JSON)
+                },
+                required = true),
             description = "Update CWMS Location",
             method = HttpMethod.PATCH,
             path = "/locations",
-            tags = {"Locations"},
+            tags = {LOCATIONS_TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the location was not found.")
@@ -364,7 +380,7 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to delete")
+                @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to delete")
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
@@ -377,7 +393,7 @@ public class LocationController implements CrudHandler {
             description = "Delete CWMS Location",
             method = HttpMethod.DELETE,
             path = "/locations",
-            tags = {"Locations"},
+            tags = {LOCATIONS_TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Location successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

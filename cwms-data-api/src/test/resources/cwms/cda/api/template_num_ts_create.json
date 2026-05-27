@@ -1,0 +1,14 @@
+{
+  "office-id": "{OFFICE}",
+  "name": "{TSID}",
+  "units": "{UNITS}",
+  "version-date": "{VERSION_DATE}",
+  "values": [
+    [
+      1209654000000,
+      4,
+      0
+    ]
+  ]
+}
+

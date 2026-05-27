@@ -14,6 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         jdk: [11]
+        # place holder for now and leaving commented but in place. General scheme target tests again the current release, the next release, the previous release, and latest development.
+        # at this time every possible instance of concern is on 25.07.01, once 26.02.17 is finalized it becomes release and 25.07.01 becomes previous.
+        # next-release will be comment out until such time as a RC gets made
         schema:
           - env: latest
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
@@ -21,6 +24,8 @@ jobs:
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
           - env: next-release
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17-RC01"
+          # - env: previous
+          #   image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
     name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
     runs-on: ubuntu-latest
     outputs:
@@ -34,7 +39,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v5.0.0
       - name: setup java
-        uses: actions/setup-java@v5.0.0
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
@@ -44,13 +49,21 @@ jobs:
         run: ./gradlew clean build --info --init-script init.gradle
       - name: integration tests
         run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
+      - name: Create matrix job badge
         if: success() || failure() # always run even if the previous step fails
+        uses: ./.github/actions/badge
         with:
-          annotate_only: true
-          include_passed: true
-          report_paths: '**/TEST-*.xml'
+          label: 'Build'
+          status: ${{ job.status == 'success' && 'Pass' || 'Fail' }}
+          file: ${{ matrix.jdk }}/${{ matrix.schema.env }}.svg
+          run_id: ${{ github.run_id }}
+      # - name: Publish Test Report
+      #   uses: mikepenz/action-junit-report@v5
+      #   if: success() || failure() # always run even if the previous step fails
+      #   with:
+      #     annotate_only: true
+      #     include_passed: true
+      #     report_paths: '**/TEST-*.xml'
   open-api-static-analysis:
     name: OpenApi Static Analysis Tests
     runs-on: ubuntu-latest
@@ -60,7 +73,7 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v5.0.0
       - name: setup java
-        uses: actions/setup-java@v5.0.0
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: 'temurin'
           java-version: 11
@@ -88,6 +101,7 @@ jobs:
     steps:
       - name: checkout code
         uses: actions/checkout@v5.0.0
+      # No uploads, we're just verifying that nothing broke the docker image.
       - name: Build Migration image
         uses: ./.github/actions/database-migration-image
         with:
@@ -95,4 +109,31 @@ jobs:
           # TODO get current target image from build information
           tag: latest-dev
 
-      # No uploads, we're just verifying that nothing broke the docker image.
+
+
+  badges:
+    needs: build
+    runs-on: ubuntu-latest
+    # we are reporing build state so always run, but only on builds on the main branch
+    if: always() && (github.ref_name == 'develop')
+    steps:
+      - name: Badge Branch
+        uses: actions/checkout@v5.0.0
+        with:
+          ref: badges
+          fetch-depth: 1
+      - name: Download badges
+        uses: actions/download-artifact@v4
+        with:
+          pattern: badges_${{ github.run_id }}_*
+          path: ./build  # directory to download artifacts into
+          merge-multiple: true  # downloaded artifacts will be in the same directory specified by path
+      - name: Apply Badge
+        run: |
+          find . -type f
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add build/**/*.svg
+          git status
+          git commit --allow-empty -m "Update Badge for build of ${{ github.sha }}"
+          git push origin badges -f

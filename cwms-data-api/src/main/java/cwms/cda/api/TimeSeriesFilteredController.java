@@ -117,7 +117,9 @@ public class TimeSeriesFilteredController implements Handler {
                             + "offset and timezone."),
                     @OpenApiParam(name = Controllers.TRIM, type = Boolean.class, description = "Specifies "
                             + "whether to trim missing values from the beginning and end of the "
-                            + "retrieved values. "
+                            + "retrieved values. When true and values are returned, the contained time-series "
+                            + Controllers.BEGIN + " and " + Controllers.END
+                            + " fields reflect the returned data window. "
                             + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                             + "Default is true."),
                     @OpenApiParam(name = INCLUDE_ENTRY_DATE, type = Boolean.class, description = "Specifies "
@@ -149,7 +151,9 @@ public class TimeSeriesFilteredController implements Handler {
                     @OpenApiParam(name = PAGE_SIZE,
                             type = Integer.class,
                             description = "How many entries per page returned. "
-                                    + "Default " + DEFAULT_PAGE_SIZE + ".")
+                                    + "Default " + DEFAULT_PAGE_SIZE
+                                    + ". Use 0 to return an empty values array, or -1 to return the entire window "
+                                    + "in one response without a next-page cursor. Values less than -1 are invalid.")
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -202,6 +206,7 @@ public class TimeSeriesFilteredController implements Handler {
             int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE},
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(TimeSeriesController.class.getName(), GET_ALL));
+            pageSize = Controllers.validateTimeSeriesPageSize(pageSize);
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
@@ -214,7 +219,7 @@ public class TimeSeriesFilteredController implements Handler {
                     ? DateUtils.parseUserDate(end, timezone)
                     : ZonedDateTime.now(tz);
 
-            String office = requiredParam(ctx, OFFICE);
+            String office = ctx.queryParam(OFFICE);
 
             FilteredTimeSeriesParameters ftsParams = FilteredTimeSeriesParameters.Builder.from(ctx)
                     .build();

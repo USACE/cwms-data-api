@@ -87,6 +87,9 @@ services:
       - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
       - cwms.dataapi.access.openid.useAltWellKnown=true
       - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
+      - cwms.dataapi.access.openid.clientId=cwms
+      # values are not actually used in the local keycloak, however it does fail and leaves them in place for various testing.
+      - cwms.dataapi.access.openid.idpHint=federation-eams,login.gov
       - blob.store.endpoint=http://minio:9000
       - blob.store.region=docker
       - blob.store.bucket=cwms-test
@@ -109,9 +112,9 @@ services:
 
   auth:
     image: quay.io/keycloak/keycloak:26.5
-    command: ["start-dev","--import-realm"]
+    command: ["start-dev", "--import-realm"]
     healthcheck:
-      test: "/usr/bin/curl -If localhost:${APP_PORT:-8081}/auth/health/ready || exit 1"
+      test: "/healthcheck.sh"
       interval: 5s
       timeout: 1s
       retries: 100
@@ -129,6 +132,7 @@ services:
       - KC_HTTP_RELATIVE_PATH=/auth
     volumes:
       - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./compose_files/keycloak/healthcheck.sh:/healthcheck.sh:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
@@ -157,7 +161,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--ping"
-      - "--log.level=DEBUG"
+      - "--log.level=WARN"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"

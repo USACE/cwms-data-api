@@ -22,3 +22,6 @@ Some decisions may also be a proposal and marked appropriately.
     Catalogs and Search <./0003-searchability-and-catalogs.rst>
     Versioning <./0004-versioning.rst>
     Authorization Middleware <./0005-data-authorization-middleware.md>
+    CDA Authorization Filtering <./0006-cda-authorization-filtering.md>
+    Access Management Clients <./0007-access-management-clients.md>
+    Timeseries CSV Format <./0008-timeseries-csv-format.rst>

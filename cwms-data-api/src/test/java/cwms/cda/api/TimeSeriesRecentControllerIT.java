@@ -26,7 +26,9 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.TS_IDS;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
@@ -34,6 +36,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
@@ -49,14 +53,13 @@ import cwms.cda.formatters.json.JsonV1;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
-import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -91,7 +94,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
-            TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(ctx);
+            TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(ctx, new MetricRegistry());
             TimeSeriesCategoryDao tsCategoryDao = new TimeSeriesCategoryDao(ctx);
             TimeSeriesGroupDao tsGroupDao = new TimeSeriesGroupDao(ctx);
             try {
@@ -102,8 +105,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
                 LOGGER.atConfig().log("TimeSeries not found");
             }
             try {
-                tsGroupDao.unassignAllTs(group, OFFICE_ID);
-                tsGroupDao.delete(CATEGORY_ID, GROUP_ID, OFFICE_ID);
+                tsGroupDao.delete(CATEGORY_ID, GROUP_ID, OFFICE_ID, true);
             } catch (NotFoundException e) {
                 LOGGER.atConfig().log("Group not found");
             }
