@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: deploy
-        uses: ./.github/actions/deploy-cda
+        uses: ./.github/actions/deploy-cda@develop
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: develop-nightly
