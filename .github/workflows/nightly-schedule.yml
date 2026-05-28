@@ -29,12 +29,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: deploy
-        uses: ./.github/actions/deploy-cda@develop
+        uses: usace/cwms-data-api/.github/actions/deploy-cda@develop
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: develop-nightly
-          api_image: ${{needs.develop.outputs.api_image}}
-          migration_image: ${{needs.develop.outputs.migration_image}}
           region: ${{env.REGION}}
           iam_role: ${{env.DEPLOY_ROLE}}
           activation_tag: ${{env.ACTIVATION_TAG}}
