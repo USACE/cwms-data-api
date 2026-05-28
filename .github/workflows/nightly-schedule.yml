@@ -33,7 +33,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: develop-nightly
-          region: ${{env.REGION}}
-          iam_role: ${{env.DEPLOY_ROLE}}
-          activation_tag: ${{env.ACTIVATION_TAG}}
+          region: ${{secrets.REGION}}
+          iam_role: ${{secrets.DEPLOY_ROLE}}
+          activation_tag: ${{secrets.ACTIVATION_TAG}}
           activate: true
