@@ -27,12 +27,11 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class UnitsController implements CrudHandler {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -50,37 +49,37 @@ public class UnitsController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void create(Context ctx) {
+    public void create(@NotNull Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void delete(Context ctx, String unit) {
+    public void delete(@NotNull Context ctx, @NotNull String unit) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = FORMAT, required = false, description = "Specifies the"
-                            + " encoding format of the response. Valid value for the format field"
-                            + " for this URI are:"
-                            + "\n* `tab`"
-                            + "\n* `csv`"
-                            + "\n* `xml`"
-                            + "\n* `json` (default)"
-                            + "\n\nSee <a href=\"legacy-format/\">this page</a> for more"
-                            + " information about accept header usage.")
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200),
-                    @OpenApiResponse(status = STATUS_501, description = "The format requested is not "
-                            + "implemented")
-            },
-            tags = {"Units"}
+        queryParams = {
+            @OpenApiParam(name = FORMAT, description = "Specifies the"
+                + " encoding format of the response. Valid value for the format field"
+                + " for this URI are:"
+                + "\n* `tab`"
+                + "\n* `csv`"
+                + "\n* `xml`"
+                + "\n* `json` (default)"
+                + "\n\nSee <a href=\"legacy-format/\">this page</a> for more"
+                + " information about accept header usage.")
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200),
+            @OpenApiResponse(status = STATUS_501, description = "The format requested is not "
+                + "implemented")
+        },
+        tags = {"Units"}
     )
     @Override
-    public void getAll(Context ctx) {
+    public void getAll(@NotNull Context ctx) {
 
         try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
@@ -115,17 +114,13 @@ public class UnitsController implements CrudHandler {
             ctx.result(results);
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
-        } catch (Exception ex) {
-            logger.atSevere().withCause(ex).log("Failed to process request");
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            ctx.result("Failed to process request");
         }
 
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String unit) {
+    public void getOne(@NotNull Context ctx, @NotNull String unit) {
 
         try (Timer.Context timeContext = markAndTime(GET_ONE)) {
             ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -134,7 +129,7 @@ public class UnitsController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String unit) {
+    public void update(@NotNull Context ctx, @NotNull String unit) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 

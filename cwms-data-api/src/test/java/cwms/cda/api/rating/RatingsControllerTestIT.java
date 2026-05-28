@@ -26,6 +26,7 @@ package cwms.cda.api.rating;
 
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingSetContainer;
@@ -88,7 +89,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 	static void store(boolean storeTemplate) throws Exception
 	{
 		//Make sure we always have something.
-		createLocation(EXISTING_LOC, true, SPK);
+		createLocationWithVerticalDatum(EXISTING_LOC, true, SPK, VerticalDatum.NAVD88);
 
 		String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
 		ratingXml = ratingXml.replaceAll("Zanesville", EXISTING_LOC);

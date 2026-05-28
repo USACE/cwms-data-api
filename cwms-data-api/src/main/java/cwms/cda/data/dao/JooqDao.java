@@ -89,14 +89,15 @@ public abstract class JooqDao<T> extends Dao<T> {
     private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
             "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
     private static final Pattern INVALID_UNIT = Pattern.compile(
-            "(.+\\R+){6}ORA-20102: The unit: \\S+"
-                    + " is not a recognized CWMS Database unit for the .+(.+\\R+){10}");
+            "ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the");
     private static final Pattern CONVERSION_ERROR = Pattern.compile(
             "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
                     + "|(from unit .+ to unit .+$))");
     private static final Pattern FIELD_LENGTH_EXCEEDED = Pattern.compile(
-            "^ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
-                    + "\\(actual: (\\d+), maximum: (\\d+)\\)\\R*$");
+            "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
+                    + "\\(actual: (\\d+), maximum: (\\d+)\\)");
+    private static final Pattern REGEX_META_CHARS_EXCEPT_DOT = Pattern.compile("[\\\\^$|?+()\\[\\]{}]");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -135,7 +136,8 @@ public abstract class JooqDao<T> extends Dao<T> {
         DSLContext retVal;
 
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null
+            && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
 
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
                 connection -> setClientInfo(ctx, connection),
@@ -247,13 +249,13 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (regex.toUpperCase().startsWith("NOT:")) {
                     String finalRegex = regex.substring(4);
                     if (ctx.family() == ORACLE) {
-                        ctx.visit(DSL.condition("{not regexp_like}({0}, {1}, 'i')", field, DSL.val(finalRegex)));
+                        ctx.visit(caseInsensitiveRegexCondition(field, finalRegex, true));
                     } else {
                         ctx.visit(DSL.upper(field).notLikeRegex(finalRegex.toUpperCase()));
                     }
                 } else {
                     if (ctx.family() == ORACLE) {
-                        ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                        ctx.visit(caseInsensitiveRegexCondition(field, regex, false));
                     } else {
                         ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
                     }
@@ -262,12 +264,32 @@ public abstract class JooqDao<T> extends Dao<T> {
         };
     }
 
-    protected static Condition filterExact(Field<String> field, String filter) {
-        if (filter == null) {
-            return DSL.noCondition();
+    private static Condition caseInsensitiveRegexCondition(Field<String> field, String regex, boolean negate) {
+        Condition condition;
+        if (isPlainTextPattern(regex)) {
+            condition = DSL.upper(field).eq(regex.toUpperCase());
+        } else if (isSimpleGlobPattern(regex)) {
+            condition = DSL.upper(field).like(toSqlLikePattern(regex).toUpperCase(), '\\');
         } else {
-            return field.eq(filter);
+            condition = DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.inline(regex));
         }
+        return negate ? condition.not() : condition;
+    }
+
+    private static boolean isPlainTextPattern(String regex) {
+        return regex != null && regex.indexOf('*') < 0 && !REGEX_META_CHARS_EXCEPT_DOT.matcher(regex).find();
+    }
+
+    private static boolean isSimpleGlobPattern(String regex) {
+        return regex != null && regex.indexOf('*') >= 0 && !REGEX_META_CHARS_EXCEPT_DOT.matcher(regex).find();
+    }
+
+    private static String toSqlLikePattern(String regex) {
+        return regex.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace(".*", "%")
+                .replace("_", "\\_")
+                .replace("*", "%");
     }
 
     /**
@@ -366,7 +388,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20001, 20025, 20034);
+            List<Integer> codes = Arrays.asList(20001, 20025, 20034, 1403);
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
 
@@ -389,7 +411,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isValueTooLargeException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
-                        Arrays.asList(6502, 12899, 20041),
+                        Arrays.asList(6502, 12899, 20041, 17072),
                         Arrays.asList("value too large for column", "character string buffer too small",
                                 "Error while writing value at JDBC bind index:")))
                 .orElse(false);
@@ -450,15 +472,21 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        NotFoundException exception = new NotFoundException(cause);
+        NotFoundException exception;
+        if (input.getMessage().contains("ASSIGN_LOC_GROUPS")) {
+            exception = new NotFoundException("Location group contains assigned locations that do not exist.", cause);
+        } else {
+            exception = new NotFoundException(cause);
 
-        String localizedMessage = cause.getLocalizedMessage();
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split("\n");
-            if (parts.length > 1) {
-                exception = new NotFoundException(parts[0], cause);
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    exception = new NotFoundException(parts[0], cause);
+                }
             }
         }
+
         return exception;
     }
 
@@ -597,7 +625,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             SQLException sqlException = optional.get();
             String message = sqlException.getLocalizedMessage();
 
-            if (INVALID_UNIT.matcher(message).matches()) {
+            if (INVALID_UNIT.matcher(message).find()) {
                 retVal = true;
             }
 
@@ -677,7 +705,7 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (localizedMessage != null) {
             Matcher matcher = FIELD_LENGTH_EXCEEDED.matcher(localizedMessage);
-            if (matcher.matches()) {
+            if (matcher.find()) {
                 String parameter = matcher.group(1);
                 int actualLength = Integer.parseInt(matcher.group(2));
                 int maxLength = Integer.parseInt(matcher.group(3));
@@ -691,19 +719,20 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         Throwable cause = (input instanceof DataAccessException) ? input.getCause() : input;
         String localizedMessage = cause.getLocalizedMessage();
+        String sanitizedMessage = null;
         if (localizedMessage != null) {
             Matcher matcher = INVALID_OFFICE_ID.matcher(localizedMessage);
             if (matcher.find()) {
                 String office = sanitizeOrNull(matcher.group(1));
                 if (office != null) {
-                    localizedMessage = "\"" + office + "\" is not a valid CWMS office id";
+                    sanitizedMessage = "\"" + office + "\" is not a valid CWMS office id";
                 }
             }
         }
-        if (localizedMessage == null || localizedMessage.isEmpty()) {
-            localizedMessage = "Invalid Office.";
+        if (sanitizedMessage == null || sanitizedMessage.isEmpty()) {
+            sanitizedMessage = "Invalid Office.";
         }
-        return new InvalidItemException(localizedMessage, cause);
+        return new InvalidItemException(sanitizedMessage, cause);
     }
 
     public static boolean isUnsupportedOperationException(RuntimeException input) {

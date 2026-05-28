@@ -21,8 +21,18 @@ import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";
 import Timestamps from "./pages/timestamps";
 import LegacyFormat from "./pages/legacy-format/index.jsx";
+import { routePaths } from "./route-paths";
 
 const queryClient = new QueryClient();
+const routeComponents = {
+  home: Home,
+  "swagger-ui": SwaggerUI,
+  "data-query": DataQuery,
+  regexp: Regexp,
+  "filter-expressions": FilterExpressions,
+  timestamps: Timestamps,
+  "legacy-format": LegacyFormat,
+};
 
 const router = createBrowserRouter(
   [
@@ -31,16 +41,12 @@ const router = createBrowserRouter(
       element: <Layout />,
       errorElement: <ErrorFallback />,
       children: [
-        { index: true, element: <Home /> },
-        {
-          path: "swagger-ui",
-          element: <SwaggerUI />,
-        },
-        { path: "data-query", element: <DataQuery /> },
-        { path: "regexp", element: <Regexp /> },
-        { path: "filter-expressions", element: <FilterExpressions /> },
-        { path: "timestamps", element: <Timestamps /> },
-        { path: "legacy-format", element: <LegacyFormat /> },
+        ...routePaths.map(({ id, index, path }) => {
+          const Component = routeComponents[id];
+          return index
+            ? { index: true, element: <Component /> }
+            : { path, element: <Component /> };
+        }),
         { path: "*", element: <NotFound /> },
       ],
     },

@@ -42,6 +42,7 @@ public class CatalogController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String TAG = "Catalog";
     public static final boolean INCLUDE_EXTENTS_DEFAULT = true;
+    public static final boolean INCLUDE_VERSIONS_DEFAULT = true;
     public static final boolean EXCLUDE_EMPTY_DEFAULT = true;
 
     private final MetricRegistry metrics;
@@ -133,6 +134,13 @@ public class CatalogController implements CrudHandler {
                         + "extents. Only valid for TIMESERIES. Note: This parameter is "
                             + "unsupported when dataset is Locations."
                         + "Default is " + INCLUDE_EXTENTS_DEFAULT + "."),
+            @OpenApiParam(name = INCLUDE_VERSIONS, type = Boolean.class,
+                description = "Whether the returned catalog entries should include timeseries "
+                    + "versions in the extents block. "
+                    + "Only used when include-extents is enabled, otherwise it is ignored. "
+                    + "Only valid for TIMESERIES. Note: This parameter is "
+                    + "unsupported when dataset is Locations."
+                    + "Default is " + INCLUDE_VERSIONS_DEFAULT + "."),
             @OpenApiParam(name = EXCLUDE_EMPTY, type = Boolean.class,
                     description = "Specifies "
                         + "whether Timeseries that have empty extents "
@@ -245,6 +253,8 @@ public class CatalogController implements CrudHandler {
 
                 boolean includeExtents = ctx.queryParamAsClass(INCLUDE_EXTENTS, Boolean.class)
                         .getOrDefault(INCLUDE_EXTENTS_DEFAULT);
+                boolean includeVersions = ctx.queryParamAsClass(INCLUDE_VERSIONS, Boolean.class)
+                    .getOrDefault(INCLUDE_VERSIONS_DEFAULT);
                 boolean excludeExtents = ctx.queryParamAsClass(EXCLUDE_EMPTY, Boolean.class)
                         .getOrDefault(EXCLUDE_EMPTY_DEFAULT);
 
@@ -257,6 +267,7 @@ public class CatalogController implements CrudHandler {
                         .withTsGroupLike(tsGroupLike)
                         .withBoundingOfficeLike(boundingOfficeLike)
                         .withIncludeExtents(includeExtents)
+                        .withIncludeVersions(includeVersions)
                         .withExcludeEmpty(excludeExtents)
                         .withLocationKind(locationKind)
                         .withLocationType(locationType)
@@ -268,7 +279,7 @@ public class CatalogController implements CrudHandler {
             } else if (LOCATIONS.equalsIgnoreCase(valDataSet)) {
 
                 warnAboutNotSupported(ctx, new String[]{TIMESERIES_CATEGORY_LIKE,
-                        TIMESERIES_GROUP_LIKE, EXCLUDE_EMPTY, INCLUDE_EXTENTS});
+                        TIMESERIES_GROUP_LIKE, EXCLUDE_EMPTY, INCLUDE_EXTENTS, INCLUDE_VERSIONS});
 
                 CatalogRequestParameters parameters = new CatalogRequestParameters.Builder()
                         .withUnitSystem(unitSystem)

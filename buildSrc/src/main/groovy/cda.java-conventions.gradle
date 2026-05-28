@@ -29,8 +29,16 @@ checkstyle {
     toolVersion = '9.3'
 }
 
+dependencyCheck {
+    nvd {
+        apiKey = providers.gradleProperty('nvdApiKey')
+                .orElse(providers.environmentVariable('NVD_API_KEY'))
+                .getOrNull()
+    }
+}
+
 jacoco {
-    toolVersion = "0.8.9"
+    toolVersion = "0.8.14"
 }
 
 jacocoTestReport {

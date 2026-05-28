@@ -11,6 +11,7 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
 import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STORE_RULE;
 import static cwms.cda.api.Controllers.TRIM;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.VERSION_DATE;
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.ApiServlet;
+import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.VerticalDatumInfo;
@@ -1026,6 +1028,48 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+        ;
+    }
+
+    @Test
+    void test_attempt_store_for_nonexistent_subloc() throws Exception
+    {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+            "/cwms/cda/api/lrl/timeseries_nonexistent_subloc.json");
+        assertNotNull(resource);
+
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0].split("-")[0];
+        String officeId = ts.get("office-id").asText();
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.DEFAULT)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CREATE_AS_LRTS, "false")
+            .queryParam(STORE_RULE, StoreRule.REPLACE_ALL.toString())
+            .queryParam(OVERRIDE_PROTECTION, "false")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+            .body("message", equalTo("ORA-20025: LOCATION_ID_NOT_FOUND: The Location: \"Buckhorn-Subloc\" does not exist."))
+            .body("source", equalTo("Database"))
         ;
     }
 

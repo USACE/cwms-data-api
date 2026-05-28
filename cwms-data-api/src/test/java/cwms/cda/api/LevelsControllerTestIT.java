@@ -42,6 +42,7 @@ import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
@@ -342,6 +343,87 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         assertEquals("m3", response.path("levels[1].level-units-id"));
         assertEquals("2023-06-01T07:00:00Z", response.path("levels[1].level-date"));
         assertEquals("1Day", response.path("levels[1].duration-id"));
+    }
+
+
+    @MinimumSchema(20261231)
+    @Test
+    void test_level_refs() throws Exception {
+        int levelCount = LevelRefsController.DEFAULT_PAGE_SIZE + 1;
+        ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America/Los_Angeles"));
+
+        for (int i = 0; i < levelCount; i++) {
+            String locId = String.format("test_level_refs_loc_%03d", i);
+            String parameterId = i % 2 == 0 ? "Flow" : "Stor";
+            String unitsId = i % 2 == 0 ? "cms" : "ac-ft";
+            double constantValue = i + 1.0;
+            String levelId = locId + "." + parameterId + ".Ave.1Day.Regulating";
+
+            createLocation(locId, true, OFFICE);
+            CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+                LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
+                    .withOfficeId(OFFICE)
+                    .withLevelUnitsId(unitsId)
+                    .withConstantValue(constantValue)
+                    .build();
+                levelList.add(level);
+                DSLContext dsl = dslContext(c, OFFICE);
+                LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+                dao.storeLocationLevel(level);
+            });
+        }
+
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, "test_level_refs_loc_*")
+            .queryParam(BEGIN, "2020-06-01T00:00:00Z")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/level-refs/")
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"), is(100));
+        String nextPage = response.path("next-page");
+        assertThat(nextPage, notNullValue());
+
+        assertEquals(OFFICE, response.path("levels[0].location-level-id.office-id"));
+        assertEquals("test_level_refs_loc_000.Flow.Ave.1Day.Regulating",
+            response.path("levels[0].location-level-id.name"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[0].effective-dates[0]"));
+
+        response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, "test_level_refs_loc_*")
+            .queryParam(BEGIN, "2020-06-01T00:00:00Z")
+            .queryParam(PAGE, nextPage)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/level-refs/")
+        .then()
+        .assertThat()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"), is(1));
+        assertThat(response.path("next-page"), nullValue());
+
+        assertEquals(OFFICE, response.path("levels[0].location-level-id.office-id"));
+        assertEquals("test_level_refs_loc_100.Flow.Ave.1Day.Regulating",
+            response.path("levels[0].location-level-id.name"));
+        assertEquals("2023-06-01T07:00:00Z", response.path("levels[0].effective-dates[0]"));
     }
 
     @Test
@@ -1855,7 +1937,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .follow(true)
             .redirects()
             .max(3)
-            .queryParam(LEVEL_ID_MASK, levelId)
+            .queryParam(LEVEL_ID_MASK, "seasonalLoc18.Elev.Ave.1Day.*")
             .get("/levels/")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1864,7 +1946,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("levels.size()", is(1))
             .body("levels[0].expiration-date", equalTo(levelDate.plusYears(50).toInstant().toString()))
             .body("levels[0].seasonal-values.size()", is(numValues))
-            .body("total", is(numValues));
+            .body("total", is(1));
     }
 
     @Test

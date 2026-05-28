@@ -24,46 +24,51 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
+import static cwms.cda.api.Controllers.NAMES;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
+
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.VerticalDatum;
+import cwms.cda.data.dto.AssignedLocation;
+import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LocationCategory;
+import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
 import fixtures.CwmsDataApiSetupCallback;
+import fixtures.TestAccounts.KeyUser;
+import io.restassured.filter.log.LogDetail;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import cwms.cda.data.dto.AssignedLocation;
-import cwms.cda.data.dto.LocationCategory;
-import cwms.cda.data.dto.LocationGroup;
-import cwms.cda.formatters.ContentType;
-import cwms.cda.data.dto.VerticalDatumInfo;
-import fixtures.TestAccounts.KeyUser;
-import io.restassured.filter.log.LogDetail;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import cwms.cda.data.dto.Location;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.json.JsonV1;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.apache.commons.lang3.RandomStringUtils;
-
-import javax.servlet.http.HttpServletResponse;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.closeTo;
-import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isOneOf;
 
 @Tag("integration")
 class LocationControllerTestIT extends DataApiTestIT {
@@ -659,6 +664,132 @@ class LocationControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void test_create_subloc() throws Exception {
+        String locationName = "TestSubLocCreate";
+        KeyUser user = KeyUser.SPK_NORMAL;
+        createLocation(locationName, true, user.getOperatingOffice(), 38.55, -121.75,
+            "NAD83", "UTC", "SITE");
+        String sublocName = String.format("%s-TestSubLoc", locationName);
+
+        String serializedLocation = loadResourceAsString("cwms/cda/api/subloc_create.json");
+
+        // create location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, user.getOperatingOffice())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + sublocName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(sublocName))
+            .body("longitude", equalTo(-121.75F))
+            .body("latitude", equalTo(38.55F));
+
+        // delete location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, user.getOperatingOffice())
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + sublocName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(user.getOperatingOffice()))
+            .body(IDENTIFIER, equalTo(sublocName));
+    }
+
+    @Test
+    void test_create_subloc_with_lat_long() throws Exception {
+        String locationName = "TestSubLocCreate";
+        KeyUser user = KeyUser.SPK_NORMAL;
+        createLocation(locationName, true, user.getOperatingOffice(), 38.55, -121.75,
+            "NAD83", "UTC", "SITE");
+        String sublocName = String.format("%s-TestSubLoc", locationName);
+
+        String serializedLocation = loadResourceAsString("cwms/cda/api/subloc_create_lat_long.json");
+
+        // create location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(serializedLocation)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/locations")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // get it back
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, user.getOperatingOffice())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/" + sublocName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("name", equalTo(sublocName))
+            .body("longitude", equalTo(-122.4F))
+            .body("latitude", equalTo(39.8F));
+
+        // delete location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, user.getOperatingOffice())
+            .queryParam(CASCADE_DELETE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/locations/" + sublocName)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(user.getOperatingOffice()))
+            .body(IDENTIFIER, equalTo(sublocName));
+    }
+
+    @Test
     void test_create_update_null_elev_units() throws Exception {
         String locationName = "TestUpdateLoc1";
         KeyUser user = KeyUser.SPK_NORMAL;
@@ -818,6 +949,32 @@ class LocationControllerTestIT extends DataApiTestIT {
             .contentType(is(test._expectedContentType));
     }
 
+    @Test
+    void test_get_all_locations_without_datum_returns_results() throws Exception {
+        String locationName = "TestLocNoDatum";
+        KeyUser user = KeyUser.SPK_NORMAL;
+        String officeId = user.getOperatingOffice();
+
+        createLocation(locationName, true, officeId, 38.5757, -121.4789, "WGS84", "UTC", "SITE");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, officeId)
+            .queryParam(NAMES, locationName)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(1))
+            .body("[0].name", equalTo(locationName))
+        ;
+    }
+
     enum GetAllLegacyTest
     {
         JSON(Formats.JSON_LEGACY, Formats.JSON),
@@ -952,10 +1109,12 @@ class LocationControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("aliases.size()", is(2))
-            .body("aliases[0].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
-            .body("aliases[0].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
-            .body("aliases[1].name", isOneOf(categoryName + "-" + groupName1, categoryName + "-" + groupName2))
-            .body("aliases[1].value", isOneOf(sharedLocAlias1, sharedLocAlias2))
+            .body("aliases.name", containsInAnyOrder(
+                categoryName + "-" + groupName1,
+                categoryName + "-" + groupName2))
+            .body("aliases.value", containsInAnyOrder(
+                sharedLocAlias1,
+                sharedLocAlias2))
         ;
 
         // verify that alias as location ID does not return results

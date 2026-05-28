@@ -62,6 +62,7 @@ import cwms.cda.api.EntityController;
 import cwms.cda.api.ForecastFileController;
 import cwms.cda.api.ForecastInstanceController;
 import cwms.cda.api.ForecastSpecController;
+import cwms.cda.api.LevelRefsController;
 import cwms.cda.api.LevelsAsTimeSeriesController;
 import cwms.cda.api.LevelsController;
 import cwms.cda.api.LocationCategoryController;
@@ -237,6 +238,7 @@ import org.owasp.html.PolicyFactory;
     "/units/*",
     "/ratings/*",
     "/levels/*",
+    "/level-refs/*",
     "/basins/*",
     "/streams/*",
     "/stream-locations/*",
@@ -410,10 +412,10 @@ public class ApiServlet extends HttpServlet {
                 })
                 .routes(this::configureRoutes)
                 .options("/*", ctx -> {
-                    ctx.header("Access-Control-Allow-Origin", "*"); // Allow requests from any origin
-                    ctx.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"); // Specify allowed methods
-                    ctx.header("Access-Control-Allow-Headers", "Content-Type, Authorization"); // Specify allowed headers
-                    ctx.status(200); // Respond with a 200 OK status
+                    // Respond with a 200 OK status for preflight checks.
+                    // It is expected that the firewall in front of the API
+                    // will handle any CORS headers.
+                    ctx.status(200);
                 })
                 .javalinServlet();
         QueueManager.ensureRssSubscribers(cwms);
@@ -476,6 +478,9 @@ public class ApiServlet extends HttpServlet {
         String levelTsPath = format("/levels/{%s}/timeseries", Controllers.LEVEL_ID);
         get(levelTsPath, new LevelsAsTimeSeriesController(metrics));
         addCacheControl(levelTsPath, 5, TimeUnit.MINUTES);
+        String levelRefsPath = "/level-refs/";
+        get(levelRefsPath, new LevelRefsController(metrics));
+        addCacheControl(levelRefsPath, 5, TimeUnit.MINUTES);
         String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
@@ -611,11 +616,11 @@ public class ApiServlet extends HttpServlet {
                                           Controllers.PROJECT_ID, NAME);
         String virtualOutletCreatePath = "/projects/virtual-outlets";
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        post(gateChangeCreatePath, new GateChangeCreateController(metrics));
+        post(gateChangeCreatePath, new GateChangeCreateController(metrics), requiredRoles);
         get(gateChangePath, new GateChangeGetAllController(metrics));
-        delete(gateChangePath, new GateChangeDeleteController(metrics));
+        delete(gateChangePath, new GateChangeDeleteController(metrics), requiredRoles);
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
-        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics));
+        post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics), requiredRoles);
 
         get("/projects/locations/", new ProjectChildLocationHandler(metrics));
         cdaCrudCache(format("/projects/{%s}", Controllers.NAME),
@@ -646,6 +651,12 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
+        /**
+         * The POST handlers for /ratings/rate-* intentionally do not have 
+         * require roles. Instead they are rate limited if not authenticated.
+         * POST is used as sending a body with GET is not standard and we cannot
+         * be sure clients, or future servers, would correctly support that.
+         */
         String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
         post(rateValues, new RateValuesController(metrics));
         String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);

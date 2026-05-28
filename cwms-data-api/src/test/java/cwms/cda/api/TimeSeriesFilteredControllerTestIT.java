@@ -34,6 +34,86 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_page_size_special_cases(String format) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(JSON_FILE);
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(Controllers.NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+
+        try {
+            createLocation(location, true, officeId);
+
+            TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header("Authorization",user.toHeaderValue())
+                .queryParam(Controllers.OFFICE, officeId)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+            given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, officeId)
+                .queryParam(Controllers.UNIT,"cfs")
+                .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+                .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
+                .queryParam(Controllers.END,"2023-01-11T15:00:00-00:00")
+                .queryParam(Controllers.PAGE_SIZE, 0)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/filtered/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("page-size", equalTo(0))
+                .body("time-series.values.size()", equalTo(0));
+
+            given()
+                .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, officeId)
+                .queryParam(Controllers.UNIT,"cfs")
+                .queryParam(Controllers.NAME, ts.get(Controllers.NAME).asText())
+                .queryParam(Controllers.BEGIN,"2023-01-11T12:00:00-00:00")
+                .queryParam(Controllers.END,"2023-01-11T15:00:00-00:00")
+                .queryParam(Controllers.PAGE_SIZE, -1)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/timeseries/filtered/")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("page-size", equalTo(-1))
+                .body("time-series.values.size()", equalTo(4));
+        } catch (SQLException ex) {
+            throw new RuntimeException("Unable to create location for TS", ex);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
     void test_filter_nulls(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 

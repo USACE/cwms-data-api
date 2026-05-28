@@ -65,6 +65,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -530,7 +531,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
     }
 
 
-    @Test
+    @RepeatedTest(2)
     void testAliasedTimeSeries() throws Exception {
         // Test Structure
         //
@@ -541,7 +542,8 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         // 5. Retrieve with aliases
 
         createLocation("Alder Springs", true, "SPK");
-        String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_ALIASES.*";
+        final String likePattern = "Alder Springs\\.Precip-Cumulative\\.Inst\\.15Minutes\\.0\\.DescriptorTEST_ALIASES.*";
+        final String formatPattern = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ALIASES%d";
 
         // Check that we don't have any ts like this in the catalog.
         List<String> names = getIdsLike(OFFICE, likePattern);
@@ -553,7 +555,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         // Create a bunch of ts and store them.
         int count = 8;
         for (int i = 0; i < count; i++) {
-            String tsId = String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ALIASES%d", i);
+            String tsId = String.format(formatPattern, i);
             TimeSeriesIdentifierDescriptor ts = buildTimeSeriesIdentifierDescriptor(OFFICE, tsId);
             String serializedTs = om.writeValueAsString(ts);
 
@@ -668,6 +670,24 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("descriptors[0].aliases.size()", greaterThan(0));
+
+
+        // get by path single
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.TIMESERIES_ID_REGEX, likePattern)
+            .queryParam(Controllers.EXCLUDE_EMPTY, false)
+            .queryParam(Controllers.INCLUDE_ALIASES, true)
+        .when()
+            .get("/timeseries/identifier-descriptor/{timeseries-id}", String.format("Alder Springs.Precip-Cumulative.Inst.15Minutes.0.DescriptorTEST_ALIASES%d",0))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("aliases.size()", greaterThan(0));
+
     }
 
     @Test

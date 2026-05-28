@@ -52,5 +52,11 @@ public final class MinIOExtension implements BeforeAllCallback {
         }
     }
 
+    public static void shutdown() {
+        if (MINIO_CONTAINER.isRunning()) {
+            MINIO_CONTAINER.stop();
+        }
+    }
+
 
 }
