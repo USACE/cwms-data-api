@@ -19,4 +19,13 @@ repositories {
 
 configurations.all {
     exclude group: "org.python", module: "jython-standalone"
+
+    resolutionStrategy {
+        // javalin 4.6.8 pulls in the vulnerable kotlin-stdlib 1.5.32 
+        // Force a patched version; javalin can't be bumped past 4.x while we target Java 11.
+        force "org.jetbrains.kotlin:kotlin-stdlib:1.9.25"
+        force "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.25"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.25"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.25"
+    }
 }
