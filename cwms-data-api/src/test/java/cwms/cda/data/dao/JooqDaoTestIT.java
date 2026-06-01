@@ -29,7 +29,7 @@ public final class JooqDaoTestIT extends DataApiTestIT {
      * Uses a raw JDBC connection (not the API pool) to guarantee cold state.
      */
     @Test
-    void sessionOfficePreparer_setsOfficeOnColdConnection() throws SQLException {
+    void test_session_office_preparer_sets_office_on_cold_connection_success() throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         String officeId = db.getOfficeId();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
@@ -52,7 +52,7 @@ public final class JooqDaoTestIT extends DataApiTestIT {
      * by one office retains that office for subsequent requests.
      */
     @Test
-    void sessionOfficePreparer_overridesStaleOffice() throws SQLException {
+    void test_session_office_preparer_overrides_stale_office_success() throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         String officeId = db.getOfficeId();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
