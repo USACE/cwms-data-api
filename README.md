@@ -83,6 +83,17 @@ To build the war:
 
 This will compile the jar and run the basic unit tests.
 
+To run the OWASP dependency vulnerability scan:
+
+     ./gradlew dependencyCheckAggregate
+
+For faster scans, add a free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) to your
+user gradle properties file (`~/.gradle/gradle.properties`):
+
+     nvdApiKey=<your-key>
+
+The report is written to `build/reports/dependency-check-report.html`.
+
 ## Development stack
 
 See the docker-compose.README.md for instructions using the docker-compose environment
