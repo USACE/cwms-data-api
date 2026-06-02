@@ -39,6 +39,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -169,6 +170,8 @@ import cwms.cda.data.dao.rss.QueueManager;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
+import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
@@ -202,6 +205,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
@@ -641,13 +645,26 @@ public class ApiServlet extends HttpServlet {
 
     private void addUserManagementHandlers() {
         RouteRole[] adminRoles = new RouteRole[] { new Role("CWMS User Admins")};
-        RouteRole[] userRoles = new RouteRole[] {new Role("CWMS Users")};
+        RouteRole[] userRoles = new RouteRole[] {new Role(CWMS_USERS_ROLE), new Role(CAC_USER)};
         crud("/users/{user-name}", new UsersController(metrics), adminRoles);
         get("/roles", new GetRolesController(metrics), adminRoles);
-        get("/user/profile", new UserProfileController(metrics), userRoles);
+        String userProfilePath = "/user/profile";
+        get(userProfilePath, new UserProfileController(metrics), userRoles);
+        cdaAccessManager.addCustomAuthorizer(userProfilePath, ApiServlet::hasAnyRole);
         post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
         delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
-        
+
+    }
+
+    private static Boolean hasAnyRole(DataApiPrincipal p, Set<RouteRole> roles) throws MissingRolesException {
+        boolean retVal = roles.stream().anyMatch(p.getRoles()::contains);
+        if(!retVal) {
+            List<String> requiredRoleNames = roles.stream()
+                    .map(Object::toString)
+                    .collect(toList());
+            throw new MissingRolesException(requiredRoleNames, "Missing one of the following roles {" + String.join(",", requiredRoleNames) + "}");
+        }
+        return true;
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
