@@ -272,6 +272,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-DwarContext=/" + context
+    jvmArgs += "-Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true"
     jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
     // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
