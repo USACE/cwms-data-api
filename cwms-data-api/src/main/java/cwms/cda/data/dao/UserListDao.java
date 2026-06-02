@@ -7,8 +7,10 @@ import static org.jooq.impl.DSL.table;
 import static org.jooq.impl.DSL.upper;
 
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dto.auth.userlists.UserList;
 import cwms.cda.data.dto.auth.userlists.UserListMember;
 import cwms.cda.data.dto.auth.userlists.UserListMembers;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
 import org.jooq.Condition;
@@ -18,9 +20,9 @@ import org.jooq.Table;
 
 public final class UserListDao extends Dao<UserListMember> {
 
-    private final Table<?> avUserListMembers = table(name("cwms_20", "av_user_list_members")).as("ulm");
-    private final Table<?> atUserLists = table(name("cwms_20", "at_user_lists")).as("ul");
-    private final Table<?> cwmsOffice = table(name("cwms_20", "cwms_office")).as("co");
+    private final Table<?> avUserListMembers = table(name("CWMS_20", "AV_USER_LIST_MEMBERS")).as("ulm");
+    private final Table<?> atUserLists = table(name("CWMS_20", "AT_USER_LISTS")).as("ul");
+    private final Table<?> cwmsOffice = table(name("CWMS_20", "CWMS_OFFICE")).as("co");
 
     public UserListDao(DSLContext dsl) {
         super(dsl);
@@ -31,16 +33,41 @@ public final class UserListDao extends Dao<UserListMember> {
         return Optional.empty();
     }
 
+    public Optional<UserList> getUserList(String officeId, String userListId) {
+        Field<Long> listOfficeCode = field(name(atUserLists.getName(), "DB_OFFICE_CODE"), Long.class);
+        Field<String> listUserListId = field(name(atUserLists.getName(), "USER_LIST_ID"), String.class);
+        Field<String> listDescription = field(name(atUserLists.getName(), "USER_LIST_DESC"), String.class);
+        Field<String> listOwner = field(name(atUserLists.getName(), "OWNED_BY_USERID"), String.class);
+        Field<Timestamp> listCreatedAt = field(name(atUserLists.getName(), "CREATED_AT"), Timestamp.class);
+        Field<Timestamp> listUpdatedAt = field(name(atUserLists.getName(), "UPDATED_AT"), Timestamp.class);
+        Field<Long> officeCode = field(name(cwmsOffice.getName(), "OFFICE_CODE"), Long.class);
+        Field<String> officeName = field(name(cwmsOffice.getName(), "OFFICE_ID"), String.class);
+
+        return dsl.select(officeName, listUserListId, listDescription, listOwner, listCreatedAt, listUpdatedAt)
+                .from(atUserLists)
+                .join(cwmsOffice).on(listOfficeCode.eq(officeCode))
+                .where(ignoreCaseEq(officeName, officeId))
+                .and(ignoreCaseEq(listUserListId, userListId))
+                .fetchOptional(record -> new UserList(
+                        record.get(officeName),
+                        record.get(listUserListId),
+                        record.get(listDescription),
+                        record.get(listOwner),
+                        record.get(listCreatedAt).toInstant(),
+                        Optional.ofNullable(record.get(listUpdatedAt)).map(Timestamp::toInstant).orElse(null)
+                ));
+    }
+
     public UserListMembers getMembers(String officeId, String userListId) {
         if (!userListExists(officeId, userListId)) {
             throw new NotFoundException("User list not found: " + officeId + "/" + userListId);
         }
 
-        Field<String> viewOfficeId = field(name(avUserListMembers.getName(), "office_id"), String.class);
-        Field<String> viewUserListId = field(name(avUserListMembers.getName(), "user_list_id"), String.class);
-        Field<String> viewUserId = field(name(avUserListMembers.getName(), "user_id"), String.class);
-        Field<String> viewFullName = field(name(avUserListMembers.getName(), "full_name"), String.class);
-        Field<String> viewEmail = field(name(avUserListMembers.getName(), "email"), String.class);
+        Field<String> viewOfficeId = field(name(avUserListMembers.getName(), "OFFICE_ID"), String.class);
+        Field<String> viewUserListId = field(name(avUserListMembers.getName(), "USER_LIST_ID"), String.class);
+        Field<String> viewUserId = field(name(avUserListMembers.getName(), "USER_ID"), String.class);
+        Field<String> viewFullName = field(name(avUserListMembers.getName(), "FULL_NAME"), String.class);
+        Field<String> viewEmail = field(name(avUserListMembers.getName(), "EMAIL"), String.class);
 
         List<UserListMember> members = dsl.select(viewOfficeId, viewUserListId, viewUserId, viewFullName,
                     viewEmail)
@@ -60,10 +87,10 @@ public final class UserListDao extends Dao<UserListMember> {
     }
 
     private boolean userListExists(String officeId, String userListId) {
-        Field<Number> listOfficeCode = field(name(atUserLists.getName(), "db_office_code"), Number.class);
-        Field<String> listUserListId = field(name(atUserLists.getName(), "user_list_id"), String.class);
-        Field<Number> officeCode = field(name(cwmsOffice.getName(), "office_code"), Number.class);
-        Field<String> officeName = field(name(cwmsOffice.getName(), "office_id"), String.class);
+        Field<Long> listOfficeCode = field(name(atUserLists.getName(), "DB_OFFICE_CODE"), Long.class);
+        Field<String> listUserListId = field(name(atUserLists.getName(), "USER_LIST_ID"), String.class);
+        Field<Long> officeCode = field(name(cwmsOffice.getName(), "OFFICE_CODE"), Long.class);
+        Field<String> officeName = field(name(cwmsOffice.getName(), "OFFICE_ID"), String.class);
 
         return dsl.fetchExists(
                 selectOne()
