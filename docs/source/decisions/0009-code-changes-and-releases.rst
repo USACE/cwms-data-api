@@ -60,11 +60,14 @@ All Environments
 -----------------------------------
 
 Schema updates in each environment will not happen until all current automated CWMS-Data-API tests are passing against that schema version.
+At this time we cannot easily automate Schema updates, once the cwms-database flyway work is finished schema updates will coincide with
+appropriate cwms-data-api versions upon deployment.
 
 Deployments will be pushed from the Github Repository using the Deploy action workflow, Described in the how-to-release documentation.
 Except for Dev, all deployments are from tags. 
 
 Any authorized user may tag for release and deploy CDA versions to the given environments.
+
 
 
 Opinions
@@ -73,7 +76,7 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Adopt this proposal
+Summary: Adopt this proposal.
 
 Michael Neilson
 
