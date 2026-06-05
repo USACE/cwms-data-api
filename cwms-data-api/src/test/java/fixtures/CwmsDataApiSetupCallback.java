@@ -36,6 +36,7 @@ import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
 import org.testcontainers.images.PullPolicy;
 
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
@@ -97,7 +98,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         int ret;
         String tmp = schemaVersion();
         if (tmp.equalsIgnoreCase("latest-dev")) {
-            ret = 999999;
+            ret = LATEST_SCHEMA;
         } else if (tmp.equalsIgnoreCase("Bypass")) {
             ret = -1;
         } else if(tmp.toLowerCase().endsWith("staging")) {
