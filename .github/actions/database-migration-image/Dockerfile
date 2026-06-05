@@ -1,5 +1,5 @@
 # Variation specific to the deploy environment will go here
-ARG IMAGE=ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer:latest-dev
+ARG IMAGE=ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer:26.02.17-RC02
 FROM ${IMAGE}
 
 COPY entry.sh /
