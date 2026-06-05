@@ -36,17 +36,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-@JsonDeserialize(builder = TimeSeriesIdentifiersByParameterList.Builder.class)
+@JsonDeserialize(builder = LocationToPublishedDataList.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-public class TimeSeriesIdentifiersByParameterList extends CwmsDTOPaginated {
+public class LocationToPublishedDataList extends CwmsDTOPaginated {
 
-    private final List<TimeSeriesIdentifiersByParameter> timeSeriesIdsForLocations;
+    private final List<LocationToPublishedData> locationToPublishedData;
 
-    private TimeSeriesIdentifiersByParameterList(Builder builder) {
+    private LocationToPublishedDataList(Builder builder) {
         super(builder.cursor, builder.pageSize, builder.total);
-        this.timeSeriesIdsForLocations = new ArrayList<>(builder.timeSeriesIdsForLocations);
+        this.locationToPublishedData = new ArrayList<>(builder.locationToPublishedData);
     }
 
     public static String getOffice(String cursor)
@@ -72,8 +72,8 @@ public class TimeSeriesIdentifiersByParameterList extends CwmsDTOPaginated {
         return null;
     }
 
-    public List<TimeSeriesIdentifiersByParameter> getTimeSeriesIdsForLocations() {
-        return Collections.unmodifiableList(timeSeriesIdsForLocations);
+    public List<LocationToPublishedData> getLocationToPublishedData() {
+        return Collections.unmodifiableList(locationToPublishedData);
     }
 
     public static class Builder {
@@ -82,7 +82,7 @@ public class TimeSeriesIdentifiersByParameterList extends CwmsDTOPaginated {
         private Integer total;
         private String nextPage;
 
-        private List<TimeSeriesIdentifiersByParameter> timeSeriesIdsForLocations = new ArrayList<>();
+        private List<LocationToPublishedData> locationToPublishedData = new ArrayList<>();
 
         public Builder withCursor(String cursor) {
             this.cursor = cursor;
@@ -104,16 +104,16 @@ public class TimeSeriesIdentifiersByParameterList extends CwmsDTOPaginated {
             return this;
         }
 
-        public Builder withTimeSeriesIdsForLocations(Collection<TimeSeriesIdentifiersByParameter> timeSeriesIdsForLocations) {
-            this.timeSeriesIdsForLocations = new ArrayList<>(timeSeriesIdsForLocations);
+        public Builder withLocationToPublishedData(Collection<LocationToPublishedData> locationToPublishedData) {
+            this.locationToPublishedData = new ArrayList<>(locationToPublishedData);
             return this;
         }
 
-        public TimeSeriesIdentifiersByParameterList build() {
-            TimeSeriesIdentifiersByParameterList retval = new TimeSeriesIdentifiersByParameterList(this);
+        public LocationToPublishedDataList build() {
+            LocationToPublishedDataList retval = new LocationToPublishedDataList(this);
 
-            if (timeSeriesIdsForLocations.size() == pageSize && !timeSeriesIdsForLocations.isEmpty()) {
-                TimeSeriesIdentifiersByParameter lastTimeSeriesIdentifiersByType = timeSeriesIdsForLocations.get(timeSeriesIdsForLocations.size() - 1);
+            if (locationToPublishedData.size() == pageSize && !locationToPublishedData.isEmpty()) {
+                LocationToPublishedData lastTimeSeriesIdentifiersByType = locationToPublishedData.get(locationToPublishedData.size() - 1);
                 String cursor = encodeCursor(CwmsDTOPaginated.delimiter, lastTimeSeriesIdentifiersByType.getLocationId().getOfficeId(),
                         lastTimeSeriesIdentifiersByType.getLocationId().getName());
                 retval.nextPage = encodeCursor(cursor, pageSize, total);

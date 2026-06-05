@@ -34,31 +34,25 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
-@JsonDeserialize(builder = TimeSeriesIdentifiersByParameter.Builder.class)
+@JsonDeserialize(builder = LocationToPublishedData.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class TimeSeriesIdentifiersByParameter extends CwmsDTOBase {
+public final class LocationToPublishedData extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId locationId;
     private final String kind;
     private final String boundingOfficeId;
-    private final Instant dateRefreshed;
-    private final String notes;
+    private final Map<String, PublishedTimeSeriesData> publishedTimesSeries;
 
-    private final Map<String, TimeSeriesMetaData> timeSeriesIdsByParameter;
-
-    private TimeSeriesIdentifiersByParameter(Builder builder) {
+    private LocationToPublishedData(Builder builder) {
         this.locationId = builder.locationId;
         this.kind = builder.kind;
         this.boundingOfficeId = builder.boundingOfficeId;
-        this.dateRefreshed = builder.dateRefreshed;
-        this.notes = builder.notes;
-        this.timeSeriesIdsByParameter = builder.timeSeriesIdsByParameter;
+        this.publishedTimesSeries = builder.publishedTimesSeries;
     }
 
     public CwmsId getLocationId() {
@@ -73,25 +67,15 @@ public final class TimeSeriesIdentifiersByParameter extends CwmsDTOBase {
         return boundingOfficeId;
     }
 
-    public java.time.Instant getDateRefreshed() {
-        return dateRefreshed;
-    }
-
-    public String getNotes() {
-        return notes;
-    }
-
-    public Map<String, TimeSeriesMetaData> getTimeSeriesIdsByParameter() {
-        return timeSeriesIdsByParameter;
+    public Map<String, PublishedTimeSeriesData> getPublishedTimesSeries() {
+        return publishedTimesSeries;
     }
 
     public static class Builder {
         private CwmsId locationId;
         private String kind;
         private String boundingOfficeId;
-        private java.time.Instant dateRefreshed;
-        private String notes;
-        private Map<String, TimeSeriesMetaData> timeSeriesIdsByParameter = new HashMap<>();
+        private Map<String, PublishedTimeSeriesData> publishedTimesSeries = new HashMap<>();
 
         public Builder withLocationId(CwmsId locationId) {
             this.locationId = locationId;
@@ -108,29 +92,19 @@ public final class TimeSeriesIdentifiersByParameter extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withDateRefreshed(java.time.Instant dateRefreshed) {
-            this.dateRefreshed = dateRefreshed;
-            return this;
-        }
-
-        public Builder withNotes(String notes) {
-            this.notes = notes;
-            return this;
-        }
-
-        public Builder withTimeSeriesIdsByParameter(Map<String, TimeSeriesMetaData> timeSeriesIdsByParameter) {
-            this.timeSeriesIdsByParameter = timeSeriesIdsByParameter;
+        public Builder withPublishedTimesSeries(Map<String, PublishedTimeSeriesData> publishedTimesSeries) {
+            this.publishedTimesSeries = publishedTimesSeries;
             return this;
         }
 
         @JsonIgnore
-        public Builder withTimeSeriesId(String parameter, TimeSeriesMetaData tsId) {
-            this.timeSeriesIdsByParameter.put(parameter, tsId);
+        public Builder withTimeSeriesId(String parameter, PublishedTimeSeriesData tsId) {
+            this.publishedTimesSeries.put(parameter, tsId);
             return this;
         }
 
-        public TimeSeriesIdentifiersByParameter build() {
-            return new TimeSeriesIdentifiersByParameter(this);
+        public LocationToPublishedData build() {
+            return new LocationToPublishedData(this);
         }
     }
 }

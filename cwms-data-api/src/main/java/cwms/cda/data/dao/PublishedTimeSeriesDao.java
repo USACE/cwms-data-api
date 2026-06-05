@@ -25,10 +25,9 @@ package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
-import cwms.cda.data.dto.TimeSeriesIdentifiersByParameter;
-import cwms.cda.data.dto.TimeSeriesIdentifiersByParameterList;
-import cwms.cda.data.dto.TimeSeriesMetaData;
+import cwms.cda.data.dto.LocationToPublishedData;
+import cwms.cda.data.dto.LocationToPublishedDataList;
+import cwms.cda.data.dto.PublishedTimeSeriesData;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -58,7 +57,7 @@ public final class PublishedTimeSeriesDao extends JooqDao<TimeSeriesProfile> {
         super(dsl);
     }
 
-    public TimeSeriesIdentifiersByParameterList retrievePublishedTimeSeriesIds(PublishedRetrievalParameters retrievalParameters, String cursor, int pageSize)
+    public LocationToPublishedDataList retrievePublishedTimeSeriesIds(PublishedRetrievalParameters retrievalParameters, String cursor, int pageSize)
     {
         int total = 0;
         String cursorOffice = null;
@@ -83,8 +82,8 @@ public final class PublishedTimeSeriesDao extends JooqDao<TimeSeriesProfile> {
             final String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
 
             if (parts.length > 1) {
-                cursorOffice = TimeSeriesIdentifiersByParameterList.getOffice(cursor);
-                cursorLocId = TimeSeriesIdentifiersByParameterList.getId(cursor);
+                cursorOffice = LocationToPublishedDataList.getOffice(cursor);
+                cursorLocId = LocationToPublishedDataList.getId(cursor);
                 total = Integer.parseInt(parts[1]);
                 pageSize = Integer.parseInt(parts[2]);
             }
@@ -99,11 +98,9 @@ public final class PublishedTimeSeriesDao extends JooqDao<TimeSeriesProfile> {
                 upper(AV_A2W_TS_CODES_BY_LOC2.DB_OFFICE_ID).greaterThan(cursorOffice.toUpperCase());
         Condition pagingCondition = moreInSameOffice.or(nextOffices);
 
-        Map<InsensitiveCwmsId, Map<String, TimeSeriesMetaData>> locationToTsParameterMap = new LinkedHashMap<>();
+        Map<InsensitiveCwmsId, Map<String, PublishedTimeSeriesData>> locationToTsParameterMap = new LinkedHashMap<>();
         Map<InsensitiveCwmsId, String> locationKindMap = new LinkedHashMap<>();
         Map<InsensitiveCwmsId, String> locationBoundingOfficeMap = new LinkedHashMap<>();
-        Map<InsensitiveCwmsId, Instant> locationRefreshDateMap = new LinkedHashMap<>();
-        Map<InsensitiveCwmsId, String> locationNotesMap = new LinkedHashMap<>();
 
         return connectionResult(dsl, conn -> {
             DSLContext ctx = getDslContext(conn, null);
@@ -136,7 +133,7 @@ public final class PublishedTimeSeriesDao extends JooqDao<TimeSeriesProfile> {
                         Timestamp refreshDate = row.get(AV_A2W_TS_CODES_BY_LOC.DATE_REFRESHED);
                         String notes = row.get(AV_A2W_TS_CODES_BY_LOC.NOTES);
 
-                        TimeSeriesMetaData tsId = buildTsId(row, refreshDate, notes);
+                        PublishedTimeSeriesData tsId = buildTsId(row, refreshDate, notes);
                         InsensitiveCwmsId key = new InsensitiveCwmsId(new CwmsId.Builder()
                                 .withOfficeId(officeId)
                                 .withName(locationId)
@@ -144,32 +141,28 @@ public final class PublishedTimeSeriesDao extends JooqDao<TimeSeriesProfile> {
                         locationToTsParameterMap.computeIfAbsent(key, k -> new LinkedHashMap<>()).put(tsParameterFromRow, tsId);
                         locationKindMap.putIfAbsent(key, kind);
                         locationBoundingOfficeMap.putIfAbsent(key, boundingOfficeId);
-                        locationRefreshDateMap.putIfAbsent(key, refreshDate == null ? null : refreshDate.toInstant());
-                        locationNotesMap.putIfAbsent(key, notes);
                     });
 
-            List<TimeSeriesIdentifiersByParameter> identifiersList = locationToTsParameterMap.entrySet().stream()
-                    .map(entry -> new TimeSeriesIdentifiersByParameter.Builder()
+            List<LocationToPublishedData> identifiersList = locationToTsParameterMap.entrySet().stream()
+                    .map(entry -> new LocationToPublishedData.Builder()
                             .withLocationId(entry.getKey().getCwmsId())
-                            .withTimeSeriesIdsByParameter(entry.getValue())
+                            .withPublishedTimesSeries(entry.getValue())
                             .withKind(locationKindMap.get(entry.getKey()))
                             .withBoundingOfficeId(locationBoundingOfficeMap.get(entry.getKey()))
-                            .withDateRefreshed(locationRefreshDateMap.get(entry.getKey()))
-                            .withNotes(locationNotesMap.get(entry.getKey()))
                             .build())
                     .collect(toList());
 
-            return new TimeSeriesIdentifiersByParameterList.Builder()
+            return new LocationToPublishedDataList.Builder()
                     .withCursor(cursor)
                     .withTotal(finalizedTotal)
                     .withPageSize(finalizedPageSize)
-                    .withTimeSeriesIdsForLocations(identifiersList)
+                    .withLocationToPublishedData(identifiersList)
                     .build();
         });
 
     }
 
-    private TimeSeriesMetaData buildTsId(Record row, Timestamp refreshDate, String notes)
+    private PublishedTimeSeriesData buildTsId(Record row, Timestamp refreshDate, String notes)
     {
         String timeSeriesId = row.get(AV_A2W_TS_CODES_BY_LOC2.CWMS_TS_ID);
         String officeId = row.get(AV_A2W_TS_CODES_BY_LOC2.DB_OFFICE_ID);
@@ -177,14 +170,14 @@ public final class PublishedTimeSeriesDao extends JooqDao<TimeSeriesProfile> {
         String timeZoneId = row.get(AV_CWMS_TS_ID.TIME_ZONE_ID);
         boolean active = parseBool(row.get(AV_LOC2.ACTIVE_FLAG));
 
-        return new TimeSeriesMetaData.Builder()
-                .withTsId(new TimeSeriesIdentifierDescriptor.Builder()
+        return new PublishedTimeSeriesData.Builder()
+                .withTimeSeriesId(new CwmsId.Builder()
                         .withOfficeId(officeId)
-                        .withTimezoneName(timeZoneId)
-                        .withTimeSeriesId(timeSeriesId)
-                        .withIntervalOffsetMinutes(intervalUtcMinuteOffset == null ? null : intervalUtcMinuteOffset.longValue())
-                        .withActive(active)
+                        .withName(timeSeriesId)
                         .build())
+                .withTimezoneName(timeZoneId)
+                .withIntervalOffsetMinutes(intervalUtcMinuteOffset == null ? null : intervalUtcMinuteOffset.intValue())
+                .withActive(active)
                 .withDateRefreshed(refreshDate == null ? null : refreshDate.toInstant())
                 .withNotes(notes)
                 .build();

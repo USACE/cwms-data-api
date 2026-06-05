@@ -55,7 +55,7 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
     private static final Map<String, String> LOCATION_TO_OFFICE = new LinkedHashMap<>();
     private static final Map<String, Map<String, String>> LOCATION_TO_TS_ID = new LinkedHashMap<>();
     private static final String STAGE = "STAGE";
-    private static final String FLOW = "FLOW";
+    private static final String INFLOW = "INFLOW";
     private static final String PRECIP = "PRECIP";
     private static final Map<String, Integer> TS_CODE_MAP = new LinkedHashMap<>();
 
@@ -63,17 +63,17 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
     public static void beforeAll() throws Exception {
         Map<String, String> aarkParamToTsIdMap = new LinkedHashMap<>();
         aarkParamToTsIdMap.put(STAGE, "AARK.Stage.Inst.15Minutes.0.Ccp-Rev");
-        aarkParamToTsIdMap.put(FLOW,  "AARK.Flow.Inst.1Hour.0.Ccp-Rev");
+        aarkParamToTsIdMap.put(INFLOW,  "AARK.Flow.Inst.1Hour.0.Ccp-Rev");
         aarkParamToTsIdMap.put(PRECIP, "AARK.Precip.Inst.15Minutes.0.Ccp-Rev");
 
         Map<String, String> addiParamToTsIdMap = new LinkedHashMap<>();
         addiParamToTsIdMap.put(STAGE, "ADDI.Stage.Inst.15Minutes.0.Ccp-Rev");
-        addiParamToTsIdMap.put(FLOW,  "ADDI.Flow.Inst.15Minutes.0.Ccp-Rev");
+        addiParamToTsIdMap.put(INFLOW,  "ADDI.Flow.Inst.15Minutes.0.Ccp-Rev");
         addiParamToTsIdMap.put(PRECIP, "ADDI.Precip.Inst.15Minutes.0.Ccp-Rev");
 
         Map<String, String> bbnkParamToTsIdMap = new LinkedHashMap<>();
         bbnkParamToTsIdMap.put(STAGE, "BBNK.Stage.Inst.15Minutes.0.Ccp-Rev");
-        bbnkParamToTsIdMap.put(FLOW,  "BBNK.Flow.Inst.15Minutes.0.Ccp-Rev");
+        bbnkParamToTsIdMap.put(INFLOW,  "BBNK.Flow.Inst.15Minutes.0.Ccp-Rev");
         bbnkParamToTsIdMap.put(PRECIP, "BBNK.Precip.Inst.15Minutes.0.Ccp-Rev");
 
         LOCATION_TO_TS_ID.put("AARK", aarkParamToTsIdMap);
@@ -158,7 +158,7 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
                 Map<String, String> tsIds = LOCATION_TO_TS_ID.get(locationId);
 
                 Integer stageCode = tsIds.get(STAGE) == null ? null : TS_CODE_MAP.get(tsIds.get(STAGE));
-                Integer flowCode  = tsIds.get(FLOW)  == null ? null : TS_CODE_MAP.get(tsIds.get(FLOW));
+                Integer flowCode  = tsIds.get(INFLOW)  == null ? null : TS_CODE_MAP.get(tsIds.get(INFLOW));
                 Integer precipCode = tsIds.get(PRECIP) == null ? null : TS_CODE_MAP.get(tsIds.get(PRECIP));
                 int numTsCodes = tsIds.values().size();
 
@@ -315,10 +315,10 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("'time-series-ids-for-locations'.size()", greaterThan(0))
-                .body("'time-series-ids-for-locations'.'location-id'.name", hasItems("AARK"))
-                .body("'time-series-ids-for-locations'[0].'time-series-ids-by-parameter'.STAGE", notNullValue())
-                .body("'time-series-ids-for-locations'[0].'time-series-ids-by-parameter'.INFLOW", notNullValue());
+                .body("'location-to-published-data'.size()", greaterThan(0))
+                .body("'location-to-published-data'.'location-id'.name", hasItems("AARK"))
+                .body("'location-to-published-data'[0].'published-times-series'.STAGE", notNullValue())
+                .body("'location-to-published-data'[0].'published-times-series'.INFLOW", notNullValue());
 
     }
 
@@ -340,9 +340,9 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
             .get("/published/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("'time-series-ids-for-locations'.size()", greaterThan(0))
-            .body("'time-series-ids-for-locations'.'location-id'.name", hasItems("AARK"))
-            .body("'time-series-ids-for-locations'[0].'time-series-ids-by-parameter'.STAGE", notNullValue());
+            .body("'location-to-published-data'.size()", greaterThan(0))
+            .body("'location-to-published-data'.'location-id'.name", hasItems("AARK"))
+            .body("'location-to-published-data'[0].'published-times-series'.STAGE", notNullValue());
 
         // --- Page 1 ---
         ExtractableResponse<Response> response = given()
@@ -355,7 +355,7 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
             .get("/published/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("'time-series-ids-for-locations'.size()", is(1))
+            .body("'location-to-published-data'.size()", is(1))
             .body("page", notNullValue())
             .extract();
 
@@ -374,7 +374,7 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
             .get("/published/")
         .then()
                 .statusCode(is(HttpServletResponse.SC_OK))
-                .body("'time-series-ids-for-locations'.size()", is(1));
+                .body("'location-to-published-data'.size()", is(1));
     }
 
     @Test
@@ -397,16 +397,16 @@ public final class PublishedControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("'time-series-ids-for-locations'.size()", is(3))
-            .body("'time-series-ids-for-locations'.'location-id'.name", hasItems("AARK", "ADDI", "BBNK"))
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'AARK' }.'time-series-ids-by-parameter'.STAGE", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'AARK' }.'time-series-ids-by-parameter'.INFLOW", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'AARK' }.'time-series-ids-by-parameter'.PRECIP", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'ADDI' }.'time-series-ids-by-parameter'.STAGE", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'ADDI' }.'time-series-ids-by-parameter'.INFLOW", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'ADDI' }.'time-series-ids-by-parameter'.PRECIP", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'BBNK' }.'time-series-ids-by-parameter'.STAGE", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'BBNK' }.'time-series-ids-by-parameter'.INFLOW", notNullValue())
-            .body("'time-series-ids-for-locations'.find { it.'location-id'.name == 'BBNK' }.'time-series-ids-by-parameter'.PRECIP", notNullValue());
+            .body("'location-to-published-data'.size()", is(3))
+            .body("'location-to-published-data'.'location-id'.name", hasItems("AARK", "ADDI", "BBNK"))
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'AARK' }.'published-times-series'.STAGE", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'AARK' }.'published-times-series'.INFLOW", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'AARK' }.'published-times-series'.PRECIP", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'ADDI' }.'published-times-series'.STAGE", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'ADDI' }.'published-times-series'.INFLOW", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'ADDI' }.'published-times-series'.PRECIP", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'BBNK' }.'published-times-series'.STAGE", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'BBNK' }.'published-times-series'.INFLOW", notNullValue())
+            .body("'location-to-published-data'.find { it.'location-id'.name == 'BBNK' }.'published-times-series'.PRECIP", notNullValue());
     }
 }

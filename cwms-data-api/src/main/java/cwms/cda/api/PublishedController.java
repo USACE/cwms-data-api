@@ -45,7 +45,7 @@ import cwms.cda.data.dao.PublishedRetrievalParameters;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 import cwms.cda.data.dao.PublishedTimeSeriesDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
-import cwms.cda.data.dto.TimeSeriesIdentifiersByParameterList;
+import cwms.cda.data.dto.LocationToPublishedDataList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -108,7 +108,7 @@ public final class PublishedController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = TimeSeriesIdentifiersByParameterList.class)
+                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = LocationToPublishedDataList.class)
                     })
             },
             description = "Returns matching time series identifiers for published data.",
@@ -132,10 +132,10 @@ public final class PublishedController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             PublishedTimeSeriesDao dao = new PublishedTimeSeriesDao(dsl);
             PublishedRetrievalParameters retrievalParams = new PublishedRetrievalParameters(locationIdMask, officeIdMask);
-            TimeSeriesIdentifiersByParameterList result = dao.retrievePublishedTimeSeriesIds(retrievalParams, cursor, pageSize);
+            LocationToPublishedDataList result = dao.retrievePublishedTimeSeriesIds(retrievalParams, cursor, pageSize);
 
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifiersByParameterList.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationToPublishedDataList.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, result);
             ctx.result(serialized);

@@ -24,7 +24,6 @@
 
 package cwms.cda.data.dto;
 
-import java.time.ZoneId;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,30 +39,30 @@ import java.nio.charset.StandardCharsets;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
-final class TimeSeriesIdentifiersByParameterTest {
+final class LocationToPublishedDataTest {
 
     @Test
     void createPublishedTimeSeriesData_allFieldsProvided_success() {
-        TimeSeriesMetaData ts1 = new TimeSeriesMetaData.Builder()
-                .withTsId(new TimeSeriesIdentifierDescriptor.Builder()
-                        .withTimeSeriesId("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
+        PublishedTimeSeriesData ts1 = new PublishedTimeSeriesData.Builder()
+                .withTimeSeriesId(new CwmsId.Builder()
+                        .withName("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
                         .withOfficeId("SWT")
-                        .withActive(true)
-                        .withIntervalOffsetMinutes(0L)
-                        .withZoneId(ZoneId.of("UTC"))
                         .build())
+                .withActive(true)
+                .withIntervalOffsetMinutes(0)
+                .withTimezoneName("UTC")
                 .withNotes("This is a test")
                 .withDateRefreshed(Instant.parse("2025-03-03T12:00:00Z")) // Adding date refreshed
                 .build();
 
-        TimeSeriesMetaData ts2 = new TimeSeriesMetaData.Builder()
-                .withTsId(new TimeSeriesIdentifierDescriptor.Builder()
-                        .withTimeSeriesId("AARK.Flow.Inst.15Minutes.0.Ccp-Rev")
+        PublishedTimeSeriesData ts2 = new PublishedTimeSeriesData.Builder()
+                .withTimeSeriesId(new CwmsId.Builder()
+                        .withName("AARK.Flow.Inst.15Minutes.0.Ccp-Rev")
                         .withOfficeId("SWT")
-                        .withActive(true)
-                        .withIntervalOffsetMinutes(0L)
-                        .withZoneId(ZoneId.of("UTC"))
                         .build())
+                .withActive(true)
+                .withIntervalOffsetMinutes(0)
+                .withTimezoneName("UTC")
                 .withNotes("This is another test")
                 .withDateRefreshed(Instant.parse("2025-03-03T12:00:00Z")) // Adding date refreshed
                 .build();
@@ -72,12 +71,10 @@ final class TimeSeriesIdentifiersByParameterTest {
                 .withName("AARK")
                 .withOfficeId("SWT")
                 .build();
-        TimeSeriesIdentifiersByParameter items = new TimeSeriesIdentifiersByParameter.Builder()
+        LocationToPublishedData items = new LocationToPublishedData.Builder()
                 .withLocationId(locId)
                 .withBoundingOfficeId("SWT")
                 .withKind("SITE")
-                .withDateRefreshed(Instant.parse("2025-03-03T12:00:00Z"))
-                .withNotes("General notes")
                 .withTimeSeriesId("STAGE", ts1)
                 .withTimeSeriesId("OUTFLOW", ts2)
                 .build();
@@ -86,34 +83,32 @@ final class TimeSeriesIdentifiersByParameterTest {
                 () -> DTOMatch.assertMatch(locId, items.getLocationId()),
                 () -> assertEquals("SITE", items.getKind()),
                 () -> assertEquals("SWT", items.getBoundingOfficeId()),
-                () -> assertEquals(Instant.parse("2025-03-03T12:00:00Z"), items.getDateRefreshed()),
-                () -> assertEquals("General notes", items.getNotes()),
-                () -> DTOMatch.assertMatch(ts1, items.getTimeSeriesIdsByParameter().get("STAGE")),
-                () -> DTOMatch.assertMatch(ts2, items.getTimeSeriesIdsByParameter().get("OUTFLOW"))
+                () -> DTOMatch.assertMatch(ts1, items.getPublishedTimesSeries().get("STAGE")),
+                () -> DTOMatch.assertMatch(ts2, items.getPublishedTimesSeries().get("OUTFLOW"))
         );
     }
 
     @Test
     void createPublishedTimeSeriesData_missingField_throwsFieldException() {
-        TimeSeriesMetaData tsDescriptor = new TimeSeriesMetaData.Builder()
-                .withTsId(new TimeSeriesIdentifierDescriptor.Builder()
-                        .withTimeSeriesId("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
+        PublishedTimeSeriesData tsDescriptor = new PublishedTimeSeriesData.Builder()
+                .withTimeSeriesId(new CwmsId.Builder()
+                        .withName("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
                         .withOfficeId("SWT")
-                        .withActive(true)
-                        .withIntervalOffsetMinutes(0L)
-                        .withZoneId(ZoneId.of("UTC"))
                         .build())
+                .withActive(true)
+                .withIntervalOffsetMinutes(0)
+                .withTimezoneName("UTC")
                 .withNotes("This is a test")
                 .withDateRefreshed(Instant.now()) // Adding date refreshed
                 .build();
 
-        Map<String, TimeSeriesMetaData> typeToTsIdMap = new HashMap<>();
+        Map<String, PublishedTimeSeriesData> typeToTsIdMap = new HashMap<>();
         typeToTsIdMap.put("STAGE", tsDescriptor);
 
         assertAll(
                 () -> assertThrows(FieldException.class, () -> {
-                    TimeSeriesIdentifiersByParameter item = new TimeSeriesIdentifiersByParameter.Builder()
-                            .withTimeSeriesIdsByParameter(typeToTsIdMap)
+                    LocationToPublishedData item = new LocationToPublishedData.Builder()
+                            .withPublishedTimesSeries(typeToTsIdMap)
                             .build();
                     item.validate();
                 }, "The validate method should have thrown a FieldException because the location ID is missing")
@@ -122,18 +117,18 @@ final class TimeSeriesIdentifiersByParameterTest {
 
     @Test
     void createPublishedTimeSeriesData_serialize_roundtrip() {
-        TimeSeriesMetaData tsDescriptor = new TimeSeriesMetaData.Builder()
-                .withTsId(new TimeSeriesIdentifierDescriptor.Builder()
-                        .withTimeSeriesId("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
+        PublishedTimeSeriesData tsDescriptor = new PublishedTimeSeriesData.Builder()
+                .withTimeSeriesId(new CwmsId.Builder()
+                        .withName("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
                         .withOfficeId("SWT")
-                        .withActive(true)
-                        .withIntervalOffsetMinutes(0L)
-                        .withZoneId(ZoneId.of("UTC"))
                         .build())
+                .withActive(true)
+                .withIntervalOffsetMinutes(0)
+                .withTimezoneName("UTC")
                 .withNotes("This is a test")
                 .withDateRefreshed(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS)) // Truncating to avoid precision mismatch
                 .build();
-        TimeSeriesIdentifiersByParameter data = new TimeSeriesIdentifiersByParameter.Builder()
+        LocationToPublishedData data = new LocationToPublishedData.Builder()
                 .withLocationId(new CwmsId.Builder()
                         .withName("AARK")
                         .withOfficeId("SWT")
@@ -145,39 +140,39 @@ final class TimeSeriesIdentifiersByParameterTest {
 
         ContentType contentType = new ContentType(Formats.JSON);
         String json = Formats.format(contentType, data);
-        TimeSeriesIdentifiersByParameter deserialized = Formats.parseContent(contentType, json, TimeSeriesIdentifiersByParameter.class);
+        LocationToPublishedData deserialized = Formats.parseContent(contentType, json, LocationToPublishedData.class);
         DTOMatch.assertMatch(data, deserialized);
     }
 
     @Test
     void createPublishedTimeSeriesData_deserialize_multipleEntries() throws Exception {
         // Expected data
-        TimeSeriesMetaData ts1Stage = new TimeSeriesMetaData.Builder()
-                .withTsId(new TimeSeriesIdentifierDescriptor.Builder()
-                        .withTimeSeriesId("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
+        PublishedTimeSeriesData ts1Stage = new PublishedTimeSeriesData.Builder()
+                .withTimeSeriesId(new CwmsId.Builder()
+                        .withName("AARK.Stage.Inst.15Minutes.0.Ccp-Rev")
                         .withOfficeId("SWT")
-                        .withActive(true)
-                        .withIntervalOffsetMinutes(0L)
-                        .withZoneId(ZoneId.of("UTC"))
                         .build())
+                .withActive(true)
+                .withIntervalOffsetMinutes(0)
+                .withTimezoneName("UTC")
                 .withNotes("Stage data for AARK")
                 .withDateRefreshed(Instant.parse("2025-03-03T12:00:00Z"))
                 .build();
 
-        TimeSeriesMetaData ts2Outflow = new TimeSeriesMetaData.Builder()
-                .withTsId(new TimeSeriesIdentifierDescriptor.Builder()
-                        .withTimeSeriesId("AARK.Flow.Inst.1Hour.0.Ccp-Rev")
+        PublishedTimeSeriesData ts2Outflow = new PublishedTimeSeriesData.Builder()
+                .withTimeSeriesId(new CwmsId.Builder()
+                        .withName("AARK.Flow.Inst.1Hour.0.Ccp-Rev")
                         .withOfficeId("SWT")
-                        .withActive(true)
-                        .withIntervalOffsetMinutes(0L)
-                        .withZoneId(ZoneId.of("UTC"))
                         .build())
+                .withActive(true)
+                .withIntervalOffsetMinutes(0)
+                .withTimezoneName("UTC")
                 .withNotes("Flow data for AARK")
                 .withDateRefreshed(Instant.parse("2025-03-03T12:00:00Z"))
                 .build();
 
         // Expected data for locations
-        TimeSeriesIdentifiersByParameter expectedAARK = new TimeSeriesIdentifiersByParameter.Builder()
+        LocationToPublishedData expectedAARK = new LocationToPublishedData.Builder()
                 .withLocationId(new CwmsId.Builder()
                         .withName("AARK")
                         .withOfficeId("SWT")
@@ -185,25 +180,53 @@ final class TimeSeriesIdentifiersByParameterTest {
                 .withBoundingOfficeId("SWT")
                 .withKind("SITE")
                 .withTimeSeriesId("STAGE", ts1Stage)
-                .withTimeSeriesId("OUTFLOW", ts2Outflow)
+                .withTimeSeriesId("INFLOW", ts2Outflow)
                 .build();
 
-        TimeSeriesIdentifiersByParameterList list = new TimeSeriesIdentifiersByParameterList.Builder()
+        LocationToPublishedDataList list = new LocationToPublishedDataList.Builder()
                 .withCursor("cursor")
                 .withPageSize(20)
                 .withTotal(100)
-                .withTimeSeriesIdsForLocations(Arrays.asList(expectedAARK))
+                .withLocationToPublishedData(Arrays.asList(expectedAARK))
                 .build();
 
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/time_series_identifiers_by_parameter.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/published_data_single_location.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
 
         ContentType contentType = new ContentType(Formats.JSON);
-        TimeSeriesIdentifiersByParameterList deserialized = Formats.parseContent(contentType, json, TimeSeriesIdentifiersByParameterList.class);
+        LocationToPublishedDataList deserialized = Formats.parseContent(contentType, json, LocationToPublishedDataList.class);
 
         // Verify the deserialized data matches the expected data
         assertAll(() -> DTOMatch.assertMatch(list, deserialized));
+    }
+
+    @Test
+    void createPublishedTimeSeriesData_deserialize_multiOffice_multiParameter() throws Exception {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/published_data_multi_office.json");
+        assertNotNull(resource);
+        String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        ContentType contentType = new ContentType(Formats.JSON);
+        LocationToPublishedDataList deserialized = Formats.parseContent(contentType, json, LocationToPublishedDataList.class);
+
+        assertAll(
+            () -> assertEquals(3, deserialized.getLocationToPublishedData().size()),
+            () -> assertEquals("SPK", deserialized.getLocationToPublishedData().get(0).getLocationId().getOfficeId()),
+            () -> assertEquals("AARK", deserialized.getLocationToPublishedData().get(0).getLocationId().getName()),
+            () -> assertEquals(3, deserialized.getLocationToPublishedData().get(0).getPublishedTimesSeries().size()),
+            () -> assertTrue(deserialized.getLocationToPublishedData().get(0).getPublishedTimesSeries().containsKey("STAGE")),
+            () -> assertTrue(deserialized.getLocationToPublishedData().get(0).getPublishedTimesSeries().containsKey("INFLOW")),
+            () -> assertTrue(deserialized.getLocationToPublishedData().get(0).getPublishedTimesSeries().containsKey("PRECIP")),
+
+            () -> assertEquals("SWT", deserialized.getLocationToPublishedData().get(1).getLocationId().getOfficeId()),
+            () -> assertEquals("ADDI", deserialized.getLocationToPublishedData().get(1).getLocationId().getName()),
+            () -> assertEquals(3, deserialized.getLocationToPublishedData().get(1).getPublishedTimesSeries().size()),
+
+            () -> assertEquals("NWD", deserialized.getLocationToPublishedData().get(2).getLocationId().getOfficeId()),
+            () -> assertEquals("BBNK", deserialized.getLocationToPublishedData().get(2).getLocationId().getName()),
+            () -> assertEquals(3, deserialized.getLocationToPublishedData().get(2).getPublishedTimesSeries().size())
+        );
     }
 
 }
