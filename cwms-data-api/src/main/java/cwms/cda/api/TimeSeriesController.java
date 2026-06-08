@@ -9,6 +9,7 @@ import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
@@ -185,7 +186,7 @@ public class TimeSeriesController implements CrudHandler {
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
-            CdaError re = new CdaError("Internal Error");
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "Internal Error", ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -636,7 +637,7 @@ public class TimeSeriesController implements CrudHandler {
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
-            CdaError re = new CdaError("Internal Error");
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "Internal Error", ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }

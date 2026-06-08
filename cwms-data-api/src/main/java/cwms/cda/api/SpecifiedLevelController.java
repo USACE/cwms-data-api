@@ -60,7 +60,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-
 public class SpecifiedLevelController implements CrudHandler {
     private static final String TAG = "Levels";
     private final MetricRegistry metrics;

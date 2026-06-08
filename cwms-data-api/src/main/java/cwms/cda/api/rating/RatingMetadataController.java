@@ -167,11 +167,6 @@ public class RatingMetadataController implements CrudHandler {
 
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (Exception ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.atSevere().withCause(ex).log("%s", re);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
