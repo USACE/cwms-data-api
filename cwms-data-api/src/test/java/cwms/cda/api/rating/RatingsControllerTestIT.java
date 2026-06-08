@@ -55,13 +55,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class RatingsControllerTestIT extends DataApiTestIT
 {
 	static final String EXISTING_LOC = "RatingsControllerTestIT";
+    static final String EXISTING_LOC_LONG = "RatingsControlTestLong";
 	private static final String EXISTING_SPEC = EXISTING_LOC + ".Stage;Flow.COE.Production";
+    private static final String EXISTING_SPEC_LONG = EXISTING_LOC_LONG + ".Stage;Flow.COE.Production";
 	private static final String TEMPLATE = "Stage;Flow.COE";
 	static final String SPK = "SPK";
 
 	@BeforeAll
 	static void beforeAll() throws Exception {
 		store(false);
+        storeLong();
 	}
 
 	@AfterAll
@@ -193,6 +196,113 @@ class RatingsControllerTestIT extends DataApiTestIT
 			.statusCode(is(HttpServletResponse.SC_CREATED));
 	}
 
+    static void storeLong() throws Exception
+    {
+        //Make sure we always have something.
+        createLocationWithVerticalDatum(EXISTING_LOC_LONG, true, SPK, VerticalDatum.NAVD88);
+
+        String ratingXml = readResourceFile("cwms/cda/api/long-rating.xml");
+        ratingXml = ratingXml.replaceAll("Zanesville", EXISTING_LOC_LONG);
+        String ratingXml2 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2016-06-06T00:00:00Z");
+        String ratingXml3 = ratingXml.replaceAll("2002-04-09T13:53:01Z", "2085-06-06T00:00:00Z");
+        RatingSetContainer container = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml);
+        RatingSetContainer container2 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml2);
+        RatingSetContainer container3 = RatingSetContainerXmlFactory.ratingSetContainerFromXml(ratingXml3);
+        RatingSpecContainer specContainer = container.ratingSpecContainer;
+        specContainer.officeId = SPK;
+        specContainer.specOfficeId = SPK;
+        specContainer.locationId = EXISTING_LOC_LONG;
+        String specXml = RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
+        String templateXml = RatingSpecXmlFactory.toXml(specContainer, "", 0);
+        String setXml = RatingContainerXmlFactory.toXml(container, "", 0, true, false);
+        String setXml2 = RatingContainerXmlFactory.toXml(container2, "", 0, true, false);
+        String setXml3 = RatingContainerXmlFactory.toXml(container3, "", 0, true, false);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        //Create Template
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.XMLV2)
+            .body(templateXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings/template")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //Create Spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.XMLV2)
+            .body(specXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings/spec")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //Create the set
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.XMLV2)
+            .body(setXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, SPK)
+            .queryParam(STORE_TEMPLATE, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //Create the second set
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.XMLV2)
+            .body(setXml2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, SPK)
+            .queryParam(STORE_TEMPLATE, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create the third set
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.XMLV2)
+            .body(setXml3)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, SPK)
+            .queryParam(STORE_TEMPLATE, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
 	@ParameterizedTest
 	@EnumSource(GetAllLegacyTest.class)
 	void test_getAll_legacy(GetAllLegacyTest test) {
@@ -313,6 +423,24 @@ class RatingsControllerTestIT extends DataApiTestIT
 		assertNotNull(effectiveDate);
 		assertEquals("2016-06-06T00:00:00Z", effectiveDate);
 	}
+
+    @Test
+    void get_one_with_content_length() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings/" + EXISTING_SPEC_LONG)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .header("Content-Length", is("19831"))
+            .contentType(is(Formats.JSONV2));
+    }
 
 	enum GetOneTest
 	{
