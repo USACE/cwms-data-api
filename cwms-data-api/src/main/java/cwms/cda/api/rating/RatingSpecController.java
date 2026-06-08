@@ -51,6 +51,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Optional;
 
 import com.google.common.flogger.FluentLogger;
@@ -196,7 +197,12 @@ public class RatingSpecController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                OutputStream os = ctx.res.getOutputStream();
+                if (os != null) {
+                    os.write(bytes);
+                } else {
+                    ctx.result(result);
+                }
             } else {
                 CdaError re = new CdaError("Unable to find Rating Spec based on parameters "
                         + "given");
