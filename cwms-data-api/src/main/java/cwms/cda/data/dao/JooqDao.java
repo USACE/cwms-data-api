@@ -36,6 +36,7 @@ import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 import java.math.BigDecimal;
@@ -50,11 +51,15 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -339,6 +344,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildFieldLengthExceededException(input);
         } else if (isTSIDInvalidIntervalException(input)) {
             retVal = buildInvalidTSIDIntervalException(input);
+        } else if (isBadRequest(input)) {
+            retVal = buildBadRequest(input);
         }
 
         return retVal;
@@ -380,6 +387,40 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     // See link for a more complete list of CWMS Error codes:
     // https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database_origin_teamcity_work/browse/src/buildSqlScripts.py#4866
+
+    public static boolean isBadRequest(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+
+            List<Integer> codes = IntStream.range(20000, 20999).boxed().collect(Collectors.toList());
+
+            retVal = hasCodeOrMessage(sqlException, codes, new ArrayList<>());
+        }
+        return retVal;
+    }
+
+    public static BadRequestResponse buildBadRequest(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            String errorMessage = parts[0];
+            Map<String, String> errorDetails = new HashMap<>();
+            errorDetails.put("message", errorMessage);
+            return new BadRequestResponse("", errorDetails);
+        }
+        return new BadRequestResponse();
+    }
+
 
     public static boolean isNotFound(RuntimeException input) {
         boolean retVal = false;
