@@ -64,6 +64,23 @@ class CdaFeatureManagerProviderTest {
     }
 
     @Test
+    void testIncludeErrorStackTracesFeature() throws IOException {
+        File tempFile = Files.createTempFile("features", ".properties").toFile();
+        tempFile.deleteOnExit();
+
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write(CdaFeatures.INCLUDE_ERROR_STACK_TRACES.name() + " = true");
+        }
+
+        System.setProperty(CdaFeatureManagerProvider.PROPERTIES_FILE, tempFile.getAbsolutePath());
+
+        CdaFeatureManagerProvider provider = new CdaFeatureManagerProvider();
+        FeatureManager manager = provider.getFeatureManager();
+
+        assertTrue(manager.isActive(CdaFeatures.INCLUDE_ERROR_STACK_TRACES));
+    }
+
+    @Test
     void testFeatureDisabledByDefault() throws IOException {
         File tempFile = Files.createTempFile("features_disabled", ".properties").toFile();
         tempFile.deleteOnExit();
@@ -76,5 +93,6 @@ class CdaFeatureManagerProviderTest {
 
         assertFalse(manager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS));
         assertFalse(manager.isActive(CdaFeatures.AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT));
+        assertFalse(manager.isActive(CdaFeatures.INCLUDE_ERROR_STACK_TRACES));
     }
 }
