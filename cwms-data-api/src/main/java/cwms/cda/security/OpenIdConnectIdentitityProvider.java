@@ -105,12 +105,16 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx), ctx.attribute(ApiServlet.OFFICE_ID));
             Optional<DataApiPrincipal> principal = dao.getPrincipalFromPrincipal(oidcPrincipal);
             if (principal.isPresent()) {
-                return principal.get();
+                DataApiPrincipal dataApiPrincipal = principal.get();
+                BatchJobContext.prepareContext(ctx, dataApiPrincipal);
+                return dataApiPrincipal;
             } else if (CREATE_USERS) {
                 final String preferredUserName = claims.get(PREFERRED_USERNAME_CLAIM, String.class);
                 final String givenName = claims.get(GIVEN_NAME_CLAIM, String.class);
                 final String email = claims.get(EMAIL_CLAIM, String.class);
-                return dao.createUser(preferredUserName, oidcPrincipal, givenName, email);
+                DataApiPrincipal dataApiPrincipal = dao.createUser(preferredUserName, oidcPrincipal, givenName, email);
+                BatchJobContext.prepareContext(ctx, dataApiPrincipal);
+                return dataApiPrincipal;
             } else {
                 throw new CwmsAuthException("Not Authorized",HttpServletResponse.SC_UNAUTHORIZED);
             }

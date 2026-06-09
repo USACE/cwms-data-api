@@ -1,0 +1,160 @@
+package cwms.cda.security;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.ApiServlet;
+import cwms.cda.datasource.ConnectionPreparingDataSource;
+import cwms.cda.datasource.ConnectionPreparer;
+import cwms.cda.datasource.DelegatingConnectionPreparer;
+import cwms.cda.datasource.SessionOfficePreparer;
+import io.javalin.http.Context;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.util.Base64;
+import java.util.Locale;
+import java.util.Map;
+import javax.sql.DataSource;
+import javax.servlet.http.HttpServletResponse;
+
+public final class BatchJobContext {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    public static final String HEADER = "X-CWMS-Job-Context";
+    public static final String RUN_AS_OFFICE_ATTR = "BatchRunAsOffice";
+    public static final String JOB_ID_ATTR = "BatchJobId";
+    public static final String REQUESTED_BY_ATTR = "BatchRequestedBy";
+    public static final String DISPATCH_SOURCE_ATTR = "BatchDispatchSource";
+
+    public static final String SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.secret";
+    public static final String PREVIOUS_SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.previousSecret";
+    public static final String KEY_ID_PROPERTY = "cwms.dataapi.batch.jobContext.keyId";
+    public static final String ISSUER_PROPERTY = "cwms.dataapi.batch.jobContext.issuer";
+    public static final String AUDIENCE_PROPERTY = "cwms.dataapi.batch.jobContext.audience";
+    public static final String MACHINE_USERS_PROPERTY = "cwms.dataapi.batch.machineUsers";
+
+    private static final String DEFAULT_ISSUER = "cwms-batch-events";
+    private static final String DEFAULT_AUDIENCE = "cwms-data-api";
+    private static final String DEFAULT_MACHINE_USERS = "";
+
+    private BatchJobContext() {
+    }
+
+    public static boolean isBatchMachineUser(String username) {
+        if (username == null) {
+            return false;
+        }
+        String machineUsers = readSetting(MACHINE_USERS_PROPERTY, DEFAULT_MACHINE_USERS);
+        if (machineUsers.isBlank()) {
+            return false;
+        }
+        for (String machineUser : machineUsers.split(",")) {
+            if (username.equalsIgnoreCase(machineUser.trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void prepareContext(Context ctx, DataApiPrincipal principal) throws CwmsAuthException {
+        if (!isBatchMachineUser(principal.getName())) {
+            return;
+        }
+
+        String token = ctx.header(HEADER);
+        if (token == null || token.isBlank()) {
+            throw new CwmsAuthException("Batch machine request missing signed job context",
+                HttpServletResponse.SC_UNAUTHORIZED);
+        }
+
+        try {
+            Claims claims = parse(token);
+            String office = claims.get("run_as_office", String.class);
+            if (office == null || office.isBlank()) {
+                office = claims.get("office", String.class);
+            }
+            if (office == null || office.isBlank()) {
+                throw new CwmsAuthException("Batch job context missing run_as_office",
+                    HttpServletResponse.SC_UNAUTHORIZED);
+            }
+            ctx.attribute(RUN_AS_OFFICE_ATTR, office.toUpperCase(Locale.ROOT));
+            ctx.attribute(JOB_ID_ATTR, claims.get("job_id", String.class));
+            ctx.attribute(REQUESTED_BY_ATTR, claims.get("requested_by", String.class));
+            ctx.attribute(DISPATCH_SOURCE_ATTR, claims.get("dispatch_source", String.class));
+        } catch (JwtException | IllegalArgumentException ex) {
+            logger.atFine().withCause(ex).log("Batch job context token validation failed.");
+            throw new CwmsAuthException("Batch job context token not valid", ex,
+                HttpServletResponse.SC_UNAUTHORIZED);
+        }
+    }
+
+    public static void applyRunContext(Context ctx) {
+        String runAsOffice = ctx.attribute(RUN_AS_OFFICE_ATTR);
+        if (runAsOffice == null || runAsOffice.isBlank()) {
+            return;
+        }
+
+        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        ConnectionPreparer officePreparer = new SessionOfficePreparer(runAsOffice);
+        if (dataSource instanceof ConnectionPreparingDataSource) {
+            ConnectionPreparingDataSource preparingDataSource = (ConnectionPreparingDataSource) dataSource;
+            preparingDataSource.setPreparer(new DelegatingConnectionPreparer(
+                preparingDataSource.getPreparer(), officePreparer));
+        } else {
+            ctx.attribute(ApiServlet.DATA_SOURCE,
+                new ConnectionPreparingDataSource(officePreparer, dataSource));
+        }
+    }
+
+    private static Claims parse(String token) {
+        String secret = secretForToken(token);
+        if (secret.length() < 32) {
+            throw new IllegalArgumentException("Batch job context secret must be at least 32 characters");
+        }
+        Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        return Jwts.parserBuilder()
+            .requireIssuer(readSetting(ISSUER_PROPERTY, DEFAULT_ISSUER))
+            .requireAudience(readSetting(AUDIENCE_PROPERTY, DEFAULT_AUDIENCE))
+            .setSigningKey(key)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+    }
+
+    private static String secretForToken(String token) {
+        String expectedKeyId = readSetting(KEY_ID_PROPERTY, "current");
+        String keyId = keyIdForToken(token);
+        if (keyId == null || keyId.isBlank() || expectedKeyId.equals(keyId)) {
+            return readSetting(SECRET_PROPERTY, "");
+        }
+        if ("previous".equals(keyId)) {
+            return readSetting(PREVIOUS_SECRET_PROPERTY, "");
+        }
+        throw new IllegalArgumentException("Batch job context key id is not recognized");
+    }
+
+    private static String keyIdForToken(String token) {
+        String[] parts = token.split("\\.");
+        if (parts.length != 3) {
+            throw new IllegalArgumentException("Batch job context token is malformed");
+        }
+        try {
+            byte[] headerBytes = Base64.getUrlDecoder().decode(parts[0]);
+            Map<?, ?> header = OBJECT_MAPPER.readValue(headerBytes, Map.class);
+            Object keyId = header.get("kid");
+            return keyId instanceof String ? (String) keyId : null;
+        } catch (IllegalArgumentException | IOException e) {
+            throw new IllegalArgumentException("Batch job context token header is malformed", e);
+        }
+    }
+
+    private static String readSetting(String key, String defaultValue) {
+        String value = System.getProperty(key, System.getenv(key));
+        return value == null || value.isBlank() ? defaultValue : value;
+    }
+}
