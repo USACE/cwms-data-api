@@ -9,6 +9,7 @@ import cwms.cda.datasource.DelegatingConnectionPreparer;
 import cwms.cda.datasource.SessionOfficePreparer;
 import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -86,6 +87,10 @@ public final class BatchJobContext {
             ctx.attribute(JOB_ID_ATTR, claims.get("job_id", String.class));
             ctx.attribute(REQUESTED_BY_ATTR, claims.get("requested_by", String.class));
             ctx.attribute(DISPATCH_SOURCE_ATTR, claims.get("dispatch_source", String.class));
+        } catch (ExpiredJwtException ex) {
+            logger.atFine().withCause(ex).log("Batch job context token expired.");
+            throw new CwmsAuthException("Batch job context token expired", ex,
+                HttpServletResponse.SC_UNAUTHORIZED);
         } catch (JwtException | IllegalArgumentException ex) {
             logger.atFine().withCause(ex).log("Batch job context token validation failed.");
             throw new CwmsAuthException("Batch job context token not valid", ex,
