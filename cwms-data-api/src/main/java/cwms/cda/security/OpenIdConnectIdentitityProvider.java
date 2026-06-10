@@ -106,18 +106,18 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             Optional<DataApiPrincipal> principal = dao.getPrincipalFromPrincipal(oidcPrincipal);
             if (principal.isPresent()) {
                 DataApiPrincipal dataApiPrincipal = principal.get();
-                BatchJobContext.prepareContext(ctx, dataApiPrincipal);
+                BatchJobContext.prepareContext(ctx, dataApiPrincipal, claims);
                 return dataApiPrincipal;
             } else if (CREATE_USERS) {
                 final String preferredUserName = claims.get(PREFERRED_USERNAME_CLAIM, String.class);
-                if (BatchJobContext.isBatchMachineUser(preferredUserName)) {
+                if (BatchJobContext.isBatchMachinePrincipal(preferredUserName, claims)) {
                     throw new CwmsAuthException("Batch machine principal is not registered",
                         HttpServletResponse.SC_UNAUTHORIZED);
                 }
                 final String givenName = claims.get(GIVEN_NAME_CLAIM, String.class);
                 final String email = claims.get(EMAIL_CLAIM, String.class);
                 DataApiPrincipal dataApiPrincipal = dao.createUser(preferredUserName, oidcPrincipal, givenName, email);
-                BatchJobContext.prepareContext(ctx, dataApiPrincipal);
+                BatchJobContext.prepareContext(ctx, dataApiPrincipal, claims);
                 return dataApiPrincipal;
             } else {
                 throw new CwmsAuthException("Not Authorized",HttpServletResponse.SC_UNAUTHORIZED);

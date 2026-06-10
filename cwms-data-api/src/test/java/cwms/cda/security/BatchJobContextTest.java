@@ -13,6 +13,7 @@ import static org.mockito.Mockito.doAnswer;
 import cwms.cda.ApiServlet;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import io.javalin.http.Context;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -72,6 +73,56 @@ class BatchJobContextTest {
         BatchJobContext.prepareContext(ctx, principal);
 
         assertNull(ctx.attribute(BatchJobContext.RUN_AS_OFFICE_ATTR));
+    }
+
+    @Test
+    void machineAuthClaimSetsRunContextWithoutSignedHeader() throws CwmsAuthException {
+        Context ctx = contextWithHeaders(Map.of());
+        Claims claims = Jwts.claims(Map.of(
+            BatchJobContext.MACHINE_AUTH_CLAIM, true,
+            BatchJobContext.RUN_AS_OFFICE_CLAIM, "swt"
+        ));
+
+        BatchJobContext.prepareContext(ctx, machinePrincipal(), claims);
+
+        assertEquals("SWT", ctx.attribute(BatchJobContext.RUN_AS_OFFICE_ATTR));
+    }
+
+    @Test
+    void machineAuthStringClaimSetsRunContextWithoutSignedHeader() throws CwmsAuthException {
+        Context ctx = contextWithHeaders(Map.of());
+        Claims claims = Jwts.claims(Map.of(
+            BatchJobContext.MACHINE_AUTH_CLAIM, "true",
+            BatchJobContext.RUN_AS_OFFICE_CLAIM, "spk"
+        ));
+
+        BatchJobContext.prepareContext(ctx, machinePrincipal(), claims);
+
+        assertEquals("SPK", ctx.attribute(BatchJobContext.RUN_AS_OFFICE_ATTR));
+    }
+
+    @Test
+    void machineAuthClaimRequiresRunAsOffice() {
+        Context ctx = contextWithHeaders(Map.of());
+        Claims claims = Jwts.claims(Map.of(BatchJobContext.MACHINE_AUTH_CLAIM, true));
+
+        CwmsAuthException ex = assertThrows(CwmsAuthException.class,
+            () -> BatchJobContext.prepareContext(ctx, machinePrincipal(), claims));
+
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, ex.getAuthFailCode());
+        assertEquals("Batch job context missing run_as_office", ex.getMessage());
+    }
+
+    @Test
+    void batchMachinePrincipalUsesMachineAuthClaimOrConfiguredUser() {
+        Claims claims = Jwts.claims(Map.of(BatchJobContext.MACHINE_AUTH_CLAIM, true));
+
+        assertTrue(BatchJobContext.isBatchMachinePrincipal("normal-user", claims));
+        assertFalse(BatchJobContext.isBatchMachinePrincipal("normal-user", Jwts.claims()));
+
+        System.setProperty(BatchJobContext.MACHINE_USERS_PROPERTY, MACHINE_USER);
+
+        assertTrue(BatchJobContext.isBatchMachinePrincipal(MACHINE_USER, Jwts.claims()));
     }
 
     @Test

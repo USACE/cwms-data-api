@@ -28,6 +28,9 @@ public final class BatchJobContext {
 
     public static final String HEADER = "X-CWMS-Job-Context";
     public static final String RUN_AS_OFFICE_ATTR = "BatchRunAsOffice";
+    public static final String MACHINE_AUTH_CLAIM = "machine_auth";
+    public static final String RUN_AS_OFFICE_CLAIM = "run_as_office";
+    public static final String LEGACY_OFFICE_CLAIM = "office";
 
     public static final String SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.secret";
     public static final String PREVIOUS_SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.previousSecret";
@@ -59,6 +62,19 @@ public final class BatchJobContext {
         return false;
     }
 
+    public static boolean isBatchMachinePrincipal(String username, Claims claims) {
+        return hasMachineAuthClaim(claims) || isBatchMachineUser(username);
+    }
+
+    public static void prepareContext(Context ctx, DataApiPrincipal principal, Claims claims)
+        throws CwmsAuthException {
+        if (hasMachineAuthClaim(claims)) {
+            setRunOfficeFromClaims(ctx, claims);
+            return;
+        }
+        prepareContext(ctx, principal);
+    }
+
     public static void prepareContext(Context ctx, DataApiPrincipal principal) throws CwmsAuthException {
         if (!isBatchMachineUser(principal.getName())) {
             return;
@@ -72,15 +88,7 @@ public final class BatchJobContext {
 
         try {
             Claims claims = parse(token);
-            String office = claims.get("run_as_office", String.class);
-            if (office == null || office.isBlank()) {
-                office = claims.get("office", String.class);
-            }
-            if (office == null || office.isBlank()) {
-                throw new CwmsAuthException("Batch job context missing run_as_office",
-                    HttpServletResponse.SC_UNAUTHORIZED);
-            }
-            ctx.attribute(RUN_AS_OFFICE_ATTR, office.toUpperCase(Locale.ROOT));
+            setRunOfficeFromClaims(ctx, claims);
         } catch (ExpiredJwtException ex) {
             logger.atFine().withCause(ex).log("Batch job context token expired.");
             throw new CwmsAuthException("Batch job context token expired", ex,
@@ -90,6 +98,32 @@ public final class BatchJobContext {
             throw new CwmsAuthException("Batch job context token not valid", ex,
                 HttpServletResponse.SC_UNAUTHORIZED);
         }
+    }
+
+    private static boolean hasMachineAuthClaim(Claims claims) {
+        if (claims == null) {
+            return false;
+        }
+        Object value = claims.get(MACHINE_AUTH_CLAIM);
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof String) {
+            return Boolean.parseBoolean((String) value);
+        }
+        return false;
+    }
+
+    private static void setRunOfficeFromClaims(Context ctx, Claims claims) throws CwmsAuthException {
+        String office = claims.get(RUN_AS_OFFICE_CLAIM, String.class);
+        if (office == null || office.isBlank()) {
+            office = claims.get(LEGACY_OFFICE_CLAIM, String.class);
+        }
+        if (office == null || office.isBlank()) {
+            throw new CwmsAuthException("Batch job context missing run_as_office",
+                HttpServletResponse.SC_UNAUTHORIZED);
+        }
+        ctx.attribute(RUN_AS_OFFICE_ATTR, office.toUpperCase(Locale.ROOT));
     }
 
     public static void applyRunContext(Context ctx) {
