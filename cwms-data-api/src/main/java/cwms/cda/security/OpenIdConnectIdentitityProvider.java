@@ -110,6 +110,10 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
                 return dataApiPrincipal;
             } else if (CREATE_USERS) {
                 final String preferredUserName = claims.get(PREFERRED_USERNAME_CLAIM, String.class);
+                if (BatchJobContext.isBatchMachineUser(preferredUserName)) {
+                    throw new CwmsAuthException("Batch machine principal is not registered",
+                        HttpServletResponse.SC_UNAUTHORIZED);
+                }
                 final String givenName = claims.get(GIVEN_NAME_CLAIM, String.class);
                 final String email = claims.get(EMAIL_CLAIM, String.class);
                 DataApiPrincipal dataApiPrincipal = dao.createUser(preferredUserName, oidcPrincipal, givenName, email);

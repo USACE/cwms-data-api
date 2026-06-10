@@ -12,9 +12,9 @@
 
 Provide CWMS Data API with a trusted batch run context for jobs that execute through a shared machine identity.
 
-Batch runtimes will authenticate to CDA with a service account (via Keycloak). Each job will also provide a signed context token that identifies the authorized job launch context, including the office for which the scheduler or API approved the run.
+Batch runtimes will authenticate to CDA with a service account (via Keycloak). Each job will also provide trusted launch context, including the office for which the scheduler or API approved the run. The preferred long-term shape is for Keycloak to mint that context into the access token when it can safely receive per-job values. The signed dispatcher context described here is the fallback proposal when Keycloak cannot provide dynamic job context without a custom extension.
 
-The signed context is **not** a replacement for normal CDA or database authorization. It establishes **who** launched the machine runtime and why. CDA and the CWMS database remain responsible for deciding whether the machine principal may read or write the requested resource office.
+The signed context is **not** a replacement for normal CDA or database authorization. It establishes **who** launched the machine runtime and why. CDA and the CWMS database remain responsible for deciding whether the machine principal may read or write the requested resource office. The machine principal must already be registered in CDA and the CWMS database; CDA must not auto-create batch machine users.
 
 ## Motivation
 
@@ -96,15 +96,16 @@ For those users, CDA will:
 
 - Require `X-CWMS-Job-Context`.
 - Validate signature, issuer, audience, and expiration.
-- Read job and run context from signed claims.
+- Read only the run office needed to establish session context from signed claims.
 - Reject missing, expired, forged, or wrong-audience tokens.
-- Make the run context available for audit logging and default session context where appropriate.
+- Make additional job context available to logging only when a logging-specific mechanism exists.
 
 CDA will not:
 
 - Treat request `office`, `office-id`, or body office fields as caller authority.
 - Reject a request solely because the target resource office differs from `run_as_office`.
 - Use signed run context to bypass route roles or database office roles.
+- Expose job identifiers or requester metadata as general request attributes for downstream controllers.
 
 Normal CDA route authorization and CWMS database permissions determine whether the machine user can act on the requested resource office.
 
@@ -153,7 +154,15 @@ Use one machine identity and require a short-lived signed token from the trusted
 
 - **Pros**: Reduces runtime duplication while preserving trusted job launch context and normal CDA/DB authorization.
 - **Cons**: Requires token validation and signing key management.
-- **Selected**: Provides the required trust boundary without per-office machine identities.
+- **Fallback proposal**: Provides the required trust boundary without per-office machine identities if Keycloak cannot mint dynamic job context into the access token.
+
+### Keycloak-Minted Job Context Claims
+
+Have Keycloak receive trusted per-job context during token minting and include that context in the normal access token.
+
+- **Pros**: CDA validates one JWT from one issuer and does not need a second signing secret.
+- **Cons**: Requires proof that Keycloak can safely receive dynamic per-job values such as `run_as_office` and `job_id` without a custom extension.
+- **Preferred if feasible**: This will be investigated before the signed dispatcher context is adopted for production.
 
 ## Compatibility
 
@@ -169,9 +178,10 @@ Endpoint resource-office semantics are unchanged. Controllers and DAOs may conti
 
 - Add CDA validation for `X-CWMS-Job-Context` on configured batch machine users.
 - Preserve signed run context separately from request resource office.
-- Expose run context for audit logging and default session behavior where appropriate.
+- Use run context only for session behavior in CDA; reserve job/requester metadata for future logging.
 - Add dispatcher-side signing in the batch events service.
 - Add runner support for forwarding `X-CWMS-Job-Context` with CDA requests.
+- Investigate Keycloak-minted dynamic job context claims before production adoption.
 
 ## Criteria
 
@@ -179,6 +189,7 @@ Endpoint resource-office semantics are unchanged. Controllers and DAOs may conti
 
 - A batch job launched through Airflow or the ad hoc API can call CDA using the shared machine Keycloak service account.
 - CDA rejects configured machine-user requests that omit or forge signed run context.
+- CDA rejects configured batch machine principals that are not already registered in CDA/DB.
 - CDA records signed job/run context for audit.
 - Resource office access remains controlled by CDA route roles and CWMS database roles.
 - A job with `run_as_office=SWT` can act on another office's resource data only when the mapped machine user has the required roles for that resource office.

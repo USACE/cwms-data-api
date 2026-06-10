@@ -75,7 +75,7 @@ class BatchJobContextTest {
     }
 
     @Test
-    void validTokenSetsBatchContextAttributes() throws CwmsAuthException {
+    void validTokenSetsRunContextAttribute() throws CwmsAuthException {
         configureBatchContext();
         String token = token(Map.of(
             "run_as_office", "swt",
@@ -88,9 +88,6 @@ class BatchJobContextTest {
         BatchJobContext.prepareContext(ctx, machinePrincipal());
 
         assertEquals("SWT", ctx.attribute(BatchJobContext.RUN_AS_OFFICE_ATTR));
-        assertEquals("job-123", ctx.attribute(BatchJobContext.JOB_ID_ATTR));
-        assertEquals("m5hectest", ctx.attribute(BatchJobContext.REQUESTED_BY_ATTR));
-        assertEquals("api", ctx.attribute(BatchJobContext.DISPATCH_SOURCE_ATTR));
     }
 
     @Test

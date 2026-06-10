@@ -28,9 +28,6 @@ public final class BatchJobContext {
 
     public static final String HEADER = "X-CWMS-Job-Context";
     public static final String RUN_AS_OFFICE_ATTR = "BatchRunAsOffice";
-    public static final String JOB_ID_ATTR = "BatchJobId";
-    public static final String REQUESTED_BY_ATTR = "BatchRequestedBy";
-    public static final String DISPATCH_SOURCE_ATTR = "BatchDispatchSource";
 
     public static final String SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.secret";
     public static final String PREVIOUS_SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.previousSecret";
@@ -84,9 +81,6 @@ public final class BatchJobContext {
                     HttpServletResponse.SC_UNAUTHORIZED);
             }
             ctx.attribute(RUN_AS_OFFICE_ATTR, office.toUpperCase(Locale.ROOT));
-            ctx.attribute(JOB_ID_ATTR, claims.get("job_id", String.class));
-            ctx.attribute(REQUESTED_BY_ATTR, claims.get("requested_by", String.class));
-            ctx.attribute(DISPATCH_SOURCE_ATTR, claims.get("dispatch_source", String.class));
         } catch (ExpiredJwtException ex) {
             logger.atFine().withCause(ex).log("Batch job context token expired.");
             throw new CwmsAuthException("Batch job context token expired", ex,
