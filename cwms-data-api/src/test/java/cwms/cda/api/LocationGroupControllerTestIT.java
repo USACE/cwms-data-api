@@ -836,9 +836,9 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
             .body("message", equalTo("Bad Request"))
-            .body("details.message", equalTo("ORA-20998: ERROR: Alias (AliasedId) would reference multiple locations.  " +
+            .body("details.message", equalTo("Alias (AliasedId) would reference multiple locations.  " +
                 "If you want to allow this, set the CWMSDB/Allow_multiple_locations_for_alias " +
-                "property to 'T' for office id SPK.  Note that this action will eliminate the " +
+                "property to T for office id SPK.  Note that this action will eliminate the " +
                 "ability to look up a location using the alias or any others that reference multiple locations."));
         //Read
         given()

@@ -103,6 +103,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)");
     private static final Pattern REGEX_META_CHARS_EXCEPT_DOT = Pattern.compile("[\\\\^$|?+()\\[\\]{}]");
+    private static final Pattern ORA_CODE = Pattern.compile("^ORA-\\d+: ERROR: .*");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -413,7 +414,11 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         if (localizedMessage != null) {
             String[] parts = localizedMessage.split("\n");
-            String errorMessage = parts[0];
+            String errorMessage = parts[0].replace("'", "");
+            if (ORA_CODE.matcher(errorMessage).matches()) {
+                errorMessage = errorMessage.substring(errorMessage.indexOf("ERROR: ") + 7);
+            }
+            errorMessage = sanitizeOrNull(errorMessage);
             Map<String, String> errorDetails = new HashMap<>();
             errorDetails.put("message", errorMessage);
             return new BadRequestResponse("", errorDetails);
