@@ -6,8 +6,8 @@ Code Changes and Releases through environments
 Summary
 =======
 
-As this API is critical to both USACE operations and various Cooperators a firm policy on how releasing changes to the various environments
-there needs to be a well defined sequences of events for changes in the software that accounts for:
+As this API is critical to both USACE operations and various Cooperators, a formal policy governing the release of changes across the different environments is necessary.
+There must be a well-defined sequence of events for software changes that accounts for:
 
 1. Stability
 2. Constant improvement
@@ -23,7 +23,7 @@ We have 3 environments available for testing internally and with specific partne
 2. Test
 3. Dev
 
-Each environment will see releases and slightly different ways.
+Each environment will see releases in slightly different ways.
 
 Dev
 ---
@@ -60,7 +60,7 @@ All Environments
 -----------------------------------
 
 Schema updates in each environment will not happen until all current automated CWMS-Data-API tests are passing against that schema version.
-At this time we cannot easily automate Schema updates, once the cwms-database flyway work is finished schema updates will coincide with
+At this time we cannot easily automate Schema updates; once the cwms-database flyway work is finished schema updates will coincide with
 appropriate cwms-data-api versions upon deployment.
 
 Deployments will be pushed from the Github Repository using the Deploy action workflow, Described in the how-to-release documentation.
