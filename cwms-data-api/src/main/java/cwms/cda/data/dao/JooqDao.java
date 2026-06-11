@@ -395,10 +395,11 @@ public abstract class JooqDao<T> extends Dao<T> {
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
+            if (!sqlException.getLocalizedMessage().contains("CAN_NOT_DELETE")) {
+                List<Integer> codes = IntStream.range(20000, 20999).boxed().collect(Collectors.toList());
 
-            List<Integer> codes = IntStream.range(20000, 20999).boxed().collect(Collectors.toList());
-
-            retVal = hasCodeOrMessage(sqlException, codes, new ArrayList<>());
+                retVal = hasCodeOrMessage(sqlException, codes, new ArrayList<>());
+            }
         }
         return retVal;
     }
