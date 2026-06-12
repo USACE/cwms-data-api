@@ -47,6 +47,8 @@ import cwms.cda.helpers.ZoneIdHelper;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -59,6 +61,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -67,6 +70,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -177,9 +181,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private final Histogram getRequestedTimeSeriesResultsReturnedHistogram;
     @NotNull
     private final Histogram getRequestedTimeSeriesRequestWindowMillisHistogram;
+    @NotNull
+    private final MetricRegistry metrics;
+    private final boolean forceOldLrtsFormatting;
 
     public TimeSeriesDaoImpl(DSLContext dsl, @NotNull MetricRegistry metrics) {
+        this(dsl, metrics, false);
+    }
+
+    private TimeSeriesDaoImpl(DSLContext dsl, @NotNull MetricRegistry metrics, boolean forceOldLrtsFormatting) {
         super(dsl);
+        this.metrics = metrics;
+        this.forceOldLrtsFormatting = forceOldLrtsFormatting;
 
         String className = this.getClass().getName();
         CacheStats stats = isVersionedCache.stats();
@@ -669,6 +682,50 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private TimeSeries getRequestedTimeSeriesDirect(String page, int pageSize,
                                                     @NotNull TimeSeriesRequestParameters requestParameters) {
+        if (isPseudoIrregularOldStyleLocalRegularId(requestParameters)) {
+            return getRequestedTimeSeriesDirectWithOldLrtsFormatting(page, pageSize, requestParameters);
+        }
+        return getRequestedTimeSeriesDirectForSession(page, pageSize, requestParameters);
+    }
+
+    private TimeSeries getRequestedTimeSeriesDirectWithOldLrtsFormatting(String page, int pageSize,
+                                                                         @NotNull TimeSeriesRequestParameters
+                                                                         requestParameters) {
+        return connectionResult(dsl, conn -> {
+            DSLContext oldLrtsDsl = DSL.using(conn, SQLDialect.ORACLE18C);
+            setOldLrtsFormatting(oldLrtsDsl);
+            TimeSeriesDaoImpl oldLrtsDao = new TimeSeriesDaoImpl(oldLrtsDsl, metrics, true);
+            return oldLrtsDao.getRequestedTimeSeriesDirectForSession(page, pageSize, requestParameters);
+        });
+    }
+
+    private boolean isPseudoIrregularOldStyleLocalRegularId(@NotNull TimeSeriesRequestParameters requestParameters) {
+        if (!isOldStyleLocalRegularId(requestParameters.getNames())) {
+            return false;
+        }
+        return connectionResult(dsl, conn -> {
+            DSLContext oldLrtsDsl = DSL.using(conn, SQLDialect.ORACLE18C);
+            setOldLrtsFormatting(oldLrtsDsl);
+            TimeSeriesDaoImpl oldLrtsDao = new TimeSeriesDaoImpl(oldLrtsDsl, metrics, true);
+            DirectReadMetadata metadata = oldLrtsDao.fetchRequestedTimeSeriesMetadataRecord(requestParameters);
+            return metadata != null && metadata.intervalUtcOffset == UTC_OFFSET_IRREGULAR;
+        });
+    }
+
+    private static void setOldLrtsFormatting(DSLContext oldLrtsDsl) {
+        CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(oldLrtsDsl.configuration(),
+                SESSION_USE_LRTS_ID_FORMAT, formatBool(false), REQUIRE_OLD_LRTS_ID_FORMAT);
+    }
+
+    private static boolean isOldStyleLocalRegularId(String tsId) {
+        String[] parts = splitTimeSeriesId(tsId);
+        String intervalPart = getTimeSeriesIdPart(parts, 3);
+        return intervalPart != null && intervalPart.startsWith("~");
+    }
+
+    private TimeSeries getRequestedTimeSeriesDirectForSession(String page, int pageSize,
+                                                              @NotNull TimeSeriesRequestParameters
+                                                              requestParameters) {
         String names = requestParameters.getNames();
         String office = requestParameters.getOffice();
         String requestedUnits = requestParameters.getUnits();
@@ -678,6 +735,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         boolean includeEntryDate = requestParameters.isIncludeEntryDate();
         String cursor = null;
         Timestamp tsCursor = null;
+
+        if (forceOldLrtsFormatting) {
+            setOldLrtsFormatting(dsl);
+        }
 
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
@@ -727,10 +788,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         // Pagination happens after regular-interval gap rows are merged
         //  fetch the full raw window first
+        if (forceOldLrtsFormatting) {
+            setOldLrtsFormatting(dsl);
+        }
         List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, nativeUnits,
                 metadataUnits, requestParameters, includeEntryDate);
         long effectiveIntervalOffset = intervalOffset;
-        if (isRegularSeries(intervalMinutes, intervalPart)) {
+        if (isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)) {
             effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts, rawRows);
         }
 
@@ -747,7 +811,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 beginTime,
                 endTime,
                 metadataUnits,
-                resolveIntervalDuration(intervalMinutes, intervalPart),
+                resolveIntervalDuration(intervalMinutes, intervalOffset, intervalPart, isLrts),
                 verticalDatumInfo,
                 effectiveIntervalOffset,
                 timeZoneId,
@@ -843,6 +907,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                                  String requestedUnits,
                                                                  TimeSeriesRequestParameters requestParameters,
                                                                  boolean includeEntryDate) {
+        if (forceOldLrtsFormatting) {
+            return fetchRequestedTimeSeriesRowsWithJdbc(tsCode, officeId, nativeUnits, requestedUnits,
+                    requestParameters, includeEntryDate);
+        }
+
         ZonedDateTime beginTime = requestParameters.getBeginTime();
         ZonedDateTime endTime = requestParameters.getEndTime();
         ZonedDateTime versionDate = requestParameters.getVersionDate();
@@ -888,6 +957,103 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
             return new TimeSeries.Record(dateTime, value, qualityCode);
         });
+    }
+
+    private List<TimeSeries.Record> fetchRequestedTimeSeriesRowsWithJdbc(
+            long tsCode, String officeId, String nativeUnits, String requestedUnits,
+            TimeSeriesRequestParameters requestParameters, boolean includeEntryDate) {
+        return connectionResult(dsl, conn -> {
+            setOldLrtsFormatting(DSL.using(conn, SQLDialect.ORACLE18C));
+            ZonedDateTime versionDate = requestParameters.getVersionDate();
+            String sql = versionDate != null
+                    ? buildVersionedRowsSql(includeEntryDate)
+                    : buildMaxVersionRowsSql(includeEntryDate);
+            try (PreparedStatement statement = conn.prepareStatement(sql)) {
+                bindDirectRowQuery(statement, tsCode, officeId, nativeUnits, requestedUnits,
+                        requestParameters, versionDate);
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    List<TimeSeries.Record> rows = new ArrayList<>();
+                    Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+                    while (resultSet.next()) {
+                        Timestamp dateTime = resultSet.getTimestamp(DATE_TIME, utcCalendar);
+                        Double value = resultSet.getDouble(VALUE);
+                        if (resultSet.wasNull()) {
+                            value = null;
+                        }
+                        int qualityCode = resultSet.getInt("quality_norm");
+                        Timestamp dataEntryDate = includeEntryDate
+                                ? resultSet.getTimestamp(DATA_ENTRY_DATE, utcCalendar)
+                                : null;
+                        if (includeEntryDate) {
+                            rows.add(new TimeSeries.Record(dateTime, value, qualityCode, dataEntryDate));
+                        } else {
+                            rows.add(new TimeSeries.Record(dateTime, value, qualityCode));
+                        }
+                    }
+                    return rows;
+                }
+            } catch (SQLException ex) {
+                throw new DataAccessException("Unable to fetch direct time series rows", ex);
+            }
+        });
+    }
+
+    private static String buildVersionedRowsSql(boolean includeEntryDate) {
+        return "select date_time,"
+                + " cwms_20.cwms_util.convert_units(value, unit_id, ?) value,"
+                + " cwms_20.cwms_ts.normalize_quality(nvl(cast(quality_code as number), 5)) quality_norm,"
+                + (includeEntryDate ? " data_entry_date" : " cast(null as timestamp) data_entry_date")
+                + " from cwms_20.av_tsv_dqu"
+                + " where aliased_item is null"
+                + " and ts_code = ?"
+                + " and office_id = ?"
+                + " and lower(unit_id) = lower(?)"
+                + " and date_time >= ?"
+                + " and date_time <= ?"
+                + " and start_date <= ?"
+                + " and end_date > ?"
+                + " and version_date = ?"
+                + " order by date_time";
+    }
+
+    private static String buildMaxVersionRowsSql(boolean includeEntryDate) {
+        return "select date_time, value, quality_norm, data_entry_date from ("
+                + " select date_time,"
+                + " cwms_20.cwms_util.convert_units(value, unit_id, ?) value,"
+                + " cwms_20.cwms_ts.normalize_quality(nvl(cast(quality_code as number), 5)) quality_norm,"
+                + (includeEntryDate ? " data_entry_date" : " cast(null as timestamp) data_entry_date")
+                + ", row_number() over (partition by date_time order by version_date desc, data_entry_date desc)"
+                + " version_rank"
+                + " from cwms_20.av_tsv_dqu"
+                + " where aliased_item is null"
+                + " and ts_code = ?"
+                + " and office_id = ?"
+                + " and lower(unit_id) = lower(?)"
+                + " and date_time >= ?"
+                + " and date_time <= ?"
+                + " and start_date <= ?"
+                + " and end_date > ?"
+                + ") where version_rank = 1"
+                + " order by date_time";
+    }
+
+    private static void bindDirectRowQuery(PreparedStatement statement, long tsCode, String officeId,
+                                           String nativeUnits, String requestedUnits,
+                                           TimeSeriesRequestParameters requestParameters,
+                                           ZonedDateTime versionDate) throws SQLException {
+        Timestamp beginTimestamp = Timestamp.from(requestParameters.getBeginTime().toInstant());
+        Timestamp endTimestamp = Timestamp.from(requestParameters.getEndTime().toInstant());
+        statement.setString(1, requestedUnits);
+        statement.setLong(2, tsCode);
+        statement.setString(3, officeId);
+        statement.setString(4, nativeUnits);
+        statement.setTimestamp(5, beginTimestamp);
+        statement.setTimestamp(6, endTimestamp);
+        statement.setTimestamp(7, endTimestamp);
+        statement.setTimestamp(8, beginTimestamp);
+        if (versionDate != null) {
+            statement.setTimestamp(9, Timestamp.from(versionDate.toInstant()));
+        }
     }
 
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
@@ -951,7 +1117,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                       TimeSeriesRequestParameters requestParameters,
                                                       List<TimeSeries.Record> rawRows) {
         boolean shouldTrim = requestParameters.isShouldTrim();
-        if (!isRegularSeries(intervalMinutes, intervalPart)) {
+        if (!isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)) {
             return Collections.emptyList();
         }
         // Trimmed requests collapse to the observed data window
@@ -1029,11 +1195,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return (rawRows.get(0).getDateTime().getTime() - topOfInterval.getTime()) / TimeUnit.MINUTES.toMillis(1);
     }
 
-    private boolean isRegularSeries(long intervalMinutes, String intervalPart) {
-        return intervalMinutes != 0L || isLocalRegularInterval(intervalPart);
+    private boolean isRegularSeries(long intervalMinutes, long intervalOffset, String intervalPart, boolean isLrts) {
+        return intervalOffset != UTC_OFFSET_IRREGULAR
+                && (intervalMinutes != 0L || (isLrts && isLocalRegularInterval(intervalPart)));
     }
 
-    private Duration resolveIntervalDuration(long intervalMinutes, String intervalPart) {
+    private Duration resolveIntervalDuration(long intervalMinutes, long intervalOffset,
+                                             String intervalPart, boolean isLrts) {
+        if (!isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)) {
+            return Duration.ZERO;
+        }
+
         if (intervalMinutes != 0L) {
             return Duration.ofMinutes(intervalMinutes);
         }

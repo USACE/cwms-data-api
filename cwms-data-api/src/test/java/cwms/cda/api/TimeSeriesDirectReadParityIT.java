@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.ApiServlet;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
@@ -157,6 +158,32 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             (long) Integer.MIN_VALUE,
             null
         );
+    }
+
+    @Test
+    void pseudoIrregularReadWithLrtsHeaderMatchesRetrieveTs() throws Exception {
+        String seriesId = "ITPARPIRR.Flow.Inst.~15Minutes.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-05T12:00:00Z");
+        Instant endTime = Instant.parse("2024-01-05T13:00:00Z");
+        List<SeedRow> rows = List.of(
+            row("2024-01-05T12:00:00Z", 10.0, 0, "2024-01-06T00:00:00Z", null),
+            row("2024-01-05T12:17:00Z", 20.0, 0, "2024-01-06T00:01:00Z", null),
+            row("2024-01-05T12:45:00Z", 30.0, 0, "2024-01-06T00:02:00Z", null)
+        );
+        seedTimeSeries("ITPARPIRR", seriesId, rows, false, null);
+
+        List<TimeSeries.Record> expectedRows = fetchOracleRows(seriesId, "cfs", beginTime, endTime,
+            false, null);
+        TimeSeries actualResponse = fetchCdaRowsWithPageSize(seriesId, "cfs", beginTime, endTime,
+            1000, false, null, true, true);
+
+        assertEquals(expectedRows.size(), actualResponse.getTotal(), "total");
+        assertEquals(expectedRows.size(), actualResponse.getValues().size(), "values size");
+        assertEquals(Duration.ZERO, actualResponse.getInterval(), "interval");
+        assertEquals((long) Integer.MIN_VALUE, actualResponse.getIntervalOffset(), "interval offset");
+        for (int index = 0; index < expectedRows.size(); index++) {
+            assertRecordsEqual(expectedRows.get(index), actualResponse.getValues().get(index), index);
+        }
     }
 
     @Test
@@ -420,8 +447,17 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
     private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
                                        boolean versioned) throws SQLException {
+        seedTimeSeries(locationId, seriesId, rows, versioned, 0);
+    }
+
+    private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
+                                       boolean versioned, Integer intervalOffset) throws SQLException {
         createLocation(locationId, true, OFFICE);
-        createTimeseries(OFFICE, seriesId, 0);
+        if (intervalOffset != null) {
+            createTimeseries(OFFICE, seriesId, intervalOffset);
+        } else {
+            createTimeseries(OFFICE, seriesId);
+        }
 
         CwmsDatabaseContainer<?> database = CwmsDataApiSetupCallback.getDatabaseLink();
         database.connection(connection -> {
@@ -650,6 +686,14 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                                                        Instant endTime, int pageSize, boolean includeEntryDate,
                                                        Instant versionDate, boolean trim)
         throws Exception {
+        return fetchCdaRowsWithPageSize(seriesId, units, beginTime, endTime, pageSize, includeEntryDate,
+            versionDate, trim, null);
+    }
+
+    private static TimeSeries fetchCdaRowsWithPageSize(String seriesId, String units, Instant beginTime,
+                                                       Instant endTime, int pageSize, boolean includeEntryDate,
+                                                       Instant versionDate, boolean trim, Boolean lrtsFormatting)
+        throws Exception {
         RequestSpecification request = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -661,6 +705,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             .queryParam(Controllers.PAGE_SIZE, pageSize)
             .queryParam(Controllers.TRIM, trim)
             .queryParam(Controllers.INCLUDE_ENTRY_DATE, includeEntryDate);
+        if (lrtsFormatting != null) {
+            request = request.header(ApiServlet.IS_NEW_LRTS, lrtsFormatting);
+        }
         if (versionDate != null) {
             request = request.queryParam(Controllers.VERSION_DATE, versionDate.toString());
         }
