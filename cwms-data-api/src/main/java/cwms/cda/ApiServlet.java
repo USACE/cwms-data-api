@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,7 @@
 
 package cwms.cda;
 
+import cwms.cda.api.PublishedController;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
@@ -249,6 +250,7 @@ import org.owasp.html.PolicyFactory;
     "/stream-locations/*",
     "/stream-reaches/*",
     "/measurements/*",
+    "/published/*",
     "/blobs/*",
     "/clobs/*",
     "/pools/*",
@@ -574,6 +576,8 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(measTimeExtents, 5, TimeUnit.MINUTES);
         cdaCrudCache(format("%s{%s}", measurements, LOCATION_ID),
                 new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/published/{%s}", LOCATION_ID),
+                new PublishedController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",

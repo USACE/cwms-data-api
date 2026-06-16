@@ -1,0 +1,40 @@
+{
+  "cursor": "cursor",
+  "page-size": 20,
+  "total": 100,
+  "next-page": "",
+  "location-to-published-data": [
+    {
+      "location-id": {
+        "office-id": "SWT",
+        "name": "AARK"
+      },
+      "bounding-office-id": "SWT",
+      "kind": "SITE",
+      "published-times-series": {
+        "STAGE": {
+            "time-series-id": {
+              "office-id": "SWT",
+              "name": "AARK.Stage.Inst.15Minutes.0.Ccp-Rev"
+            },
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true,
+            "date-refreshed": "2025-03-03T12:00:00Z",
+            "notes": "Stage data for AARK"
+        },
+        "INFLOW": {
+            "time-series-id": {
+              "office-id": "SWT",
+              "name": "AARK.Flow.Inst.1Hour.0.Ccp-Rev"
+            },
+            "timezone-name": "UTC",
+            "interval-offset-minutes": 0,
+            "active": true,
+            "date-refreshed": "2025-03-03T12:00:00Z",
+            "notes": "Flow data for AARK"
+        }
+      }
+    }
+  ]
+}
