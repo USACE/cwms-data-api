@@ -70,8 +70,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
@@ -186,8 +186,8 @@ public class LevelsController implements CrudHandler {
                     .getOrDefault("UTC");
             Boolean cascadeDelete = ctx.queryParamAsClass(CASCADE_DELETE, Boolean.class)
                     .getOrDefault(false);
-            ZonedDateTime unmarshalledDateTime = dateString != null
-                    ? DateUtils.parseUserDate(dateString, timezone) : null;
+            Instant unmarshalledDateTime = dateString != null
+                    ? DateUtils.parseUserDate(dateString, timezone).toInstant() : null;
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             levelsDao.deleteLocationLevel(levelId, unmarshalledDateTime, office, cascadeDelete);
             StatusResponse re = new StatusResponse(office,"CWMS Location Level Deleted", levelId);
@@ -302,12 +302,12 @@ public class LevelsController implements CrudHandler {
                 int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class)
                                   .getOrDefault(DEFAULT_PAGE_SIZE);
 
-                ZonedDateTime endZdt = queryParamAsZdt(ctx, END);
-                ZonedDateTime beginZdt = queryParamAsZdt(ctx, BEGIN);
+                Instant beginInstant = queryParamAsInstant(ctx, BEGIN);
+                Instant endInstant = queryParamAsInstant(ctx, END);
 
                 LocationLevels levels;
                 levels = levelsDao.getLocationLevels(cursor, pageSize, levelIdMask,
-                        office, unit, datum, beginZdt, endZdt, includeAliases);
+                        office, unit, datum, beginInstant, endInstant, includeAliases);
                 String result = Formats.format(contentType, levels);
 
                 ctx.result(result);
@@ -394,7 +394,7 @@ public class LevelsController implements CrudHandler {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
-            ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString, timezone);
+            Instant unmarshalledDateTime = DateUtils.parseUserDate(dateString, timezone).toInstant();
 
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
             //retrieveLocationLevel will throw an error if level does not exist
@@ -455,8 +455,8 @@ public class LevelsController implements CrudHandler {
                     throw new IllegalArgumentException("Cannot update location level "
                             + "effective date if no date is specified");
                 }
-                ZonedDateTime unmarshalledDateTime = DateUtils.parseUserDate(dateString,
-                        ZoneId.systemDefault().getId());
+                Instant unmarshalledDateTime = DateUtils.parseUserDate(dateString,
+                        ZoneId.systemDefault().getId()).toInstant();
                 //retrieveLocationLevel will throw an error if level does not exist
                 LocationLevel existingLevelLevel = levelsDao.retrieveLocationLevel(oldLevelId,
                     UnitSystem.EN.getValue(), unmarshalledDateTime, officeId, true);

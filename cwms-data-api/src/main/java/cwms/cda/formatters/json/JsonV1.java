@@ -16,10 +16,12 @@ import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.BadRequestResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
@@ -55,6 +57,7 @@ public class JsonV1 implements OutputFormatter {
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
         retVal.registerModule(module);
 
         return retVal;
