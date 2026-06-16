@@ -33,7 +33,9 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.StateDao;
 import cwms.cda.data.dto.State;
 import cwms.cda.formatters.ContentType;
@@ -45,6 +47,7 @@ import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -57,6 +60,7 @@ import org.jooq.DSLContext;
  * @see StateController
  */
 public class StateController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -96,9 +100,17 @@ public class StateController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, State.class);
             String result = Formats.format(contentType, states, State.class);
-            ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve States", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve States");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

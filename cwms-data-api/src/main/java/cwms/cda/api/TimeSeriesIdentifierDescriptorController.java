@@ -25,12 +25,38 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.ACTIVE;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
+import static cwms.cda.api.Controllers.INTERVAL_OFFSET;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.SNAP_BACKWARD;
+import static cwms.cda.api.Controllers.SNAP_FORWARD;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMESERIES_ID;
+import static cwms.cda.api.Controllers.TIMESERIES_ID_REGEX;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredParamAs;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.TimeSeriesIdentifierDescriptorDao;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
@@ -46,11 +72,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -140,12 +166,20 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             String result = Formats.format(contentType, descriptors);
 
-            ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
-        }
+            ctx.contentType(contentType.toString());
 
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve timeseries identifiers", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve timeseries identifiers");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 
     @OpenApi(
@@ -193,16 +227,25 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             if (grp.isPresent()) {
                 String result = Formats.format(contentType, grp.get());
 
-                ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find identifier based on parameters "
                         + "given");
                 logger.atInfo().log("%s%s for request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
+        } catch (IOException e) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve time series identifier", e);
+            logger.atSevere().withCause(e).log("Failed to process request to retrieve time series identifier");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

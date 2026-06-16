@@ -28,11 +28,13 @@ package cwms.cda.api.timeseriesprofile;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import org.jooq.DSLContext;
 
 public abstract class TimeSeriesProfileBase {
+    static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     static final String TAG = "TimeSeries";
     private MetricRegistry metrics;
 

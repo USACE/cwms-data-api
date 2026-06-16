@@ -40,7 +40,9 @@ import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.StatusResponse;
@@ -80,6 +82,8 @@ import org.jooq.DSLContext;
 
 
 public class LevelsController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+    private static final String ERROR_MSG = "Failed to process request to retrieve level";
     static final String TAG = "Levels";
     private final MetricRegistry metrics;
 
@@ -310,26 +314,36 @@ public class LevelsController implements CrudHandler {
                         office, unit, datum, beginZdt, endZdt, includeAliases);
                 String result = Formats.format(contentType, levels);
 
-                ctx.result(result);
+                ctx.contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.contentType(contentType.toString());
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 //Use the type string, not the full string with properties.
                 //i.e. application/json not application/json;version=1
                 String results = levelsDao.getLocationLevels(format, levelIdMask, office, unit, datum,
                         begin, end, timezone);
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.result(results);
-                requestResultSize.update(results.length());
+
                 if (isLegacyVersion) {
                     ctx.contentType(contentType.toString());
                 } else {
                     ctx.contentType(contentType.getType());
                 }
+                requestResultSize.update(results.length());
+
+                byte[] bytes = results.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
+        } catch (IOException ex) {
+            CdaError re = new CdaError(ERROR_MSG);
+            LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -400,8 +414,22 @@ public class LevelsController implements CrudHandler {
             //retrieveLocationLevel will throw an error if level does not exist
             LocationLevel locationLevel = levelsDao.retrieveLocationLevel(levelId,
                     units, unmarshalledDateTime, office, exactDateMatch);
-            ctx.json(locationLevel);
+
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
+
+            String result = Formats.format(contentType, locationLevel);
+
+            ctx.contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError re = new CdaError(ERROR_MSG);
+            LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

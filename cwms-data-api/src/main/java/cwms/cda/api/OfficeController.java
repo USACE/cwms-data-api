@@ -14,6 +14,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.OfficeDao;
 import cwms.cda.data.dto.Office;
@@ -27,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +43,7 @@ import org.jooq.DSLContext;
  * @see OfficeController
  */
 public class OfficeController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private final MetricRegistry metrics;
 
@@ -107,13 +110,19 @@ public class OfficeController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseQueryOrHeaderParam(formatHeader, formatParm, Office.class);
 
-            String result = Formats.format(contentType, offices, Office.class);
-
             Controllers.addDeprecatedContentTypeWarning(ctx, contentType);
-
-            ctx.result(result).contentType(contentType.toString());
+            String result = Formats.format(contentType, offices, Office.class);
+            ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(result.length());
 
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error writing response");
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -155,15 +164,24 @@ public class OfficeController implements CrudHandler {
                 ContentType contentType = Formats.parseHeaderAndQueryParm(formatHeader, formatParm, Office.class);
                 String result = Formats.format(contentType, office.get());
                 Controllers.addDeprecatedContentTypeWarning(ctx, contentType);
-                ctx.result(result).contentType(contentType.toString());
+                ctx.contentType(contentType.toString());
+                ctx.status(HttpServletResponse.SC_OK);
 
                 requestResultSize.update(result.length());
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 Map<String, Serializable> map = new HashMap<>();
                 map.put(OFFICE, "An office with that name does not exist");
                 CdaError re = new CdaError("Not Found", map);
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error writing response");
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

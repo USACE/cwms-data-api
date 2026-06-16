@@ -24,14 +24,27 @@
 
 package cwms.cda.api.rss;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.SINCE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.rss.MessageDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.rss.RssFeed;
@@ -45,17 +58,20 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.function.UnaryOperator;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class RssHandler extends BaseHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private static final int DEFAULT_PAGE_SIZE = 500;
     private static final String TAG = "RSS";
@@ -120,8 +136,17 @@ public final class RssHandler extends BaseHandler {
             MessageDao dao = new MessageDao(dsl);
             RssFeed feed = dao.retrieveFeed(cursor, pageSize, office, name, since, newLinkTemplate(ctx));
             String result = Formats.format(contentType, feed);
-            ctx.result(result);
             ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve data as RSS feed", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve data as RSS feed");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

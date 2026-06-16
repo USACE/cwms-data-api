@@ -3,17 +3,10 @@ package cwms.cda.api.auth.users;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-import java.security.Principal;
-import java.util.Optional;
-
-import org.jooq.DSLContext;
-
 import com.codahale.metrics.MetricRegistry;
-
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.UserDao;
-import cwms.cda.data.dto.Clobs;
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -25,9 +18,10 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import javax.servlet.http.HttpServletResponse;
+import org.jooq.DSLContext;
 
 public class UserProfileController implements Handler {
 
@@ -66,8 +60,12 @@ public class UserProfileController implements Handler {
         ContentType contentType = Formats.parseHeader(formatHeader, User.class);
         String result = Formats.format(contentType, user);
 
-        ctx.result(result);
         ctx.contentType(contentType.toString());
+        ctx.status(HttpServletResponse.SC_OK);
+
+        byte[] bytes = result.getBytes();
+        ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+        ctx.res.getOutputStream().write(bytes);
     }
     
 }

@@ -1,7 +1,45 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
+import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_ENTRY_DATE;
+import static cwms.cda.api.Controllers.MAX_VERSION;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.STORE_RULE;
+import static cwms.cda.api.Controllers.TIMESERIES;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UNITS;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredZdt;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -504,7 +542,13 @@ public class TimeSeriesController implements CrudHandler {
 
                 addLinkHeader(ctx, ts, contentType);
 
-                ctx.result(results).contentType(contentType.toString());
+                ctx.contentType(contentType.toString());
+
+                requestResultSize.update(results.length());
+
+                byte[] bytes = results.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 if (versionDate != null) {
                     throw new IllegalArgumentException(String.format("Version date is only supported for:%s and %s",
@@ -523,10 +567,14 @@ public class TimeSeriesController implements CrudHandler {
                 String office = ctx.queryParam(OFFICE);
                 results = dao.getTimeseries(format, names, office, units, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.result(results);
+
+                requestResultSize.update(results.length());
+
+                byte[] bytes = results.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
-            requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
             logger.atSevere().withCause(e).log("%s", re.toString());
@@ -537,6 +585,10 @@ public class TimeSeriesController implements CrudHandler {
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve time series");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

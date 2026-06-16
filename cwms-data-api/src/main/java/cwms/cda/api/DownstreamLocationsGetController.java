@@ -25,10 +25,6 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
 import static cwms.cda.api.Controllers.ALL_DOWNSTREAM;
 import static cwms.cda.api.Controllers.AREA_UNIT;
 import static cwms.cda.api.Controllers.GET_ALL;
@@ -41,6 +37,13 @@ import static cwms.cda.api.Controllers.STAGE_UNIT;
 import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
+
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.StreamLocationDao;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
@@ -48,13 +51,18 @@ import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.*;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class DownstreamLocationsGetController implements Handler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -107,6 +115,15 @@ public final class DownstreamLocationsGetController implements Handler {
             ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve downstream locations", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve downstream locations");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 }

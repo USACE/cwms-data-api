@@ -38,6 +38,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import cwms.cda.formatters.ContentType;
@@ -50,12 +52,14 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
 public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileBase implements Handler {
+    public static final String TAG = "Time Series Profiles";
     public static final String PARAMETER_ID_MASK = "parameter-id-mask";
 
     public TimeSeriesProfileCatalogController(MetricRegistry metrics) {
@@ -103,7 +107,16 @@ public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileB
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileList.class);
             String results = Formats.format(contentType, retrievedProfiles);
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = results.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve time series profiles", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve time series profiles");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 }

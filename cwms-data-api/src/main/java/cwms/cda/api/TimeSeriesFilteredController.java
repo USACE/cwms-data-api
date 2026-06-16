@@ -1,12 +1,35 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.INCLUDE_ENTRY_DATE;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.QUERY;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsZdt;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.FilteredTimeSeriesParameters;
@@ -15,7 +38,6 @@ import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesRequestParameters;
 import cwms.cda.data.dto.TimeSeries;
-
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -29,14 +51,12 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import com.google.common.flogger.FluentLogger;
-
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jetbrains.annotations.NotNull;
@@ -244,15 +264,22 @@ public class TimeSeriesFilteredController implements Handler {
 
             addLinkHeader(ctx, fts, contentType);
 
-            ctx.result(results).contentType(contentType.toString());
-
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = results.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve filtered time series");
+            logger.atSevere().withCause(ex).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 

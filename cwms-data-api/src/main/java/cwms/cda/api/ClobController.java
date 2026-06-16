@@ -24,6 +24,7 @@ import static cwms.cda.api.Controllers.requiredParam;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.JooqDao;
@@ -44,7 +45,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
@@ -53,6 +54,7 @@ import org.jooq.DSLContext;
 
 
 public class ClobController implements CrudHandler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Clob";
     public static final String TEXT_PLAIN = "text/plain";
@@ -143,9 +145,17 @@ public class ClobController implements CrudHandler {
             Clobs clobs = dao.getClobs(cursor, pageSize, office, includeValues, like);
             String result = Formats.format(contentType, clobs);
 
-            ctx.result(result);
             ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(result.length());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException e) {
+            CdaError re = new CdaError("Failed to process request to retrieve ");
+            logger.atSevere().withCause(e).log("Failed to process request to retrieve Basin");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -221,14 +231,22 @@ public class ClobController implements CrudHandler {
                     String result = Formats.format(contentType, clob);
 
                     ctx.contentType(contentType.toString());
-                    ctx.result(result);
+                    ctx.status(HttpServletResponse.SC_OK);
 
                     requestResultSize.update(result.length());
+
+                    byte[] bytes = result.getBytes();
+                    ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                    ctx.res.getOutputStream().write(bytes);
                 } else {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "clob based on given parameters"));
                 }
             }
+        } catch (IOException e) {
+            CdaError re = new CdaError("Failed to process request to retrieve clob");
+            logger.atSevere().withCause(e).log("Failed to process request to retrieve clob");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
