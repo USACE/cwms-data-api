@@ -112,7 +112,6 @@ public final class DownstreamLocationsGetController implements Handler {
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, downstreamLocations, StreamLocation.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
 

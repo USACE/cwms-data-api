@@ -101,7 +101,6 @@ public final class WaterUserController extends WaterSupplyControllerBase {
             WaterContractDao contractDao = getContractDao(dsl);
             WaterUser user = contractDao.getWaterUser(projectLocation, entityName);
             String result = Formats.format(contentType, user);
-            ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
 
             byte[] bytes = result.getBytes();

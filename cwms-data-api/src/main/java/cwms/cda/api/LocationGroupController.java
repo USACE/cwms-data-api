@@ -147,7 +147,6 @@ public class LocationGroupController implements CrudHandler {
 
                 String result = Formats.format(contentType, grps, LocationGroup.class);
 
-                ctx.result(result);
                 ctx.contentType(contentType.toString());
                 requestResultSize.update(result.length());
 

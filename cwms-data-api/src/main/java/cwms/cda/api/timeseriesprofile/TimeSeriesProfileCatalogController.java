@@ -59,7 +59,6 @@ import org.jooq.DSLContext;
 
 
 public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileBase implements Handler {
-    public static final String TAG = "Time Series Profiles";
     public static final String PARAMETER_ID_MASK = "parameter-id-mask";
 
     public TimeSeriesProfileCatalogController(MetricRegistry metrics) {

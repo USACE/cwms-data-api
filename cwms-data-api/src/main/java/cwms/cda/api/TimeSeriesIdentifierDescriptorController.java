@@ -25,31 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.ACTIVE;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
-import static cwms.cda.api.Controllers.INTERVAL_OFFSET;
-import static cwms.cda.api.Controllers.METHOD;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.SNAP_BACKWARD;
-import static cwms.cda.api.Controllers.SNAP_FORWARD;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.TIMESERIES_ID;
-import static cwms.cda.api.Controllers.TIMESERIES_ID_REGEX;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.requiredParam;
-import static cwms.cda.api.Controllers.requiredParamAs;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -371,7 +347,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {
 
-        JooqDao.DeleteMethod method =requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
+        JooqDao.DeleteMethod method = requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
 
         String office = requiredParam(ctx, OFFICE);
 

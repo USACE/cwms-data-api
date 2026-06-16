@@ -230,7 +230,6 @@ public class PoolController implements CrudHandler {
 
                 String result = Formats.format(contentType, pool);
 
-                ctx.result(result);
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
