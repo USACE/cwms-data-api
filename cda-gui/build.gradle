@@ -12,7 +12,7 @@ task buildGuiVite(type:NpxTask) {
     command = "vite"
     args = ["build", "--mode", cdaGuiViteMode.get()]
     inputs.files('package.json', 'package-lock.json', 'vite.config.js', 'index.html',
-            '.env.development', '.env.production', '.env.test')
+            '.env.development', '.env.localhost', '.env.production', '.env.test')
     inputs.dir('src')
     inputs.dir('public')
     inputs.dir(fileTree("node_modules").exclude(".cache"))

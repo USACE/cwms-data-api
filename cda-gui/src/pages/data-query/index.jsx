@@ -16,18 +16,48 @@ import SettingsMenu from "./components/SettingsMenu";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
+  basePath: import.meta.env.VITE_CDA_API_ROOT,
   headers: {
     accept: "application/json;version=2",
   },
 });
 const ts_api = new TimeSeriesApi(v2_config);
-const offices_api = new OfficesApi();
+const offices_api = new OfficesApi(v2_config);
 const DATA_QUERY_CACHE_KEY = "data-query-cache-enabled";
 const DATA_QUERY_SORT_ASC_KEY = "data-query-sort-ascending";
 const DATA_QUERY_INCLUDE_MISSING_TS_KEY = "data-query-include-missing-timeseries";
 const DEFAULT_CACHE_ENABLED = true;
 const DEFAULT_SORT_ASCENDING = false;
 const DEFAULT_INCLUDE_MISSING_TIMESERIES = false;
+const DEFAULT_LOOKBACK = { amount: 1, unit: "day" };
+const MINIMUM_INTERVAL_LOOKBACKS = {
+  minute: DEFAULT_LOOKBACK,
+  hour: DEFAULT_LOOKBACK,
+};
+
+function getLookbackForInterval(interval) {
+  if (!interval || interval === "0") return DEFAULT_LOOKBACK;
+
+  const match = interval.replace(/^~/, "").match(/^(\d+)([A-Za-z]+)$/);
+  if (!match) return DEFAULT_LOOKBACK;
+
+  const amount = Number(match[1]);
+  const unit = match[2].toLowerCase().replace(/s$/, "");
+
+  return MINIMUM_INTERVAL_LOOKBACKS[unit] || { amount, unit };
+}
+
+function getLookbackForTsids(tsids, endDateTime) {
+  return tsids.reduce(
+    (earliestBegin, tsid) => {
+      const interval = tsid.split(".")[3];
+      const lookback = getLookbackForInterval(interval);
+      const begin = endDateTime.subtract(lookback.amount, lookback.unit);
+      return begin.isBefore(earliestBegin) ? begin : earliestBegin;
+    },
+    endDateTime.subtract(DEFAULT_LOOKBACK.amount, DEFAULT_LOOKBACK.unit),
+  );
+}
 
 // const config = cwmsConfigs["SWF"];
 // async function fetchConfig(configUrl) {
@@ -103,6 +133,15 @@ export default function DataQuery() {
   });
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
+
+  useEffect(() => {
+    if (!tsids.length) return;
+
+    const recommendedBegin = getLookbackForTsids(tsids, endDateTime);
+    setBeginDateTime((currentBegin) =>
+      currentBegin.isAfter(recommendedBegin) ? recommendedBegin : currentBegin,
+    );
+  }, [endDateTime, tsids]);
 
   async function fetchAllTSData(data, requestOverrides) {
     let startDate = data?.begin;
@@ -327,7 +366,7 @@ export default function DataQuery() {
           />
         </div>
         <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex flex-col gap-4 w-4/5 md:w-3/5">
+          <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-1">
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
               <label htmlFor="office">Office: </label>
               <select
@@ -363,35 +402,26 @@ export default function DataQuery() {
                 label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
               />
             </div>
-            {(office || mode === "advanced") && (
-              <>
-                {mode == "advanced" ? (
-                  <TimeSeriesDropdown
-                    office={office}
-                    setOffice={setOffice}
-                    setTsids={setTsids}
-                    tsids={tsids}
-                    includeMissingTimeseries={includeMissingTimeseries}
-                  />
-                ) : (
-                  <TimeSeriesBuilder
-                    office={office}
-                    setTsids={setTsids}
-                    tsids={tsids}
-                  />
-                )}
-
-                <Controls
-                  setBeginDateTime={setBeginDateTime}
-                  setEndDateTime={setEndDateTime}
-                  beginDateTime={beginDateTime}
-                  endDateTime={endDateTime}
-                />
-              </>
-            )}
-            {!office && mode !== "advanced" && (
+            {mode == "advanced" ? (
+              <TimeSeriesDropdown
+                office={office}
+                setOffice={setOffice}
+                setTsids={setTsids}
+                tsids={tsids}
+                includeMissingTimeseries={includeMissingTimeseries}
+              />
+            ) : !office ? (
               <H3 className="text-center mt-4">Select an office to begin</H3>
+            ) : (
+              <TimeSeriesBuilder office={office} setTsids={setTsids} tsids={tsids} />
             )}
+
+            <Controls
+              setBeginDateTime={setBeginDateTime}
+              setEndDateTime={setEndDateTime}
+              beginDateTime={beginDateTime}
+              endDateTime={endDateTime}
+            />
           </div>
           <TimeSeriesManager
             tsids={tsids}

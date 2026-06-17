@@ -31,6 +31,7 @@ export default function useDescriptors({
         type || "*",
         interval || "*",
         duration || "*",
+        "*",
       ].join(".");
       const request = {
         dataset: "TIMESERIES",

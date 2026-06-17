@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode localhost",
-    "build": "vite build && node scripts/generate-sitemap.mjs",
+    "build": "vite build --mode production && node scripts/generate-sitemap.mjs",
+    "build:development": "vite build --mode development && node scripts/generate-sitemap.mjs",
+    "build:test": "vite build --mode test && node scripts/generate-sitemap.mjs",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "prepare": "cd .. && husky cda-gui/.husky",
@@ -20,6 +22,7 @@
     ]
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.10",
     "@tanstack/react-query": "^5.64.1",
     "@usace-watermanagement/groundwork-water": "^3.3.1",
     "@usace/groundwork": "^3.14.18",

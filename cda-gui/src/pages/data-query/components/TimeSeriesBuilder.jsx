@@ -8,12 +8,14 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
   const [locationKind, setLocationKind] = useState("*");
   const aliases = useAliases({ office, kind: locationKind });
 
-  const [location, setLocation] = useState("");
+  const [locationKey, setLocationKey] = useState("");
   const [parameter, setParameter] = useState("");
   const [type, setType] = useState("");
   const [interval, setInterval] = useState("");
   const [duration, setDuration] = useState("");
   const [version, setVersion] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const location = selectedLocation?.name || "";
 
   const descriptors = useDescriptors({
     office,
@@ -23,6 +25,13 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
     interval,
     duration,
   });
+
+  useEffect(() => {
+    if (office && selectedLocation?.office && selectedLocation.office !== office) {
+      setLocationKey("");
+      setSelectedLocation(null);
+    }
+  }, [office, selectedLocation]);
 
   // Compose TSID
   useEffect(() => {
@@ -73,7 +82,8 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
         value={locationKind}
         onChange={(value) => {
           setLocationKind(value);
-          setLocation("");
+          setLocationKey("");
+          setSelectedLocation(null);
         }}
         options={[
           { value: "*", label: "All" },
@@ -87,11 +97,19 @@ export default function TimeSeriesBuilder({ office, setTsids }) {
       />
       <Dropdown
         label="Location"
-        value={location}
-        onChange={setLocation}
+        value={locationKey}
+        onChange={(value) => {
+          const selected = aliases.data?.[value];
+          setSelectedLocation(selected || null);
+          setLocationKey(value);
+        }}
         options={Object.keys(aliases.data || {}).map((key) => ({
           value: key,
-          label: aliases.data[key].publicName,
+          label: office
+            ? aliases.data[key].publicName || aliases.data[key].name
+            : `${aliases.data[key].office} / ${
+                aliases.data[key].publicName || aliases.data[key].name
+              }`,
         }))}
         loading={aliases.isLoading}
       />

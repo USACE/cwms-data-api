@@ -15,7 +15,7 @@ export default function useAliases({ office, kind, cacheDuration, props }) {
         dataset: "LOCATIONS",
         includeAliases: true,
       };
-      if (kind) request.locationKindLike = kind;
+      if (kind && kind !== "*") request.locationKindLike = kind;
       if (office) request.office = office;
       return cataApi.getCatalogWithDataset(request);
     },
@@ -28,7 +28,8 @@ export default function useAliases({ office, kind, cacheDuration, props }) {
           a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
         )
         .forEach((loc) => {
-          aliasMap[loc.name] = {
+          const key = office ? loc.name : `${loc.office}/${loc.name}`;
+          aliasMap[key] = {
             name: loc.name,
             publicName: loc.publicName,
             office: loc.office,
