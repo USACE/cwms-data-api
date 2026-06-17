@@ -19,11 +19,25 @@ const catalogApi = new CatalogApi(
   }),
 );
 
-function getFreshnessColor(latestTimeIso) {
-  if (!latestTimeIso) return "gray";
+function getExtentLastUpdate(extent) {
+  return extent?.lastUpdate || extent?.["last-update"];
+}
+
+function getFreshnessColor(extents) {
+  const lastUpdates = (extents || [])
+    .map(getExtentLastUpdate)
+    .filter(Boolean)
+    .map((lastUpdate) => dayjs(lastUpdate))
+    .filter((lastUpdate) => lastUpdate.isValid());
+
+  if (!lastUpdates.length) return "red";
+
   const now = dayjs();
-  const latestTime = dayjs(latestTimeIso);
-  return now.diff(latestTime, "hour", true) <= 1 ? "green" : "yellow";
+  const newestLastUpdate = lastUpdates.reduce((newest, lastUpdate) =>
+    lastUpdate.isAfter(newest) ? lastUpdate : newest,
+  );
+
+  return now.diff(newestLastUpdate, "hour", true) <= 24 ? "green" : "yellow";
 }
 
 export default function TimeSeriesDropdown({
@@ -98,9 +112,7 @@ export default function TimeSeriesDropdown({
               <li className="p-2 text-red-600">Error: {error.message}</li>
             ) : (
               suggestions.map((entry, idx) => {
-                const suggestion_color = getFreshnessColor(
-                  entry.extents?.[0]?.latestTime,
-                );
+                const suggestion_color = getFreshnessColor(entry.extents);
                 return (
                   <ComboboxOption
                     key={`${entry.office}/${entry.name}/${idx}`}
@@ -117,9 +129,7 @@ export default function TimeSeriesDropdown({
                               ? "bg-green-500"
                               : suggestion_color === "yellow"
                                 ? "bg-yellow-400"
-                                : suggestion_color === "gray"
-                                  ? "bg-gray-500"
-                                  : "bg-red-500"
+                                : "bg-red-500"
                           }`}
                         />
                         <span className="font-semibold">{entry.office}</span>
