@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import Controls from "./components/Controls";
-import { Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
+import { CatalogApi, Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
 import FailedTimeSeries from "./components/FailedTimeSeries";
 // import useConfigList from "./hooks/useConfigList";
@@ -23,6 +23,7 @@ const v2_config = new Configuration({
 });
 const ts_api = new TimeSeriesApi(v2_config);
 const offices_api = new OfficesApi(v2_config);
+const catalog_api = new CatalogApi(v2_config);
 const DATA_QUERY_CACHE_KEY = "data-query-cache-enabled";
 const DATA_QUERY_SORT_ASC_KEY = "data-query-sort-ascending";
 const DATA_QUERY_INCLUDE_MISSING_TS_KEY = "data-query-include-missing-timeseries";
@@ -30,21 +31,47 @@ const DEFAULT_CACHE_ENABLED = true;
 const DEFAULT_SORT_ASCENDING = false;
 const DEFAULT_INCLUDE_MISSING_TIMESERIES = false;
 const DEFAULT_LOOKBACK = { amount: 1, unit: "day" };
+const CHUNK_PAGE_SIZE = 5000;
+const TARGET_VALUES_PER_CHUNK = 3000;
+const MAX_CHUNK_DAYS = 365;
+const MAX_PARALLEL_CHUNK_REQUESTS = 6;
 const MINIMUM_INTERVAL_LOOKBACKS = {
   minute: DEFAULT_LOOKBACK,
   hour: DEFAULT_LOOKBACK,
 };
+const INTERVAL_MINUTES = {
+  minute: 1,
+  hour: 60,
+  day: 60 * 24,
+  week: 60 * 24 * 7,
+  month: 60 * 24 * 30,
+  year: 60 * 24 * 365,
+};
+
+function parseInterval(interval) {
+  if (!interval || interval === "0") return { amount: 1, unit: "hour" };
+
+  const match = interval.replace(/^~/, "").match(/^(\d+)([A-Za-z]+)$/);
+  if (!match) return { amount: 1, unit: "hour" };
+
+  return {
+    amount: Number(match[1]),
+    unit: match[2].toLowerCase().replace(/s$/, ""),
+  };
+}
 
 function getLookbackForInterval(interval) {
   if (!interval || interval === "0") return DEFAULT_LOOKBACK;
 
-  const match = interval.replace(/^~/, "").match(/^(\d+)([A-Za-z]+)$/);
-  if (!match) return DEFAULT_LOOKBACK;
-
-  const amount = Number(match[1]);
-  const unit = match[2].toLowerCase().replace(/s$/, "");
+  const { amount, unit } = parseInterval(interval);
 
   return MINIMUM_INTERVAL_LOOKBACKS[unit] || { amount, unit };
+}
+
+function getIntervalMinutes(tsid) {
+  const interval = tsid.split(".")[3];
+  const { amount, unit } = parseInterval(interval);
+  return amount * (INTERVAL_MINUTES[unit] || INTERVAL_MINUTES.hour);
 }
 
 function getLookbackForTsids(tsids, endDateTime) {
@@ -57,6 +84,74 @@ function getLookbackForTsids(tsids, endDateTime) {
     },
     endDateTime.subtract(DEFAULT_LOOKBACK.amount, DEFAULT_LOOKBACK.unit),
   );
+}
+
+function getChunkMinutes(tsid) {
+  const estimatedIntervalMinutes = getIntervalMinutes(tsid);
+  return Math.min(
+    estimatedIntervalMinutes * TARGET_VALUES_PER_CHUNK,
+    MAX_CHUNK_DAYS * INTERVAL_MINUTES.day,
+  );
+}
+
+function getDateChunks(tsid, beginDateTime, endDateTime) {
+  const chunkMinutes = getChunkMinutes(tsid);
+  const chunks = [];
+  let chunkEnd = endDateTime;
+
+  while (chunkEnd.isAfter(beginDateTime)) {
+    let chunkBegin = chunkEnd.subtract(chunkMinutes, "minute");
+    if (chunkBegin.isBefore(beginDateTime)) chunkBegin = beginDateTime;
+    chunks.unshift({ begin: chunkBegin, end: chunkEnd });
+    chunkEnd = chunkBegin;
+  }
+
+  return chunks;
+}
+
+async function runLimited(tasks, limit) {
+  const results = [];
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < tasks.length) {
+      const taskIndex = nextIndex;
+      nextIndex += 1;
+      results[taskIndex] = await tasks[taskIndex]();
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, tasks.length) }, () => worker()),
+  );
+  return results;
+}
+
+function mergeTimeSeriesChunks(name, begin, end, chunks) {
+  const valuesByTime = new Map();
+  let units;
+  let total = 0;
+
+  chunks.forEach((chunk) => {
+    units ||= chunk?.units;
+    total += chunk?.total || 0;
+    chunk?.values?.forEach((value) => {
+      valuesByTime.set(value[0], value);
+    });
+  });
+
+  return {
+    begin,
+    end,
+    values: [...valuesByTime.values()].sort((a, b) => a[0] - b[0]),
+    name,
+    units,
+    total,
+  };
+}
+
+function getExtentEarliestTime(extent) {
+  return extent?.earliestTime || extent?.["earliest-time"];
 }
 
 // const config = cwmsConfigs["SWF"];
@@ -143,45 +238,106 @@ export default function DataQuery() {
     );
   }, [endDateTime, tsids]);
 
-  async function fetchAllTSData(data, requestOverrides) {
-    let startDate = data?.begin;
-    let endDate = data?.end;
-    let values = data?.values;
-    let { name, "office-id": office, "next-page": nextPage } = data;
+  async function fetchTimeSeriesChunkPages(data, request, requestOverrides) {
+    let values = data?.values || [];
+    let nextPage = data?.["next-page"];
     const maxPages = 200;
     let pageCount = 0;
+
     while (nextPage) {
-      let _result = await ts_api.getTimeSeries(
+      const result = await ts_api.getTimeSeriesRaw(
         {
-          begin: startDate,
-          end: endDate,
-          name,
-          office,
+          ...request,
           page: nextPage,
-          pageSize: 25000,
-          // begin: beginDateTime.format(CDA_DATE_FORMAT),
-          // end: endDateTime.format(CDA_DATE_FORMAT),
         },
         requestOverrides,
       );
-      // if (!_result?.page) page = false
-      nextPage = _result?.nextPage;
-      endDate = _result?.end;
-      values = values.concat(_result?.values);
+      const pageData = await result.raw.json();
+      values = values.concat(pageData?.values || []);
+      nextPage = pageData?.["next-page"];
       pageCount++;
       if (pageCount > maxPages) {
         alert("Max recursion reached, stopping");
         break;
       }
     }
-    return {
-      begin: startDate,
-      end: endDate,
-      values,
-      name,
-      units: data?.units,
-      total: data?.total,
-    };
+
+    return { ...data, values };
+  }
+
+  async function fetchTimeSeriesChunk(request, requestOverrides) {
+    const result = await ts_api.getTimeSeriesRaw(request, requestOverrides);
+
+    if (!result.raw.ok) {
+      return {
+        name: request.name,
+        values: [],
+        message: await result.raw.text(),
+      };
+    }
+
+    const data = await result.raw.json();
+    return await fetchTimeSeriesChunkPages(data, request, requestOverrides);
+  }
+
+  async function getEffectiveBeginDateTime(tsid) {
+    try {
+      const { entries = [] } = await catalog_api.getCatalogWithDataset({
+        dataset: "TIMESERIES",
+        excludeEmpty: false,
+        includeAliases: true,
+        like: tsid,
+        office: office || undefined,
+        pageSize: 10,
+      });
+      const entry =
+        entries.find((catalogEntry) => catalogEntry.name === tsid) || entries[0];
+      const earliestTime = getExtentEarliestTime(entry?.extents?.[0]);
+      const earliestDateTime = earliestTime ? dayjs(earliestTime) : null;
+
+      if (earliestDateTime?.isValid() && earliestDateTime.isAfter(beginDateTime)) {
+        return earliestDateTime;
+      }
+    } catch (e) {
+      console.warn(`Unable to fetch catalog extents for ${tsid}`, e);
+    }
+
+    return beginDateTime;
+  }
+
+  async function fetchTimeSeries(tsid, requestOverrides) {
+    const effectiveBeginDateTime = await getEffectiveBeginDateTime(tsid);
+    if (!effectiveBeginDateTime.isBefore(endDateTime)) {
+      return {
+        begin: beginDateTime.format(CDA_DATE_FORMAT),
+        end: endDateTime.format(CDA_DATE_FORMAT),
+        values: [],
+        name: tsid,
+      };
+    }
+
+    const chunks = getDateChunks(tsid, effectiveBeginDateTime, endDateTime);
+    const tasks = chunks.map((chunk) => {
+      const request = {
+        name: tsid,
+        office: office || undefined,
+        begin: chunk.begin.format(CDA_DATE_FORMAT),
+        end: chunk.end.format(CDA_DATE_FORMAT),
+        pageSize: CHUNK_PAGE_SIZE,
+      };
+      return () => fetchTimeSeriesChunk(request, requestOverrides);
+    });
+
+    const chunkResults = await runLimited(tasks, MAX_PARALLEL_CHUNK_REQUESTS);
+    const failedChunk = chunkResults.find((chunk) => chunk?.message);
+    if (failedChunk) return failedChunk;
+
+    return mergeTimeSeriesChunks(
+      tsid,
+      beginDateTime.format(CDA_DATE_FORMAT),
+      endDateTime.format(CDA_DATE_FORMAT),
+      chunkResults,
+    );
   }
 
   const {
@@ -206,27 +362,10 @@ export default function DataQuery() {
             cache: "no-store",
           };
       const promises = tsids.map((tsid) => {
-        return ts_api
-          .getTimeSeriesRaw(
-            {
-              name: tsid,
-              office: office || undefined,
-              begin: beginDateTime.format(CDA_DATE_FORMAT),
-              end: endDateTime.format(CDA_DATE_FORMAT),
-              pageSize: 25000,
-            },
-            requestOverrides,
-          )
-          .then(async (r) => {
-            if (r.raw.ok) {
-              let _data = await r.raw.json();
-              return await fetchAllTSData(_data, requestOverrides);
-            } else return { name: tsid, values: [], message: r.raw.text };
-          })
-          .catch((e) => {
-            console.error(e);
-            return { name: tsid, values: [], message: e?.message };
-          });
+        return fetchTimeSeries(tsid, requestOverrides).catch((e) => {
+          console.error(e);
+          return { name: tsid, values: [], message: e?.message };
+        });
       });
       const data = await Promise.all(promises);
       return data;
