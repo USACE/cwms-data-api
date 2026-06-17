@@ -42,6 +42,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.basinconnectivity.BasinDao;
 import cwms.cda.data.dto.CwmsId;
@@ -143,7 +144,7 @@ public class BasinController implements CrudHandler {
             ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (SQLException ex) {
-            CdaError error = new CdaError("Error retrieving all basins");
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Error retrieving all basins", ex);
             LOGGER.atSevere().withCause(ex).log("Error retrieving all basins");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }

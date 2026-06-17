@@ -45,3 +45,23 @@ The following users and permissions are available:
 
 Traefik uses port 8081 by default, if this conflicts with existing services on your machine it can
 be changed by setting the APP_PORT variable.
+
+## Local error trace debugging
+
+The API supports conditional stack traces in JSON error responses through
+`cwms.cda.api.errors.ExceptionTraceSupport`.
+
+Stack-trace exposure is controlled through the Togglz feature flag
+`INCLUDE_ERROR_STACK_TRACES`.
+
+For shared environments, enable that feature in the active `features.properties` and the API will
+include traces only for authenticated users with the `SHOW STACK TRACE` role.
+
+The local Docker Compose setup enables that feature by default by mounting
+`./compose_files/togglz/features.properties` into the API container and passing its path through
+`JAVA_OPTS`.
+
+In that compose environment, `l2hectest` has the `SHOW STACK TRACE` role. When enabled, error
+responses include `details.stackTraceLines` along with the existing `incidentIdentifier`.
+
+Response stack traces should *not* be enabled broadly for production traffic.

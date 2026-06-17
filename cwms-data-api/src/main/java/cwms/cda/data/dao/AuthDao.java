@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -409,19 +410,34 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @throws CwmsAuthException if the user is not authorized
      */
     public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles) throws CwmsAuthException {
+        isAuthorized(ctx, p, routeRoles, (principal, requiredRoles) ->
+                principal.getRoles().containsAll(requiredRoles));
+    }
+
+    /**
+     * logic to determine if a given principal can perform the desired operation based on a predicate.
+     * Throws exception if not valid, otherwise just returns.
+     * @param ctx the context to check
+     * @param p the principal to check
+     * @param routeRoles the route roles
+     * @param authorizer the authorizer logic for the route roles
+     * @throws CwmsAuthException if the user is not authorized
+     */
+    public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles,
+                                    BiPredicate<DataApiPrincipal, Set<RouteRole>> authorizer) throws CwmsAuthException {
         if (routeRoles == null || routeRoles.isEmpty()) {
             logger.atFinest().log("Passthrough, no required roles defined.");
             return;
-        } else if (p != null) {
-            Set<RouteRole> specifiedRoles = p.getRoles();
-            if (specifiedRoles.containsAll(routeRoles)) {
-                logger.atFinest().log("User has required roles.");
-                return;
+        }
+
+        if (p != null && authorizer.test(p, routeRoles)) {
+            logger.atFinest().log("User is authorized.");
+        } else {
+            if (p == null) {
+                throw new CwmsAuthException("No credentials provided.", 401);
             } else {
                 throw new MissingRolesException(getMissingRoles(ctx, routeRoles, p));
             }
-        } else {
-            throw new CwmsAuthException("No credentials provided.",401);
         }
     }
 

@@ -62,6 +62,7 @@ import cwms.cda.api.BaseCrudHandler;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
@@ -171,11 +172,13 @@ public class RatingController extends BaseCrudHandler {
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Rating Set successfully stored to CWMS.");
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet");
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet", ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         } catch (RatingException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -492,14 +495,14 @@ public class RatingController extends BaseCrudHandler {
                         ctx.status(HttpCode.NOT_FOUND);
                     }
                 } catch (RatingException e) {
-                    CdaError re =
-                            new CdaError("Failed to process request to retrieve RatingSet");
+                    CdaError re = ExceptionTraceSupport.buildError(ctx,
+                             "Failed to process request to retrieve RatingSet", e);
                     logger.atSevere().withCause(e).log("%s", re);
                     ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     ctx.json(re);
                 } catch (IOException e) {
-                    CdaError re =
-                            new CdaError("Failed to process request to retrieve RatingSet");
+                    CdaError re = ExceptionTraceSupport.buildError(ctx,
+                             "Failed to process request to retrieve RatingSet", e);
                     logger.atSevere().withCause(e).log("%s", re);
                     ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
                 }
@@ -580,11 +583,13 @@ public class RatingController extends BaseCrudHandler {
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Updated RatingSet");
             ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (IOException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet");
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet", ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         } catch (RatingException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
