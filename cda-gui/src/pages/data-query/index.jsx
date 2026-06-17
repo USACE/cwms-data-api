@@ -709,7 +709,12 @@ export default function DataQuery() {
             ) : !office ? (
               <H3 className="text-center mt-4">Select an office to begin</H3>
             ) : (
-              <TimeSeriesBuilder office={office} setTsids={setTsids} tsids={tsids} />
+              <TimeSeriesBuilder
+                includeMissingTimeseries={includeMissingTimeseries}
+                office={office}
+                setTsids={setTsids}
+                tsids={tsids}
+              />
             )}
 
             <Controls
@@ -751,14 +756,14 @@ export default function DataQuery() {
           />
         </div>
         <div className="overflow-auto max-w-[85vw]">
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-start gap-2">
             <FailedTimeSeries
               failedTS={timeseriesData?.failed}
-              className="w-3/4 mx-auto"
+              className="max-w-full flex-1 basis-72"
             />
 
             {(canExportTimeseries || tsids.length > 0) && (
-              <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+              <div className="mb-3 ms-auto flex flex-wrap items-center justify-end gap-2">
                 {canExportTimeseries && (
                   <>
                     <Button

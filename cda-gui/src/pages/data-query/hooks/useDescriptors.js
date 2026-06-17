@@ -7,6 +7,7 @@ const config = new Configuration({
 const cataApi = new CatalogApi(config);
 
 export default function useDescriptors({
+  includeMissingTimeseries,
   office,
   location,
   parameter,
@@ -17,6 +18,7 @@ export default function useDescriptors({
   return useQuery({
     queryKey: [
       "tsid-descriptors",
+      includeMissingTimeseries,
       office,
       location,
       parameter,
@@ -35,7 +37,7 @@ export default function useDescriptors({
       ].join(".");
       const request = {
         dataset: "TIMESERIES",
-        excludeEmpty: true,
+        excludeEmpty: !includeMissingTimeseries,
         like,
       };
       if (office) request.office = office;
@@ -60,6 +62,7 @@ export default function useDescriptors({
       });
 
       return {
+        count: descriptors?.entries?.length || 0,
         parameters: Array.from(parameters),
         types: Array.from(types),
         intervals: Array.from(intervals),

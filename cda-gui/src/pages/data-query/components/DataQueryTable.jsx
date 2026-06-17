@@ -131,7 +131,7 @@ export default function DataQueryTable({
             {timeseriesParams.map((param) => (
               <div
                 key={param.tsid}
-                className="border-b border-slate-200 px-3 py-2"
+                className="border-b border-slate-200 px-3 py-2 text-right"
                 role="columnheader"
               >
                 {param.header}
@@ -189,7 +189,7 @@ export default function DataQueryTable({
             {visibleMobileParams.map((param) => (
               <div
                 key={param.tsid}
-                className="border-b border-slate-200 px-3 py-2"
+                className="border-b border-slate-200 px-3 py-2 text-right"
                 role="columnheader"
               >
                 {param.header}

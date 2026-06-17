@@ -7,11 +7,11 @@ export default function FailedTimeSeries({ failedTS, className }) {
 
   //   TODO: fetch the extents if the timeseries error is not 404 to let the user know valid dates
   return (
-    <div className={gwMerge("flex flex-col gap-2 mx-2 my-5", className)}>
+    <div className={gwMerge("flex min-w-0 flex-col gap-2", className)}>
       <Accordion
         heading={
-          <div className="flex justify-between items-center w-full">
-            <div className="text-xl font-bold">
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="text-sm font-bold">
               <IoWarning className="inline" /> Failed Timeseries
             </div>
             <Badge color="red">
