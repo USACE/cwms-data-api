@@ -2,6 +2,7 @@ import { UsaceBox, Skeleton, Badge, H3, Button } from "@usace/groundwork";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
+import PropTypes from "prop-types";
 import Controls from "./components/Controls";
 import { CatalogApi, Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
@@ -109,6 +110,30 @@ function getDateChunks(tsid, beginDateTime, endDateTime) {
   return chunks;
 }
 
+function getLoadPlan(tsids, beginDateTime, endDateTime, extentsByTsid = {}) {
+  const items = tsids.map((tsid) => {
+    const extentBegin = extentsByTsid[tsid]?.earliestDateTime;
+    const effectiveBegin =
+      extentBegin?.isValid() && extentBegin.isAfter(beginDateTime)
+        ? extentBegin
+        : beginDateTime;
+    const chunks = effectiveBegin.isBefore(endDateTime)
+      ? getDateChunks(tsid, effectiveBegin, endDateTime)
+      : [];
+
+    return {
+      tsid,
+      effectiveBegin,
+      chunks,
+    };
+  });
+
+  return {
+    items,
+    totalChunks: items.reduce((total, item) => total + item.chunks.length, 0),
+  };
+}
+
 async function runLimited(tasks, limit) {
   const results = [];
   let nextIndex = 0;
@@ -153,6 +178,73 @@ function mergeTimeSeriesChunks(name, begin, end, chunks) {
 function getExtentEarliestTime(extent) {
   return extent?.earliestTime || extent?.["earliest-time"];
 }
+
+function formatFriendlyDate(dateTime) {
+  return dateTime.format("MMM D, YYYY h:mm A");
+}
+
+function getProgressPercent(progress) {
+  if (!progress?.total) return 0;
+  return Math.round((progress.completed / progress.total) * 100);
+}
+
+function QueryProgress({ progress }) {
+  const percent = getProgressPercent(progress);
+
+  return (
+    <div className="mt-4 rounded border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-slate-700">
+        <span>Loading time series data</span>
+        <span>
+          {progress.completed} / {progress.total} chunks
+        </span>
+      </div>
+      <div className="h-3 w-full overflow-hidden rounded bg-slate-200">
+        <div
+          className="h-full bg-blue-600 transition-all"
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <div className="mt-3 grid gap-2 text-xs text-slate-600">
+        {progress.byTsid.map((item) => {
+          const itemPercent = item.total
+            ? Math.round((item.completed / item.total) * 100)
+            : 100;
+          return (
+            <div key={item.tsid}>
+              <div className="mb-1 flex justify-between gap-4">
+                <span className="truncate">{item.tsid}</span>
+                <span>
+                  {item.completed} / {item.total}
+                </span>
+              </div>
+              <div className="h-2 overflow-hidden rounded bg-slate-100">
+                <div
+                  className="h-full bg-emerald-500 transition-all"
+                  style={{ width: `${itemPercent}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+QueryProgress.propTypes = {
+  progress: PropTypes.shape({
+    byTsid: PropTypes.arrayOf(
+      PropTypes.shape({
+        completed: PropTypes.number.isRequired,
+        total: PropTypes.number.isRequired,
+        tsid: PropTypes.string.isRequired,
+      }),
+    ).isRequired,
+    completed: PropTypes.number.isRequired,
+    total: PropTypes.number.isRequired,
+  }).isRequired,
+};
 
 // const config = cwmsConfigs["SWF"];
 // async function fetchConfig(configUrl) {
@@ -228,6 +320,18 @@ export default function DataQuery() {
   });
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
+  const [loadProgress, setLoadProgress] = useState(null);
+
+  const validTsids = useMemo(
+    () =>
+      tsids.length > 0 &&
+      tsids.every(
+        (tsid) =>
+          tsid.split(".").length === 6 &&
+          tsid.split(".").every((part) => part.trim() !== ""),
+      ),
+    [tsids],
+  );
 
   useEffect(() => {
     if (!tsids.length) return;
@@ -237,6 +341,79 @@ export default function DataQuery() {
       currentBegin.isAfter(recommendedBegin) ? recommendedBegin : currentBegin,
     );
   }, [endDateTime, tsids]);
+
+  const extents = useQuery({
+    queryKey: ["data-query-extents", tsids, office],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        tsids.map(async (tsid) => {
+          const { entries: catalogEntries = [] } =
+            await catalog_api.getCatalogWithDataset({
+              dataset: "TIMESERIES",
+              excludeEmpty: false,
+              includeAliases: true,
+              like: tsid,
+              office: office || undefined,
+              pageSize: 10,
+            });
+          const entry =
+            catalogEntries.find((catalogEntry) => catalogEntry.name === tsid) ||
+            catalogEntries[0];
+          const earliestTime = getExtentEarliestTime(entry?.extents?.[0]);
+          const earliestDateTime = earliestTime ? dayjs(earliestTime) : null;
+
+          return [
+            tsid,
+            {
+              earliestDateTime:
+                earliestDateTime?.isValid() === true ? earliestDateTime : null,
+              entry,
+            },
+          ];
+        }),
+      );
+
+      return Object.fromEntries(entries);
+    },
+    enabled: validTsids && office !== undefined,
+    retry: 1,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const loadPlan = useMemo(
+    () => getLoadPlan(tsids, beginDateTime, endDateTime, extents.data),
+    [beginDateTime, endDateTime, extents.data, tsids],
+  );
+
+  const extentAdjustments = useMemo(() => {
+    return loadPlan.items
+      .map((item) => ({
+        tsid: item.tsid,
+        earliestDateTime: extents.data?.[item.tsid]?.earliestDateTime,
+      }))
+      .filter(
+        (item) =>
+          item.earliestDateTime?.isValid() &&
+          item.earliestDateTime.isAfter(beginDateTime),
+      );
+  }, [beginDateTime, extents.data, loadPlan.items]);
+
+  const requestedDateBeforeExtent =
+    extentAdjustments.length > 0 && !extents.isLoading && !extents.isError;
+
+  const adjustedExtentBeginDateTime = useMemo(() => {
+    return extentAdjustments.reduce(
+      (latestBegin, item) =>
+        item.earliestDateTime.isAfter(latestBegin)
+          ? item.earliestDateTime
+          : latestBegin,
+      beginDateTime,
+    );
+  }, [beginDateTime, extentAdjustments]);
+
+  const applyExtentStartDate = () => {
+    setBeginDateTime(adjustedExtentBeginDateTime);
+  };
 
   async function fetchTimeSeriesChunkPages(data, request, requestOverrides) {
     let values = data?.values || [];
@@ -280,34 +457,8 @@ export default function DataQuery() {
     return await fetchTimeSeriesChunkPages(data, request, requestOverrides);
   }
 
-  async function getEffectiveBeginDateTime(tsid) {
-    try {
-      const { entries = [] } = await catalog_api.getCatalogWithDataset({
-        dataset: "TIMESERIES",
-        excludeEmpty: false,
-        includeAliases: true,
-        like: tsid,
-        office: office || undefined,
-        pageSize: 10,
-      });
-      const entry =
-        entries.find((catalogEntry) => catalogEntry.name === tsid) || entries[0];
-      const earliestTime = getExtentEarliestTime(entry?.extents?.[0]);
-      const earliestDateTime = earliestTime ? dayjs(earliestTime) : null;
-
-      if (earliestDateTime?.isValid() && earliestDateTime.isAfter(beginDateTime)) {
-        return earliestDateTime;
-      }
-    } catch (e) {
-      console.warn(`Unable to fetch catalog extents for ${tsid}`, e);
-    }
-
-    return beginDateTime;
-  }
-
-  async function fetchTimeSeries(tsid, requestOverrides) {
-    const effectiveBeginDateTime = await getEffectiveBeginDateTime(tsid);
-    if (!effectiveBeginDateTime.isBefore(endDateTime)) {
+  async function fetchTimeSeries(tsid, requestOverrides, planItem) {
+    if (!planItem.effectiveBegin.isBefore(endDateTime)) {
       return {
         begin: beginDateTime.format(CDA_DATE_FORMAT),
         end: endDateTime.format(CDA_DATE_FORMAT),
@@ -316,8 +467,7 @@ export default function DataQuery() {
       };
     }
 
-    const chunks = getDateChunks(tsid, effectiveBeginDateTime, endDateTime);
-    const tasks = chunks.map((chunk) => {
+    const tasks = planItem.chunks.map((chunk) => {
       const request = {
         name: tsid,
         office: office || undefined,
@@ -325,7 +475,22 @@ export default function DataQuery() {
         end: chunk.end.format(CDA_DATE_FORMAT),
         pageSize: CHUNK_PAGE_SIZE,
       };
-      return () => fetchTimeSeriesChunk(request, requestOverrides);
+      return async () => {
+        try {
+          return await fetchTimeSeriesChunk(request, requestOverrides);
+        } finally {
+          setLoadProgress((current) => {
+            if (!current) return current;
+            return {
+              ...current,
+              completed: current.completed + 1,
+              byTsid: current.byTsid.map((item) =>
+                item.tsid === tsid ? { ...item, completed: item.completed + 1 } : item,
+              ),
+            };
+          });
+        }
+      };
     });
 
     const chunkResults = await runLimited(tasks, MAX_PARALLEL_CHUNK_REQUESTS);
@@ -361,26 +526,36 @@ export default function DataQuery() {
         : {
             cache: "no-store",
           };
-      const promises = tsids.map((tsid) => {
-        return fetchTimeSeries(tsid, requestOverrides).catch((e) => {
+      setLoadProgress({
+        completed: 0,
+        total: loadPlan.totalChunks,
+        byTsid: loadPlan.items.map((item) => ({
+          completed: 0,
+          total: item.chunks.length,
+          tsid: item.tsid,
+        })),
+      });
+
+      const promises = loadPlan.items.map((item) => {
+        return fetchTimeSeries(item.tsid, requestOverrides, item).catch((e) => {
           console.error(e);
-          return { name: tsid, values: [], message: e?.message };
+          return { name: item.tsid, values: [], message: e?.message };
         });
       });
       const data = await Promise.all(promises);
+      setLoadProgress((current) =>
+        current ? { ...current, completed: current.total } : current,
+      );
       return data;
     },
     select: (data) => {
       return { ...mergeTimeseries(data), raw: data };
     },
     enabled:
-      tsids.length > 0 &&
-      tsids.every(
-        (tsid) =>
-          tsid.split(".").length === 6 &&
-          tsid.split(".").every((part) => part.trim() !== ""),
-      ) &&
-      office !== undefined,
+      validTsids &&
+      office !== undefined &&
+      !extents.isLoading &&
+      !requestedDateBeforeExtent,
     staleTime: cacheEnabled ? 1000 * 60 * 5 : 0,
     gcTime: cacheEnabled ? 1000 * 60 * 30 : 0,
   });
@@ -561,6 +736,30 @@ export default function DataQuery() {
               beginDateTime={beginDateTime}
               endDateTime={endDateTime}
             />
+            {requestedDateBeforeExtent && (
+              <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <div className="font-semibold">
+                  Data starts on {formatFriendlyDate(adjustedExtentBeginDateTime)}.
+                </div>
+                <div className="mt-1">Query from that date instead?</div>
+                <div className="mt-3 max-h-36 overflow-auto text-xs">
+                  {extentAdjustments.map((item) => (
+                    <div key={item.tsid} className="flex flex-col gap-1 py-1">
+                      <span className="font-medium">{item.tsid}</span>
+                      <span>Starts {formatFriendlyDate(item.earliestDateTime)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    className="bg-amber-600 px-3 py-2 text-white"
+                    onClick={applyExtentStartDate}
+                  >
+                    Query from {formatFriendlyDate(adjustedExtentBeginDateTime)}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <TimeSeriesManager
             tsids={tsids}
@@ -579,7 +778,11 @@ export default function DataQuery() {
             <Button
               onClick={handleDownloadCSV}
               className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${
-                !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
+                !timeseriesData?.tsids.length ||
+                timeseriesLoading ||
+                requestedDateBeforeExtent
+                  ? "hidden"
+                  : ""
               }`}
             >
               Download CSV
@@ -587,14 +790,18 @@ export default function DataQuery() {
             <Button
               onClick={handleDownloadJSON}
               className={`mb-4 bg-green-600 text-white px-4 py-2 rounded ms-2 ${
-                !timeseriesData?.tsids.length || timeseriesLoading ? "hidden" : ""
+                !timeseriesData?.tsids.length ||
+                timeseriesLoading ||
+                requestedDateBeforeExtent
+                  ? "hidden"
+                  : ""
               }`}
             >
               Download JSON
             </Button>
             <Button
               onClick={handleRefreshTimeseries}
-              disabled={!tsids.length || isRefreshing}
+              disabled={!tsids.length || isRefreshing || requestedDateBeforeExtent}
               className={`mb-4 bg-slate-700 text-white px-4 py-2 rounded ms-2 ${
                 !tsids.length ? "hidden" : ""
               }`}
@@ -603,8 +810,12 @@ export default function DataQuery() {
             </Button>
           </div>
 
-          {timeseriesLoading ? (
-            <Skeleton type="card" className="w-full h-[500px]" />
+          {requestedDateBeforeExtent ? null : timeseriesLoading ? (
+            loadProgress ? (
+              <QueryProgress progress={loadProgress} />
+            ) : (
+              <Skeleton type="card" className="w-full h-[500px]" />
+            )
           ) : tsids.length > 0 &&
             timeseriesData?.raw?.every((ts) => ts?.values?.length === 0) ? (
             <>
