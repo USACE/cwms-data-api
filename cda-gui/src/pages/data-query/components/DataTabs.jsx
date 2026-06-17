@@ -1,6 +1,6 @@
 import { Tabs, Skeleton } from "@usace/groundwork";
 import CWMSPlot from "./CWMSPlot";
-import { CWMSTable } from "@usace-watermanagement/groundwork-water";
+import DataQueryTable from "./DataQueryTable";
 import MetaDataTab from "./MetaDataTab";
 import PropTypes from "prop-types";
 
@@ -9,7 +9,6 @@ export default function DataTabs({
   tsids,
   timeseriesData,
   isLoading,
-  cdaParams,
   timeseriesParams,
   begin,
   end,
@@ -31,27 +30,12 @@ export default function DataTabs({
               className="relative z-10 bg-white"
             >
               {timeseriesParams.length > 0 && (
-                <CWMSTable
-                  begin={cdaParams.begin}
-                  end={cdaParams.end}
-                  office={cdaParams.office}
+                <DataQueryTable
                   timeseriesParams={timeseriesParams}
                   dateFormat="YYYY-MM-DD HH:mm:ss"
-                  interval="5"
                   missingString="---"
                   sortAscending={sortAscending}
-                  trim
-                  pageSize={1000000}
-                  tableOptions={{
-                    bleed: true,
-                    dense: true,
-                    grid: true,
-                    overflow: true,
-                    striped: true,
-                    stickyHeader: true,
-                    overflowHeight: "max-h-[55vh]",
-                  }}
-                  inputTSValues={timeseriesData?.raw}
+                  rawSeries={timeseriesData?.raw}
                 />
               )}
             </div>
@@ -113,7 +97,6 @@ DataTabs.propTypes = {
   tsids: PropTypes.array.isRequired,
   timeseriesData: PropTypes.object,
   isLoading: PropTypes.bool,
-  cdaParams: PropTypes.object,
   timeseriesParams: PropTypes.array,
   begin: PropTypes.object.isRequired,
   end: PropTypes.object.isRequired,

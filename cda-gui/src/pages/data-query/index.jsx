@@ -14,6 +14,7 @@ import Toggle from "./components/Toggle";
 import TimeSeriesBuilder from "./components/TimeSeriesBuilder";
 import TimeSeriesManager from "./components/TimeSeriesManager";
 import SettingsMenu from "./components/SettingsMenu";
+import { buildCsvContent, buildTableRows, downloadBlob } from "./utils/tableData";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
@@ -572,47 +573,27 @@ export default function DataQuery() {
       .filter((p) => visibleTSIDs.includes(p.tsid));
   }, [timeseriesData, tsids, visibleTSIDs]);
 
-  const cdaParams = useMemo(
-    () => ({
-      begin: beginDateTime.format("YYYY-MM-DDTHH:mm:ssZZ"),
-      end: endDateTime.format("YYYY-MM-DDTHH:mm:ssZZ"),
-      office: office || undefined,
-    }),
-    [beginDateTime, endDateTime, office],
-  );
   const handleDownloadCSV = () => {
     if (!timeseriesData || timeseriesData.dates.length === 0) {
       console.warn("No data to export");
       return;
     }
-    const parameters = visibleTSIDs.map((ts) => ts.split(".")[1]);
-    const header = ["Date", ...parameters];
-    const rows = timeseriesData.dates.map((date) => {
-      const formattedDate = dayjs(date).format("YYYY-MM-DD HH:mm:ss");
-      const values = timeseriesData.values[date] || [];
-      const paddedValues = visibleTSIDs.map((_, i) => {
-        const val = values[i];
-        return val === null || val === undefined ? "" : val;
-      });
-      return [formattedDate, ...paddedValues];
+    const rows = buildTableRows({
+      dateFormat: "YYYY-MM-DD HH:mm:ss",
+      missingString: "",
+      rawSeries: timeseriesData.raw,
+      sortAscending,
+      timeseriesParams,
     });
-    const csvContent = [header, ...rows].map((row) => row.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
+    const csvContent = buildCsvContent({ rows, timeseriesParams });
     const locName = tsids[0].split(".")[0];
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `${locName}_${parameters.length}_params_${beginDateTime.format(
+    downloadBlob({
+      content: csvContent,
+      fileName: `${locName}_${timeseriesParams.length}_params_${beginDateTime.format(
         "YYYY-MM-DD",
       )}_${endDateTime.format("YYYY-MM-DD")}.csv`,
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      type: "text/csv;charset=utf-8;",
+    });
   };
   const handleDownloadJSON = () => {
     if (!timeseriesData || timeseriesData.dates.length === 0) {
@@ -620,26 +601,22 @@ export default function DataQuery() {
       return;
     }
 
-    const jsonContent = JSON.stringify(timeseriesData.raw, null, 2);
-    const blob = new Blob([jsonContent], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-
+    const visibleSet = new Set(visibleTSIDs);
+    const jsonContent = JSON.stringify(
+      timeseriesData.raw.filter((series) => visibleSet.has(series.name)),
+      null,
+      2,
+    );
     const parameter = tsids[0].split(".")[1];
     const locName = tsids[0].split(".")[0];
     const paramName = parameter.split("-")[0].split(".")[0];
-
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `${locName}_${paramName}_${beginDateTime.format(
+    downloadBlob({
+      content: jsonContent,
+      fileName: `${locName}_${paramName}_${beginDateTime.format(
         "YYYY-MM-DD",
       )}_${endDateTime.format("YYYY-MM-DD")}.json`,
-    );
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      type: "application/json",
+    });
   };
   const handleRefreshTimeseries = async () => {
     setIsRefreshing(true);
@@ -835,7 +812,6 @@ export default function DataQuery() {
               tsids={visibleTSIDs}
               timeseriesData={timeseriesData}
               isLoading={timeseriesLoading}
-              cdaParams={cdaParams}
               timeseriesParams={timeseriesParams}
               sortAscending={sortAscending}
             />
