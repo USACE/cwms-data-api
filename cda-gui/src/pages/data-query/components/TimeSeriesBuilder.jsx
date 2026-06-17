@@ -11,6 +11,27 @@ function getOptions(values = []) {
   }));
 }
 
+const DESCRIPTOR_FIELDS = ["parameter", "type", "interval", "duration", "version"];
+
+function getFilteredValues(entries, selectedFilters, field) {
+  const values = new Set();
+
+  entries
+    .filter((entry) =>
+      DESCRIPTOR_FIELDS.every(
+        (filterField) =>
+          filterField === field ||
+          !selectedFilters[filterField] ||
+          entry[filterField] === selectedFilters[filterField],
+      ),
+    )
+    .forEach((entry) => {
+      if (entry[field]) values.add(entry[field]);
+    });
+
+  return Array.from(values);
+}
+
 export default function TimeSeriesBuilder({
   includeMissingTimeseries,
   office,
@@ -25,6 +46,7 @@ export default function TimeSeriesBuilder({
   const [interval, setInterval] = useState("");
   const [duration, setDuration] = useState("");
   const [version, setVersion] = useState("");
+  const [clearedFields, setClearedFields] = useState({});
   const [selectedLocation, setSelectedLocation] = useState(null);
   const location = selectedLocation?.name || "";
 
@@ -32,10 +54,6 @@ export default function TimeSeriesBuilder({
     includeMissingTimeseries,
     office,
     location,
-    parameter,
-    type,
-    interval,
-    duration,
   });
 
   useEffect(() => {
@@ -45,22 +63,39 @@ export default function TimeSeriesBuilder({
     }
   }, [office, selectedLocation]);
 
-  const parameters = useMemo(
-    () => descriptors.data?.parameters || [],
-    [descriptors.data?.parameters],
+  const descriptorEntries = useMemo(
+    () => descriptors.data?.entries || [],
+    [descriptors.data?.entries],
   );
-  const types = useMemo(() => descriptors.data?.types || [], [descriptors.data?.types]);
+  const selectedFilters = useMemo(
+    () => ({
+      duration,
+      interval,
+      parameter,
+      type,
+      version,
+    }),
+    [duration, interval, parameter, type, version],
+  );
+  const parameters = useMemo(
+    () => getFilteredValues(descriptorEntries, selectedFilters, "parameter"),
+    [descriptorEntries, selectedFilters],
+  );
+  const types = useMemo(
+    () => getFilteredValues(descriptorEntries, selectedFilters, "type"),
+    [descriptorEntries, selectedFilters],
+  );
   const intervals = useMemo(
-    () => descriptors.data?.intervals || [],
-    [descriptors.data?.intervals],
+    () => getFilteredValues(descriptorEntries, selectedFilters, "interval"),
+    [descriptorEntries, selectedFilters],
   );
   const durations = useMemo(
-    () => descriptors.data?.durations || [],
-    [descriptors.data?.durations],
+    () => getFilteredValues(descriptorEntries, selectedFilters, "duration"),
+    [descriptorEntries, selectedFilters],
   );
   const versions = useMemo(
-    () => descriptors.data?.versions || [],
-    [descriptors.data?.versions],
+    () => getFilteredValues(descriptorEntries, selectedFilters, "version"),
+    [descriptorEntries, selectedFilters],
   );
   const hasSelectedLocation = Boolean(location);
   const hasNoTimeseries =
@@ -72,52 +107,53 @@ export default function TimeSeriesBuilder({
     setInterval("");
     setDuration("");
     setVersion("");
+    setClearedFields({});
   }, [location]);
 
   useEffect(() => {
     if (descriptors.isLoading) return;
-    if (parameters.length === 1 && parameter !== parameters[0]) {
+    if (!clearedFields.parameter && parameters.length === 1 && !parameter) {
       setParameter(parameters[0]);
     } else if (parameter && !parameters.includes(parameter)) {
       setParameter("");
     }
-  }, [descriptors.isLoading, parameter, parameters]);
+  }, [clearedFields.parameter, descriptors.isLoading, parameter, parameters]);
 
   useEffect(() => {
     if (descriptors.isLoading) return;
-    if (types.length === 1 && type !== types[0]) {
+    if (!clearedFields.type && types.length === 1 && !type) {
       setType(types[0]);
     } else if (type && !types.includes(type)) {
       setType("");
     }
-  }, [descriptors.isLoading, type, types]);
+  }, [clearedFields.type, descriptors.isLoading, type, types]);
 
   useEffect(() => {
     if (descriptors.isLoading) return;
-    if (intervals.length === 1 && interval !== intervals[0]) {
+    if (!clearedFields.interval && intervals.length === 1 && !interval) {
       setInterval(intervals[0]);
     } else if (interval && !intervals.includes(interval)) {
       setInterval("");
     }
-  }, [descriptors.isLoading, interval, intervals]);
+  }, [clearedFields.interval, descriptors.isLoading, interval, intervals]);
 
   useEffect(() => {
     if (descriptors.isLoading) return;
-    if (durations.length === 1 && duration !== durations[0]) {
+    if (!clearedFields.duration && durations.length === 1 && !duration) {
       setDuration(durations[0]);
     } else if (duration && !durations.includes(duration)) {
       setDuration("");
     }
-  }, [descriptors.isLoading, duration, durations]);
+  }, [clearedFields.duration, descriptors.isLoading, duration, durations]);
 
   useEffect(() => {
     if (descriptors.isLoading) return;
-    if (versions.length === 1 && version !== versions[0]) {
+    if (!clearedFields.version && versions.length === 1 && !version) {
       setVersion(versions[0]);
     } else if (version && !versions.includes(version)) {
       setVersion("");
     }
-  }, [descriptors.isLoading, version, versions]);
+  }, [clearedFields.version, descriptors.isLoading, version, versions]);
 
   // Compose TSID
   useEffect(() => {
@@ -140,6 +176,14 @@ export default function TimeSeriesBuilder({
   }, [location, parameter, type, interval, duration, version, setTsids]);
 
   const errors = [aliases.error, descriptors.error].filter(Boolean);
+  const setDescriptorValue = (field, setter, value) => {
+    setter(value);
+    setClearedFields((current) => ({
+      ...current,
+      [field]: value === "",
+    }));
+  };
+
   if (aliases.isLoading) {
     return (
       <div className="flex flex-col gap-2">
@@ -203,13 +247,7 @@ export default function TimeSeriesBuilder({
       <Dropdown
         label="Parameter"
         value={parameter}
-        onChange={(value) => {
-          setParameter(value);
-          setType("");
-          setInterval("");
-          setDuration("");
-          setVersion("");
-        }}
+        onChange={(value) => setDescriptorValue("parameter", setParameter, value)}
         options={getOptions(parameters)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
         loading={descriptors.isLoading}
@@ -218,12 +256,7 @@ export default function TimeSeriesBuilder({
       <Dropdown
         label="Type"
         value={type}
-        onChange={(value) => {
-          setType(value);
-          setInterval("");
-          setDuration("");
-          setVersion("");
-        }}
+        onChange={(value) => setDescriptorValue("type", setType, value)}
         options={getOptions(types)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
         loading={descriptors.isLoading}
@@ -232,11 +265,7 @@ export default function TimeSeriesBuilder({
       <Dropdown
         label="Interval"
         value={interval}
-        onChange={(value) => {
-          setInterval(value);
-          setDuration("");
-          setVersion("");
-        }}
+        onChange={(value) => setDescriptorValue("interval", setInterval, value)}
         options={getOptions(intervals)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
         loading={descriptors.isLoading}
@@ -245,10 +274,7 @@ export default function TimeSeriesBuilder({
       <Dropdown
         label="Duration"
         value={duration}
-        onChange={(value) => {
-          setDuration(value);
-          setVersion("");
-        }}
+        onChange={(value) => setDescriptorValue("duration", setDuration, value)}
         options={getOptions(durations)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
         loading={descriptors.isLoading}
@@ -257,7 +283,7 @@ export default function TimeSeriesBuilder({
       <Dropdown
         label="Version"
         value={version}
-        onChange={setVersion}
+        onChange={(value) => setDescriptorValue("version", setVersion, value)}
         options={getOptions(versions)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
         loading={descriptors.isLoading}

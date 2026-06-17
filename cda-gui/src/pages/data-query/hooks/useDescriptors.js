@@ -6,35 +6,11 @@ const config = new Configuration({
 });
 const cataApi = new CatalogApi(config);
 
-export default function useDescriptors({
-  includeMissingTimeseries,
-  office,
-  location,
-  parameter,
-  type,
-  interval,
-  duration,
-}) {
+export default function useDescriptors({ includeMissingTimeseries, office, location }) {
   return useQuery({
-    queryKey: [
-      "tsid-descriptors",
-      includeMissingTimeseries,
-      office,
-      location,
-      parameter,
-      type,
-      interval,
-      duration,
-    ],
+    queryKey: ["tsid-descriptors", includeMissingTimeseries, office, location],
     queryFn: async () => {
-      const like = [
-        location || "*",
-        parameter || "*",
-        type || "*",
-        interval || "*",
-        duration || "*",
-        "*",
-      ].join(".");
+      const like = [location || "*", "*", "*", "*", "*", "*"].join(".");
       const request = {
         dataset: "TIMESERIES",
         excludeEmpty: !includeMissingTimeseries,
@@ -51,18 +27,29 @@ export default function useDescriptors({
       const durations = new Set();
       const versions = new Set();
       const parameters = new Set();
-      descriptors?.entries.forEach((d) => {
-        const parts = d.name.split(".");
+      const entries = (descriptors?.entries || []).map((d) => {
+        const [entryLocation, parameter, type, interval, duration, version] =
+          d.name.split(".");
         // const locParts = parts[0].split("-");
-        parameters.add(parts[1]);
-        types.add(parts[2]);
-        intervals.add(parts[3]);
-        durations.add(parts[4]);
-        versions.add(parts[5]);
+        parameters.add(parameter);
+        types.add(type);
+        intervals.add(interval);
+        durations.add(duration);
+        versions.add(version);
+        return {
+          duration,
+          interval,
+          location: entryLocation,
+          name: d.name,
+          parameter,
+          type,
+          version,
+        };
       });
 
       return {
         count: descriptors?.entries?.length || 0,
+        entries,
         parameters: Array.from(parameters),
         types: Array.from(types),
         intervals: Array.from(intervals),
