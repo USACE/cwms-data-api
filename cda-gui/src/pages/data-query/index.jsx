@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import PropTypes from "prop-types";
+import { FiDownload, FiRefreshCw } from "react-icons/fi";
 import Controls from "./components/Controls";
 import { CatalogApi, Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
 import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
@@ -630,6 +631,10 @@ export default function DataQuery() {
     cacheEnabled !== DEFAULT_CACHE_ENABLED ||
     sortAscending !== DEFAULT_SORT_ASCENDING ||
     includeMissingTimeseries !== DEFAULT_INCLUDE_MISSING_TIMESERIES;
+  const canExportTimeseries =
+    timeseriesData?.tsids.length && !timeseriesLoading && !requestedDateBeforeExtent;
+  const canRefreshTimeseries =
+    tsids.length > 0 && !isRefreshing && !requestedDateBeforeExtent;
 
   if (error)
     return (
@@ -752,39 +757,49 @@ export default function DataQuery() {
               className="w-3/4 mx-auto"
             />
 
-            <Button
-              onClick={handleDownloadCSV}
-              className={`mb-4 bg-blue-500 text-white px-4 py-2 rounded ${
-                !timeseriesData?.tsids.length ||
-                timeseriesLoading ||
-                requestedDateBeforeExtent
-                  ? "hidden"
-                  : ""
-              }`}
-            >
-              Download CSV
-            </Button>
-            <Button
-              onClick={handleDownloadJSON}
-              className={`mb-4 bg-green-600 text-white px-4 py-2 rounded ms-2 ${
-                !timeseriesData?.tsids.length ||
-                timeseriesLoading ||
-                requestedDateBeforeExtent
-                  ? "hidden"
-                  : ""
-              }`}
-            >
-              Download JSON
-            </Button>
-            <Button
-              onClick={handleRefreshTimeseries}
-              disabled={!tsids.length || isRefreshing || requestedDateBeforeExtent}
-              className={`mb-4 bg-slate-700 text-white px-4 py-2 rounded ms-2 ${
-                !tsids.length ? "hidden" : ""
-              }`}
-            >
-              {isRefreshing ? "Refreshing..." : "Refresh Data"}
-            </Button>
+            {(canExportTimeseries || tsids.length > 0) && (
+              <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+                {canExportTimeseries && (
+                  <>
+                    <Button
+                      aria-label="Download CSV"
+                      title="Download CSV"
+                      onClick={handleDownloadCSV}
+                      className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                    >
+                      <FiDownload aria-hidden="true" />
+                      CSV
+                    </Button>
+                    <Button
+                      aria-label="Download JSON"
+                      title="Download JSON"
+                      onClick={handleDownloadJSON}
+                      className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+                    >
+                      <FiDownload aria-hidden="true" />
+                      JSON
+                    </Button>
+                  </>
+                )}
+                {tsids.length > 0 && (
+                  <Button
+                    aria-label={isRefreshing ? "Refreshing data" : "Refresh data"}
+                    title={isRefreshing ? "Refreshing data" : "Refresh data"}
+                    onClick={handleRefreshTimeseries}
+                    disabled={!canRefreshTimeseries}
+                    className="inline-flex h-9 items-center gap-2 rounded border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <FiRefreshCw
+                      aria-hidden="true"
+                      className={isRefreshing ? "animate-spin" : ""}
+                    />
+                    <span className="hidden sm:inline">
+                      {isRefreshing ? "Refreshing" : "Refresh"}
+                    </span>
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {requestedDateBeforeExtent ? null : timeseriesLoading ? (

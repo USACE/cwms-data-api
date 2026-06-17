@@ -72,7 +72,14 @@ export default function DataQueryTable({
   const mobileColumnSlots = Array.from({
     length: Math.min(2, timeseriesParams.length),
   });
-  const mobileGridTemplateColumns = `12rem repeat(${visibleMobileParams.length}, minmax(8rem, 1fr))`;
+  const desktopGridStyle = {
+    gridTemplateColumns: `12rem repeat(${timeseriesParams.length}, minmax(8rem, 1fr))`,
+    minWidth: `${12 + timeseriesParams.length * 8}rem`,
+  };
+  const mobileGridStyle = {
+    gridTemplateColumns: `12rem repeat(${visibleMobileParams.length}, minmax(8rem, 1fr))`,
+    minWidth: `${12 + visibleMobileParams.length * 8}rem`,
+  };
 
   if (!timeseriesParams.length) {
     return null;
@@ -88,11 +95,6 @@ export default function DataQueryTable({
 
   return (
     <div className="rounded border border-slate-200 bg-white">
-      <div className="border-b border-slate-200 px-3 py-2 text-sm text-slate-600">
-        Showing {rows.length.toLocaleString()} timestamps. Rows are rendered as you
-        scroll.
-      </div>
-
       <div className="grid gap-3 border-b border-slate-200 p-3 md:hidden">
         {mobileColumnSlots.map((_, slot) => (
           <label key={slot} className="grid gap-1 text-sm text-slate-700">
@@ -117,73 +119,121 @@ export default function DataQueryTable({
       </div>
 
       <div ref={parentRef} className="max-h-[60vh] overflow-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm md:table">
-          <thead className="sticky top-0 z-10 bg-slate-100 text-left">
-            <tr>
-              <th className="w-48 border-b border-slate-200 px-3 py-2 font-semibold">
-                Date & Time (Local)
-              </th>
-              {timeseriesParams.map((param) => (
-                <th
-                  key={param.tsid}
-                  className="hidden border-b border-slate-200 px-3 py-2 font-semibold md:table-cell"
-                >
-                  {param.header}
-                </th>
-              ))}
-              {visibleMobileParams.map((param) => (
-                <th
-                  key={`mobile-${param.tsid}`}
-                  className="border-b border-slate-200 px-3 py-2 font-semibold md:hidden"
-                >
-                  {param.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody
-            style={{
-              display: "block",
-              height: `${totalSize}px`,
-              position: "relative",
-            }}
+        <div className="hidden text-sm md:block" role="table">
+          <div
+            className="sticky top-0 z-10 grid bg-slate-100 text-left font-semibold"
+            role="row"
+            style={desktopGridStyle}
+          >
+            <div className="border-b border-slate-200 px-3 py-2" role="columnheader">
+              Date & Time (Local)
+            </div>
+            {timeseriesParams.map((param) => (
+              <div
+                key={param.tsid}
+                className="border-b border-slate-200 px-3 py-2"
+                role="columnheader"
+              >
+                {param.header}
+              </div>
+            ))}
+          </div>
+          <div
+            className="relative"
+            role="rowgroup"
+            style={{ height: `${totalSize}px`, minWidth: desktopGridStyle.minWidth }}
           >
             {virtualRows.map((virtualRow) => {
               const row = rows[virtualRow.index];
               return (
-                <tr
+                <div
                   key={row.date}
-                  className="absolute left-0 grid w-full grid-cols-[12rem_repeat(2,minmax(8rem,1fr))] border-b border-slate-100 even:bg-slate-50 md:table-row"
+                  className="absolute left-0 grid w-full border-b border-slate-100 odd:bg-white even:bg-slate-50"
+                  role="row"
                   style={{
-                    gridTemplateColumns: mobileGridTemplateColumns,
+                    ...desktopGridStyle,
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <td className="px-3 py-2 font-mono text-xs text-slate-700 md:w-48">
+                  <div
+                    className="px-3 py-2 font-mono text-xs text-slate-700"
+                    role="cell"
+                  >
                     {row.formattedDate}
-                  </td>
+                  </div>
                   {row.values.map((value, index) => (
-                    <td
+                    <div
                       key={timeseriesParams[index].tsid}
-                      className="hidden px-3 py-2 text-right font-mono text-xs md:table-cell"
+                      className="px-3 py-2 text-right font-mono text-xs"
+                      role="cell"
                     >
                       {value}
-                    </td>
+                    </div>
                   ))}
-                  {visibleMobileIndexes.map((index) => (
-                    <td
-                      key={`mobile-${timeseriesParams[index].tsid}`}
-                      className="px-3 py-2 text-right font-mono text-xs md:hidden"
-                    >
-                      {row.values[index]}
-                    </td>
-                  ))}
-                </tr>
+                </div>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        </div>
+
+        <div className="text-sm md:hidden" role="table">
+          <div
+            className="sticky top-0 z-10 grid bg-slate-100 text-left font-semibold"
+            role="row"
+            style={mobileGridStyle}
+          >
+            <div className="border-b border-slate-200 px-3 py-2" role="columnheader">
+              Date & Time (Local)
+            </div>
+            {visibleMobileParams.map((param) => (
+              <div
+                key={param.tsid}
+                className="border-b border-slate-200 px-3 py-2"
+                role="columnheader"
+              >
+                {param.header}
+              </div>
+            ))}
+          </div>
+          <div
+            className="relative"
+            role="rowgroup"
+            style={{ height: `${totalSize}px`, minWidth: mobileGridStyle.minWidth }}
+          >
+            {virtualRows.map((virtualRow) => {
+              const row = rows[virtualRow.index];
+              return (
+                <div
+                  key={row.date}
+                  className="absolute left-0 grid w-full border-b border-slate-100 odd:bg-white even:bg-slate-50"
+                  role="row"
+                  style={{
+                    ...mobileGridStyle,
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div
+                    className="px-3 py-2 font-mono text-xs text-slate-700"
+                    role="cell"
+                  >
+                    {row.formattedDate}
+                  </div>
+                  {visibleMobileIndexes.map((index) => (
+                    <div
+                      key={timeseriesParams[index].tsid}
+                      className="px-3 py-2 text-right font-mono text-xs"
+                      role="cell"
+                    >
+                      {row.values[index]}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
