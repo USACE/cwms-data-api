@@ -79,29 +79,13 @@ function getKeycloakConfig(spec) {
   };
 }
 
-function removeSwaggerAuthOptions(spec) {
-  if (spec.components?.securitySchemes) {
-    spec.components.securitySchemes = {};
-  }
-
-  for (const path of Object.values(spec.paths ?? {})) {
-    for (const operation of Object.values(path ?? {})) {
-      if (operation && typeof operation === "object") {
-        operation.security = [];
-      }
-    }
-  }
-}
-
 export default function SwaggerUI() {
   const [authStatus, setAuthStatus] = useState("checking");
-  const [authMode, setAuthMode] = useState("custom");
   const [customAuthType, setCustomAuthType] = useState(null);
   const [isOpenIdAuthReady, setIsOpenIdAuthReady] = useState(false);
   const autoLoginAttemptedRef = useRef(false);
   const openIdAuthMethodRef = useRef(null);
   const openIdAuthConfigSignatureRef = useRef(null);
-  const useSwaggerLogin = authMode === "swagger";
   const cwmsAuthMethod = useMemo(() => {
     const basePath = getBasePath();
     return createCwmsLoginAuthMethod({
@@ -116,7 +100,7 @@ export default function SwaggerUI() {
       : customAuthType === "openid"
         ? openIdAuthMethod
         : null;
-  const customAuthLabel = customAuthType === "cwms" ? "CWMS Login" : "CWBI Login";
+  const authLabel = customAuthType === "cwms" ? "CWMS Login" : "CWBI Login";
 
   const checkAuth = async () => {
     if (!authMethod) {
@@ -134,12 +118,7 @@ export default function SwaggerUI() {
   };
 
   useEffect(() => {
-    // document.querySelector("#swagger-ui").prepend(Index)
-    // TODO: Add page index to top of page
-    // Alter the page title to match the swagger page
     document.title = "CWMS Data API for Data Retrieval - Swagger UI";
-    // Begin Swagger UI call region
-    // TODO: add endpoint that dynamic returns swagger generated doc
 
     let cancelled = false;
 
@@ -158,9 +137,11 @@ export default function SwaggerUI() {
         : keycloakConfig
           ? "openid"
           : null;
+
       if (customAuthType !== nextCustomAuthType) {
         setCustomAuthType(nextCustomAuthType);
       }
+
       if (nextCustomAuthType === "openid" && keycloakConfig) {
         const keycloakConfigSignature = JSON.stringify(keycloakConfig);
         if (openIdAuthConfigSignatureRef.current !== keycloakConfigSignature) {
@@ -172,9 +153,6 @@ export default function SwaggerUI() {
         openIdAuthMethodRef.current = null;
         openIdAuthConfigSignatureRef.current = null;
         setIsOpenIdAuthReady(false);
-      }
-      if (!useSwaggerLogin) {
-        removeSwaggerAuthOptions(spec);
       }
 
       if (cancelled) {
@@ -188,8 +166,6 @@ export default function SwaggerUI() {
         presets: [SwaggerUIBundle.presets.apis],
         plugins: [SwaggerUIBundle.plugins.DownloadUrl],
         requestInterceptor: (req) => {
-          // Add a cache-busting query param... but only if it's to our api. Some
-          // external systems, like keycloak, don't allow random unknown parameters.
           const requestUrl = new URL(req.url, window.location.origin);
           if (requestUrl.hostname === "auth") {
             requestUrl.protocol = window.location.protocol;
@@ -204,40 +180,35 @@ export default function SwaggerUI() {
             req.credentials = "include";
             requestUrl.searchParams.set("_cb", Date.now());
             req.url = requestUrl.toString();
+            req.headers = req.headers ?? {};
 
-            if (!useSwaggerLogin && authMethod?.token) {
-              req.headers["Authorization"] = `Bearer ${authMethod.token}`;
+            if (authMethod?.token) {
+              req.headers.Authorization = `Bearer ${authMethod.token}`;
             }
 
             req.cache = "no-store";
-            // Also ask intermediaries not to serve from cache
             req.headers["Cache-Control"] = "no-cache, no-store, max-age=0";
-            req.headers["Pragma"] = "no-cache";
+            req.headers.Pragma = "no-cache";
           }
           return req;
         },
         onComplete: () => {
-          if (useSwaggerLogin) {
-            for (const schemeName in spec.components.securitySchemes) {
-              const scheme = spec.components.securitySchemes[schemeName];
-              if (scheme.type === "openIdConnect") {
-                let additionalParams = null;
-                let hints = scheme["x-kc_idp_hint"];
-                if (hints) {
-                  additionalParams = {
-                    // Since getting the interface to allow users to choose
-                    // is likely impossible, we will assume the first in the list
-                    // is the "primary" auth system
-                    kc_idp_hint: hints.values[0],
-                  };
-                }
-                ui.initOAuth({
-                  clientId: scheme["x-oidc-client-id"],
-                  usePkceWithAuthorizationCodeGrant: true,
-                  additionalQueryStringParams: additionalParams,
-                });
-                break;
+          for (const schemeName in spec.components.securitySchemes) {
+            const scheme = spec.components.securitySchemes[schemeName];
+            if (scheme.type === "openIdConnect") {
+              let additionalParams = null;
+              let hints = scheme["x-kc_idp_hint"];
+              if (hints) {
+                additionalParams = {
+                  kc_idp_hint: hints.values[0],
+                };
               }
+              ui.initOAuth({
+                clientId: scheme["x-oidc-client-id"],
+                usePkceWithAuthorizationCodeGrant: true,
+                additionalQueryStringParams: additionalParams,
+              });
+              break;
             }
           }
         },
@@ -250,7 +221,7 @@ export default function SwaggerUI() {
       cancelled = true;
       document.querySelector("#swagger-ui").innerHTML = "";
     };
-  }, [authMethod, customAuthType, useSwaggerLogin]);
+  }, [authMethod, customAuthType]);
 
   useEffect(() => {
     if (!authMethod) {
@@ -308,7 +279,7 @@ export default function SwaggerUI() {
     };
   }, [authMethod, customAuthType]);
 
-  const startOpenIdLogin = async () => {
+  const startLogin = async () => {
     if (!authMethod) {
       return;
     }
@@ -317,17 +288,24 @@ export default function SwaggerUI() {
     await checkAuth();
   };
 
+  const signOut = async () => {
+    if (!authMethod) {
+      return;
+    }
+
+    await authMethod.logout();
+    await checkAuth();
+  };
+
   const isAuthenticated = authStatus === "authenticated";
   const isCheckingAuth = authStatus === "checking";
 
   return (
     <>
-      <div
-        className={`swagger-auth-bar ${useSwaggerLogin ? "swagger-login-mode" : ""}`}
-      >
-        <div>
-          <strong>{useSwaggerLogin ? "Swagger Login" : customAuthLabel}</strong>
-          <span>
+      <div className="my-3 flex flex-col gap-4 rounded-md border border-sky-200 bg-sky-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <strong className="block text-base text-slate-800">{authLabel}</strong>
+          <span className="block text-sm text-slate-600">
             {customAuthType === "cwms"
               ? isAuthenticated
                 ? "Signed in with the shared CWMS session. Swagger requests will include it automatically."
@@ -339,80 +317,38 @@ export default function SwaggerUI() {
                 : "Sign in through the OpenID authorization flow for this CDA deployment."}
           </span>
         </div>
-        <div className="swagger-auth-actions">
-          <label className="swagger-auth-mode-select">
-            <span>Login mode</span>
-            <select
-              onChange={(event) => setAuthMode(event.target.value)}
-              value={authMode}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <button
+            className="h-9 rounded border border-blue-700 bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={!authMethod || isCheckingAuth}
+            onClick={startLogin}
+            type="button"
+          >
+            {isAuthenticated ? "Reauthenticate" : "Sign in"}
+          </button>
+          {isAuthenticated && (
+            <button
+              className="h-9 rounded border border-red-800 bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={isCheckingAuth}
+              onClick={signOut}
+              type="button"
             >
-              <option value="custom">{customAuthLabel}</option>
-              <option value="swagger">Swagger Login</option>
-            </select>
-          </label>
-          {!useSwaggerLogin && customAuthType === "cwms" ? (
-            <>
-              <button
-                className="swagger-auth-button primary"
-                disabled={isCheckingAuth}
-                onClick={() => authMethod.login()}
-                type="button"
-              >
-                {isAuthenticated ? "Reauthenticate" : "Sign in"}
-              </button>
-              {isAuthenticated && (
-                <button
-                  className="swagger-auth-button danger"
-                  disabled={isCheckingAuth}
-                  onClick={() => authMethod.logout()}
-                  type="button"
-                >
-                  Sign out
-                </button>
-              )}
-              <button
-                className="swagger-auth-button secondary"
-                disabled={isCheckingAuth}
-                onClick={checkAuth}
-                type="button"
-              >
-                Refresh status
-              </button>
-            </>
-          ) : !useSwaggerLogin ? (
-            <>
-              <button
-                className="swagger-auth-button primary"
-                disabled={!authMethod || isCheckingAuth}
-                onClick={startOpenIdLogin}
-                type="button"
-              >
-                {isAuthenticated ? "Reauthenticate" : "Sign in"}
-              </button>
-              {isAuthenticated && (
-                <button
-                  className="swagger-auth-button danger"
-                  disabled={isCheckingAuth}
-                  onClick={() => authMethod.logout().then(checkAuth)}
-                  type="button"
-                >
-                  Sign out
-                </button>
-              )}
-            </>
-          ) : (
-            <span className="swagger-auth-mode-note">
-              Swagger authorization controls are enabled.
-            </span>
+              Sign out
+            </button>
+          )}
+          {customAuthType === "cwms" && (
+            <button
+              className="h-9 rounded border border-sky-200 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={isCheckingAuth}
+              onClick={checkAuth}
+              type="button"
+            >
+              Refresh status
+            </button>
           )}
         </div>
       </div>
-      <div
-        className={
-          useSwaggerLogin ? "swagger-ui-host swagger-login-mode" : "swagger-ui-host"
-        }
-        id="swagger-ui"
-      ></div>
+      <div id="swagger-ui"></div>
     </>
   );
 }
