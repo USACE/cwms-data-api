@@ -209,6 +209,7 @@ export default function SwaggerUI() {
               req.headers["Authorization"] = `Bearer ${authMethod.token}`;
             }
 
+            req.cache = "no-store";
             // Also ask intermediaries not to serve from cache
             req.headers["Cache-Control"] = "no-cache, no-store, max-age=0";
             req.headers["Pragma"] = "no-cache";
