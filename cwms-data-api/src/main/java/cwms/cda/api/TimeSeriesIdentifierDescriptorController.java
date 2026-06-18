@@ -55,7 +55,6 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
 
 public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -341,11 +340,6 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             dao.delete(office, timeseriesId, method);
 
             ctx.status(HttpServletResponse.SC_OK);
-
-        } catch (DataAccessException ex) {
-            CdaError re = new CdaError("Internal Error");
-            logger.atSevere().withCause(ex).log("%s", re.toString());
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
     }

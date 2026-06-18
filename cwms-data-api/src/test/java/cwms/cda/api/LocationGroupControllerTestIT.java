@@ -305,6 +305,95 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_with_non_existent_locations(String format) throws Exception {
+        String officeId = user.getOperatingOffice();
+        String locationId = "LocationPostTest";
+        createLocation(locationId, true, officeId);
+        String nonExistentLocationId = "NonExistentLocation";
+        String nonExistentLocationId2 = "NonExistentLocation2";
+        LocationCategory cat = new LocationCategory(officeId, "TestCategory5", "IntegrationTesting");
+        AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasId", 1, locationId);
+        AssignedLocation assignLoc2 = new AssignedLocation(nonExistentLocationId, officeId, "NotALoc", 1, locationId);
+        AssignedLocation assignLoc3 = new AssignedLocation(nonExistentLocationId2, officeId, "NotALoc2", 1, locationId);
+        LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
+            "sharedLocAliasId", locationId, 123), List.of(assignLoc, assignLoc2, assignLoc3));
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String categoryXml = Formats.format(contentType, cat);
+        String groupXml = Formats.format(contentType, group);
+        categoriesToCleanup.add(cat);
+
+        // Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create Group with invalid assigned locations
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+            .body("message", equalTo("Location group contains assigned locations that do not exist."));
+
+        // Read, verify rollback occurred successfully
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // Delete Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/category/" + group.getLocationCategory().getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_read_delete_agency_aliases_same_name(String format) throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();

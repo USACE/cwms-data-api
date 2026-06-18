@@ -20,10 +20,10 @@ jobs:
         schema:
           - env: latest
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
-          - env: release
-            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
-          - env: next-release
-            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17-RC01"
+          # - env: release
+          #   image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
+          # - env: next-release
+          #   image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17-RC01"
           # - env: previous
           #   image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
     name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
@@ -57,13 +57,35 @@ jobs:
           status: ${{ job.status == 'success' && 'Pass' || 'Fail' }}
           file: ${{ matrix.jdk }}/${{ matrix.schema.env }}.svg
           run_id: ${{ github.run_id }}
-      # - name: Publish Test Report
-      #   uses: mikepenz/action-junit-report@v5
-      #   if: success() || failure() # always run even if the previous step fails
-      #   with:
-      #     annotate_only: true
-      #     include_passed: true
-      #     report_paths: '**/TEST-*.xml'
+      - name: Install xmllint
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - name: coverage
+        id: coverage
+        run: |
+          # combine the test and integration test reports.
+          ./gradlew codeCoverageReport --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
+          # calculate coverage percentage
+          MISSED_LINES=`xmllint --xpath "string(/report/counter[@type='COMPLEXITY']/@missed)"   cwms-data-api/build/reports/jacoco-composite.xml`
+          COVERED_LINES=`xmllint --xpath "string(/report/counter[@type='COMPLEXITY']/@covered)" cwms-data-api/build/reports/jacoco-composite.xml`
+          PERCENT=`echo "scale=1; (${COVERED_LINES} / (${COVERED_LINES} + ${MISSED_LINES})) * 100" | bc`
+          echo "Coverage from missed $MISSED_LINES and covered $COVERED_LINES is $PRECENT"
+          echo "coverage=$PERCENT %" >> $GITHUB_OUTPUT
+      - name: Create matrix coverage badge
+        if: success() || failure() # always run even if the previous step fails
+        uses: ./.github/actions/badge
+        with:
+          label: 'Coverage'
+          status: ${{ steps.coverage.outputs.coverage }}
+          file: ${{ matrix.jdk }}/${{ matrix.schema.env }}-coverage.svg
+          run_id: ${{ github.run_id }}
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v6.4.1
+        if: always()
+        with:
+          annotate_only: true
+          include_passed: true
+          report_paths: '**/TEST-*.xml'
+          detailed_summary: true
   open-api-static-analysis:
     name: OpenApi Static Analysis Tests
     runs-on: ubuntu-latest
@@ -82,7 +104,7 @@ jobs:
         id: thebuild
         run: ./gradlew clean :cwms-data-api:test --tests "cwms.cda.api.OpenApiDocTest" --info --init-script init.gradle
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6.4.1
         if: always()
         with:
           annotate_only: true

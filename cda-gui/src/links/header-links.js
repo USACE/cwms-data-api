@@ -31,6 +31,11 @@ export default [
         text: "Data Query",
         href: "/data-query",
       },
+      {
+        id: "location-search",
+        text: "Location Search",
+        href: "/location-search",
+      },
     ],
   },
   {

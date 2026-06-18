@@ -5,15 +5,21 @@ import javax.servlet.http.HttpServletResponse;
 
 public class MissingRolesException extends CwmsAuthException {
     private final List<String> missingRoles;
+    private final String message;
 
     public MissingRolesException(List<String> missingRoles) {
-        super(buildMessage(missingRoles), HttpServletResponse.SC_FORBIDDEN, buildMessage(missingRoles));
+        this(missingRoles, buildMessage(missingRoles));
+    }
+
+    public MissingRolesException(List<String> missingRoles, String message) {
+        super(message, HttpServletResponse.SC_FORBIDDEN, message);
         this.missingRoles = missingRoles;
+        this.message = message;
     }
 
     @Override
     public String getMessage() {
-        return buildMessage(missingRoles);
+        return message;
     }
 
     private static String buildMessage(List<String> roles) {

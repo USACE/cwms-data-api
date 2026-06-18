@@ -108,6 +108,7 @@ Never point integration tests at production or valued databases. The test suite 
 - RestAssured is the standard HTTP test client. Failures should log request/response details.
 - Prefer parameterized tests for repeated API cases.
 - Do not make integration tests parallel unless the shared fixtures are redesigned; `DataApiTestIT` notes that it is not thread safe.
+- ALWAYS use bind variables. Never concatenate strings. 
 
 ## Database And SQL Guidance
 
@@ -117,6 +118,7 @@ Never point integration tests at production or valued databases. The test suite 
 - If nested queries are needed, name derived tables to avoid unstable generated names and shared-memory pressure.
 - Gate features that require newer CWMS schema behavior behind schema/version checks with clear error messages.
 - Be careful with generated jOOQ codegen compatibility. The service shades legacy and latest CWMS DB codegen artifacts; preserve that pattern.
+- ALWAYS use bind variables. Never concatenate strings. 
 
 ## API Compatibility
 

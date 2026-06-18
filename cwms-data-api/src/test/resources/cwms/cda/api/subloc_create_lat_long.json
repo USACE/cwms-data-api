@@ -1,0 +1,20 @@
+{
+  "name": "TestSubLocCreate-TestSubLoc",
+  "public-name": "LOC_TEST",
+  "long-name": "LOCATION_TEST",
+  "description": "For Testing",
+  "timezone-name": "UTC",
+  "location-kind": "SITE",
+  "nation": "US",
+  "state-initial": "CA",
+  "county-name": "Sacramento",
+  "nearest-city": "Sacramento",
+  "horizontal-datum": "NGVD-29",
+  "elevation": 0.2,
+  "latitude": 39.8,
+  "longitude": -122.4,
+  "elevation-units": "m",
+  "map-label": "label",
+  "bounding-office-id": "SPK",
+  "office-id": "SPK"
+}

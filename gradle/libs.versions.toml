@@ -11,12 +11,12 @@ google-findbugs = "3.0.2"
 error_prone_annotations = "2.15.0"
 cwms-ratings = "4.2.3"
 javalin = "4.6.8"
-tomcat = "9.0.115"
+tomcat = "9.0.118"
 swagger-core = "2.2.23"
 jackson = "2.17.1"
 geojson-jackson = "1.14"
 dropwizard = "4.2.12"
-dropwizard_prometheus = "0.15.0"
+prometheus_client = "1.6.1"
 owasp = "20220608.1"
 java-ee = "8.0.1"
 cwms-tomcat-auth = "1.1.0"
@@ -73,8 +73,8 @@ javalin-openapi = { module = "io.javalin:javalin-openapi", version.ref = "javali
 swagger-core = { module = "io.swagger.core.v3:swagger-core", version.ref = "swagger-core" }
 metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref = "dropwizard" }
 metrics-servlets = { module = "io.dropwizard.metrics:metrics-servlets", version.ref = "dropwizard" }
-metrics-prometheus-client = { module = "io.prometheus:simpleclient_dropwizard", version.ref = "dropwizard_prometheus" }
-metrics-prometheus-servlets = { module = "io.prometheus:simpleclient_servlet", version.ref = "dropwizard_prometheus" }
+metrics-prometheus-client = { module = "io.prometheus:prometheus-metrics-instrumentation-dropwizard", version.ref = "prometheus_client" }
+metrics-prometheus-servlets = { module = "io.prometheus:prometheus-metrics-exporter-servlet-javax", version.ref = "prometheus_client" }
 password4j = { module = "com.password4j:password4j", version = "1.8.4" }
 
 

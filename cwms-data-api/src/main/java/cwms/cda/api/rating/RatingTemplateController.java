@@ -134,11 +134,6 @@ public class RatingTemplateController implements CrudHandler {
             String result = Formats.format(contentType, ratingTemplates);
             ctx.result(result);
             requestResultSize.update(result.length());
-        } catch (Exception ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.atSevere().withCause(ex).log("%s", re);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
     }
