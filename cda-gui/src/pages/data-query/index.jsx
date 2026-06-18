@@ -11,7 +11,6 @@ import FailedTimeSeries from "./components/FailedTimeSeries";
 // import useConfigList from "./hooks/useConfigList";
 import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
 import DataTabs from "./components/DataTabs";
-import Toggle from "./components/Toggle";
 import TimeSeriesBuilder from "./components/TimeSeriesBuilder";
 import TimeSeriesManager from "./components/TimeSeriesManager";
 import SettingsMenu from "./components/SettingsMenu";
@@ -234,6 +233,102 @@ function QueryProgress({ progress }) {
   );
 }
 
+function ModeSelector({ mode, setMode, setOffice }) {
+  const setQueryMode = (nextMode) => {
+    setMode(nextMode);
+    if (nextMode === "guided") setOffice("");
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="text-sm font-semibold text-slate-700">Query mode</div>
+      <div className="inline-flex w-fit rounded border border-slate-300 bg-white p-1 shadow-sm">
+        {[
+          {
+            description: "Build a TSID from catalog filters.",
+            label: "Guided",
+            value: "guided",
+          },
+          {
+            description: "Search or paste a known TSID.",
+            label: "Manual",
+            value: "manual",
+          },
+        ].map((option) => {
+          const selected = mode === option.value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={selected}
+              className={`rounded px-4 py-2 text-left text-sm font-semibold transition ${
+                selected
+                  ? "bg-indigo-600 text-white shadow"
+                  : "text-slate-700 hover:bg-slate-100"
+              }`}
+              onClick={() => setQueryMode(option.value)}
+              title={option.description}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+ModeSelector.propTypes = {
+  mode: PropTypes.oneOf(["guided", "manual"]).isRequired,
+  setMode: PropTypes.func.isRequired,
+  setOffice: PropTypes.func.isRequired,
+};
+
+function OfficeSelect({ office, offices, setOffice, setTsids }) {
+  return (
+    <div className="flex flex-col gap-1 sm:w-56">
+      <label htmlFor="office" className="text-sm font-semibold text-slate-700">
+        Office
+      </label>
+      <select
+        id="office"
+        value={office}
+        disabled={offices.isLoading}
+        onChange={(e) => {
+          const _office = e.target.value;
+          if (!_office) {
+            setOffice("");
+            setTsids([]);
+            return;
+          }
+          setOffice(_office);
+          setTsids([]);
+        }}
+        className="min-w-[150px] rounded border border-slate-300 px-3 py-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+      >
+        <option key="select" value="">
+          {offices.isLoading ? "Loading offices..." : "Select Office"}
+        </option>
+        {offices.data?.map((key) => (
+          <option key={key} value={key}>
+            {key}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+OfficeSelect.propTypes = {
+  office: PropTypes.string.isRequired,
+  offices: PropTypes.shape({
+    data: PropTypes.arrayOf(PropTypes.string),
+    isLoading: PropTypes.bool.isRequired,
+  }).isRequired,
+  setOffice: PropTypes.func.isRequired,
+  setTsids: PropTypes.func.isRequired,
+};
+
 QueryProgress.propTypes = {
   progress: PropTypes.shape({
     byTsid: PropTypes.arrayOf(
@@ -280,7 +375,7 @@ export default function DataQuery() {
   //   const [parameter, setParameter] = useState(null);
   //   const [interval, setInterval] = useState(null);
   const [office, setOffice] = useState("");
-  const [mode, setMode] = useState("advanced");
+  const [mode, setMode] = useState("manual");
   useEffect(() => {
     // Reset visible list when tsids change
     setVisibleTSIDs(tsids);
@@ -635,6 +730,25 @@ export default function DataQuery() {
     timeseriesData?.tsids.length && !timeseriesLoading && !requestedDateBeforeExtent;
   const canRefreshTimeseries =
     tsids.length > 0 && !isRefreshing && !requestedDateBeforeExtent;
+  const statusByTsid = useMemo(() => {
+    if (!tsids.length) return {};
+    if (timeseriesLoading) {
+      return Object.fromEntries(tsids.map((tsid) => [tsid, "pending"]));
+    }
+    if (!timeseriesData?.raw) {
+      return Object.fromEntries(tsids.map((tsid) => [tsid, "pending"]));
+    }
+
+    return Object.fromEntries(
+      tsids.map((tsid) => {
+        const series = timeseriesData.raw.find((item) => item.name === tsid);
+        if (!series || series.message || !series.values?.length) {
+          return [tsid, "error"];
+        }
+        return [tsid, "success"];
+      }),
+    );
+  }, [timeseriesData?.raw, timeseriesLoading, tsids]);
 
   if (error)
     return (
@@ -645,8 +759,6 @@ export default function DataQuery() {
         {error.message}
       </div>
     );
-  if (offices.isLoading)
-    return <Skeleton type="card" className="w-full h-[500px] mb-5" />;
   return (
     <div className="px-5">
       <UsaceBox title="Hydrologic Query">
@@ -663,55 +775,32 @@ export default function DataQuery() {
         </div>
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-1">
-            <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-              <label htmlFor="office">Office: </label>
-              <select
-                id="office"
-                value={office}
-                onChange={(e) => {
-                  const _office = e.target.value;
-                  if (!_office) {
-                    setOffice("");
-                    setTsids([]);
-                    return;
-                  }
-                  setOffice(_office);
-                  setTsids([]);
-                }}
-                className="px-3 min-w-[150px] w-auto"
-              >
-                <option key="select" value="">
-                  Select Office
-                </option>
-                {offices.data?.map((key) => (
-                  <option key={key} value={key}>
-                    {key}
-                  </option>
-                ))}
-              </select>
-
-              <Toggle
-                checked={mode === "advanced"}
-                onChange={() =>
-                  setMode((prev) => (prev === "basic" ? "advanced" : "basic"))
-                }
-                label={mode === "basic" ? "Guided Mode" : "Manual Mode"}
-              />
-            </div>
-            {mode == "advanced" ? (
-              <TimeSeriesDropdown
-                office={office}
-                setOffice={setOffice}
-                setTsids={setTsids}
-                tsids={tsids}
-                includeMissingTimeseries={includeMissingTimeseries}
-              />
-            ) : !office ? (
-              <H3 className="text-center mt-4">Select an office to begin</H3>
+            <ModeSelector mode={mode} setMode={setMode} setOffice={setOffice} />
+            {mode === "manual" ? (
+              <>
+                <OfficeSelect
+                  office={office}
+                  offices={offices}
+                  setOffice={setOffice}
+                  setTsids={setTsids}
+                />
+                {office ? (
+                  <TimeSeriesDropdown
+                    office={office}
+                    setOffice={setOffice}
+                    setTsids={setTsids}
+                    tsids={tsids}
+                    includeMissingTimeseries={includeMissingTimeseries}
+                  />
+                ) : (
+                  <H3 className="text-center mt-4">Select an office to begin</H3>
+                )}
+              </>
             ) : (
               <TimeSeriesBuilder
                 includeMissingTimeseries={includeMissingTimeseries}
-                office={office}
+                office=""
+                setOffice={setOffice}
                 setTsids={setTsids}
                 tsids={tsids}
               />
@@ -749,6 +838,7 @@ export default function DataQuery() {
             )}
           </div>
           <TimeSeriesManager
+            statusByTsid={statusByTsid}
             tsids={tsids}
             visibleTSIDs={visibleTSIDs}
             setTsids={setTsids}

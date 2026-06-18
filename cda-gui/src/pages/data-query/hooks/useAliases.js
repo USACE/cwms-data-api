@@ -6,6 +6,27 @@ const config = new Configuration({
   basePath: CDA_URL,
 });
 const cataApi = new CatalogApi(config);
+const ALIAS_PAGE_SIZE = 2000;
+const MAX_ALIAS_PAGES = 10;
+
+async function getCatalogPages(request) {
+  const firstPage = await cataApi.getCatalogWithDataset(request);
+  const entries = firstPage?.entries || [];
+  let nextPage = firstPage?.["next-page"];
+  let pageCount = 1;
+
+  while (nextPage && pageCount < MAX_ALIAS_PAGES) {
+    const page = await cataApi.getCatalogWithDataset({
+      ...request,
+      page: nextPage,
+    });
+    entries.push(...(page?.entries || []));
+    nextPage = page?.["next-page"];
+    pageCount += 1;
+  }
+
+  return { ...firstPage, entries };
+}
 
 export default function useAliases({ office, kind, cacheDuration, props }) {
   const { data, isLoading, error } = useQuery({
@@ -14,10 +35,11 @@ export default function useAliases({ office, kind, cacheDuration, props }) {
       const request = {
         dataset: "LOCATIONS",
         includeAliases: true,
+        pageSize: ALIAS_PAGE_SIZE,
       };
       if (kind && kind !== "*") request.locationKindLike = kind;
       if (office) request.office = office;
-      return cataApi.getCatalogWithDataset(request);
+      return getCatalogPages(request);
     },
     staleTime: cacheDuration,
     select: (data) => {

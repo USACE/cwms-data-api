@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import { Badge, H4, Skeleton } from "@usace/groundwork";
+import { Badge, H4 } from "@usace/groundwork";
 import useAliases from "../hooks/useAliases";
 import useDescriptors from "../hooks/useDescriptors";
 import PropTypes from "prop-types";
+import { FiHelpCircle } from "react-icons/fi";
 
 function getOptions(values = []) {
   return values.map((value) => ({
@@ -12,6 +13,21 @@ function getOptions(values = []) {
 }
 
 const DESCRIPTOR_FIELDS = ["parameter", "type", "interval", "duration", "version"];
+const TSID_PART_HELP = {
+  Duration:
+    "Duration identifies the length of time represented by each value. Instantaneous values commonly use 0.",
+  Interval:
+    "Interval is the time step for regular data, such as 15Minutes, 1Hour, or 1Day. A leading ~ means irregular.",
+  Location:
+    "Location is the CWMS location identifier where the time series is measured or computed.",
+  "Location Kind":
+    "Location Kind narrows the location list to projects, gages, locks, sites, outlets, or all locations.",
+  Parameter:
+    "Parameter is what the time series measures, such as Elev, Flow, Stage, Precip, or Stor.",
+  Type: "Type describes how values are produced or summarized, such as Inst, Ave, Total, Min, or Max.",
+  Version:
+    "Version identifies the source or processing path for the time series, such as Raw, Rev, Best, or a district-specific version.",
+};
 
 function getFilteredValues(entries, selectedFilters, field) {
   const values = new Set();
@@ -35,10 +51,15 @@ function getFilteredValues(entries, selectedFilters, field) {
 export default function TimeSeriesBuilder({
   includeMissingTimeseries,
   office,
+  setOffice,
   setTsids,
 }) {
-  const [locationKind, setLocationKind] = useState("*");
-  const aliases = useAliases({ office, kind: locationKind });
+  const [locationKind, setLocationKind] = useState("");
+  const aliases = useAliases({
+    office,
+    kind: locationKind,
+    props: { enabled: Boolean(locationKind) },
+  });
 
   const [locationKey, setLocationKey] = useState("");
   const [parameter, setParameter] = useState("");
@@ -49,10 +70,11 @@ export default function TimeSeriesBuilder({
   const [clearedFields, setClearedFields] = useState({});
   const [selectedLocation, setSelectedLocation] = useState(null);
   const location = selectedLocation?.name || "";
+  const descriptorOffice = office || selectedLocation?.office || "";
 
   const descriptors = useDescriptors({
     includeMissingTimeseries,
-    office,
+    office: descriptorOffice,
     location,
   });
 
@@ -184,14 +206,6 @@ export default function TimeSeriesBuilder({
     }));
   };
 
-  if (aliases.isLoading) {
-    return (
-      <div className="flex flex-col gap-2">
-        <H4>Loading Location Aliases...</H4>
-        <Skeleton className="w-full h-10" />
-      </div>
-    );
-  }
   if (errors.length > 0) {
     return (
       <div className="mt-5 flex flex-col gap-2">
@@ -214,6 +228,7 @@ export default function TimeSeriesBuilder({
           setLocationKind(value);
           setLocationKey("");
           setSelectedLocation(null);
+          setOffice?.("");
         }}
         options={[
           { value: "*", label: "All" },
@@ -223,6 +238,7 @@ export default function TimeSeriesBuilder({
           { value: "SITE", label: "Site" },
           { value: "OUTLET", label: "Outlet" },
         ]}
+        helpText={TSID_PART_HELP["Location Kind"]}
         loading={aliases.isLoading}
       />
       <Dropdown
@@ -232,6 +248,7 @@ export default function TimeSeriesBuilder({
           const selected = aliases.data?.[value];
           setSelectedLocation(selected || null);
           setLocationKey(value);
+          setOffice?.(selected?.office || "");
         }}
         options={Object.keys(aliases.data || {}).map((key) => ({
           value: key,
@@ -241,8 +258,13 @@ export default function TimeSeriesBuilder({
                 aliases.data[key].publicName || aliases.data[key].name
               }`,
         }))}
+        helpText={TSID_PART_HELP.Location}
         loading={aliases.isLoading}
-        noOptionsMessage="No locations found for this office and kind."
+        noOptionsMessage={
+          locationKind
+            ? "No locations found for this office and kind."
+            : "Choose a location kind to load locations."
+        }
       />
       <Dropdown
         label="Parameter"
@@ -250,6 +272,7 @@ export default function TimeSeriesBuilder({
         onChange={(value) => setDescriptorValue("parameter", setParameter, value)}
         options={getOptions(parameters)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
+        helpText={TSID_PART_HELP.Parameter}
         loading={descriptors.isLoading}
         noOptionsMessage="No parameters found for this location."
       />
@@ -259,6 +282,7 @@ export default function TimeSeriesBuilder({
         onChange={(value) => setDescriptorValue("type", setType, value)}
         options={getOptions(types)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
+        helpText={TSID_PART_HELP.Type}
         loading={descriptors.isLoading}
         noOptionsMessage="No types found for this selection."
       />
@@ -268,6 +292,7 @@ export default function TimeSeriesBuilder({
         onChange={(value) => setDescriptorValue("interval", setInterval, value)}
         options={getOptions(intervals)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
+        helpText={TSID_PART_HELP.Interval}
         loading={descriptors.isLoading}
         noOptionsMessage="No intervals found for this selection."
       />
@@ -277,6 +302,7 @@ export default function TimeSeriesBuilder({
         onChange={(value) => setDescriptorValue("duration", setDuration, value)}
         options={getOptions(durations)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
+        helpText={TSID_PART_HELP.Duration}
         loading={descriptors.isLoading}
         noOptionsMessage="No durations found for this selection."
       />
@@ -286,6 +312,7 @@ export default function TimeSeriesBuilder({
         onChange={(value) => setDescriptorValue("version", setVersion, value)}
         options={getOptions(versions)}
         disabled={!hasSelectedLocation || hasNoTimeseries}
+        helpText={TSID_PART_HELP.Version}
         loading={descriptors.isLoading}
         noOptionsMessage="No versions found for this selection."
       />
@@ -307,15 +334,36 @@ function Dropdown({
   onChange,
   options,
   disabled = false,
+  helpText,
   loading = false,
   noOptionsMessage,
 }) {
   const hasOptions = options.length > 0;
+  const [helpOpen, setHelpOpen] = useState(false);
   const showNoOptionsMessage = !loading && !disabled && !hasOptions;
 
   return (
     <div className="flex flex-col min-w-[150px]">
-      <label className="text-sm font-medium mb-1">{label}</label>
+      <div className="mb-1 flex items-center gap-1">
+        <label className="text-sm font-medium">{label}</label>
+        {helpText && (
+          <button
+            type="button"
+            aria-expanded={helpOpen}
+            aria-label={`${label} help`}
+            className="rounded text-slate-500 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            onClick={() => setHelpOpen((current) => !current)}
+            title={`${label} help`}
+          >
+            <FiHelpCircle aria-hidden="true" size={14} />
+          </button>
+        )}
+      </div>
+      {helpOpen && helpText && (
+        <div className="mb-2 max-w-64 rounded border border-slate-200 bg-slate-50 p-2 text-xs text-slate-700 shadow-sm">
+          {helpText}
+        </div>
+      )}
       <select
         disabled={disabled || loading || !hasOptions}
         className={`px-3 py-1 rounded border border-gray-300 ${
@@ -356,6 +404,7 @@ Dropdown.propTypes = {
     }),
   ).isRequired,
   disabled: PropTypes.bool,
+  helpText: PropTypes.string,
   loading: PropTypes.bool,
   noOptionsMessage: PropTypes.string,
 };
@@ -363,5 +412,6 @@ Dropdown.propTypes = {
 TimeSeriesBuilder.propTypes = {
   includeMissingTimeseries: PropTypes.bool.isRequired,
   office: PropTypes.string.isRequired,
+  setOffice: PropTypes.func,
   setTsids: PropTypes.func.isRequired,
 };
