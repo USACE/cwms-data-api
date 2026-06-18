@@ -10,7 +10,6 @@ import cwms.cda.formatters.csv.CsvConfiguration;
 import cwms.cda.helpers.DateUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 
 import static org.jooq.impl.DSL.asterisk;
@@ -68,7 +67,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,11 +103,8 @@ import usace.cwms.db.jooq.codegen.udt.records.DATE_RANGE_T;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
-import java.nio.charset.StandardCharsets;
 import cwms.cda.formatters.csv.CsvV1;
 import cwms.cda.formatters.Formats;
-import cwms.cda.data.dto.csv.TimeSeriesCsv;
-import cwms.cda.data.dto.csv.TimeSeriesCsvRow;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -232,6 +227,61 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 timezone.getId(), office);
     }
 
+    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildTsvDquQuery(
+            long tsCode, String officeId, String units,
+            TimeSeriesRequestParameters requestParameters,
+            boolean includeEntryDate) {
+        ZonedDateTime beginTime = requestParameters.getBeginTime();
+        ZonedDateTime endTime = requestParameters.getEndTime();
+        ZonedDateTime versionDate = requestParameters.getVersionDate();
+
+        Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
+        Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
+
+        AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
+
+        Field<BigDecimal> qualityForNormalization = DSL.nvl(
+                view.QUALITY_CODE.cast(BigDecimal.class),
+                DSL.val(BigDecimal.valueOf(5))
+        );
+
+        Field<BigDecimal> normalizedQuality = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
+                qualityForNormalization
+        ).as("quality_norm");
+
+        Field<Double> value = view.VALUE.as(VALUE);
+
+        Condition baseCondition = view.ALIASED_ITEM.isNull()
+                .and(view.TS_CODE.eq(tsCode))
+                .and(view.OFFICE_ID.eq(officeId))
+                .and(view.UNIT_ID.equalIgnoreCase(units))
+                .and(view.DATE_TIME.ge(beginTimestamp))
+                .and(view.DATE_TIME.le(endTimestamp))
+                .and(view.START_DATE.le(endTimestamp))
+                .and(view.END_DATE.gt(beginTimestamp));
+
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
+        if (versionDate != null) {
+            query = buildVersionedRowsQuery(
+                    view,
+                    value,
+                    normalizedQuality,
+                    baseCondition,
+                    versionDate,
+                    includeEntryDate
+            );
+        } else {
+            query = buildMaxVersionRowsQuery(
+                    view,
+                    value,
+                    normalizedQuality,
+                    baseCondition,
+                    includeEntryDate
+            );
+        }
+        return query;
+    }
+
     @Override
     public void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters, StreamConsumer consumer,
                                              CsvConfiguration csvConfiguration, Integer dbFetchSize, Integer rowsPerBuffer) {
@@ -247,61 +297,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String tsIdStr = metadata.tsId;
         String officeResolved = metadata.officeId;
         String resolvedUnits = metadata.units;
-        String nativeUnits = metadata.nativeUnits;
 
-        ZonedDateTime beginTime = requestParameters.getBeginTime();
-        ZonedDateTime endTime = requestParameters.getEndTime();
-        ZonedDateTime versionDate = requestParameters.getVersionDate();
-
-        Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
-        Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
-        Timestamp versionTs = versionDate != null ? Timestamp.from(versionDate.toInstant()) : null;
-
-        AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
-
-        Field<BigDecimal> qualityForNormalization = DSL.nvl(
-                view.QUALITY_CODE.cast(BigDecimal.class),
-                DSL.val(BigDecimal.valueOf(5))
-        );
-
-        Field<BigDecimal> normalizedQuality = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
-                qualityForNormalization
-        ).as("quality_norm");
-
-        Field<Double> convertedValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
-                view.VALUE,
-                view.UNIT_ID,
-                DSL.val(resolvedUnits, String.class)
-        ).as(VALUE);
-
-        Condition baseCondition = view.ALIASED_ITEM.isNull()
-                .and(view.TS_CODE.eq(tsCode))
-                .and(view.OFFICE_ID.eq(officeResolved))
-                .and(view.UNIT_ID.equalIgnoreCase(nativeUnits))
-                .and(view.DATE_TIME.ge(beginTimestamp))
-                .and(view.DATE_TIME.le(endTimestamp))
-                .and(view.START_DATE.le(endTimestamp))
-                .and(view.END_DATE.gt(beginTimestamp));
-
-        ResultQuery<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
-        if (versionDate != null) {
-            query = buildVersionedRowsQuery(
-                    view,
-                    convertedValue,
-                    normalizedQuality,
-                    baseCondition,
-                    versionDate,
-                    includeDataEntryDate
-            );
-        } else {
-            query = buildMaxVersionRowsQuery(
-                    view,
-                    convertedValue,
-                    normalizedQuality,
-                    baseCondition,
-                    includeDataEntryDate
-            );
-        }
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved,
+                resolvedUnits, requestParameters, includeDataEntryDate);
 
         logger.atFine().log("%s", lazy(query::getSQL));
 
@@ -314,6 +312,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         query.fetchSize(effectiveFetchSize);
+
+        ZonedDateTime versionDate = requestParameters.getVersionDate();
+        Timestamp versionTs = versionDate != null ? Timestamp.from(versionDate.toInstant()) : null;
 
         try (Cursor<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query.fetchLazy()) {
             CsvV1 csvFormatter = new CsvV1();
@@ -333,165 +334,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 consumer.accept(stream, Formats.CSV);
             } catch (IOException | SQLException e) {
                 throw new RuntimeException(e);
-            }
-        }
-    }
-
-    // InputStream that renders CSV rows on-demand from a jOOQ Cursor
-    private static final class CsvOnDemandInputStream extends InputStream {
-        private final Cursor<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> cursor;
-        private final Iterator<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> it;
-        private final CsvV1 csv;
-        private final String tsIdStr;
-        private final String officeId;
-        private final String units;
-        private final Timestamp versionTs;
-        private final int rowsPerBuffer;
-        private final CsvConfiguration csvConfiguration;
-        private final CsvConfiguration rowConfiguration;
-
-        private byte[] buffer = new byte[0];
-        private int bufPos = 0;
-        private boolean first = true;
-        private boolean closed = false;
-
-        CsvOnDemandInputStream(Cursor<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> cursor,
-                               CsvV1 csv,
-                               String tsIdStr,
-                               String officeId,
-                               String units,
-                               Timestamp versionTs,
-                               CsvConfiguration csvConfiguration,
-                               Integer rowsPerBuffer) {
-            this.cursor = cursor;
-            this.it = cursor.iterator();
-            this.csv = csv;
-            this.tsIdStr = tsIdStr;
-            this.officeId = officeId;
-            this.units = units;
-            this.versionTs = versionTs;
-            this.csvConfiguration = csvConfiguration;
-            this.rowConfiguration = new CsvConfiguration.Builder()
-                    .from(csvConfiguration)
-                    .withMetadataIncluded(false)
-                    .build();
-
-            int rpb = rowsPerBuffer == null ? 1 : rowsPerBuffer;
-            this.rowsPerBuffer = rpb > 0 ? rpb : 1;
-        }
-
-        @Override
-        public int read() throws IOException {
-            byte[] one = new byte[1];
-            int r = read(one, 0, 1);
-            return r == -1 ? -1 : (one[0] & 0xFF);
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-            if (closed) {
-                throw new IOException("Stream closed");
-            }
-            if(b == null) {
-                throw new NullPointerException("Buffer is null");
-            }
-            if (off < 0 || len < 0 || len > b.length - off) {
-                throw new IndexOutOfBoundsException();
-            }
-
-            int totalCopied = 0;
-            while (len > 0) {
-                if (bufPos >= buffer.length) {
-                    if (!fillBuffer()) {
-                        break; // EOF
-                    }
-                }
-
-                int toCopy = Math.min(len, buffer.length - bufPos);
-                System.arraycopy(buffer, bufPos, b, off, toCopy);
-                bufPos += toCopy;
-                off += toCopy;
-                len -= toCopy;
-                totalCopied += toCopy;
-            }
-
-            return totalCopied == 0 ? -1 : totalCopied;
-        }
-
-        private boolean fillBuffer() {
-            if (!it.hasNext()) {
-                buffer = new byte[0];
-                bufPos = 0;
-                return false;
-            }
-
-            List<TimeSeriesCsvRow> batch = new ArrayList<>(rowsPerBuffer);
-            int produced = 0;
-
-            while (it.hasNext() && produced < rowsPerBuffer) {
-                Record4<Timestamp, Double, BigDecimal, Timestamp> r = it.next();
-
-                Timestamp ts = r.value1();
-                Double val = r.value2();
-                BigDecimal qualityCode = r.value3();
-                Timestamp dataEntryDate = r.value4();
-
-                TimeSeriesCsvRow row = new TimeSeriesCsvRow.Builder()
-                        .withDateTime(ts == null ? null : ts.toInstant())
-                        .withValue(val)
-                        .withQualityCode(qualityCode == null ? null : qualityCode.intValue())
-                        .withDataEntryDate(dataEntryDate == null ? null : dataEntryDate.toInstant())
-                        .withUnits(units)
-                        .build();
-
-                batch.add(row);
-                produced++;
-            }
-
-            if (batch.isEmpty()) {
-                buffer = new byte[0];
-                bufPos = 0;
-                return false;
-            }
-
-            TimeSeriesCsv container = new TimeSeriesCsv.Builder()
-                    .withTimeSeriesId(tsIdStr)
-                    .withOfficeId(officeId)
-                    .withVersionDate(versionTs == null ? null : versionTs.toInstant().toString())
-                    .withRows(batch)
-                    .build();
-
-            String rendered = first
-                    ? csv.format(container, csvConfiguration)
-                    : csv.format(container, rowConfiguration);
-
-            if (first) {
-                first = false;
-            } else {
-                // Remove header from subsequent writes
-                int headerEnd = rendered.indexOf('\n');
-                // Check for \r\n as well
-                if (headerEnd != -1) {
-                    if (headerEnd > 0 && rendered.charAt(headerEnd - 1) == '\r') {
-                        // It was \r\n, skip the \n and start at headerEnd + 1
-                    }
-                    rendered = rendered.substring(headerEnd + 1);
-                }
-            }
-            buffer = rendered.getBytes(StandardCharsets.UTF_8);
-            bufPos = 0;
-            return buffer.length > 0;
-        }
-
-        @Override
-        public void close() {
-            if (!closed) {
-                closed = true;
-                try {
-                    cursor.close();
-                } catch (DataAccessException ex) {
-                    logger.atWarning().withCause(ex).log("Error closing database cursor");
-                }
             }
         }
     }
@@ -1003,7 +845,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         // Pagination happens after regular-interval gap rows are merged
         //  fetch the full raw window first
-        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, nativeUnits,
+        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId,
                 metadataUnits, requestParameters, includeEntryDate);
         long effectiveIntervalOffset = intervalOffset;
         if (isRegularSeries(intervalMinutes, intervalPart)) {
@@ -1115,42 +957,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 record.getValue("version_flag", String.class)));
     }
 
-    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId, String nativeUnits,
+    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId,
                                                                  String requestedUnits,
                                                                  TimeSeriesRequestParameters requestParameters,
                                                                  boolean includeEntryDate) {
-        ZonedDateTime beginTime = requestParameters.getBeginTime();
-        ZonedDateTime endTime = requestParameters.getEndTime();
-        ZonedDateTime versionDate = requestParameters.getVersionDate();
-        Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
-        Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
-
-        AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
-        Field<BigDecimal> qualityForNormalization = DSL.nvl(
-                view.QUALITY_CODE.cast(BigDecimal.class),
-                DSL.val(BigDecimal.valueOf(5))
-        );
-        Field<BigDecimal> normalizedQuality = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
-                qualityForNormalization).as("quality_norm");
-        Field<Double> convertedValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
-                view.VALUE, view.UNIT_ID, DSL.val(requestedUnits, String.class)).as(VALUE);
-
-        Condition baseCondition = view.ALIASED_ITEM.isNull()
-                .and(view.TS_CODE.eq(tsCode))
-                .and(view.OFFICE_ID.eq(officeId))
-                .and(view.UNIT_ID.equalIgnoreCase(nativeUnits))
-                .and(view.DATE_TIME.ge(beginTimestamp))
-                .and(view.DATE_TIME.le(endTimestamp))
-                .and(view.START_DATE.le(endTimestamp))
-                .and(view.END_DATE.gt(beginTimestamp));
-
-        ResultQuery<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
-        if (versionDate != null) {
-            query = buildVersionedRowsQuery(view, convertedValue, normalizedQuality, baseCondition, versionDate,
-                    includeEntryDate);
-        } else {
-            query = buildMaxVersionRowsQuery(view, convertedValue, normalizedQuality, baseCondition, includeEntryDate);
-        }
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeId,
+                requestedUnits, requestParameters, includeEntryDate);
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 

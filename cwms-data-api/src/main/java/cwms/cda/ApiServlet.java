@@ -187,6 +187,8 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
 import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
+import cwms.cda.data.dto.csv.CwmsCsvDTO;
+import cwms.cda.formatters.csv.CsvExampleGenerator;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
@@ -194,6 +196,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
 import java.io.IOException;
@@ -224,6 +228,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 
 
 /**
@@ -946,7 +952,37 @@ public class ApiServlet extends HttpServlet {
                         });
                     }
             });
-                
+                Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
+                try (ScanResult scanResult = new ClassGraph()
+                        .acceptPackages("cwms.cda.data.dto")
+                        .scan()) {
+                    List<Class<CwmsCsvDTO>> csvDtoClasses = scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
+                            .loadClasses(CwmsCsvDTO.class);
+                    for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
+                        schemaToClass.put(clazz.getSimpleName(), clazz);
+                    }
+                }
+                api.getPaths().values().forEach(pathItem -> {
+                    for (Operation op : pathItem.readOperations()) {
+                        if (op.getResponses() != null) {
+                            for (ApiResponse resp : op.getResponses().values()) {
+                                if (resp.getContent() != null && resp.getContent().containsKey(Formats.CSV)) {
+                                    MediaType csvMedia = resp.getContent().get(Formats.CSV);
+                                    if (csvMedia.getSchema() != null && csvMedia.getSchema().get$ref() != null) {
+                                        String ref = csvMedia.getSchema().get$ref();
+                                        String schemaName = ref.substring(ref.lastIndexOf('/') + 1);
+                                        @SuppressWarnings("unchecked")
+                                        Class<? extends CwmsCsvDTO<?>> dtoClass = (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
+
+                                        if (dtoClass != null) {
+                                            csvMedia.setExample(CsvExampleGenerator.getExample(dtoClass));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
                 return api;
             })
             .defaultDocumentation(doc -> {
