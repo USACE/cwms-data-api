@@ -135,11 +135,14 @@ function getLoadPlan(
   endDateTime,
   extentsByTsid = {},
   tsidOffices = {},
+  useExtentStartDates = true,
 ) {
   const items = tsids.map((tsid) => {
     const extentBegin = extentsByTsid[tsid]?.earliestDateTime;
     const effectiveBegin =
-      extentBegin?.isValid() && extentBegin.isAfter(beginDateTime)
+      useExtentStartDates &&
+      extentBegin?.isValid() &&
+      extentBegin.isAfter(beginDateTime)
         ? extentBegin
         : beginDateTime;
     const chunks = effectiveBegin.isBefore(endDateTime)
@@ -486,6 +489,7 @@ export default function DataQuery() {
   const [endDateTime, setEndDateTime] = useState(dayjs());
   const [loadProgress, setLoadProgress] = useState(null);
   const [acceptedExtentSuggestionKey, setAcceptedExtentSuggestionKey] = useState("");
+  const [acceptedUserDateKey, setAcceptedUserDateKey] = useState("");
 
   const validTsids = useMemo(
     () =>
@@ -546,24 +550,19 @@ export default function DataQuery() {
     staleTime: 1000 * 60 * 5,
   });
 
-  const loadPlan = useMemo(
-    () => getLoadPlan(tsids, beginDateTime, endDateTime, extents.data, officesByTsid),
-    [beginDateTime, endDateTime, extents.data, officesByTsid, tsids],
-  );
-
   const extentAdjustments = useMemo(() => {
-    return loadPlan.items
-      .map((item) => ({
-        tsid: item.tsid,
-        office: item.office,
-        earliestDateTime: extents.data?.[item.tsid]?.earliestDateTime,
+    return tsids
+      .map((tsid) => ({
+        tsid,
+        office: officesByTsid[tsid],
+        earliestDateTime: extents.data?.[tsid]?.earliestDateTime,
       }))
       .filter(
         (item) =>
           item.earliestDateTime?.isValid() &&
           item.earliestDateTime.isAfter(beginDateTime),
       );
-  }, [beginDateTime, extents.data, loadPlan.items]);
+  }, [beginDateTime, extents.data, officesByTsid, tsids]);
 
   const extentSuggestionKey = useMemo(
     () =>
@@ -579,14 +578,43 @@ export default function DataQuery() {
     [beginDateTime, endDateTime, extentAdjustments],
   );
   const acceptedExtentSuggestions = acceptedExtentSuggestionKey === extentSuggestionKey;
+  const acceptedUserDates = acceptedUserDateKey === extentSuggestionKey;
   const requestedDateBeforeExtent =
     extentAdjustments.length > 0 &&
     !acceptedExtentSuggestions &&
+    !acceptedUserDates &&
     !extents.isLoading &&
     !extents.isError;
+  const useExtentStartDates = !acceptedUserDates;
+
+  const loadPlan = useMemo(
+    () =>
+      getLoadPlan(
+        tsids,
+        beginDateTime,
+        endDateTime,
+        extents.data,
+        officesByTsid,
+        useExtentStartDates,
+      ),
+    [
+      beginDateTime,
+      endDateTime,
+      extents.data,
+      officesByTsid,
+      tsids,
+      useExtentStartDates,
+    ],
+  );
 
   const applyExtentSuggestedStartDates = () => {
     setAcceptedExtentSuggestionKey(extentSuggestionKey);
+    setAcceptedUserDateKey("");
+  };
+
+  const applyUserProvidedStartDates = () => {
+    setAcceptedUserDateKey(extentSuggestionKey);
+    setAcceptedExtentSuggestionKey("");
   };
 
   async function fetchTimeSeriesChunkPages(data, request, requestOverrides) {
@@ -969,6 +997,12 @@ export default function DataQuery() {
                     onClick={applyExtentSuggestedStartDates}
                   >
                     Use Suggested Start Dates
+                  </Button>
+                  <Button
+                    className="border border-slate-300 bg-slate-100 px-3 py-2 text-slate-800 hover:bg-slate-200"
+                    onClick={applyUserProvidedStartDates}
+                  >
+                    Use My Dates
                   </Button>
                 </div>
               </div>
