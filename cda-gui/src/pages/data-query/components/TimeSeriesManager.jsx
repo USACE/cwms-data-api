@@ -11,7 +11,7 @@ export default function TimeSeriesManager({
   toggleTSID,
 }) {
   const getStatusClasses = (tsid) => {
-    const status = statusByTsid[tsid] || "pending";
+    const status = statusByTsid[tsid]?.status || "pending";
 
     if (status === "success") {
       return "border-green-200 bg-green-50 text-green-950";
@@ -22,7 +22,7 @@ export default function TimeSeriesManager({
     return "border-yellow-200 bg-yellow-50 text-yellow-950";
   };
   const getStatusLabel = (tsid) => {
-    const status = statusByTsid[tsid] || "pending";
+    const status = statusByTsid[tsid]?.status || "pending";
 
     if (status === "success") return "Loaded successfully";
     if (status === "error") return "Failed or no values found";
@@ -45,14 +45,19 @@ export default function TimeSeriesManager({
       {tsids.map((tsid) => (
         <div
           key={tsid}
-          data-status={statusByTsid[tsid] || "pending"}
-          title={getStatusLabel(tsid)}
+          data-status={statusByTsid[tsid]?.status || "pending"}
+          title={statusByTsid[tsid]?.message || getStatusLabel(tsid)}
           className={`mb-1 flex min-w-0 items-center justify-between gap-2 rounded border px-2 py-1 ${getStatusClasses(tsid)}`}
         >
-          <span className="truncate text-sm">
-            {tsidOffices[tsid] ? `${tsidOffices[tsid]} / ` : ""}
-            {tsid}
-          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">
+              {tsidOffices[tsid] ? `${tsidOffices[tsid]} / ` : ""}
+              {tsid}
+            </div>
+            <div className="truncate text-xs opacity-80">
+              {statusByTsid[tsid]?.message || getStatusLabel(tsid)}
+            </div>
+          </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => toggleTSID(tsid)}
@@ -87,7 +92,12 @@ export default function TimeSeriesManager({
 }
 
 TimeSeriesManager.propTypes = {
-  statusByTsid: PropTypes.objectOf(PropTypes.oneOf(["error", "pending", "success"])),
+  statusByTsid: PropTypes.objectOf(
+    PropTypes.shape({
+      message: PropTypes.string.isRequired,
+      status: PropTypes.oneOf(["error", "pending", "success"]).isRequired,
+    }),
+  ),
   tsidOffices: PropTypes.objectOf(PropTypes.string),
   tsids: PropTypes.arrayOf(PropTypes.string).isRequired,
   visibleTSIDs: PropTypes.arrayOf(PropTypes.string).isRequired,

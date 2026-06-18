@@ -466,7 +466,7 @@ function LocationCombobox({
 }) {
   const hasSearch = searchTerm.trim().length >= 2;
   const showNoOptionsMessage =
-    !loading && (!locationKind || (hasSearch && !options.length));
+    !value && !loading && (!locationKind || (hasSearch && !options.length));
 
   return (
     <div className="flex min-w-[280px] flex-col">
@@ -519,7 +519,7 @@ function LocationCombobox({
                 )}
               </ComboboxOption>
             ))
-          ) : hasSearch ? (
+          ) : hasSearch && !value ? (
             <div className="p-2 text-sm text-slate-500">No locations found.</div>
           ) : (
             <div className="p-2 text-sm text-slate-500">

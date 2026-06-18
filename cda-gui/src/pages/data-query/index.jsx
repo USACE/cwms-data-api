@@ -7,7 +7,6 @@ import { FiDownload, FiRefreshCw } from "react-icons/fi";
 import Controls from "./components/Controls";
 import { CatalogApi, Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
 import { getPrecision } from "../../utils/timeseries";
-import FailedTimeSeries from "./components/FailedTimeSeries";
 // import useConfigList from "./hooks/useConfigList";
 import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
 import DataTabs from "./components/DataTabs";
@@ -216,6 +215,28 @@ function formatFriendlyDate(dateTime) {
 function getProgressPercent(progress) {
   if (!progress?.total) return 0;
   return Math.round((progress.completed / progress.total) * 100);
+}
+
+function getSeriesMessage(series) {
+  if (!series) return "Waiting for data";
+  if (series.message) {
+    try {
+      const parsedMessage = JSON.parse(series.message);
+      const message = String(
+        parsedMessage.message ||
+          parsedMessage.reason ||
+          parsedMessage.error ||
+          series.message,
+      );
+      return message.length > 180 ? `${message.slice(0, 177)}...` : message;
+    } catch {
+      return series.message.length > 180
+        ? `${series.message.slice(0, 177)}...`
+        : series.message;
+    }
+  }
+  if (!series.values?.length) return "No values found for the selected date range";
+  return `${series.values.length.toLocaleString()} values loaded`;
 }
 
 function QueryProgress({ progress }) {
@@ -811,19 +832,47 @@ export default function DataQuery() {
   const statusByTsid = useMemo(() => {
     if (!tsids.length) return {};
     if (timeseriesLoading) {
-      return Object.fromEntries(tsids.map((tsid) => [tsid, "pending"]));
+      return Object.fromEntries(
+        tsids.map((tsid) => [
+          tsid,
+          {
+            message: "Loading data",
+            status: "pending",
+          },
+        ]),
+      );
     }
     if (!timeseriesData?.raw) {
-      return Object.fromEntries(tsids.map((tsid) => [tsid, "pending"]));
+      return Object.fromEntries(
+        tsids.map((tsid) => [
+          tsid,
+          {
+            message: "Waiting for data",
+            status: "pending",
+          },
+        ]),
+      );
     }
 
     return Object.fromEntries(
       tsids.map((tsid) => {
         const series = timeseriesData.raw.find((item) => item.name === tsid);
         if (!series || series.message || !series.values?.length) {
-          return [tsid, "error"];
+          return [
+            tsid,
+            {
+              message: getSeriesMessage(series),
+              status: "error",
+            },
+          ];
         }
-        return [tsid, "success"];
+        return [
+          tsid,
+          {
+            message: getSeriesMessage(series),
+            status: "success",
+          },
+        ];
       }),
     );
   }, [timeseriesData?.raw, timeseriesLoading, tsids]);
@@ -937,11 +986,6 @@ export default function DataQuery() {
         </div>
         <div className="max-w-full overflow-auto">
           <div className="mt-4 flex flex-wrap items-start gap-2">
-            <FailedTimeSeries
-              failedTS={timeseriesData?.failed}
-              className="max-w-full flex-1 basis-72"
-            />
-
             {(canExportTimeseries || tsids.length > 0) && (
               <div className="mb-3 ms-auto flex flex-wrap items-center justify-end gap-2">
                 {canExportTimeseries && (
