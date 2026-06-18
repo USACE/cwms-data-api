@@ -11,36 +11,12 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        "/cwms-data/timeseries": {
-          target: cdaApiRoot,
-          changeOrigin: true,
-          secure: false,
-        },
-        "/cwms-data/catalog": {
-          target: cdaApiRoot,
-          changeOrigin: true,
-          secure: false,
-        },
-        "/cwms-data/auth": {
-          target: cdaApiRoot,
-          changeOrigin: true,
-          secure: false,
-        },
-        "/auth": {
-          target: cdaApiRoot,
-          changeOrigin: true,
-          secure: false,
-        },
-        "/CWMSLogin": {
-          target: cdaApiRoot,
-          changeOrigin: true,
-          secure: false,
-        },
-        "/cwms-data/swagger-docs": {
-          target: cdaApiRoot,
-          changeOrigin: true,
-          secure: false,
-        },
+        "^/(auth|CWMSLogin|cwms-data/(?!swagger-ui(?:/|$)|assets/|src/|node_modules/|@vite/).*)":
+          {
+            target: cdaApiRoot,
+            changeOrigin: true,
+            secure: false,
+          },
       },
     },
     experimental: {
