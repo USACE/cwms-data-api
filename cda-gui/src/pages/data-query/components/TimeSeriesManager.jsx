@@ -19,7 +19,7 @@ export default function TimeSeriesManager({
     if (status === "error") {
       return "border-red-200 bg-red-50 text-red-950";
     }
-    return "border-yellow-200 bg-yellow-50 text-yellow-950";
+    return "border-blue-200 bg-blue-50 text-blue-950";
   };
   const getStatusLabel = (tsid) => {
     const status = statusByTsid[tsid]?.status || "pending";
