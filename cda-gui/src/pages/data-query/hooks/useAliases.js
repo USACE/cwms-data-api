@@ -8,6 +8,7 @@ const config = new Configuration({
 const cataApi = new CatalogApi(config);
 const ALIAS_PAGE_SIZE = 2000;
 const MAX_ALIAS_PAGES = 10;
+const MIN_ALIAS_SEARCH_LENGTH = 2;
 
 async function getCatalogPages(request) {
   const firstPage = await cataApi.getCatalogWithDataset(request);
@@ -28,9 +29,17 @@ async function getCatalogPages(request) {
   return { ...firstPage, entries };
 }
 
-export default function useAliases({ office, kind, cacheDuration, props }) {
+export default function useAliases({
+  office,
+  kind,
+  searchTerm = "",
+  cacheDuration,
+  props,
+}) {
+  const normalizedSearchTerm = searchTerm.trim();
+  const hasSearchTerm = normalizedSearchTerm.length >= MIN_ALIAS_SEARCH_LENGTH;
   const { data, isLoading, error } = useQuery({
-    queryKey: ["aliases", office, kind],
+    queryKey: ["aliases", office, kind, normalizedSearchTerm],
     queryFn: async () => {
       const request = {
         dataset: "LOCATIONS",
@@ -38,6 +47,7 @@ export default function useAliases({ office, kind, cacheDuration, props }) {
         pageSize: ALIAS_PAGE_SIZE,
       };
       if (kind && kind !== "*") request.locationKindLike = kind;
+      if (hasSearchTerm) request.like = `*${normalizedSearchTerm}*`;
       if (office) request.office = office;
       return getCatalogPages(request);
     },

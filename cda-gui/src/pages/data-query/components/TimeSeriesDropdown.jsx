@@ -45,6 +45,7 @@ export default function TimeSeriesDropdown({
   setOffice,
   tsids,
   setTsids,
+  setTsidOffices,
   includeMissingTimeseries,
 }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,6 +89,12 @@ export default function TimeSeriesDropdown({
             if ((tsid.match(/\./g) || []).length === 5) {
               if (!office && selected?.office) setOffice(selected.office);
               setTsids((prev) => (prev.includes(tsid) ? prev : [...prev, tsid]));
+              if (selected?.office || office) {
+                setTsidOffices?.((current) => ({
+                  ...current,
+                  [tsid]: selected?.office || office,
+                }));
+              }
             } else {
               alert(
                 "TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version",
@@ -152,5 +159,6 @@ TimeSeriesDropdown.propTypes = {
   setOffice: PropTypes.func.isRequired,
   tsids: PropTypes.array.isRequired,
   setTsids: PropTypes.func.isRequired,
+  setTsidOffices: PropTypes.func,
   includeMissingTimeseries: PropTypes.bool.isRequired,
 };

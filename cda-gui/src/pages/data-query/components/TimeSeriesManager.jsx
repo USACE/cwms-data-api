@@ -3,9 +3,11 @@ import PropTypes from "prop-types";
 
 export default function TimeSeriesManager({
   statusByTsid = {},
+  tsidOffices = {},
   tsids,
   visibleTSIDs,
   setTsids,
+  setTsidOffices,
   toggleTSID,
 }) {
   const getStatusClasses = (tsid) => {
@@ -29,7 +31,7 @@ export default function TimeSeriesManager({
 
   return (
     <div
-      className={`bg-gray-50 border p-2 w-full rounded shadow-sm md:mt-4 lg:w-2/5 overflow-auto h-[20vh] max-h-[40vh] ${
+      className={`bg-gray-50 border p-2 w-full min-w-0 rounded shadow-sm overflow-auto max-h-56 ${
         tsids.length == 0 ? "hidden" : ""
       }`}
     >
@@ -45,10 +47,13 @@ export default function TimeSeriesManager({
           key={tsid}
           data-status={statusByTsid[tsid] || "pending"}
           title={getStatusLabel(tsid)}
-          className={`mb-1 flex items-center justify-between gap-2 rounded border px-2 py-1 ${getStatusClasses(tsid)}`}
+          className={`mb-1 flex min-w-0 items-center justify-between gap-2 rounded border px-2 py-1 ${getStatusClasses(tsid)}`}
         >
-          <span className="truncate text-sm">{tsid}</span>
-          <div className="flex items-center gap-2">
+          <span className="truncate text-sm">
+            {tsidOffices[tsid] ? `${tsidOffices[tsid]} / ` : ""}
+            {tsid}
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
             <button
               onClick={() => toggleTSID(tsid)}
               title="Toggle visibility"
@@ -61,7 +66,14 @@ export default function TimeSeriesManager({
               )}
             </button>
             <button
-              onClick={() => setTsids((prev) => prev.filter((t) => t !== tsid))}
+              onClick={() => {
+                setTsids((prev) => prev.filter((t) => t !== tsid));
+                setTsidOffices?.((current) => {
+                  const next = { ...current };
+                  delete next[tsid];
+                  return next;
+                });
+              }}
               title="Remove"
               className="text-red-600 hover:text-red-800"
             >
@@ -76,8 +88,10 @@ export default function TimeSeriesManager({
 
 TimeSeriesManager.propTypes = {
   statusByTsid: PropTypes.objectOf(PropTypes.oneOf(["error", "pending", "success"])),
+  tsidOffices: PropTypes.objectOf(PropTypes.string),
   tsids: PropTypes.arrayOf(PropTypes.string).isRequired,
   visibleTSIDs: PropTypes.arrayOf(PropTypes.string).isRequired,
   setTsids: PropTypes.func.isRequired,
+  setTsidOffices: PropTypes.func,
   toggleTSID: PropTypes.func.isRequired,
 };

@@ -111,7 +111,13 @@ function getDateChunks(tsid, beginDateTime, endDateTime) {
   return chunks;
 }
 
-function getLoadPlan(tsids, beginDateTime, endDateTime, extentsByTsid = {}) {
+function getLoadPlan(
+  tsids,
+  beginDateTime,
+  endDateTime,
+  extentsByTsid = {},
+  tsidOffices = {},
+) {
   const items = tsids.map((tsid) => {
     const extentBegin = extentsByTsid[tsid]?.earliestDateTime;
     const effectiveBegin =
@@ -124,6 +130,7 @@ function getLoadPlan(tsids, beginDateTime, endDateTime, extentsByTsid = {}) {
 
     return {
       tsid,
+      office: tsidOffices[tsid],
       effectiveBegin,
       chunks,
     };
@@ -156,10 +163,12 @@ async function runLimited(tasks, limit) {
 function mergeTimeSeriesChunks(name, begin, end, chunks) {
   const valuesByTime = new Map();
   let units;
+  let office;
   let total = 0;
 
   chunks.forEach((chunk) => {
     units ||= chunk?.units;
+    office ||= chunk?.office || chunk?.officeId || chunk?.["office-id"];
     total += chunk?.total || 0;
     chunk?.values?.forEach((value) => {
       valuesByTime.set(value[0], value);
@@ -171,6 +180,7 @@ function mergeTimeSeriesChunks(name, begin, end, chunks) {
     end,
     values: [...valuesByTime.values()].sort((a, b) => a[0] - b[0]),
     name,
+    office,
     units,
     total,
   };
@@ -197,7 +207,7 @@ function QueryProgress({ progress }) {
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm font-semibold text-slate-700">
         <span>Loading time series data</span>
         <span>
-          {progress.completed} / {progress.total} chunks
+          {progress.completed} / {progress.total}
         </span>
       </div>
       <div className="h-3 w-full overflow-hidden rounded bg-slate-200">
@@ -213,17 +223,17 @@ function QueryProgress({ progress }) {
             : 100;
           return (
             <div key={item.tsid}>
-              <div className="mb-1 flex justify-between gap-4">
+              <div className="mb-1">
                 <span className="truncate">{item.tsid}</span>
-                <span>
-                  {item.completed} / {item.total}
-                </span>
               </div>
-              <div className="h-2 overflow-hidden rounded bg-slate-100">
+              <div className="relative h-4 overflow-hidden rounded bg-slate-100">
                 <div
                   className="h-full bg-emerald-500 transition-all"
                   style={{ width: `${itemPercent}%` }}
                 />
+                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-semibold text-slate-700">
+                  {itemPercent}%
+                </div>
               </div>
             </div>
           );
@@ -284,7 +294,7 @@ ModeSelector.propTypes = {
   setOffice: PropTypes.func.isRequired,
 };
 
-function OfficeSelect({ office, offices, setOffice, setTsids }) {
+function OfficeSelect({ office, offices, setOffice, setTsidOffices, setTsids }) {
   return (
     <div className="flex flex-col gap-1 sm:w-56">
       <label htmlFor="office" className="text-sm font-semibold text-slate-700">
@@ -298,10 +308,12 @@ function OfficeSelect({ office, offices, setOffice, setTsids }) {
           const _office = e.target.value;
           if (!_office) {
             setOffice("");
+            setTsidOffices({});
             setTsids([]);
             return;
           }
           setOffice(_office);
+          setTsidOffices({});
           setTsids([]);
         }}
         className="min-w-[150px] rounded border border-slate-300 px-3 py-2 disabled:cursor-not-allowed disabled:bg-slate-100"
@@ -326,6 +338,7 @@ OfficeSelect.propTypes = {
     isLoading: PropTypes.bool.isRequired,
   }).isRequired,
   setOffice: PropTypes.func.isRequired,
+  setTsidOffices: PropTypes.func.isRequired,
   setTsids: PropTypes.func.isRequired,
 };
 
@@ -352,6 +365,7 @@ QueryProgress.propTypes = {
 
 export default function DataQuery() {
   const [tsids, setTsids] = useState([]);
+  const [tsidOffices, setTsidOffices] = useState({});
   const [visibleTSIDs, setVisibleTSIDs] = useState(tsids);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [cacheEnabled, setCacheEnabled] = useState(() => {
@@ -379,6 +393,11 @@ export default function DataQuery() {
   useEffect(() => {
     // Reset visible list when tsids change
     setVisibleTSIDs(tsids);
+    setTsidOffices((current) =>
+      Object.fromEntries(
+        tsids.map((tsid) => [tsid, current[tsid]]).filter((entry) => entry[1]),
+      ),
+    );
   }, [tsids]);
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -403,6 +422,14 @@ export default function DataQuery() {
     setVisibleTSIDs((prev) =>
       prev.includes(tsid) ? prev.filter((t) => t !== tsid) : [...prev, tsid],
     );
+  const tsidOfficeEntries = useMemo(
+    () => tsids.map((tsid) => [tsid, tsidOffices[tsid] || office || ""]),
+    [office, tsidOffices, tsids],
+  );
+  const officesByTsid = useMemo(
+    () => Object.fromEntries(tsidOfficeEntries),
+    [tsidOfficeEntries],
+  );
 
   const offices = useQuery({
     queryKey: ["offices"],
@@ -418,6 +445,7 @@ export default function DataQuery() {
   const [beginDateTime, setBeginDateTime] = useState(dayjs().subtract(1, "day"));
   const [endDateTime, setEndDateTime] = useState(dayjs());
   const [loadProgress, setLoadProgress] = useState(null);
+  const [acceptedExtentSuggestionKey, setAcceptedExtentSuggestionKey] = useState("");
 
   const validTsids = useMemo(
     () =>
@@ -440,17 +468,18 @@ export default function DataQuery() {
   }, [endDateTime, tsids]);
 
   const extents = useQuery({
-    queryKey: ["data-query-extents", tsids, office],
+    queryKey: ["data-query-extents", tsids, tsidOfficeEntries],
     queryFn: async () => {
       const entries = await Promise.all(
         tsids.map(async (tsid) => {
+          const tsidOffice = officesByTsid[tsid];
           const { entries: catalogEntries = [] } =
             await catalog_api.getCatalogWithDataset({
               dataset: "TIMESERIES",
               excludeEmpty: false,
               includeAliases: true,
               like: tsid,
-              office: office || undefined,
+              office: tsidOffice || undefined,
               pageSize: 10,
             });
           const entry =
@@ -472,20 +501,21 @@ export default function DataQuery() {
 
       return Object.fromEntries(entries);
     },
-    enabled: validTsids && office !== undefined,
+    enabled: validTsids && tsids.every((tsid) => Boolean(officesByTsid[tsid])),
     retry: 1,
     staleTime: 1000 * 60 * 5,
   });
 
   const loadPlan = useMemo(
-    () => getLoadPlan(tsids, beginDateTime, endDateTime, extents.data),
-    [beginDateTime, endDateTime, extents.data, tsids],
+    () => getLoadPlan(tsids, beginDateTime, endDateTime, extents.data, officesByTsid),
+    [beginDateTime, endDateTime, extents.data, officesByTsid, tsids],
   );
 
   const extentAdjustments = useMemo(() => {
     return loadPlan.items
       .map((item) => ({
         tsid: item.tsid,
+        office: item.office,
         earliestDateTime: extents.data?.[item.tsid]?.earliestDateTime,
       }))
       .filter(
@@ -495,21 +525,28 @@ export default function DataQuery() {
       );
   }, [beginDateTime, extents.data, loadPlan.items]);
 
+  const extentSuggestionKey = useMemo(
+    () =>
+      JSON.stringify({
+        begin: beginDateTime.valueOf(),
+        end: endDateTime.valueOf(),
+        starts: extentAdjustments.map((item) => [
+          item.tsid,
+          item.office,
+          item.earliestDateTime.valueOf(),
+        ]),
+      }),
+    [beginDateTime, endDateTime, extentAdjustments],
+  );
+  const acceptedExtentSuggestions = acceptedExtentSuggestionKey === extentSuggestionKey;
   const requestedDateBeforeExtent =
-    extentAdjustments.length > 0 && !extents.isLoading && !extents.isError;
+    extentAdjustments.length > 0 &&
+    !acceptedExtentSuggestions &&
+    !extents.isLoading &&
+    !extents.isError;
 
-  const adjustedExtentBeginDateTime = useMemo(() => {
-    return extentAdjustments.reduce(
-      (latestBegin, item) =>
-        item.earliestDateTime.isAfter(latestBegin)
-          ? item.earliestDateTime
-          : latestBegin,
-      beginDateTime,
-    );
-  }, [beginDateTime, extentAdjustments]);
-
-  const applyExtentStartDate = () => {
-    setBeginDateTime(adjustedExtentBeginDateTime);
+  const applyExtentSuggestedStartDates = () => {
+    setAcceptedExtentSuggestionKey(extentSuggestionKey);
   };
 
   async function fetchTimeSeriesChunkPages(data, request, requestOverrides) {
@@ -545,13 +582,15 @@ export default function DataQuery() {
     if (!result.raw.ok) {
       return {
         name: request.name,
+        office: request.office,
         values: [],
         message: await result.raw.text(),
       };
     }
 
     const data = await result.raw.json();
-    return await fetchTimeSeriesChunkPages(data, request, requestOverrides);
+    const pagedData = await fetchTimeSeriesChunkPages(data, request, requestOverrides);
+    return { ...pagedData, office: request.office };
   }
 
   async function fetchTimeSeries(tsid, requestOverrides, planItem) {
@@ -561,13 +600,14 @@ export default function DataQuery() {
         end: endDateTime.format(CDA_DATE_FORMAT),
         values: [],
         name: tsid,
+        office: planItem.office,
       };
     }
 
     const tasks = planItem.chunks.map((chunk) => {
       const request = {
         name: tsid,
-        office: office || undefined,
+        office: planItem.office || undefined,
         begin: chunk.begin.format(CDA_DATE_FORMAT),
         end: chunk.end.format(CDA_DATE_FORMAT),
         pageSize: CHUNK_PAGE_SIZE,
@@ -611,7 +651,7 @@ export default function DataQuery() {
     queryKey: [
       "cdaTimeSeries",
       tsids,
-      office,
+      tsidOfficeEntries,
       beginDateTime,
       endDateTime,
       cacheEnabled,
@@ -636,7 +676,12 @@ export default function DataQuery() {
       const promises = loadPlan.items.map((item) => {
         return fetchTimeSeries(item.tsid, requestOverrides, item).catch((e) => {
           console.error(e);
-          return { name: item.tsid, values: [], message: e?.message };
+          return {
+            name: item.tsid,
+            office: item.office,
+            values: [],
+            message: e?.message,
+          };
         });
       });
       const data = await Promise.all(promises);
@@ -650,7 +695,7 @@ export default function DataQuery() {
     },
     enabled:
       validTsids &&
-      office !== undefined &&
+      tsids.every((tsid) => Boolean(officesByTsid[tsid])) &&
       !extents.isLoading &&
       !requestedDateBeforeExtent,
     staleTime: cacheEnabled ? 1000 * 60 * 5 : 0,
@@ -661,13 +706,27 @@ export default function DataQuery() {
     // Build table params from timeseriesData
     if (!timeseriesData) return [];
     return timeseriesData.tsids
-      .map((series, index) => ({
-        tsid: tsids[index],
-        header: `${tsids[index].split(".")[1]} (${series.units})`,
+      .map((series) => ({
+        tsid: series.name,
+        header: `${series.name.split(".")[1]} (${series.units})`,
         rounding: getPrecision(series.units),
+        units: series.units,
       }))
       .filter((p) => visibleTSIDs.includes(p.tsid));
-  }, [timeseriesData, tsids, visibleTSIDs]);
+  }, [timeseriesData, visibleTSIDs]);
+  const visibleLoadedTsids = useMemo(
+    () => timeseriesParams.map((param) => param.tsid),
+    [timeseriesParams],
+  );
+  const visibleRawSeries = useMemo(() => {
+    const visibleSet = new Set(visibleTSIDs);
+    return (timeseriesData?.raw || []).filter((series) => visibleSet.has(series.name));
+  }, [timeseriesData?.raw, visibleTSIDs]);
+  const visibleSeriesHaveNoData =
+    tsids.length > 0 &&
+    !timeseriesLoading &&
+    visibleRawSeries.length > 0 &&
+    visibleRawSeries.every((series) => !series?.values?.length);
 
   const handleDownloadCSV = () => {
     if (!timeseriesData || timeseriesData.dates.length === 0) {
@@ -773,7 +832,7 @@ export default function DataQuery() {
             active={hasActiveSettings}
           />
         </div>
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,2fr)]">
           <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-1">
             <ModeSelector mode={mode} setMode={setMode} setOffice={setOffice} />
             {mode === "manual" ? (
@@ -782,12 +841,14 @@ export default function DataQuery() {
                   office={office}
                   offices={offices}
                   setOffice={setOffice}
+                  setTsidOffices={setTsidOffices}
                   setTsids={setTsids}
                 />
                 {office ? (
                   <TimeSeriesDropdown
                     office={office}
                     setOffice={setOffice}
+                    setTsidOffices={setTsidOffices}
                     setTsids={setTsids}
                     tsids={tsids}
                     includeMissingTimeseries={includeMissingTimeseries}
@@ -801,6 +862,7 @@ export default function DataQuery() {
                 includeMissingTimeseries={includeMissingTimeseries}
                 office={office}
                 setOffice={setOffice}
+                setTsidOffices={setTsidOffices}
                 setTsids={setTsids}
                 tsids={tsids}
               />
@@ -815,23 +877,30 @@ export default function DataQuery() {
             {requestedDateBeforeExtent && (
               <div className="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
                 <div className="font-semibold">
-                  Data starts on {formatFriendlyDate(adjustedExtentBeginDateTime)}.
+                  Some selected time series start after your requested begin date.
                 </div>
-                <div className="mt-1">Query from that date instead?</div>
+                <div className="mt-1">
+                  Use the suggested start date for each affected time series?
+                </div>
                 <div className="mt-3 max-h-36 overflow-auto text-xs">
                   {extentAdjustments.map((item) => (
                     <div key={item.tsid} className="flex flex-col gap-1 py-1">
-                      <span className="font-medium">{item.tsid}</span>
-                      <span>Starts {formatFriendlyDate(item.earliestDateTime)}</span>
+                      <span className="font-medium">
+                        {item.office ? `${item.office} / ` : ""}
+                        {item.tsid}
+                      </span>
+                      <span>
+                        Suggested start: {formatFriendlyDate(item.earliestDateTime)}
+                      </span>
                     </div>
                   ))}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
                     className="bg-amber-600 px-3 py-2 text-white"
-                    onClick={applyExtentStartDate}
+                    onClick={applyExtentSuggestedStartDates}
                   >
-                    Query from {formatFriendlyDate(adjustedExtentBeginDateTime)}
+                    Use Suggested Start Dates
                   </Button>
                 </div>
               </div>
@@ -839,13 +908,15 @@ export default function DataQuery() {
           </div>
           <TimeSeriesManager
             statusByTsid={statusByTsid}
+            tsidOffices={officesByTsid}
             tsids={tsids}
             visibleTSIDs={visibleTSIDs}
+            setTsidOffices={setTsidOffices}
             setTsids={setTsids}
             toggleTSID={toggleTSID}
           />
         </div>
-        <div className="overflow-auto max-w-[85vw]">
+        <div className="max-w-full overflow-auto">
           <div className="mt-4 flex flex-wrap items-start gap-2">
             <FailedTimeSeries
               failedTS={timeseriesData?.failed}
@@ -903,8 +974,7 @@ export default function DataQuery() {
             ) : (
               <Skeleton type="card" className="w-full h-[500px]" />
             )
-          ) : tsids.length > 0 &&
-            timeseriesData?.raw?.every((ts) => ts?.values?.length === 0) ? (
+          ) : visibleSeriesHaveNoData ? (
             <>
               <div className="text-center text-red-600 font-semibold mt-4">
                 No TimeSeries values found for the selected parameters, office, or date
@@ -919,7 +989,8 @@ export default function DataQuery() {
               begin={beginDateTime}
               end={endDateTime}
               office={office}
-              tsids={visibleTSIDs}
+              officesByTsid={officesByTsid}
+              tsids={visibleLoadedTsids}
               timeseriesData={timeseriesData}
               isLoading={timeseriesLoading}
               timeseriesParams={timeseriesParams}

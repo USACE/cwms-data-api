@@ -6,6 +6,7 @@ import PropTypes from "prop-types";
 
 export default function DataTabs({
   office,
+  officesByTsid = {},
   tsids,
   timeseriesData,
   isLoading,
@@ -16,6 +17,7 @@ export default function DataTabs({
 }) {
   if (!tsids || !tsids.length) return null;
   if (isLoading) return <Skeleton type="card" className="w-full h-[500px]" />;
+  const primaryOffice = officesByTsid[tsids[0]] || office;
 
   return (
     <Tabs
@@ -46,15 +48,13 @@ export default function DataTabs({
           content: (
             <CWMSPlot
               inputTSValues={timeseriesData?.raw}
-              timeSeries={tsids.map((tsid, index) => ({
-                id: tsid,
+              timeSeries={timeseriesParams.map((param, index) => ({
+                id: param.tsid,
                 traceOptions: {
-                  name: `${tsid.split(".").join(" ")}${
-                    timeseriesData?.tsids?.[index]?.units
-                      ? " (" + timeseriesData?.tsids?.[index]?.units + ")"
-                      : ""
+                  name: `${param.tsid.split(".").join(" ")}${
+                    param.units ? " (" + param.units + ")" : ""
                   }`,
-                  units: timeseriesData?.tsids?.[index]?.units,
+                  units: param.units,
                   yaxis: `y${index + 1}`,
                 },
               }))}
@@ -77,7 +77,7 @@ export default function DataTabs({
                 },
               }}
               unit="EN"
-              office={office}
+              office={primaryOffice}
               begin={begin.format("YYYY-MM-DDTHH:mm:ssZZ")}
               end={end.format("YYYY-MM-DDTHH:mm:ssZZ")}
             />
@@ -85,7 +85,7 @@ export default function DataTabs({
         },
         {
           name: "Metadata",
-          content: <MetaDataTab tsids={tsids} office={office} />,
+          content: <MetaDataTab tsids={tsids} office={primaryOffice} />,
         },
       ]}
     />
@@ -94,6 +94,7 @@ export default function DataTabs({
 
 DataTabs.propTypes = {
   office: PropTypes.string.isRequired,
+  officesByTsid: PropTypes.objectOf(PropTypes.string),
   tsids: PropTypes.array.isRequired,
   timeseriesData: PropTypes.object,
   isLoading: PropTypes.bool,

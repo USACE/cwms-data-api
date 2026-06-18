@@ -9,7 +9,7 @@ import {
 import useAliases from "../hooks/useAliases";
 import useDescriptors from "../hooks/useDescriptors";
 import PropTypes from "prop-types";
-import { FiHelpCircle } from "react-icons/fi";
+import { FiHelpCircle, FiX } from "react-icons/fi";
 import { useDebounce } from "use-debounce";
 
 function getOptions(values = []) {
@@ -59,6 +59,7 @@ export default function TimeSeriesBuilder({
   includeMissingTimeseries,
   office,
   setOffice,
+  setTsidOffices,
   setTsids,
 }) {
   const [locationKind, setLocationKind] = useState("");
@@ -67,7 +68,10 @@ export default function TimeSeriesBuilder({
   const aliases = useAliases({
     office: "",
     kind: locationKind,
-    props: { enabled: Boolean(locationKind) },
+    searchTerm: debouncedLocationSearchTerm,
+    props: {
+      enabled: Boolean(locationKind) && debouncedLocationSearchTerm.trim().length >= 2,
+    },
   });
 
   const [locationKey, setLocationKey] = useState("");
@@ -161,8 +165,18 @@ export default function TimeSeriesBuilder({
       .slice(0, 100);
   }, [debouncedLocationSearchTerm, locationOptions]);
   const selectedLocationOption = useMemo(
-    () => locationOptions.find((option) => option.value === locationKey) || null,
-    [locationKey, locationOptions],
+    () =>
+      locationOptions.find((option) => option.value === locationKey) ||
+      (selectedLocation
+        ? {
+            value: locationKey,
+            label: `${selectedLocation.office} / ${
+              selectedLocation.publicName || selectedLocation.name
+            }`,
+            location: selectedLocation,
+          }
+        : null),
+    [locationKey, locationOptions, selectedLocation],
   );
   const hasSelectedLocation = Boolean(location);
   const hasNoTimeseries =
@@ -238,9 +252,27 @@ export default function TimeSeriesBuilder({
         duration +
         "." +
         version;
+      const tsidOffice = selectedLocation?.office || office;
       setTsids((prev) => (prev.includes(fullTsid) ? prev : [...prev, fullTsid]));
+      if (tsidOffice) {
+        setTsidOffices?.((current) => ({
+          ...current,
+          [fullTsid]: tsidOffice,
+        }));
+      }
     }
-  }, [location, parameter, type, interval, duration, version, setTsids]);
+  }, [
+    location,
+    parameter,
+    type,
+    interval,
+    duration,
+    version,
+    office,
+    selectedLocation?.office,
+    setTsidOffices,
+    setTsids,
+  ]);
 
   const errors = [aliases.error, descriptors.error].filter(Boolean);
   const setDescriptorValue = (field, setter, value) => {
@@ -249,6 +281,12 @@ export default function TimeSeriesBuilder({
       ...current,
       [field]: value === "",
     }));
+  };
+  const clearLocationSelection = () => {
+    setLocationKey("");
+    setLocationSearchTerm("");
+    setSelectedLocation(null);
+    setOffice?.("");
   };
 
   if (errors.length > 0) {
@@ -292,6 +330,7 @@ export default function TimeSeriesBuilder({
         helpText={TSID_PART_HELP.Location}
         locationKind={locationKind}
         loading={aliases.isLoading}
+        onClear={clearLocationSelection}
         onChange={(option) => {
           const selected = option?.location;
           setSelectedLocation(selected || null);
@@ -418,6 +457,7 @@ function LocationCombobox({
   loading,
   locationKind,
   noOptionsMessage,
+  onClear,
   onChange,
   onSearchChange,
   options,
@@ -432,18 +472,31 @@ function LocationCombobox({
     <div className="flex min-w-[280px] flex-col">
       <LabelWithHelp helpText={helpText} label="Location" />
       <Combobox value={value} onChange={onChange} disabled={disabled}>
-        <ComboboxInput
-          className={`rounded border border-gray-300 px-3 py-1 ${
-            disabled ? "cursor-not-allowed bg-gray-100" : ""
-          }`}
-          displayValue={(option) => option?.label || searchTerm}
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder={
-            locationKind
-              ? "Search locations by name or ID"
-              : "Choose location kind first"
-          }
-        />
+        <div className="relative">
+          <ComboboxInput
+            className={`w-full rounded border border-gray-300 py-1 pl-3 pr-9 ${
+              disabled ? "cursor-not-allowed bg-gray-100" : ""
+            }`}
+            displayValue={(option) => option?.label || searchTerm}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder={
+              locationKind
+                ? "Search locations by name or ID"
+                : "Choose location kind first"
+            }
+          />
+          {(value || searchTerm) && !disabled && (
+            <button
+              type="button"
+              aria-label="Clear location"
+              title="Clear location"
+              className="absolute inset-y-0 right-1 my-auto inline-flex h-7 w-7 items-center justify-center rounded text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              onClick={onClear}
+            >
+              <FiX aria-hidden="true" size={16} />
+            </button>
+          )}
+        </div>
         <ComboboxOptions className="z-20 mt-1 max-h-72 overflow-auto rounded border border-slate-200 bg-white shadow-lg">
           {loading ? (
             <div className="p-2 text-sm italic text-slate-500">
@@ -488,6 +541,7 @@ LocationCombobox.propTypes = {
   loading: PropTypes.bool,
   locationKind: PropTypes.string.isRequired,
   noOptionsMessage: PropTypes.string,
+  onClear: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
   onSearchChange: PropTypes.func.isRequired,
   options: PropTypes.arrayOf(
@@ -572,5 +626,6 @@ TimeSeriesBuilder.propTypes = {
   includeMissingTimeseries: PropTypes.bool.isRequired,
   office: PropTypes.string.isRequired,
   setOffice: PropTypes.func,
+  setTsidOffices: PropTypes.func,
   setTsids: PropTypes.func.isRequired,
 };
