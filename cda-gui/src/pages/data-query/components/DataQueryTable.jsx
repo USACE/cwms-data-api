@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import dayjs from "dayjs";
 import PropTypes from "prop-types";
-import { buildTableRows } from "../utils/tableData";
+import { buildTableIndex, buildTableRowValues } from "../utils/tableData";
 
 function getDefaultMobileColumns(timeseriesParams) {
   return timeseriesParams.slice(0, 2).map((param) => param.tsid);
@@ -32,16 +33,18 @@ export default function DataQueryTable({
     setMobileColumns((current) => normalizeMobileColumns(current, timeseriesParams));
   }, [timeseriesParams]);
 
-  const rows = useMemo(
+  const tableIndex = useMemo(
     () =>
-      buildTableRows({
-        dateFormat,
-        missingString,
+      buildTableIndex({
         rawSeries,
         sortAscending,
         timeseriesParams,
       }),
-    [dateFormat, missingString, rawSeries, sortAscending, timeseriesParams],
+    [rawSeries, sortAscending, timeseriesParams],
+  );
+  const precisionByTsid = useMemo(
+    () => new Map(timeseriesParams.map((param) => [param.tsid, param.rounding ?? 2])),
+    [timeseriesParams],
   );
 
   const visibleMobileParams = useMemo(
@@ -61,7 +64,7 @@ export default function DataQueryTable({
   );
 
   const rowVirtualizer = useVirtualizer({
-    count: rows.length,
+    count: tableIndex.dates.length,
     estimateSize: () => 36,
     getScrollElement: () => parentRef.current,
     overscan: 12,
@@ -85,7 +88,7 @@ export default function DataQueryTable({
     return null;
   }
 
-  if (!rows.length) {
+  if (!tableIndex.dates.length) {
     return (
       <div className="rounded border border-slate-200 bg-white p-4 text-center text-sm text-slate-600">
         No table rows found for the selected time series.
@@ -144,10 +147,17 @@ export default function DataQueryTable({
             style={{ height: `${totalSize}px`, minWidth: desktopGridStyle.minWidth }}
           >
             {virtualRows.map((virtualRow) => {
-              const row = rows[virtualRow.index];
+              const date = tableIndex.dates[virtualRow.index];
+              const values = buildTableRowValues({
+                date,
+                missingString,
+                precisionByTsid,
+                seriesLookup: tableIndex.seriesLookup,
+                visibleTsids: tableIndex.visibleTsids,
+              });
               return (
                 <div
-                  key={row.date}
+                  key={date}
                   className="absolute left-0 grid w-full border-b border-slate-100 odd:bg-white even:bg-slate-50"
                   role="row"
                   style={{
@@ -160,9 +170,9 @@ export default function DataQueryTable({
                     className="px-3 py-2 font-mono text-xs text-slate-700"
                     role="cell"
                   >
-                    {row.formattedDate}
+                    {dayjs(date).format(dateFormat)}
                   </div>
-                  {row.values.map((value, index) => (
+                  {values.map((value, index) => (
                     <div
                       key={timeseriesParams[index].tsid}
                       className="px-3 py-2 text-right font-mono text-xs"
@@ -202,10 +212,17 @@ export default function DataQueryTable({
             style={{ height: `${totalSize}px`, minWidth: mobileGridStyle.minWidth }}
           >
             {virtualRows.map((virtualRow) => {
-              const row = rows[virtualRow.index];
+              const date = tableIndex.dates[virtualRow.index];
+              const values = buildTableRowValues({
+                date,
+                missingString,
+                precisionByTsid,
+                seriesLookup: tableIndex.seriesLookup,
+                visibleTsids: tableIndex.visibleTsids,
+              });
               return (
                 <div
-                  key={row.date}
+                  key={date}
                   className="absolute left-0 grid w-full border-b border-slate-100 odd:bg-white even:bg-slate-50"
                   role="row"
                   style={{
@@ -218,7 +235,7 @@ export default function DataQueryTable({
                     className="px-3 py-2 font-mono text-xs text-slate-700"
                     role="cell"
                   >
-                    {row.formattedDate}
+                    {dayjs(date).format(dateFormat)}
                   </div>
                   {visibleMobileIndexes.map((index) => (
                     <div
@@ -226,7 +243,7 @@ export default function DataQueryTable({
                       className="px-3 py-2 text-right font-mono text-xs"
                       role="cell"
                     >
-                      {row.values[index]}
+                      {values[index]}
                     </div>
                   ))}
                 </div>

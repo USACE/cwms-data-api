@@ -12,9 +12,7 @@ export function buildSeriesLookup(rawSeries = []) {
   );
 }
 
-export function buildTableRows({
-  dateFormat = "YYYY-MM-DD HH:mm:ss",
-  missingString = "",
+export function buildTableIndex({
   rawSeries = [],
   sortAscending = true,
   timeseriesParams = [],
@@ -28,20 +26,57 @@ export function buildTableRows({
     series?.values?.forEach((value) => dateSet.add(value[0]));
   });
 
-  const dates = [...dateSet].sort((a, b) => (sortAscending ? a - b : b - a));
+  return {
+    dates: [...dateSet].sort((a, b) => (sortAscending ? a - b : b - a)),
+    seriesLookup,
+    visibleTsids,
+  };
+}
+
+export function buildTableRowValues({
+  date,
+  missingString = "",
+  precisionByTsid = new Map(),
+  seriesLookup,
+  visibleTsids = [],
+}) {
+  return visibleTsids.map((tsid) => {
+    const rawValue = seriesLookup.get(tsid)?.valuesByDate.get(date)?.[1];
+    const precision = precisionByTsid.get(tsid) ?? 2;
+
+    if (rawValue === null || rawValue === undefined) return missingString;
+    const numericValue = Number(rawValue);
+    return Number.isFinite(numericValue)
+      ? numericValue.toFixed(precision)
+      : String(rawValue);
+  });
+}
+
+export function buildTableRows({
+  dateFormat = "YYYY-MM-DD HH:mm:ss",
+  missingString = "",
+  rawSeries = [],
+  sortAscending = true,
+  timeseriesParams = [],
+}) {
+  const { dates, seriesLookup, visibleTsids } = buildTableIndex({
+    rawSeries,
+    sortAscending,
+    timeseriesParams,
+  });
+  const precisionByTsid = new Map(
+    timeseriesParams.map((param) => [param.tsid, param.rounding ?? 2]),
+  );
+
   return dates.map((date) => ({
     date,
     formattedDate: dayjs(date).format(dateFormat),
-    values: visibleTsids.map((tsid) => {
-      const rawValue = seriesLookup.get(tsid)?.valuesByDate.get(date)?.[1];
-      const precision =
-        timeseriesParams.find((param) => param.tsid === tsid)?.rounding ?? 2;
-
-      if (rawValue === null || rawValue === undefined) return missingString;
-      const numericValue = Number(rawValue);
-      return Number.isFinite(numericValue)
-        ? numericValue.toFixed(precision)
-        : String(rawValue);
+    values: buildTableRowValues({
+      date,
+      missingString,
+      precisionByTsid,
+      seriesLookup,
+      visibleTsids,
     }),
   }));
 }

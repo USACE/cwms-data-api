@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 import { FiDownload, FiRefreshCw } from "react-icons/fi";
 import Controls from "./components/Controls";
 import { CatalogApi, Configuration, OfficesApi, TimeSeriesApi } from "cwmsjs";
-import { getPrecision, mergeTimeseries } from "../../utils/timeseries";
+import { getPrecision } from "../../utils/timeseries";
 import FailedTimeSeries from "./components/FailedTimeSeries";
 // import useConfigList from "./hooks/useConfigList";
 import TimeSeriesDropdown from "./components/TimeSeriesDropdown";
@@ -49,6 +49,25 @@ const INTERVAL_MINUTES = {
   month: 60 * 24 * 30,
   year: 60 * 24 * 365,
 };
+
+function summarizeTimeseries(timeseriesList) {
+  return timeseriesList.reduce(
+    (summary, series) => {
+      if (series?.values?.length) {
+        summary.tsids.push({
+          name: series.name,
+          office: series.office,
+          units: series.units,
+        });
+        summary.hasValues = true;
+      } else if (series?.name) {
+        summary.failed.push(series.name);
+      }
+      return summary;
+    },
+    { failed: [], hasValues: false, tsids: [] },
+  );
+}
 
 function parseInterval(interval) {
   if (!interval || interval === "0") return { amount: 1, unit: "hour" };
@@ -691,7 +710,7 @@ export default function DataQuery() {
       return data;
     },
     select: (data) => {
-      return { ...mergeTimeseries(data), raw: data };
+      return { ...summarizeTimeseries(data), raw: data };
     },
     enabled:
       validTsids &&
@@ -729,7 +748,7 @@ export default function DataQuery() {
     visibleRawSeries.every((series) => !series?.values?.length);
 
   const handleDownloadCSV = () => {
-    if (!timeseriesData || timeseriesData.dates.length === 0) {
+    if (!timeseriesData?.hasValues) {
       console.warn("No data to export");
       return;
     }
@@ -751,7 +770,7 @@ export default function DataQuery() {
     });
   };
   const handleDownloadJSON = () => {
-    if (!timeseriesData || timeseriesData.dates.length === 0) {
+    if (!timeseriesData?.hasValues) {
       console.warn("No data to export");
       return;
     }
