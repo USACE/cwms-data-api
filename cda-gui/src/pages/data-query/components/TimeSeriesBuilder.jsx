@@ -1,9 +1,16 @@
 import { useState, useEffect, useMemo } from "react";
 import { Badge, H4 } from "@usace/groundwork";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxOption,
+  ComboboxOptions,
+} from "@headlessui/react";
 import useAliases from "../hooks/useAliases";
 import useDescriptors from "../hooks/useDescriptors";
 import PropTypes from "prop-types";
 import { FiHelpCircle } from "react-icons/fi";
+import { useDebounce } from "use-debounce";
 
 function getOptions(values = []) {
   return values.map((value) => ({
@@ -55,8 +62,10 @@ export default function TimeSeriesBuilder({
   setTsids,
 }) {
   const [locationKind, setLocationKind] = useState("");
+  const [locationSearchTerm, setLocationSearchTerm] = useState("");
+  const [debouncedLocationSearchTerm] = useDebounce(locationSearchTerm, 350);
   const aliases = useAliases({
-    office,
+    office: "",
     kind: locationKind,
     props: { enabled: Boolean(locationKind) },
   });
@@ -118,6 +127,42 @@ export default function TimeSeriesBuilder({
   const versions = useMemo(
     () => getFilteredValues(descriptorEntries, selectedFilters, "version"),
     [descriptorEntries, selectedFilters],
+  );
+  const locationOptions = useMemo(
+    () =>
+      Object.keys(aliases.data || {}).map((key) => ({
+        value: key,
+        label: `${aliases.data[key].office} / ${
+          aliases.data[key].publicName || aliases.data[key].name
+        }`,
+        location: aliases.data[key],
+      })),
+    [aliases.data],
+  );
+  const filteredLocationOptions = useMemo(() => {
+    const search = debouncedLocationSearchTerm.trim().toLowerCase();
+    if (search.length < 2) return [];
+
+    return locationOptions
+      .filter((option) => {
+        const location = option.location;
+        const searchableText = [
+          option.label,
+          location.name,
+          location.office,
+          location.publicName,
+          JSON.stringify(location.aliases || []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return searchableText.includes(search);
+      })
+      .slice(0, 100);
+  }, [debouncedLocationSearchTerm, locationOptions]);
+  const selectedLocationOption = useMemo(
+    () => locationOptions.find((option) => option.value === locationKey) || null,
+    [locationKey, locationOptions],
   );
   const hasSelectedLocation = Boolean(location);
   const hasNoTimeseries =
@@ -227,6 +272,7 @@ export default function TimeSeriesBuilder({
         onChange={(value) => {
           setLocationKind(value);
           setLocationKey("");
+          setLocationSearchTerm("");
           setSelectedLocation(null);
           setOffice?.("");
         }}
@@ -241,30 +287,34 @@ export default function TimeSeriesBuilder({
         helpText={TSID_PART_HELP["Location Kind"]}
         loading={aliases.isLoading}
       />
-      <Dropdown
-        label="Location"
-        value={locationKey}
-        onChange={(value) => {
-          const selected = aliases.data?.[value];
+      <LocationCombobox
+        disabled={!locationKind}
+        helpText={TSID_PART_HELP.Location}
+        locationKind={locationKind}
+        loading={aliases.isLoading}
+        onChange={(option) => {
+          const selected = option?.location;
           setSelectedLocation(selected || null);
-          setLocationKey(value);
+          setLocationKey(option?.value || "");
+          setLocationSearchTerm(option?.label || "");
           setOffice?.(selected?.office || "");
         }}
-        options={Object.keys(aliases.data || {}).map((key) => ({
-          value: key,
-          label: office
-            ? aliases.data[key].publicName || aliases.data[key].name
-            : `${aliases.data[key].office} / ${
-                aliases.data[key].publicName || aliases.data[key].name
-              }`,
-        }))}
-        helpText={TSID_PART_HELP.Location}
-        loading={aliases.isLoading}
+        onSearchChange={(value) => {
+          setLocationSearchTerm(value);
+          if (selectedLocationOption && value !== selectedLocationOption.label) {
+            setSelectedLocation(null);
+            setLocationKey("");
+            setOffice?.("");
+          }
+        }}
         noOptionsMessage={
           locationKind
-            ? "No locations found for this office and kind."
+            ? "No locations found for this kind."
             : "Choose a location kind to load locations."
         }
+        options={filteredLocationOptions}
+        searchTerm={locationSearchTerm}
+        value={selectedLocationOption}
       />
       <Dropdown
         label="Parameter"
@@ -328,22 +378,11 @@ export default function TimeSeriesBuilder({
   );
 }
 
-function Dropdown({
-  label,
-  value,
-  onChange,
-  options,
-  disabled = false,
-  helpText,
-  loading = false,
-  noOptionsMessage,
-}) {
-  const hasOptions = options.length > 0;
+function LabelWithHelp({ helpText, label }) {
   const [helpOpen, setHelpOpen] = useState(false);
-  const showNoOptionsMessage = !loading && !disabled && !hasOptions;
 
   return (
-    <div className="flex flex-col min-w-[150px]">
+    <>
       <div className="mb-1 flex items-center gap-1">
         <label className="text-sm font-medium">{label}</label>
         {helpText && (
@@ -364,6 +403,126 @@ function Dropdown({
           {helpText}
         </div>
       )}
+    </>
+  );
+}
+
+LabelWithHelp.propTypes = {
+  helpText: PropTypes.string,
+  label: PropTypes.string.isRequired,
+};
+
+function LocationCombobox({
+  disabled,
+  helpText,
+  loading,
+  locationKind,
+  noOptionsMessage,
+  onChange,
+  onSearchChange,
+  options,
+  searchTerm,
+  value,
+}) {
+  const hasSearch = searchTerm.trim().length >= 2;
+  const showNoOptionsMessage =
+    !loading && (!locationKind || (hasSearch && !options.length));
+
+  return (
+    <div className="flex min-w-[280px] flex-col">
+      <LabelWithHelp helpText={helpText} label="Location" />
+      <Combobox value={value} onChange={onChange} disabled={disabled}>
+        <ComboboxInput
+          className={`rounded border border-gray-300 px-3 py-1 ${
+            disabled ? "cursor-not-allowed bg-gray-100" : ""
+          }`}
+          displayValue={(option) => option?.label || searchTerm}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder={
+            locationKind
+              ? "Search locations by name or ID"
+              : "Choose location kind first"
+          }
+        />
+        <ComboboxOptions className="z-20 mt-1 max-h-72 overflow-auto rounded border border-slate-200 bg-white shadow-lg">
+          {loading ? (
+            <div className="p-2 text-sm italic text-slate-500">
+              Searching locations...
+            </div>
+          ) : hasSearch && options.length ? (
+            options.map((option) => (
+              <ComboboxOption key={option.value} value={option}>
+                {({ active }) => (
+                  <div
+                    className={`cursor-pointer px-3 py-2 text-sm ${
+                      active ? "bg-blue-100" : ""
+                    }`}
+                  >
+                    <div className="font-medium">{option.label}</div>
+                    <div className="text-xs text-slate-500">
+                      {option.location.office} / {option.location.name}
+                    </div>
+                  </div>
+                )}
+              </ComboboxOption>
+            ))
+          ) : hasSearch ? (
+            <div className="p-2 text-sm text-slate-500">No locations found.</div>
+          ) : (
+            <div className="p-2 text-sm text-slate-500">
+              Type at least 2 characters to search.
+            </div>
+          )}
+        </ComboboxOptions>
+      </Combobox>
+      {showNoOptionsMessage && noOptionsMessage && (
+        <span className="mt-1 text-xs text-slate-500">{noOptionsMessage}</span>
+      )}
+    </div>
+  );
+}
+
+LocationCombobox.propTypes = {
+  disabled: PropTypes.bool,
+  helpText: PropTypes.string,
+  loading: PropTypes.bool,
+  locationKind: PropTypes.string.isRequired,
+  noOptionsMessage: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  onSearchChange: PropTypes.func.isRequired,
+  options: PropTypes.arrayOf(
+    PropTypes.shape({
+      label: PropTypes.string.isRequired,
+      location: PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        office: PropTypes.string.isRequired,
+      }).isRequired,
+      value: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
+  searchTerm: PropTypes.string.isRequired,
+  value: PropTypes.shape({
+    label: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
+  }),
+};
+
+function Dropdown({
+  label,
+  value,
+  onChange,
+  options,
+  disabled = false,
+  helpText,
+  loading = false,
+  noOptionsMessage,
+}) {
+  const hasOptions = options.length > 0;
+  const showNoOptionsMessage = !loading && !disabled && !hasOptions;
+
+  return (
+    <div className="flex flex-col min-w-[150px]">
+      <LabelWithHelp helpText={helpText} label={label} />
       <select
         disabled={disabled || loading || !hasOptions}
         className={`px-3 py-1 rounded border border-gray-300 ${

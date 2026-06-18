@@ -799,7 +799,7 @@ export default function DataQuery() {
             ) : (
               <TimeSeriesBuilder
                 includeMissingTimeseries={includeMissingTimeseries}
-                office=""
+                office={office}
                 setOffice={setOffice}
                 setTsids={setTsids}
                 tsids={tsids}
