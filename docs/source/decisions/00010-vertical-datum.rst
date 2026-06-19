@@ -12,7 +12,7 @@ This ADR defines the policy for handling vertical datums in the CWMS Data API, s
 Context
 =======
 
-When storing vertical datum information, specifically for "NATIVE" datums, there's a need to support custom or non-standard datums. 
+When storing vertical datum information there's a need to support custom or non-standard datums.
 
 In the database ``AT_VERTICAL_DATUM_OFFSET`` table, vertical datums are constrained to ``NGVD29``, ``NAVD88``, ``LOCAL``, and ``STAGE`` (though ``STAGE`` is never used).
 Conversely, the ``VERTICAL_DATUM`` field in the ``AT_PHYSICAL_LOCATION`` table is unconstrained and can contain any text.
