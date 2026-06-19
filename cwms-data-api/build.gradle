@@ -276,6 +276,21 @@ task run(type: JavaExec) {
     //jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms"
 }
 
+tasks.register('seedDevApiKeys', JavaExec) {
+    group "application"
+    description = "Create development API keys for local **HECTEST users and print the plaintext keys."
+    dependsOn testClasses
+
+    classpath = sourceSets.test.runtimeClasspath
+    classpath += configurations.baseLibs
+    classpath += configurations.tomcatLibs
+
+    mainClass = "fixtures.SeedDevApiKeys"
+
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+//    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+}
+
 task integrationTests(type: Test) {
 //    dependsOn test
     dependsOn generateConfig
