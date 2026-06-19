@@ -10,7 +10,7 @@ _CWMS Data API (CDA) client library created with OpenAPI generator in TypeScript
 
 - Import the API endpoint you wish to use:
   - Available endpoints are listed in the generated TypeDoc output. API classes use names like `TimeSeriesApi`.
-  - At the top of your js/jsx/file type:
+  - At the top of your js/jsx file:
     ```javascript
     import { TimeSeriesApi } from "cwmsjs";
     ```
@@ -32,6 +32,16 @@ _CWMS Data API (CDA) client library created with OpenAPI generator in TypeScript
         console.log("My Error", e);
       });
     ```
+
+- Use CWMSjs from plain HTML with the generated browser bundle:
+    ```html
+    <script src="https://cdn.jsdelivr.net/npm/cwmsjs@<version>/dist/cwmsjs.min.js"></script>
+    <script>
+      const tsApi = new cwmsjs.TimeSeriesApi();
+    </script>
+    ```
+
+The npm package supports both bundler/module usage and plain HTML usage. Bundlers should import from `cwmsjs`; the CDN/browser bundle exposes the same APIs on the global `cwmsjs` object.
 
 Documentation is generated during the Gradle build for both developers and new users:
 

@@ -101,11 +101,11 @@ fs.readFile(templatePath, "utf8", (err, template) => {
 <hr />
 <h2>Bundle / Vanilla JS Example</h2>
 <b>To Install:</b><br>
-<p>Build the client with <code class="language-shell">./gradlew :clients:typescript:build</code>, then copy <code>clients/typescript/cwmsjs/dist/bundle.js</code> into your web directory.</p>
+<p>Use the published browser bundle from npm via jsDelivr, or download the same bundle from the matching GitHub release once release assets are enabled.</p>
 <pre>
 <code class="language-html">` +
-                escapeHtml(`<!-- Include the bundle.js file -->
-<script src="./bundle.js"></script>
+                escapeHtml(`<!-- Pin this to the cwmsjs version paired with your CDA release -->
+<script src="https://cdn.jsdelivr.net/npm/cwmsjs@${packageVersion}/dist/cwmsjs.min.js"></script>
 <!-- Call the cwmsjs after the bundle has loaded -->
 <script type="module">
 ${formattedBlock.replaceAll("new ", "new cwmsjs.")}\n</script>`) +
