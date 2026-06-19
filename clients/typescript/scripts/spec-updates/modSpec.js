@@ -97,6 +97,38 @@ function normalizeOperationIds(spec) {
   }
 }
 
+function renameSchema(spec, fromName, toName) {
+  const schemas = spec.components?.schemas;
+  if (!schemas?.[fromName]) {
+    return;
+  }
+
+  schemas[toName] = schemas[fromName];
+  delete schemas[fromName];
+
+  const fromRef = `#/components/schemas/${fromName}`;
+  const toRef = `#/components/schemas/${toName}`;
+
+  function replaceRefs(value) {
+    if (Array.isArray(value)) {
+      value.forEach(replaceRefs);
+      return;
+    }
+
+    if (value && typeof value === "object") {
+      for (const [key, childValue] of Object.entries(value)) {
+        if (key === "$ref" && childValue === fromRef) {
+          value[key] = toRef;
+        } else {
+          replaceRefs(childValue);
+        }
+      }
+    }
+  }
+
+  replaceRefs(spec);
+}
+
 function main() {
   const rawSpec = readJson("cwms-swagger-raw.json");
   const rootPackage = readJson("package.json");
@@ -124,6 +156,8 @@ function main() {
     spec.paths["/cwms-data/offices"].get.responses["200"].content[""] =
       spec.paths["/cwms-data/offices"].get.responses["200"].content["application/json"];
   }
+
+  renameSchema(spec, "Blob", "CwmsBlob");
 
   const cleaned = removeUniqueItems(spec);
   const normalized = normalizeStrings(cleaned);

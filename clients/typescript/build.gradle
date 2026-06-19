@@ -37,14 +37,18 @@ tasks.register('cleanGeneration', Delete) {
 
 clean.dependsOn cleanGeneration
 
-tasks.register('copyOpenApiSpec', Copy) {
+tasks.register('copyOpenApiSpec') {
     group 'openapi'
     description 'Copy the locally generated CDA OpenAPI spec into the TypeScript client workspace.'
     dependsOn ':cwms-data-api:executeOpenAPIConversion'
-    from "$rootDir/cwms-data-api/build/openapi.json"
-    into projectDir
-    rename { 'cwms-swagger-raw.json' }
     outputs.file rawSpecFile
+    doLast {
+        copy {
+            from "$rootDir/cwms-data-api/build/openapi.json"
+            into projectDir
+            rename { 'cwms-swagger-raw.json' }
+        }
+    }
 }
 
 tasks.register('modSpec', NpxTask) {
