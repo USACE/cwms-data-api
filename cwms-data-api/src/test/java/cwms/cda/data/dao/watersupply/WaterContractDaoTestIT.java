@@ -88,6 +88,9 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             try {
                 projectDao.create(testProject, true);
                 dao.storeLocation(testLocation, false);
+                dao.storeLocation(pumpInLoc, false);
+                dao.storeLocation(pumpOutLoc, false);
+                dao.storeLocation(pumpOutBelowLoc, false);
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
                         buildTestWaterContract("Test", false).getContractType());
             } catch (IOException e) {
