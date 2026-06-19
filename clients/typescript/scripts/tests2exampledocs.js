@@ -86,6 +86,7 @@ fs.readFile(templatePath, "utf8", (err, template) => {
           // Replace placeholder in template
           const filledTemplate = template
             .replaceAll("${docName}", docFullName)
+            .replaceAll("${docFileName}", docName.replaceAll("-", ""))
             .replaceAll("${packageVersion}", packageVersion)
             .replaceAll(
               "${pageBody}",
@@ -100,14 +101,7 @@ fs.readFile(templatePath, "utf8", (err, template) => {
 <hr />
 <h2>Bundle / Vanilla JS Example</h2>
 <b>To Install:</b><br>
-<p>
-<ol>
-<li>Run <br>
-<code class="language-shell">curl -O "https://raw.githubusercontent.com/HydrologicEngineeringCenter/cwms-data-api-client-javascript/main/src/dist/bundle.js"</code><br> 
-to download bundle.js to your system</li>
-<li>Copy bundle.js to your web directory if not in that directory already</li>
-</o>
-</p>
+<p>Build the client with <code class="language-shell">./gradlew :clients:typescript:build</code>, then copy <code>clients/typescript/cwmsjs/dist/bundle.js</code> into your web directory.</p>
 <pre>
 <code class="language-html">` +
                 escapeHtml(`<!-- Include the bundle.js file -->
@@ -133,7 +127,8 @@ ${formattedBlock.replaceAll("new ", "new cwmsjs.")}\n</script>`) +
       }
     });
   });
-  const exampleLinks =
+  function buildExampleLinks(prefix) {
+    return (
     "<ul>" +
     all_files
       .map((filePath) => {
@@ -141,10 +136,12 @@ ${formattedBlock.replaceAll("new ", "new cwmsjs.")}\n</script>`) +
           .basename(filePath)
           .replace(".test.js", "")
           .replaceAll("-", " ");
-        return `<li><a href="/cwms-data-api-client-javascript/examples/${docName.replaceAll(" ", "")}.html">${docName.replace(".v", " - Version ")}</a></li>`;
+        return `<li><a href="${prefix}${docName.replaceAll(" ", "")}.html">${docName.replace(".v", " - Version ")}</a></li>`;
       })
       .join("") +
-    "</ul>";
+    "</ul>"
+    );
+  }
 
   // Write the index file for all
   const indexOutputPath = path.join(outputDirectory, `index.html`);
@@ -153,12 +150,13 @@ ${formattedBlock.replaceAll("new ", "new cwmsjs.")}\n</script>`) +
     .replaceAll("Example:", "")
     // .replaceAll(":", "")
     .replaceAll("${docName}", "Home")
+    .replaceAll("${docFileName}", "index")
     .replaceAll("${packageVersion}", packageVersion)
     .replaceAll("    ", "")
     .replaceAll(
       "${pageBody}",
       `
-            ${exampleLinks}
+            ${buildExampleLinks("")}
         `
     );
   fs.writeFile(indexOutputPath, filledTemplate, (err) => {
@@ -176,8 +174,8 @@ ${formattedBlock.replaceAll("new ", "new cwmsjs.")}\n</script>`) +
       const updatedContent = content.replace(
         "</h3>",
         `</h3>
-             <h3 class="tsd-index-heading"><a href="/cwms-data-api-client-javascript/examples/">Examples Home</a></h3>
-             ${exampleLinks}
+             <h3 class="tsd-index-heading"><a href="examples/">Examples Home</a></h3>
+             ${buildExampleLinks("examples/")}
             `
       );
       fs.writeFile(modulesPath, updatedContent, (err) => {
@@ -193,8 +191,8 @@ ${formattedBlock.replaceAll("new ", "new cwmsjs.")}\n</script>`) +
       const updatedContent = content.replace(
         "</h2>",
         `</h2>
-             <p><a href="/cwms-data-api-client-javascript/examples/">Examples Home</a></p>
-             ${exampleLinks}
+             <p><a href="examples/">Examples Home</a></p>
+             ${buildExampleLinks("examples/")}
             `
       );
       fs.writeFile(indexPath, updatedContent, (err) => {

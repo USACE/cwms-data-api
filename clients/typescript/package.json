@@ -5,7 +5,8 @@
   "author": "USACE,HEC,CWMS,OpenApi Contributors",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/HydrologicEngineeringCenter/cwms-data-api-client-javascript"
+    "url": "git+https://github.com/USACE/cwms-data-api.git",
+    "directory": "clients/typescript"
   },
   "keywords": [
     "fetch",

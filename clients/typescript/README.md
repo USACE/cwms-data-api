@@ -4,19 +4,19 @@ _CWMS Data API (CDA) client library created with OpenAPI generator in TypeScript
 
 ## Getting Started
 
-- Install CWMSjs to your react project with:  
+- Install CWMSjs to your React project with:
    `npm install cwmsjs`  
    (This will grab the latest)
 
 - Import the API endpoint you wish to use:
-  - Avaiable endpoints are here (Classes ending in API): [Endpoints](https://hydrologicengineeringcenter.github.io/cwms-data-api-client-javascript/modules.html)
+  - Available endpoints are listed in the generated TypeDoc output. API classes use names like `TimeSeriesApi`.
   - At the top of your js/jsx/file type:
     ```javascript
-    import { TimeSeriesAPI } from "cwmsjs";
+    import { TimeSeriesApi } from "cwmsjs";
     ```
-  - Then initialize the TimeSeriesAPI with:
+  - Then initialize the `TimeSeriesApi` with:
     ```javascript
-    const ts_api = new TimeSeriesAPI();
+    const ts_api = new TimeSeriesApi();
     ```
   - Fetch time series data with:
     ```javascript
@@ -33,10 +33,10 @@ _CWMS Data API (CDA) client library created with OpenAPI generator in TypeScript
       });
     ```
 
-Documentation is available for both developers and new users:
+Documentation is generated during the Gradle build for both developers and new users:
 
-- New Users : [Examples](https://hydrologicengineeringcenter.github.io/cwms-data-api-client-javascript/examples/)
-- Advanced users : [Type Documentation / Developer Docs](https://hydrologicengineeringcenter.github.io/cwms-data-api-client-javascript/)
+- New Users: generated examples in `clients/typescript/cwmsjs/docs/examples/`
+- Advanced users: generated TypeDoc output in `clients/typescript/cwmsjs/docs/`
 
 ## API Adjustments
 
@@ -54,8 +54,8 @@ Throughout CDA, "time series" is arbitrarily referred to in both a one-word ("ti
 
 ### Versioning
 
-In order to accommodate changes both to the generator and to CDA itself, cwmsjs is versioned in the following format:
-`[generator SemVer]-[CDA schema version]`
+In order to accommodate changes both to the generator and to CDA itself, cwmsjs combines the client generator SemVer with the CDA version suffix:
+`[cwmsjs generator SemVer]-[CDA version/calver suffix]`
 
 The Gradle build passes the CDA project version into the client package step. When running the package update script directly, set `CDA_CLIENT_VERSION_SUFFIX` or pass `--version-suffix=<version>`.
 

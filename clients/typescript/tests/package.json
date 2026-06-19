@@ -3,7 +3,8 @@
     "description": "CWMSjs unit tests for all endpoints",
     "repository": {
         "type": "git",
-        "url": "https://github.com/HydrologicEngineeringCenter/cwms-data-api-client-javascript"
+        "url": "https://github.com/USACE/cwms-data-api",
+        "directory": "clients/typescript/tests"
     },
     "license": "MIT License",
     "main": "./index.js",
