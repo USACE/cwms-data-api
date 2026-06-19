@@ -30,6 +30,8 @@ import org.jooq.Record4;
 import org.jooq.SelectConditionStep;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
+
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static org.jooq.impl.DSL.inline;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +48,6 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<String> STREAM_LOC_IDS = new ArrayList<>();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
-    public static final int MINIMUM_SCHEMA = 999999;
 
     @BeforeAll
     public static void setup() {
@@ -144,7 +145,7 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void testRoundTripStore() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();

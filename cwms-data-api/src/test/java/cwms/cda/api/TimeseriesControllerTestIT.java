@@ -16,6 +16,7 @@ import static cwms.cda.api.Controllers.TRIM;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static helpers.FloatCloseTo.floatCloseTo;
 import static io.restassured.RestAssured.given;
 import static io.restassured.config.JsonConfig.jsonConfig;
@@ -70,7 +71,6 @@ import java.util.List;
 
 @Tag("integration")
 final class TimeseriesControllerTestIT extends DataApiTestIT {
-    public static final int MINIMUM_SCHEMA = 999999;
 
     @Test
     void test_lrl_timeseries_psuedo_reg1hour() throws Exception {
@@ -138,7 +138,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_local_regular_new_LRTS_ID() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -477,7 +477,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_lrl_1day_max_version_with_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -804,7 +804,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_include_data_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -994,7 +994,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_attempt_store_with_entry_date() throws Exception
     {
         ObjectMapper mapper = new ObjectMapper();
@@ -1420,7 +1420,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_lrl_trim_with_data_entry_date() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -1708,28 +1708,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .body("values[1][1]",closeTo(1724.4,0.1))
             .body("values[0][1]",closeTo(1724.4,0.1))
         ;
-    }
-
-    private static void deleteLocation(String location, String officeId) throws SQLException {
-        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
-        db.connection(c-> {
-            try(PreparedStatement stmt = c.prepareStatement("declare\n"
-                    + "    p_location varchar2(64) := ?;\n"
-                    + "    p_office varchar2(10) := ?;\n"
-                    + "begin\n"
-                    + "cwms_loc.delete_location(\n"
-                    + "        p_location_id   => p_location,\n"
-                    + "        p_delete_action => cwms_util.delete_all,\n"
-                    + "        p_db_office_id  => p_office);\n"
-                    + "end;")) {
-                stmt.setString(1, location);
-                stmt.setString(2, officeId);
-                stmt.execute();
-
-            } catch (SQLException ex) {
-                throw new RuntimeException("Unable to delete location",ex);
-            }
-        }, "cwms_20");
     }
 
     @ParameterizedTest

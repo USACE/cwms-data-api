@@ -27,24 +27,29 @@
       <tr>
         <th>CWMS Database Schema target</th>
         <th>Status</th>
+        <th>Coverage</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>Latest</td>
-        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg">
+        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg"></td>
+        <td><img alt="Latest Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest-coverage.svg"></td>
       </tr>
       <tr>
         <td>Current Release</td>
-        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg">
+        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg"></td>
+        <td><img alt="Current Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Next Release</td>
-        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg">
+        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg"></td>
+        <td><img alt="Next Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Previous Release - NOTE: Not applicable yet</td>
-        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg">
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg"></td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous-coverage.svg"></td>
       </tr>
     </tbody>
   </table>
@@ -77,6 +82,17 @@ To build the war:
      ./gradlew build
 
 This will compile the jar and run the basic unit tests.
+
+To run the OWASP dependency vulnerability scan:
+
+     ./gradlew dependencyCheckAggregate
+
+For faster scans, add a free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) to your
+user gradle properties file (`~/.gradle/gradle.properties`):
+
+     nvdApiKey=<your-key>
+
+The report is written to `build/reports/dependency-check-report.html`.
 
 ## Development stack
 
@@ -139,3 +155,9 @@ However it MUST be explicit on each request.
 
 If expanding the functionality of the Base class, do not depend on the SQL wrappers. Either use direct JDBC, or [JDBI3](https://jdbi.org/)
 This is to isolate specific possible errors with various APIs and reduces points of failure in initial setup for traceability.
+
+
+
+# Releasing and Deploying new versios
+
+See (Release and Deployments)[RELEASE_DEPLOY.md] for information about how releases are created and what the different naming means.

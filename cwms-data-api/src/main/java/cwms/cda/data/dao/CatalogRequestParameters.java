@@ -24,6 +24,7 @@ public class CatalogRequestParameters {
     private final boolean includeAliases;
     private final boolean filterBaseLocations;
     private final boolean negateLocationKindLike;
+    private final String searchText;
 
     private CatalogRequestParameters(Builder builder) {
         this.office = builder.office;
@@ -42,6 +43,7 @@ public class CatalogRequestParameters {
         this.includeAliases = builder.includeAliases;
         this.filterBaseLocations = builder.filterBaseLocations;
         this.negateLocationKindLike = builder.negateLocationKindLike;
+        this.searchText = builder.searchText;
     }
 
     public String getBoundingOfficeLike() {
@@ -108,6 +110,10 @@ public class CatalogRequestParameters {
         return negateLocationKindLike;
     }
 
+    public String getSearchText() {
+        return searchText;
+    }
+
     public static class Builder {
         String office;
         String idLike;
@@ -125,6 +131,7 @@ public class CatalogRequestParameters {
         private boolean includeAliases = false;
         private boolean filterBaseLocations = false;
         private boolean negateLocationKindLike = false;
+        private String searchText;
 
         public Builder() {
 
@@ -210,6 +217,11 @@ public class CatalogRequestParameters {
             return this;
         }
 
+        public Builder withSearchText(String searchText) {
+            this.searchText = searchText;
+            return this;
+        }
+
         public static Builder from(CatalogRequestParameters params) {
             // This NEEDS to include every field in the CatalogRequestParameters
             return new Builder()
@@ -228,6 +240,7 @@ public class CatalogRequestParameters {
                     .withLocationType(params.locationType)
                     .withFilterBaseLocations(params.filterBaseLocations)
                     .withNegateLocationKindLike(params.negateLocationKindLike)
+                    .withSearchText(params.searchText)
                     ;
         }
 

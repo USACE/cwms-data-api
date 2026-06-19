@@ -267,6 +267,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-DwarContext=/" + context
+    jvmArgs += "-Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true"
     jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
     // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
@@ -415,3 +416,29 @@ tasks.register('shadeCodegenLatest', com.github.jengelman.gradle.plugins.shadow.
     relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_latest'
 }
 tasks.compileJava.dependsOn(tasks.shadeCodegenLatest)
+
+
+
+tasks.register("codeCoverageReport", JacocoReport) { jr ->
+    tasks.matching({t -> t.extensions.findByType(JacocoTaskExtension)}).each { testTask ->
+        if(testTask.extensions.getByType(JacocoTaskExtension).isEnabled()) {
+            System.out.print(testTask.getName())
+            //jr.sourceSets subproject.sourceSets.main
+            //jr.sourceDirectories.setFrom(subproject.sourceSets.main.allSource.srcDirs)
+            //jr.classDirectories.setFrom(subproject.sourceSets.main.output)
+            jr.executionData(testTask)
+        }
+    }
+
+
+    // enable the different report types (html, xml, csv)
+    reports {
+        xml.required = true
+        html.required = true
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco-composite.xml')
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtmlComposite')
+    }
+
+    jr.sourceDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/src/**/main/java/**", exclude: "build/**/codeCoverageReport.xml"))
+    jr.classDirectories.setFrom(fileTree(dir: "${rootDir}", include: "**/build/**/classes/**"))
+}
