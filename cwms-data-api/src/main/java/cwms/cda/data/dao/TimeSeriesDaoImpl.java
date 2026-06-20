@@ -119,6 +119,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final String VALUE_AT_MAX_DATE = "value_at_max_date";
     private static final String CWMS_20 = "CWMS_20";
     private static final String UNIT_ID = "UNIT_ID";
+    private static final DateTimeFormatter ORACLE_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
@@ -765,6 +767,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String[] tsIdParts = splitTimeSeriesId(tsId);
         String metadataOfficeId = metadata.officeId;
         String metadataUnits = metadata.units;
+        String nativeUnits = metadata.nativeUnits;
         String locPart = getTimeSeriesIdPart(tsIdParts, 0);
         String parmPart = getTimeSeriesIdPart(tsIdParts, 1);
         String intervalPart = getTimeSeriesIdPart(tsIdParts, 3);
@@ -777,6 +780,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (shouldFetchVerticalDatum(parmPart)) {
             verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, requestedUnits, office);
         }
+        validateRequestedUnits(nativeUnits, requestedUnits);
 
         VersionType finalDateVersionType = getDirectReadVersionType(
                 metadata.versionFlag, versionDate != null);
@@ -870,6 +874,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 valid.field("tsid", String.class).as("tsid"),
                                 valid.field("office_id", String.class).as("office_id"),
                                 valid.field("units", String.class).as("units"),
+                                tsIdView.UNIT_ID.as("native_units"),
                                 valid.field("interval", BigDecimal.class).as("interval"),
                                 tsIdView.INTERVAL_UTC_OFFSET.as("interval_utc_offset"),
                                 tsIdView.TIME_ZONE_ID.as("time_zone_id"),
@@ -886,6 +891,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 record.getValue("tsid", String.class),
                 record.getValue("office_id", String.class),
                 record.getValue("units", String.class),
+                record.getValue("native_units", String.class),
                 record.getValue("interval", BigDecimal.class) == null
                         ? 0L
                         : record.getValue("interval", BigDecimal.class).longValue(),
@@ -921,8 +927,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         ZonedDateTime versionDate = requestParameters.getVersionDate();
         Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
         Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
-        String beginTimestampText = beginTimestamp.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        String endTimestampText = endTimestamp.toLocalDateTime().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        String beginTimestampText = beginTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
+        String endTimestampText = endTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
 
         AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
         Field<Timestamp> dateTimeField = field(name("CWMS_20", "AV_TSV_DQU", DATE_TIME), Timestamp.class);
@@ -988,7 +994,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             ZonedDateTime versionDate,
             boolean includeEntryDate) {
         String versionTimestampText = Timestamp.from(versionDate.toInstant()).toLocalDateTime()
-                .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                .format(ORACLE_DATE_FORMATTER);
         Field<Timestamp> dataEntryDateField = includeEntryDate
                 ? view.DATA_ENTRY_DATE
                 : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE);
@@ -1038,6 +1044,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .from(rankedRows)
                 .where(versionRankCol.eq(1))
                 .orderBy(dateTimeCol.asc());
+    }
+
+    private void validateRequestedUnits(String nativeUnits, String requestedUnits) {
+        if (nativeUnits != null && requestedUnits != null) {
+            CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), 0.0D, nativeUnits, requestedUnits);
+        }
     }
 
     private List<Timestamp> fetchExpectedRegularTimes(long intervalMinutes, long intervalOffset, String timeZoneId,
@@ -2511,18 +2523,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         private final String tsId;
         private final String officeId;
         private final String units;
+        private final String nativeUnits;
         private final long intervalMinutes;
         private final long intervalUtcOffset;
         private final String timeZoneId;
         private final String versionFlag;
 
-        private DirectReadMetadata(long tsCode, String tsId, String officeId, String units,
+        private DirectReadMetadata(long tsCode, String tsId, String officeId, String units, String nativeUnits,
                                    long intervalMinutes, long intervalUtcOffset,
                                    String timeZoneId, String versionFlag) {
             this.tsCode = tsCode;
             this.tsId = tsId;
             this.officeId = officeId;
             this.units = units;
+            this.nativeUnits = nativeUnits;
             this.intervalMinutes = intervalMinutes;
             this.intervalUtcOffset = intervalUtcOffset;
             this.timeZoneId = timeZoneId;
