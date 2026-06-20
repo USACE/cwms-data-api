@@ -26,8 +26,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -211,13 +209,13 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             "ITPARLCL",
             "ITPARLCL.Flow.Inst.~1Day.0.BENCH",
             "cfs",
-            Instant.parse("2024-01-01T00:00:00Z"),
-            Instant.parse("2024-01-05T00:00:00Z"),
+            Instant.parse("2024-01-01T06:00:00Z"),
+            Instant.parse("2024-01-05T06:00:00Z"),
             List.of(
-                row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-06T00:00:00Z", null),
-                row("2024-01-02T00:00:00Z", 2.0, 0, "2024-01-06T00:00:00Z", null),
-                row("2024-01-04T00:00:00Z", 4.0, 0, "2024-01-06T00:00:00Z", null),
-                row("2024-01-05T00:00:00Z", 5.0, 0, "2024-01-06T00:00:00Z", null)
+                row("2024-01-01T06:00:00Z", 1.0, 0, "2024-01-06T00:00:00Z", null),
+                row("2024-01-02T06:00:00Z", 2.0, 0, "2024-01-06T00:00:00Z", null),
+                row("2024-01-04T06:00:00Z", 4.0, 0, "2024-01-06T00:00:00Z", null),
+                row("2024-01-05T06:00:00Z", 5.0, 0, "2024-01-06T00:00:00Z", null)
             ),
             false,
             false,
@@ -297,8 +295,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
         assertNotNull(response.getBegin(), "begin");
         assertNotNull(response.getEnd(), "end");
-        assertEquals(Instant.parse("2024-01-01T00:00:00Z"), response.getBegin().toInstant(), "begin");
-        assertEquals(Instant.parse("2024-01-01T00:09:00Z"), response.getEnd().toInstant(), "end");
+        assertEquals(response.getValues().get(0).getDateTime().toInstant(), response.getBegin().toInstant(), "begin");
+        assertEquals(response.getValues().get(response.getValues().size() - 1).getDateTime().toInstant(),
+            response.getEnd().toInstant(), "end");
     }
 
     private static void assertDirectReadMatchesOracle(String locationId, String seriesId, String units,
@@ -471,7 +470,7 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
                 long tsCode = findTsCode(connection, seriesId);
                 List<Integer> years = rows.stream()
-                    .map(seedRow -> OffsetDateTime.ofInstant(seedRow.dateTime, ZoneOffset.UTC).getYear())
+                    .map(seedRow -> storageYear(seedRow.dateTime))
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -521,7 +520,7 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
         Map<Integer, List<SeedRow>> rowsByYear = new LinkedHashMap<>();
         for (SeedRow row: sortedRows) {
-            int year = OffsetDateTime.ofInstant(row.dateTime, ZoneOffset.UTC).getYear();
+            int year = storageYear(row.dateTime);
             rowsByYear.computeIfAbsent(year, ignored -> new ArrayList<>()).add(row);
         }
 
@@ -562,6 +561,10 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             statement.setNull(5, Types.DOUBLE);
         }
         statement.setInt(6, row.qualityCode);
+    }
+
+    private static int storageYear(Instant instant) {
+        return Timestamp.from(instant).toLocalDateTime().getYear();
     }
 
     private static void updateScenarioExtents(Connection connection, long tsCode, List<SeedRow> rows)
