@@ -79,10 +79,21 @@ function getKeycloakConfig(spec) {
   };
 }
 
+function isExternalOpenIdOnLocalhost(keycloakConfig) {
+  return (
+    keycloakConfig?.flow === "authorization-code-pkce" &&
+    isLoopbackHost(window.location.hostname)
+  );
+}
+
 export default function SwaggerUI() {
   const [authStatus, setAuthStatus] = useState("checking");
   const [customAuthType, setCustomAuthType] = useState(null);
+  const [authUiMode, setAuthUiMode] = useState("hidden");
   const [isOpenIdAuthReady, setIsOpenIdAuthReady] = useState(false);
+  const [isLocalOpenIdAuth, setIsLocalOpenIdAuth] = useState(false);
+  const [authError, setAuthError] = useState(null);
+  const [swaggerError, setSwaggerError] = useState(null);
   const autoLoginAttemptedRef = useRef(false);
   const openIdAuthMethodRef = useRef(null);
   const openIdAuthConfigSignatureRef = useRef(null);
@@ -100,7 +111,21 @@ export default function SwaggerUI() {
       : customAuthType === "openid"
         ? openIdAuthMethod
         : null;
-  const authLabel = customAuthType === "cwms" ? "CWMS Login" : "CWBI Login";
+  const authLabel = authUiMode === "cwms-login" ? "CWMS Login" : "CWBI Login";
+
+  const getUnavailableMessage = () => {
+    if (authMethod) {
+      return null;
+    }
+
+    if (customAuthType === "openid") {
+      return isLoopbackHost(window.location.hostname)
+        ? "Local sign-in is not available for this OpenID configuration. Start the local CDA/Keycloak stack, or use Swagger's Authorize controls with an API key."
+        : "Sign-in is not available because this Swagger spec does not advertise a usable OpenID client.";
+    }
+
+    return "No supported sign-in method was advertised by this CDA deployment. You can still use Swagger's Authorize controls for API keys.";
+  };
 
   const checkAuth = async () => {
     if (!authMethod) {
@@ -109,10 +134,12 @@ export default function SwaggerUI() {
     }
 
     setAuthStatus("checking");
+    setAuthError(null);
     try {
       const isAuth = await authMethod.isAuth();
       setAuthStatus(isAuth ? "authenticated" : "anonymous");
-    } catch {
+    } catch (error) {
+      setAuthError(error?.message ?? "Unable to check sign-in status.");
       setAuthStatus("anonymous");
     }
   };
@@ -123,12 +150,32 @@ export default function SwaggerUI() {
     let cancelled = false;
 
     async function initSwagger() {
-      const response = await fetch(`${getBasePath()}/swagger-docs`, {
-        headers: {
-          Accept: "application/json",
-        },
-      });
-      const spec = await response.json();
+      let spec;
+      try {
+        const response = await fetch(`${getBasePath()}/swagger-docs`, {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`Swagger spec request failed with HTTP ${response.status}`);
+        }
+        spec = await response.json();
+        setSwaggerError(null);
+      } catch (error) {
+        if (!cancelled) {
+          setSwaggerError(
+            error?.message ?? "Unable to load the Swagger specification.",
+          );
+          setCustomAuthType(null);
+          setAuthUiMode("hidden");
+          setAuthStatus("anonymous");
+          setIsOpenIdAuthReady(false);
+          setIsLocalOpenIdAuth(false);
+          document.querySelector("#swagger-ui").innerHTML = "";
+        }
+        return;
+      }
       normalizeOpenIdConnectUrls(spec);
       const keycloakConfig = getKeycloakConfig(spec);
       const hasCwmsLogin = getCwmsLoginScheme(spec) && (await isCwmsLoginAvailable());
@@ -142,16 +189,48 @@ export default function SwaggerUI() {
         setCustomAuthType(nextCustomAuthType);
       }
 
-      if (nextCustomAuthType === "openid" && keycloakConfig) {
+      if (hasCwmsLogin) {
+        setAuthUiMode("cwms-login");
+      } else if (nextCustomAuthType === "openid" && keycloakConfig) {
         const keycloakConfigSignature = JSON.stringify(keycloakConfig);
-        if (openIdAuthConfigSignatureRef.current !== keycloakConfigSignature) {
-          openIdAuthMethodRef.current = createKeycloakAuthMethod(keycloakConfig);
-          openIdAuthConfigSignatureRef.current = keycloakConfigSignature;
+        if (isExternalOpenIdOnLocalhost(keycloakConfig)) {
+          openIdAuthMethodRef.current = null;
+          openIdAuthConfigSignatureRef.current = null;
+          setAuthUiMode("hidden");
+          setAuthError(null);
+          setAuthStatus("anonymous");
+          setIsLocalOpenIdAuth(false);
+          setIsOpenIdAuthReady(false);
+        } else {
+          try {
+            if (openIdAuthConfigSignatureRef.current !== keycloakConfigSignature) {
+              openIdAuthMethodRef.current = createKeycloakAuthMethod(keycloakConfig);
+              openIdAuthConfigSignatureRef.current = keycloakConfigSignature;
+            }
+            setAuthError(null);
+            setIsLocalOpenIdAuth(keycloakConfig.flow === "direct-grant");
+            setAuthUiMode(
+              keycloakConfig.flow === "direct-grant"
+                ? "local-keycloak"
+                : "external-openid",
+            );
+            setIsOpenIdAuthReady(true);
+          } catch (error) {
+            openIdAuthMethodRef.current = null;
+            openIdAuthConfigSignatureRef.current = null;
+            setAuthUiMode("external-openid");
+            setAuthError(error?.message ?? "Unable to configure OpenID sign-in.");
+            setAuthStatus("anonymous");
+            setIsLocalOpenIdAuth(false);
+            setIsOpenIdAuthReady(false);
+          }
         }
-        setIsOpenIdAuthReady(true);
       } else {
         openIdAuthMethodRef.current = null;
         openIdAuthConfigSignatureRef.current = null;
+        setAuthUiMode("hidden");
+        setAuthError(null);
+        setIsLocalOpenIdAuth(false);
         setIsOpenIdAuthReady(false);
       }
 
@@ -193,9 +272,13 @@ export default function SwaggerUI() {
           return req;
         },
         onComplete: () => {
-          for (const schemeName in spec.components.securitySchemes) {
+          for (const schemeName in spec.components?.securitySchemes ?? {}) {
             const scheme = spec.components.securitySchemes[schemeName];
             if (scheme.type === "openIdConnect") {
+              if (isExternalOpenIdOnLocalhost(keycloakConfig)) {
+                break;
+              }
+
               let additionalParams = null;
               let hints = scheme["x-kc_idp_hint"];
               if (hints) {
@@ -251,7 +334,7 @@ export default function SwaggerUI() {
     if (
       customAuthType !== "openid" ||
       !authMethod ||
-      !isLoopbackHost(window.location.hostname) ||
+      !isLocalOpenIdAuth ||
       autoLoginAttemptedRef.current
     ) {
       return undefined;
@@ -260,6 +343,7 @@ export default function SwaggerUI() {
     autoLoginAttemptedRef.current = true;
     let mounted = true;
     setAuthStatus("checking");
+    setAuthError(null);
     authMethod
       .login()
       .then(() => authMethod.isAuth())
@@ -268,8 +352,9 @@ export default function SwaggerUI() {
           setAuthStatus(isAuth ? "authenticated" : "anonymous");
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (mounted) {
+          setAuthError(error?.message ?? "Automatic local sign-in failed.");
           setAuthStatus("anonymous");
         }
       });
@@ -277,15 +362,23 @@ export default function SwaggerUI() {
     return () => {
       mounted = false;
     };
-  }, [authMethod, customAuthType]);
+  }, [authMethod, customAuthType, isLocalOpenIdAuth]);
 
   const startLogin = async () => {
     if (!authMethod) {
+      setAuthError(getUnavailableMessage());
       return;
     }
 
-    await authMethod.login();
-    await checkAuth();
+    setAuthError(null);
+    setAuthStatus("checking");
+    try {
+      await authMethod.login();
+      await checkAuth();
+    } catch (error) {
+      setAuthError(error?.message ?? "Sign-in failed.");
+      setAuthStatus("anonymous");
+    }
   };
 
   const signOut = async () => {
@@ -293,61 +386,89 @@ export default function SwaggerUI() {
       return;
     }
 
-    await authMethod.logout();
-    await checkAuth();
+    setAuthError(null);
+    setAuthStatus("checking");
+    try {
+      await authMethod.logout();
+      await checkAuth();
+    } catch (error) {
+      setAuthError(error?.message ?? "Sign-out failed.");
+      setAuthStatus("anonymous");
+    }
   };
 
   const isAuthenticated = authStatus === "authenticated";
   const isCheckingAuth = authStatus === "checking";
+  const unavailableMessage = getUnavailableMessage();
+  const showAuthBar = authUiMode !== "hidden";
+  const showUnavailableMessage =
+    showAuthBar && !authMethod && authStatus !== "checking";
 
   return (
     <>
-      <div className="my-3 flex flex-col gap-4 rounded-md border border-sky-200 bg-sky-50 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <strong className="block text-base text-slate-800">{authLabel}</strong>
-          <span className="block text-sm text-slate-600">
-            {customAuthType === "cwms"
-              ? isAuthenticated
-                ? "Signed in with the shared CWMS session. Swagger requests will include it automatically."
-                : "Sign in with the district CWMS AAA login before using secured endpoints."
-              : isLoopbackHost(window.location.hostname)
+      {showAuthBar && (
+        <div className="my-3 flex flex-col gap-4 rounded-md border border-sky-200 bg-sky-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <strong className="block text-base text-slate-800">{authLabel}</strong>
+            <span className="block text-sm text-slate-600">
+              {authUiMode === "cwms-login"
                 ? isAuthenticated
-                  ? "Signed in with the local Keycloak dev account."
-                  : "Local Keycloak dev login uses m5hectest / m5hectest."
-                : "Sign in through the OpenID authorization flow for this CDA deployment."}
-          </span>
+                  ? "Signed in with the shared CWMS session. Swagger requests will include it automatically."
+                  : "Sign in with the district CWMS AAA login before using secured endpoints."
+                : authUiMode === "local-keycloak"
+                  ? isAuthenticated
+                    ? "Signed in with the local Keycloak dev account."
+                    : "Local Keycloak dev login uses m5hectest / m5hectest."
+                  : "Sign in through the OpenID authorization flow for this CDA deployment."}
+            </span>
+            {showUnavailableMessage && (
+              <span className="mt-2 block text-sm text-amber-800">
+                {unavailableMessage}
+              </span>
+            )}
+            {authError && (
+              <span className="mt-2 block text-sm text-red-700">{authError}</span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            {authMethod && (
+              <button
+                className="h-9 rounded border border-blue-700 bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-55"
+                disabled={isCheckingAuth}
+                onClick={startLogin}
+                type="button"
+              >
+                {isAuthenticated ? "Reauthenticate" : "Sign in"}
+              </button>
+            )}
+            {isAuthenticated && (
+              <button
+                className="h-9 rounded border border-red-800 bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-55"
+                disabled={isCheckingAuth}
+                onClick={signOut}
+                type="button"
+              >
+                Sign out
+              </button>
+            )}
+            {authUiMode === "cwms-login" && (
+              <button
+                className="h-9 rounded border border-sky-200 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-55"
+                disabled={isCheckingAuth}
+                onClick={checkAuth}
+                type="button"
+              >
+                Refresh status
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <button
-            className="h-9 rounded border border-blue-700 bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-55"
-            disabled={!authMethod || isCheckingAuth}
-            onClick={startLogin}
-            type="button"
-          >
-            {isAuthenticated ? "Reauthenticate" : "Sign in"}
-          </button>
-          {isAuthenticated && (
-            <button
-              className="h-9 rounded border border-red-800 bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-55"
-              disabled={isCheckingAuth}
-              onClick={signOut}
-              type="button"
-            >
-              Sign out
-            </button>
-          )}
-          {customAuthType === "cwms" && (
-            <button
-              className="h-9 rounded border border-sky-200 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-55"
-              disabled={isCheckingAuth}
-              onClick={checkAuth}
-              type="button"
-            >
-              Refresh status
-            </button>
-          )}
+      )}
+      {swaggerError && (
+        <div className="my-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          {swaggerError}
         </div>
-      </div>
+      )}
       <div id="swagger-ui"></div>
     </>
   );

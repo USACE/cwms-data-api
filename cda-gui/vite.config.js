@@ -4,14 +4,16 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const cdaApiRoot = new URL(env.CDA_API_ROOT || "http://localhost:8081").origin;
+  const cdaApiRoot = new URL(
+    env.VITE_CDA_API_ROOT || env.CDA_API_ROOT || "http://localhost:8081",
+  ).origin;
   // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
   return {
     base: "/cwms-data",
     plugins: [react()],
     server: {
       proxy: {
-        "^/(auth|CWMSLogin|cwms-data/(?!swagger-ui(?:/|$)|assets/|src/|node_modules/|@vite/).*)":
+        "^/(auth|CWMSLogin|cwms-data/(?!swagger-ui(?:/|$)|assets/|src/|node_modules/|@).*)":
           {
             target: cdaApiRoot,
             changeOrigin: true,
