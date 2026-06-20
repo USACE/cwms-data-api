@@ -94,7 +94,8 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
 
-            if (getDbVersion() > Dao.CWMS_25_07_01) {
+            // Reuse the connection already borrowed above so small test pools don't deadlock.
+            if (currentDbVersion(dslContext) > Dao.CWMS_25_07_01) {
                 // With newer schema it should just work, don't need transaction
                 Configuration config = dslContext.configuration();
                 CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(config, categoryId, formatBool(true), office);
@@ -116,6 +117,13 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
             }
 
         });
+    }
+
+    private static int currentDbVersion(DSLContext dslContext) {
+        if (CURRENT_SCHEMA_VERSION == null) {
+            CURRENT_SCHEMA_VERSION = versionAsInteger(getVersion(dslContext));
+        }
+        return CURRENT_SCHEMA_VERSION;
     }
 
     public void create(TimeSeriesCategory category, boolean failIfExists, boolean ignoreNulls) {
