@@ -942,6 +942,16 @@ public class ApiServlet extends HttpServlet {
                 doc.json("401", CdaError.class);
                 doc.json("403", CdaError.class);
                 doc.json("404", CdaError.class);
+                doc.header(IS_NEW_LRTS,
+                    Boolean.class,
+                    p -> p.description(
+                        "If True, will use use the new 'Local Regular Time Series" +
+                        " naming scheme. For example 1DayLocal. Instead of the original" +
+                        " PsuedoRegular based scheme, for example ~1DayLocal." +
+                        " NOTE: this parameter only applies to the input and output of" +
+                        " Time Series names. It is added to all endpoints and will be ignored" +
+                        " when not required. Default values is false if not set.")
+                );
             })
             .activateAnnotationScanningFor("cwms.cda.api");
         config.registerPlugin(new OpenApiPlugin(ops));

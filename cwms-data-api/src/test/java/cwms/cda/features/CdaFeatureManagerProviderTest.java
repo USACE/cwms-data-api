@@ -45,6 +45,18 @@ class CdaFeatureManagerProviderTest {
     }
 
     @Test
+    void testLoadsDefaultPropertiesFromClasspath() {
+        System.clearProperty(CdaFeatureManagerProvider.PROPERTIES_FILE);
+
+        CdaFeatureManagerProvider provider = new CdaFeatureManagerProvider();
+        FeatureManager manager = provider.getFeatureManager();
+
+        assertFalse(manager.isActive(CdaFeatures.USE_OBJECT_STORAGE_BLOBS));
+        assertFalse(manager.isActive(CdaFeatures.AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT));
+        assertTrue(manager.isActive(CdaFeatures.INCLUDE_ERROR_STACK_TRACES));
+    }
+
+    @Test
     void testUseObjectStorageBlobsFeature() throws IOException {
         File tempFile = Files.createTempFile("features", ".properties").toFile();
         tempFile.deleteOnExit();
