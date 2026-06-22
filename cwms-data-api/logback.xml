@@ -14,12 +14,21 @@
         </filter>
     </appender>
 
+    <appender name="OTEL-STERR" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+        <appender-ref ref="STDERR"/>
+    </appender>
+
+
     <appender name="FILE" class="FileAppender">
         <encoder class="JsonEncoder"/>
         <append>false</append>
         <immediateFlush>true</immediateFlush>
         <file>build/cda.jsonl</file>
     </appender>
+
+    <appender name="OTEL-FILE" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+    <appender-ref ref="FILE"/>
+  </appender>
 
     <appender name="FILE-PLAIN" class="FileAppender">
         <encoder>
@@ -36,8 +45,8 @@
     <logger name="org.apache" level="ERROR"/>
 
     <root level="INFO">
-        <appender-ref ref="STDERR"/>
-        <appender-ref ref="FILE"/>
+        <appender-ref ref="OTEL-STDERR"/>
+        <appender-ref ref="OTEL-FILE"/>
         <appender-ref ref="FILE-PLAIN"/>
     </root>
 </configuration>
