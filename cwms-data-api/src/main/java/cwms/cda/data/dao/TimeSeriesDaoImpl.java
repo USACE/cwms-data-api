@@ -228,7 +228,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildTsvDquQuery(
-            long tsCode, String officeId, String units,
+            long tsCode, String officeId, String nativeUnits, String requestedUnits,
             TimeSeriesRequestParameters requestParameters,
             boolean includeEntryDate) {
         ZonedDateTime beginTime = requestParameters.getBeginTime();
@@ -249,12 +249,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 qualityForNormalization
         ).as("quality_norm");
 
-        Field<Double> value = view.VALUE.as(VALUE);
+        Field<Double> convertedValue = CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(
+                view.VALUE, view.UNIT_ID, DSL.val(requestedUnits, String.class)).as(VALUE);
 
         Condition baseCondition = view.ALIASED_ITEM.isNull()
                 .and(view.TS_CODE.eq(tsCode))
                 .and(view.OFFICE_ID.eq(officeId))
-                .and(view.UNIT_ID.equalIgnoreCase(units))
+                .and(view.UNIT_ID.equalIgnoreCase(nativeUnits))
                 .and(view.DATE_TIME.ge(beginTimestamp))
                 .and(view.DATE_TIME.le(endTimestamp))
                 .and(view.START_DATE.le(endTimestamp))
@@ -264,7 +265,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (versionDate != null) {
             query = buildVersionedRowsQuery(
                     view,
-                    value,
+                    convertedValue,
                     normalizedQuality,
                     baseCondition,
                     versionDate,
@@ -273,7 +274,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         } else {
             query = buildMaxVersionRowsQuery(
                     view,
-                    value,
+                    convertedValue,
                     normalizedQuality,
                     baseCondition,
                     includeEntryDate
@@ -296,10 +297,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         long tsCode = metadata.tsCode;
         String tsIdStr = metadata.tsId;
         String officeResolved = metadata.officeId;
-        String resolvedUnits = metadata.units;
+        String nativeUnits = metadata.nativeUnits;
+        String requestedUnits = metadata.units;
 
-        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved,
-                resolvedUnits, requestParameters, includeDataEntryDate);
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved, nativeUnits,
+                requestedUnits, requestParameters, includeDataEntryDate);
 
         logger.atFine().log("%s", lazy(query::getSQL));
 
@@ -324,7 +326,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     csvFormatter,
                     tsIdStr,
                     officeResolved,
-                    resolvedUnits,
+                    requestedUnits,
                     versionTs,
                     csvConfiguration,
                     rowsPerBuffer
@@ -845,7 +847,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         // Pagination happens after regular-interval gap rows are merged
         //  fetch the full raw window first
-        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId,
+        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId, nativeUnits,
                 metadataUnits, requestParameters, includeEntryDate);
         long effectiveIntervalOffset = intervalOffset;
         if (isRegularSeries(intervalMinutes, intervalPart)) {
@@ -957,12 +959,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 record.getValue("version_flag", String.class)));
     }
 
-    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId,
+    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId, String nativeUnits,
                                                                  String requestedUnits,
                                                                  TimeSeriesRequestParameters requestParameters,
                                                                  boolean includeEntryDate) {
         ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeId,
-                requestedUnits, requestParameters, includeEntryDate);
+                nativeUnits, requestedUnits, requestParameters, includeEntryDate);
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
