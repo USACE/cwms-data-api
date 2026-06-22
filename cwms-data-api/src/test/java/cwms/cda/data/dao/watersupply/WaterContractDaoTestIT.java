@@ -468,7 +468,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 .withPublicName("Test Public Name")
                 .withLongName("Test Long Name")
                 .withDescription("Test Description")
-                .withNearestCity("Davis")
+                .withNearestCity("Davis, California")
                 .withLatitude(38.55)
                 .withLongitude(-121.73)
                 .withPublishedLatitude(38.55)
