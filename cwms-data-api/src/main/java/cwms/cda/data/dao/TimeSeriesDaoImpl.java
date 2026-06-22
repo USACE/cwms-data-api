@@ -6,6 +6,7 @@ import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.data.dao.rsql.FieldResolver;
 import cwms.cda.data.dao.rsql.MapFieldResolver;
 import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.formatters.csv.CsvConfiguration;
@@ -27,7 +28,8 @@ import static org.jooq.impl.DSL.selectOne;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
-
+import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesVersions;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -39,11 +41,11 @@ import com.google.common.cache.CacheStats;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.Tsv;
 import cwms.cda.data.dto.TsvDqu;
 import cwms.cda.data.dto.TsvId;
@@ -220,6 +222,91 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
 
+    @Override
+    public TimeSeriesVersions getTimeSeriesVersions(String cursor, int pageSize, String names, String office,
+                                                   ZonedDateTime begin, ZonedDateTime end) {
+        Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.eq(names);
+        if (office != null) {
+            condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.toUpperCase()));
+        }
+        condition = condition.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
+
+        Record tsRecord = dsl.select(AV_CWMS_TS_ID2.TS_CODE, AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.CWMS_TS_ID)
+                .from(AV_CWMS_TS_ID2)
+                .where(condition)
+                .fetchOne();
+
+        if (tsRecord == null) {
+            throw new NotFoundException("Could not find time series for identifier: " + names);
+        }
+
+        BigDecimal tsCode = tsRecord.get(AV_CWMS_TS_ID2.TS_CODE);
+        String officeId = tsRecord.get(AV_CWMS_TS_ID2.DB_OFFICE_ID);
+        String tsId = tsRecord.get(AV_CWMS_TS_ID2.CWMS_TS_ID);
+
+        Condition extentsCondition = AV_TS_EXTENTS_UTC.TS_CODE.coerce(BigDecimal.class).eq(tsCode);
+        if (begin != null) {
+            extentsCondition = extentsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.ge(Timestamp.from(begin.toInstant())));
+        }
+        if (end != null) {
+            extentsCondition = extentsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.le(Timestamp.from(end.toInstant())));
+        }
+
+        Condition pagingCondition = noCondition();
+        if (cursor != null && !cursor.isEmpty()) {
+            String[] parts = CwmsDTOPaginated.decodeCursor(cursor);
+            if (parts.length > 0) {
+                Timestamp lastVersionTime = Timestamp.from(ZonedDateTime.parse(parts[0]).toInstant());
+                pagingCondition = AV_TS_EXTENTS_UTC.VERSION_TIME.lessThan(lastVersionTime);
+            }
+        }
+
+        Integer total = dsl.selectCount()
+                .from(AV_TS_EXTENTS_UTC)
+                .where(extentsCondition)
+                .fetchOne(0, Integer.class);
+        
+        Result<? extends Record> results = dsl.select(AV_TS_EXTENTS_UTC.VERSION_TIME,
+                        AV_TS_EXTENTS_UTC.EARLIEST_TIME,
+                        AV_TS_EXTENTS_UTC.LATEST_TIME,
+                        AV_TS_EXTENTS_UTC.LAST_UPDATE)
+                .from(AV_TS_EXTENTS_UTC)
+                .where(extentsCondition)
+                .and(pagingCondition)
+                .orderBy(AV_TS_EXTENTS_UTC.VERSION_TIME.desc().nullsFirst())
+                .limit(pageSize)
+                .fetch();
+
+        TimeSeriesVersions.Builder builder = new TimeSeriesVersions.Builder()
+                .withTsId(new CwmsId.Builder()
+                        .withName(tsId)
+                        .withOfficeId(officeId)
+                        .build())
+                .withPage(cursor)
+                .withPageSize(pageSize)
+                .withTotal(total);
+
+        for (Record row : results) {
+            builder.addVersion(new TimeSeriesExtents.Builder()
+                    .withVersionTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME)))
+                    .withEarliestTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME)))
+                    .withLatestTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.LATEST_TIME)))
+                    .withLastUpdate(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.LAST_UPDATE)))
+                    .build());
+        }
+
+        if (results.size() == pageSize) {
+            Record lastRecord = results.get(results.size() - 1);
+            Timestamp lastVersionTime = lastRecord.get(AV_TS_EXTENTS_UTC.VERSION_TIME);
+            if (lastVersionTime != null) {
+                builder.withNextPage(CwmsDTOPaginated.encodeCursor(DateUtils.toZdt(lastVersionTime).format(DateTimeFormatter.ISO_INSTANT), pageSize, total));
+            }
+        }
+
+        return builder.build();
+    }
+
+    @Override
     public String getTimeseries(String format, String names, String office, String units,
                                 String datum,
                                 ZonedDateTime begin, ZonedDateTime end, ZoneId timezone) {

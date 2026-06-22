@@ -29,6 +29,7 @@ import cwms.cda.data.dto.Entity;
 import cwms.cda.data.dto.ParameterLegacy;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesVersions;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.LocationToPublishedData;
@@ -648,6 +649,13 @@ public final class DTOMatch {
             () -> assertEquals(first.getVersionTime(), second.getVersionTime(), "Version time does not match"),
             () -> assertEquals(first.getEarliestTime(), second.getEarliestTime(), "Earliest time does not match"),
             () -> assertEquals(first.getLatestTime(), second.getLatestTime(), "Latest time does not match")
+        );
+    }
+
+    public static void assertMatch(TimeSeriesVersions first, TimeSeriesVersions second) {
+        assertAll(
+            () -> assertMatch(first.getTsId(), second.getTsId()),
+            () -> assertMatch(first.getVersions(), second.getVersions(), DTOMatch::assertMatch)
         );
     }
 
