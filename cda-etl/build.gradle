@@ -22,56 +22,97 @@ plugins {
     id 'base'
 }
 
-def isWindows = {
-    System.getProperty('os.name').toLowerCase().contains('win')
-}
+final def imageName = providers.gradleProperty('etlImageName').orElse('cwms-data-api/etl')
+final def dockerPull = providers.gradleProperty('dockerPull')
+        .map { it.toBoolean() }
+        .orElse(false)
 
-final def pythonCmd = isWindows() ? 'python' : 'python3'
-final def mainScript = 'src/cda_etl/main.py'
-final def envFile = 'etl.env'
-final def reqFile = 'requirements.txt'
+def dockerVersion
 
-tasks.register('installRequirements', Exec) {
-    commandLine pythonCmd, '-m', 'pip', 'install', '-r', reqFile
-    workingDir projectDir
-    inputs.file(new File(projectDir, reqFile))
-    outputs.file(new File(buildDir, 'pip-install.marker'))
-    doLast {
-        mkdir buildDir
-        new File(buildDir, 'pip-install.marker').text = "installed at ${new Date()}\n"
+def getDockerVersion = {
+    if (dockerVersion != null) {
+        return dockerVersion
     }
-}
 
-tasks.register('runEtl', Exec) {
-    dependsOn 'installRequirements'
-    group 'application'
-    executable pythonCmd
-    args mainScript
-    workingDir projectDir
-    
-    // Load environment variables from etl.env
-    doFirst {
-        def envFileObj = new File(projectDir, envFile)
-        if (envFileObj.exists()) {
-            envFileObj.eachLine { line ->
-                if (line.trim() && !line.startsWith('#')) {
-                    def parts = line.split('=', 2)
-                    if (parts.length == 2) {
-                        environment parts[0].trim(), parts[1].trim()
-                    }
-                }
-            }
-        } else {
-            logger.warn("Environment file ${envFile} not found.")
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'docker', 'version', '--format', '{{.Server.Version}}'
+            standardOutput = stdout
+            errorOutput = new ByteArrayOutputStream()
         }
+        dockerVersion = stdout.toString().trim()
+    } catch (Exception ignored) {
+        dockerVersion = ''
     }
+
+    return dockerVersion
+}
+
+def isDockerAvailable = { String taskName ->
+    def version = getDockerVersion()
+    if (!version) {
+        logger.lifecycle("Skipping ${taskName} because Docker is not installed or the Docker daemon is unavailable.")
+        return false
+    }
+
+    logger.info("Docker is available: ${version}")
+    return true
+}
+
+tasks.register('dockerBuild', Exec) {
+    group = 'docker'
+    description = 'Builds the CDA ETL Docker image.'
+
+    onlyIf {
+        isDockerAvailable(name)
+    }
+
+    doFirst {
+        def args = ['docker', 'build']
+
+        if (dockerPull.get()) {
+            args += '--pull'
+        }
+
+        args += ['-t', imageName.get(), '.']
+
+        commandLine args
+    }
+
+    inputs.file('Dockerfile')
+    inputs.file('requirements.txt')
+    inputs.dir('src')
 }
 
 tasks.register('runEtlUnitTests', Exec) {
-    dependsOn 'installRequirements'
-    group 'verification'
-    executable pythonCmd
-    args '-m', 'pytest'
-    workingDir projectDir
-    environment 'PYTHONPATH', 'src/cda_etl'
+    dependsOn 'dockerBuild'
+
+    group = 'verification'
+    description = 'Runs ETL unit tests in Docker with local source and tests mounted for faster iteration.'
+
+    onlyIf {
+        isDockerAvailable(name)
+    }
+
+    doFirst {
+        def args = [
+            'docker', 'run', '--rm',
+            '-e', 'PYTHONPATH=/app/src/cda_etl',
+    '-v', "${projectDir}/src:/app/src"
+        ]
+
+        def testsDir = file('tests')
+        args += ['-v', "${testsDir.absolutePath}:/app/tests"]
+        args += [imageName.get(), 'python', '-m', 'pytest']
+
+        commandLine args
+    }
+
+    inputs.dir('src')
+    inputs.dir('tests').optional()
+}
+
+tasks.named('check') {
+    dependsOn 'runEtlUnitTests'
 }
