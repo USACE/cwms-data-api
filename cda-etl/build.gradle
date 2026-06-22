@@ -36,20 +36,23 @@ def getDockerVersion = {
 
     try {
         def stdout = new ByteArrayOutputStream()
+        def stderr = new ByteArrayOutputStream()
+
         exec {
-            commandLine 'docker', 'version', '--format', '{{.Server.Version}}'
+            commandLine 'docker', 'info', '--format', '{{.ServerVersion}}'
             standardOutput = stdout
-            errorOutput = new ByteArrayOutputStream()
+            errorOutput = stderr
         }
+
         dockerVersion = stdout.toString().trim()
-    } catch (Exception ignored) {
+    } catch (ignored) {
         dockerVersion = ''
     }
 
     return dockerVersion
 }
 
-def isDockerAvailable = { String taskName ->
+def isDockerAvailable = { taskName ->
     def version = getDockerVersion()
     if (!version) {
         logger.lifecycle("Skipping ${taskName} because Docker is not installed or the Docker daemon is unavailable.")
@@ -99,7 +102,7 @@ tasks.register('runEtlUnitTests', Exec) {
         def args = [
             'docker', 'run', '--rm',
             '-e', 'PYTHONPATH=/app/src/cda_etl',
-    '-v', "${projectDir}/src:/app/src"
+            '-v', "${projectDir}/src:/app/src"
         ]
 
         def testsDir = file('tests')
