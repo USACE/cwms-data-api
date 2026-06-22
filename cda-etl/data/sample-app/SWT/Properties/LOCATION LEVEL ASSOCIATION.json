@@ -1,0 +1,25 @@
+[
+  {
+    "office-id": "SWT",
+    "category": "LOCATION LEVEL ASSOCIATION",
+    "name": "Regi_project_INPUT.Evap_pan_to_lake_multiplier.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION LEVEL ASSOCIATION",
+    "name": "Regi_project_INPUT.Evap_pan_to_lake_multiplier.COPA",
+    "value": "COPA.Coeff.Inst.0.Pan Evaporation Multiplier"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION LEVEL ASSOCIATION",
+    "name": "Regi_project_INPUT.Evap_pan_to_lake_multiplier.KEYS",
+    "value": "KEYS.Coeff.Inst.0.Pan Evaporation Multiplier"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION LEVEL ASSOCIATION",
+    "name": "Regi_project_INPUT.Evap_seasonal_pan_value.COPA",
+    "value": "COPA.Coeff.Inst.0.Pan Evaporation Multiplier"
+  }
+]

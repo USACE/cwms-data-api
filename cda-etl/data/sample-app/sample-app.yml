@@ -1,0 +1,28 @@
+version: 1
+
+settings:
+  startTime: "2026-06-01"
+  endTime: "now"
+  maxThreads: 1
+  logLevel: INFO
+  path: "/data/sample-app"
+
+offices:
+  - id: SWT
+    enabled: true
+    projects:
+      - id: EUFA
+        enabled: true
+        locations:
+          - id: EUFA-Dam
+        outlets: []
+        turbines: []
+        embankments: []
+        clobs:
+          - id: FLOW.EUFA.PROJECT_TOTAL
+        locationLevels:
+          - id: EUFA-Dam.Elev.Inst.0.Top of Flood
+            por: true
+        ratings:
+          - id: EUFA.Stage;Flow.Standard.Production
+            por: true

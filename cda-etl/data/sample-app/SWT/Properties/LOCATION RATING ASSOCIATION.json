@@ -1,0 +1,16 @@
+[
+  {
+    "office-id": "SWT",
+    "category": "LOCATION RATING ASSOCIATION",
+    "name": "Regi_project_INPUT.Elev_Area.?GLOBAL?",
+    "value": "?GLOBAL?.Elev;Area.Linear.Production",
+    "comment": "Description for: Elev Area Rating"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION RATING ASSOCIATION",
+    "name": "Regi_project_INPUT.Elev_Stor.?GLOBAL?",
+    "value": "?GLOBAL?.Elev;Stor.Linear.Production",
+    "comment": "Description for: Elev Stor Rating"
+  }
+]

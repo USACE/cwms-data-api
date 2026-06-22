@@ -1,0 +1,61 @@
+# cda-expander templates.
+#
+# One entry per association property category. There is deliberately no way to
+# list individual property ids: the whole category is read and everything in it
+# is used. Nothing can be missed, and a property added to the database later is
+# picked up by the next run with no change here.
+#
+# No offices and no projects appear below - those come from the base config
+# (sample-app.yml), and each category is resolved once per enabled project of each
+# enabled office found there.
+#
+# Run:
+#   python -m cda_expander --base      data/sample-app/sample-app.yml \
+#                          --templates data/sample-app/sample-app.templates.yml \
+#                          --out       data/sample-app/sample-app.generated.yml
+#
+# Keys:
+#   categoryId        The CWMS property category to read. Read once per office
+#                     with a single request.
+#   placeholder       The token a property *name* uses in place of a project id,
+#                     marking it as applying to every project. REGI uses
+#                     "?GLOBAL?", e.g.
+#                     Regi_project_INPUT.Hourly_wind_speed.?GLOBAL?
+#   valuePlaceholder  The token inside a global row's *value* that is replaced
+#                     with the project id. In SWT's data this is also
+#                     "?GLOBAL?" - that global row's value is
+#                     "?GLOBAL?.Speed-Wind.Inst.1Hour.0.Ccp-Rev". Kept separate
+#                     from "placeholder" because nothing guarantees the name-side
+#                     and value-side tokens agree; a global whose value lacks
+#                     this token is an error rather than a silent pass, since
+#                     REGI's templates have the same shape as a real ts_id.
+#   entry             Extra keys carried onto every appended entry.
+#
+# Resolution order per project: a row named for the project wins outright (real
+# SWT rows point a project at another location's gauge - KEMP -> TRUS), and
+# "?GLOBAL?" rows fill in only the families that project has no row for.
+version: 1
+
+# Also emit "properties: all: true" per category into the generated config, so
+# cda-etl stages and publishes the association property records themselves.
+stageProperties: true
+
+templates:
+  timeseries:
+    categoryId: LOCATION TIME SERIES ASSOCIATION
+    placeholder: "?GLOBAL?"
+    valuePlaceholder: "?GLOBAL?"
+
+  ratings:
+    categoryId: LOCATION RATING ASSOCIATION
+    placeholder: "?GLOBAL?"
+    valuePlaceholder: "?GLOBAL?"
+    entry:
+      por: true
+
+  locationLevels:
+    categoryId: LOCATION LEVEL ASSOCIATION
+    placeholder: "?GLOBAL?"
+    valuePlaceholder: "?GLOBAL?"
+    entry:
+      por: true

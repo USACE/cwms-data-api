@@ -1,0 +1,21 @@
+version: 1
+
+stageProperties: true
+
+templates:
+  timeseries:
+    categoryId: LOCATION TIME SERIES ASSOCIATION
+    placeholder: "?GLOBAL?"
+    valuePlaceholder: "?GLOBAL?"
+  ratings:
+    categoryId: LOCATION RATING ASSOCIATION
+    placeholder: "?GLOBAL?"
+    valuePlaceholder: "?GLOBAL?"
+    entry:
+      por: true
+  locationLevels:
+    categoryId: LOCATION LEVEL ASSOCIATION
+    placeholder: "?GLOBAL?"
+    valuePlaceholder: "?GLOBAL?"
+    entry:
+      por: true
