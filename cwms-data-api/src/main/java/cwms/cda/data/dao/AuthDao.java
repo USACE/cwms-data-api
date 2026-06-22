@@ -114,7 +114,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
     private AuthDao(DSLContext dsl, String defaultOffice) {
         super(dsl);
-        if (getDbVersion() < Dao.CWMS_23_03_16) {
+        if (getDbVersion(dsl) < Dao.CWMS_23_03_16) {
             throw new RuntimeException(SCHEMA_TOO_OLD);
         }
 
