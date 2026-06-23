@@ -41,6 +41,7 @@ import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -50,6 +51,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -102,6 +104,7 @@ public final class RssHandler extends BaseHandler {
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
+        NaiveRateLimit.requestPerTimeUnit(ctx, 6, TimeUnit.MINUTES);
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE).toUpperCase();
@@ -120,6 +123,7 @@ public final class RssHandler extends BaseHandler {
             MessageDao dao = new MessageDao(dsl);
             RssFeed feed = dao.retrieveFeed(cursor, pageSize, office, name, since, newLinkTemplate(ctx));
             String result = Formats.format(contentType, feed);
+            ctx.header("Retry-After", "10");
             ctx.result(result);
             ctx.contentType(contentType.toString());
         }

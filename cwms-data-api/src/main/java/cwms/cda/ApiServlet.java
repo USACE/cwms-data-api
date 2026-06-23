@@ -185,6 +185,7 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -646,7 +647,7 @@ public class ApiServlet extends HttpServlet {
         addUserManagementHandlers();
 
         get("/version/", new CdaVersionHandler(metrics), requiredRoles);
-        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics), requiredRoles);
+        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics));
     }
 
     private void addUserManagementHandlers() {
@@ -675,7 +676,7 @@ public class ApiServlet extends HttpServlet {
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
         /**
-         * The POST handlers for /ratings/rate-* intentionally do not have 
+         * The POST handlers for /ratings/rate-* intentionally do not have
          * require roles. Instead they are rate limited if not authenticated.
          * POST is used as sending a body with GET is not standard and we cannot
          * be sure clients, or future servers, would correctly support that.
