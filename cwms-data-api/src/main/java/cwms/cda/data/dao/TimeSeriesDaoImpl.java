@@ -964,17 +964,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private void validateUnits(String units, Field<BigDecimal> tsCode, Field<String> officeId, String name) {
         if(!units.equalsIgnoreCase("SI") && !units.equalsIgnoreCase("EN")) {
-            boolean unitRequestedExists = dsl.fetchExists(
+
+            boolean tsExists = dsl.fetchExists(
                     selectOne()
                             .from(AV_TSV_DQU.AV_TSV_DQU)
                             .where(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(tsCode.cast(Long.class)))
                             .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(officeId))
-                            .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(units))
             );
+            if(tsExists) {
+                boolean unitRequestedExists = dsl.fetchExists(
+                        selectOne()
+                                .from(AV_TSV_DQU.AV_TSV_DQU)
+                                .where(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(tsCode.cast(Long.class)))
+                                .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(officeId))
+                                .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(units))
+                );
 
-            if (!unitRequestedExists) {
-                String msg = units + " is not a valid unit for time series " + name;
-                throw new InvalidItemException(msg, new IllegalArgumentException(msg));
+                if (!unitRequestedExists) {
+                    String msg = sanitizeOrNull(units + " is not a valid unit for time series " + name);
+                    throw new InvalidItemException(msg, new IllegalArgumentException(msg));
+                }
             }
         }
     }
