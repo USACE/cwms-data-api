@@ -228,6 +228,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.logging.LoggingSpanExporter;
@@ -341,7 +342,6 @@ public class ApiServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        OpenTelemetrySetup.initTelemetry();
         if (VERSION == null) {
             ApiServlet.VERSION = obtainFullVersion(config);
         }
@@ -1045,10 +1045,6 @@ public class ApiServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
         totalRequests.mark();
-        Span span = GlobalOpenTelemetry.getTracer("cda")
-            .spanBuilder("Request")
-            .setSpanKind(SpanKind.SERVER)
-            .startSpan();
         try {
             String office = officeFromContext(req.getContextPath());
             req.setAttribute(OFFICE_ID, office);
@@ -1065,8 +1061,6 @@ public class ApiServlet extends HttpServlet {
                 ObjectMapper om = new ObjectMapper();
                 out.println(om.writeValueAsString(re));
             }
-        } finally {
-            span.end();
         }
     }
 
