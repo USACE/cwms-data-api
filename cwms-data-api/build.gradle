@@ -30,6 +30,7 @@ configurations.all {
     exclude group: 'org.apache.xmlbeans'
     exclude group: 'org.apache.poi'
     exclude group: 'org.bouncycastle'
+    exclude group: 'org.apache.tomcat', module: 'tomcat-juli'
 }
 
 dependencies {
@@ -38,7 +39,7 @@ dependencies {
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
     implementation(libs.jaxb.impl)
-    implementation(libs.cwms.db.jooq.codegen) { 
+    implementation(libs.cwms.db.jooq.codegen) {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -76,6 +77,7 @@ dependencies {
     implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-legacy.jar"))
     implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-latest.jar"))
 
+    compileOnly(libs.slf4j)
     implementation(libs.slf4j)
 
     implementation(libs.monolith) {
@@ -87,7 +89,7 @@ dependencies {
     implementation(libs.google.flogger.api)
     implementation(libs.google.findbugs)
     implementation(libs.google.errorProne)
-    runtimeOnly(libs.google.flogger.backend)
+    runtimeOnly(libs.google.flogger.system.backend)
 
     implementation(libs.nucleus.data) {
         exclude group: "org.jdom"
@@ -162,19 +164,24 @@ dependencies {
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.rest.assured)
     testImplementation(libs.hamcrest.all)
+    testImplementation(libs.slf4j.jul)
 
     tomcatLibs(libs.bundles.tomcat.embedded)
     tomcatLibs(libs.bundles.tomcat.support)
     tomcatLibs(libs.google.flogger.api)
-    tomcatLibs(libs.google.flogger.backend)
+    tomcatLibs(libs.google.flogger.system.backend)
+
+    baseLibs(libs.google.flogger.slf4j.backend) {
+        exclude group: "org.slf4j"
+    }
+
+    baseLibs(libs.ch.qos.logback)
 
     testImplementation(libs.bundles.testcontainers)
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
-
-    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")    
 
     webjars(project(":cda-gui"))
 
@@ -270,6 +277,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-DwarContext=/" + context
     jvmArgs += "-Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true"
@@ -314,6 +322,7 @@ task integrationTests(type: Test) {
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"

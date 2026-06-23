@@ -664,7 +664,8 @@
       "redirectUris": [
         "https://cwms-data.test:8444/*",
         "https://localhost:5010/*",
-        "http://localhost:*"
+        "http://localhost:*",
+        "http://127.0.0.1:*"
       ],
       "webOrigins": [
         "*"

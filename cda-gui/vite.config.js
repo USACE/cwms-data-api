@@ -3,34 +3,22 @@ import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  // eslint-disable-next-line no-undef
-  const env = loadEnv(mode, process.cwd(), "VITE_");
+  const env = loadEnv(mode, process.cwd(), "");
+  const cdaApiRoot = new URL(
+    env.VITE_CDA_API_ROOT || env.CDA_API_ROOT || "http://localhost:8081",
+  ).origin;
   // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
   return {
     base: "/cwms-data",
     plugins: [react()],
     server: {
       proxy: {
-        "^/cwms-data/timeseries/.*": {
-          target: env.VITE_CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
-        "^/cwms-data/catalog/.*": {
-          target: env.VITE_CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
-        "^/cwms-data/auth/.*": {
-          target: env.VITE_CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
-        "^/cwms-data/swagger-docs$": {
-          target: env.VITE_CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
+        "^/(auth|CWMSLogin|cwms-data/(?!swagger-ui(?:/|$)|assets/|src/|node_modules/|@).*)":
+          {
+            target: cdaApiRoot,
+            changeOrigin: true,
+            secure: false,
+          },
       },
     },
     experimental: {
