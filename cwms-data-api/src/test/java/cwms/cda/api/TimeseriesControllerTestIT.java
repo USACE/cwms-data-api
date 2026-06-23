@@ -1825,7 +1825,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
-            .body("details.message", containsString("Cannot convert from unit C to unit m"))
+            .body("details.message", containsString("m is not a valid unit for time series Buckhorn.Temp-Water.Inst.1Day.0.cda-test"))
         ;
     }
 

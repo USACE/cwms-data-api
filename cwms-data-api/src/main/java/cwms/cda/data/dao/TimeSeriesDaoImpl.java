@@ -1,6 +1,8 @@
 package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
+
+import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.data.dao.rsql.FieldResolver;
 import cwms.cda.data.dao.rsql.MapFieldResolver;
 import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
@@ -21,6 +23,7 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+import static org.jooq.impl.DSL.selectOne;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
@@ -892,6 +895,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
         final Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names), officeId);
 
+        validateUnits(units, tsCode, officeId, names);
+
         Table<Record3<BigDecimal, String, String>> validTs =
                 select(tsCode.as("tscode"),
                         tsId.as("tsid"),
@@ -955,6 +960,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         ? UTC
                         : record.getValue("time_zone_id", String.class),
                 record.getValue("version_flag", String.class)));
+    }
+
+    private void validateUnits(String units, Field<BigDecimal> tsCode, Field<String> officeId, String name) {
+        if(!units.equalsIgnoreCase("SI") && !units.equalsIgnoreCase("EN")) {
+            boolean unitRequestedExists = dsl.fetchExists(
+                    selectOne()
+                            .from(AV_TSV_DQU.AV_TSV_DQU)
+                            .where(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(tsCode.cast(Long.class)))
+                            .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(officeId))
+                            .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(units))
+            );
+
+            if (!unitRequestedExists) {
+                String msg = units + " is not a valid unit for time series " + name;
+                throw new InvalidItemException(msg, new IllegalArgumentException(msg));
+            }
+        }
     }
 
     private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId,
