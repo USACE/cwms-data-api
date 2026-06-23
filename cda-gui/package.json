@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.64.1",
-    "@usace-watermanagement/groundwork-water": "^3.3.1",
+    "@usace-watermanagement/groundwork-water": "^3.9.0",
     "@usace/groundwork": "^3.14.18",
     "cwmsjs": "^2.3.2-2025.3.19",
     "dayjs": "^1.11.13",
