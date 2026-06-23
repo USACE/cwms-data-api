@@ -218,11 +218,11 @@ def _validate_config(config: dict[str, Any]) -> None:
 
     settings = config.get("settings", {})
     if settings is not None and not isinstance(settings, dict):
-        raise ValueError("settings must be a mapping/object.")
+        raise ValueError("Settings must be a mapping/object.")
 
     offices = config.get("offices")
     if not isinstance(offices, list):
-        raise ValueError("offices must be a list.")
+        raise ValueError("Offices must be a list.")
 
     for office in offices:
         _validate_office(office)
@@ -237,7 +237,7 @@ def _validate_office(office: dict[str, Any]) -> None:
 
     projects = office.get("projects", [])
     if not isinstance(projects, list):
-        raise ValueError(f"projects must be a list for office {office['id']}.")
+        raise ValueError(f"Projects must be a list for office {office['id']}.")
 
     for project in projects:
         _validate_project(office["id"], project)
@@ -257,7 +257,7 @@ def _validate_project(office_id: str, project: dict[str, Any]) -> None:
 
 def _validate_locations(office_id: str, project_id: str, locations: Any) -> None:
     if not isinstance(locations, list):
-        raise ValueError(f"locations must be a list for project {office_id}.{project_id}.")
+        raise ValueError(f"Locations must be a list for project {office_id}.{project_id}.")
 
     for location in locations:
         if not isinstance(location, dict):
@@ -271,7 +271,7 @@ def _validate_locations(office_id: str, project_id: str, locations: Any) -> None
 
 def _validate_timeseries_items(office_id: str, project_id: str, timeseries_items: Any) -> None:
     if not isinstance(timeseries_items, list):
-        raise ValueError(f"timeseries must be a list for project {office_id}.{project_id}.")
+        raise ValueError(f"Timeseries must be a list for project {office_id}.{project_id}.")
 
     for timeseries in timeseries_items:
         if not isinstance(timeseries, dict):
