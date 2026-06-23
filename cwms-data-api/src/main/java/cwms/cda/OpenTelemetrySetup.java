@@ -23,7 +23,7 @@ public final class OpenTelemetrySetup {
     static void initTelemetry() {
         SdkTracerProvider sdkTracerProvider =
             SdkTracerProvider.builder()
-                .addSpanProcessor(SimpleSpanProcessor.create(new LoggingSpanExporter()))
+       //         .addSpanProcessor(SimpleSpanProcessor.create(new LoggingSpanExporter()))
                 .build();
 
         OpenTelemetrySdk sdk =
@@ -33,7 +33,7 @@ public final class OpenTelemetrySetup {
                 .build();
         GlobalOpenTelemetry.set(sdk);
         Runtime.getRuntime().addShutdownHook(new Thread(sdkTracerProvider::close));
-        //return sdk;
+       
     }
 
 }

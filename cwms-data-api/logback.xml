@@ -14,7 +14,7 @@
         </filter>
     </appender>
 
-    <appender name="OTEL-STERR" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+    <appender name="OTEL-STDERR" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
         <appender-ref ref="STDERR"/>
     </appender>
 
