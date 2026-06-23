@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context cookies="true">
+<Context cookies="true" delegate="true">
     <Resource name="jdbc/CWMS3" auth="Container" type="javax.sql.DataSource"
               username="${CDA_JDBC_USERNAME}" password="${CDA_JDBC_PASSWORD}"
               url="${CDA_JDBC_URL}"
