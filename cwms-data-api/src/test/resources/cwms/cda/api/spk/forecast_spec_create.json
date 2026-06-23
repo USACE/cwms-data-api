@@ -1,5 +1,6 @@
 {
   "spec-id": "TEST-SPEC",
+  "location-id": "TsBinTestLoc",
   "office-id": "SPK",
   "source-entity-id": "USACE",
   "designator": "designator",

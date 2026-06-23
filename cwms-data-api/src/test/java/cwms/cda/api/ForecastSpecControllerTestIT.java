@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static cwms.cda.api.Controllers.DESIGNATOR;
 import static cwms.cda.api.Controllers.ID_MASK;
@@ -49,9 +51,11 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
 
     @BeforeAll
     static void create() throws Exception {
+        deleteSpec();
         createLocation(locationId, true, OFFICE);
         createLocation(locationId2, true, OFFICE);
         createTimeSeries(locationId);
+        createTimeSeries(locationId2);
         createTimeseries(OFFICE, "TsBinTestLoc.Elev.Inst.~1Day.0.SPK-cavi-fct");
         createTimeseries(OFFICE, "TsBinTestLoc.Flow-Outflow.Inst.~1Day.0.SPK-cavi-fct");
         createTimeseries(OFFICE, "TsBinTestLoc2.Elev.Inst.~1Day.0.SPK-cavi-fct");
@@ -88,19 +92,32 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
     }
 
     static void deleteSpec() throws SQLException {
-       try {
            CwmsDataApiSetupCallback.getDatabaseLink()
                    .connection(c -> {
-                       CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID, "designator",
-                               DeleteRule.DELETE_ALL.getRule(), OFFICE);
-                       CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), SPEC_ID + "-NULL-DESIGNATOR", null,
-                               DeleteRule.DELETE_ALL.getRule(), OFFICE);
-                   });
-       } catch (DataAccessException e) {
-           LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
-       }
-    }
+                       Map<String, String> specs = Map.of(
+                               SPEC_ID, "designator",
+                               SPEC_ID + "-TEST", "designator",
+                               SPEC_ID + "TEST", "designator",
+                               SPEC_ID + "TEST-2", "designator",
+                               SPEC_ID + "-TEST-2", "designator",
+                               "TEST_SPEC_2", "designator",
+                               SPEC_ID + "-LRTS", "designator",
+                               SPEC_ID + "-2", "designator"
+                       );
+                       Map<String, String> specsComplete = new HashMap<>(specs);
+                       specsComplete.put(SPEC_ID + "-NULL-DESIGNATOR", null);
 
+                       specsComplete.forEach((id, desig) -> {
+                           try {
+                               CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(OracleDSL.using(c).configuration(), id, desig,
+                                       DeleteRule.DELETE_ALL.getRule(), OFFICE);
+                           } catch (DataAccessException e) {
+                               LOGGER.atFine().withCause(e).log("Couldn't clean up forecast spec before executing tests. Probably didn't exist");
+                           }
+                       });
+                   });
+
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
@@ -457,6 +474,155 @@ final class ForecastSpecControllerTestIT extends DataApiTestIT {
         truncateFcstTimeSeries();
 
         // Step 4) Verify getAll no longer returns the deleted specs
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(DESIGNATOR, "*")
+            .queryParam(ID_MASK, specId + "*")
+            .queryParam(Controllers.SOURCE_ENTITY, ".*")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            // Expect empty array
+            .body("size()", equalTo(0))
+        ;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void create_then_create_with_diff_location_then_getAll_then_delete(String format) throws Exception {
+
+        // Structure of test:
+        // 1) Create a spec with a location id
+        // 2) Create a forecast instance with that spec 
+        // 3) Create a second spec with the same designator but different location id 
+        // 4) Call getAll and verify a list/array is returned containing only one spec with the updated location id 
+        // 5) Verify the forecast instance is still associated with the spec with the updated location id
+        // 6) Delete spec and forecast instance
+        // 7) Call getAll again and verify they are not returned
+
+        // Step 1) Create two specs
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_spec_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        String specId = SPEC_ID + "TEST";
+        tsData = tsData.replace("\"spec-id\": \"" + SPEC_ID + "\"", "\"spec-id\": \"" + specId + "\"");
+
+        String tsData2 = tsData.replace(locationId, locationId2);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Create first spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 2) Create a forecast instance for the first spec (at locationId)
+        InputStream instResource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/forecast_inst_create.json");
+        assertNotNull(instResource);
+        String instData = IOUtils.toString(instResource, StandardCharsets.UTF_8);
+        // Ensure the instance spec-id and timeseries location match the spec we just created
+        instData = instData.replace("\"spec-id\": \"" + SPEC_ID + "\"", "\"spec-id\": \"" + specId + "\"");
+        // The instance resource uses FcstInstTestLoc.* TSIDs; switch them to our locationId TSIDs
+        instData = instData.replace("FcstInstTestLoc", locationId);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSONV2)
+            .body(instData)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(ForecastInstanceControllerTestIT.PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create second spec
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSONV2)
+            .body(tsData2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Step 3) getAll should return a list only containing the one spec with the updated location id
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.DESIGNATOR_MASK, "*")
+            .queryParam(Controllers.ID_MASK, specId)
+            .queryParam(Controllers.SOURCE_ENTITY, ".*")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(PATH)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            // verify it is an array with 2 elements and contains both spec-ids
+            .body("size()", equalTo(1))
+            .body("[0].designator", equalTo(designator))
+            .body("[0].location-id", equalTo(locationId2))
+        ;
+
+        // Step 4) Verify the forecast instance is still retrievable and points to the updated spec/location
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.DESIGNATOR, designator)
+            // These match the values in forecast_inst_create.json
+            .queryParam(Controllers.FORECAST_DATE, "2021-06-21T14:00:00+00:00")
+            .queryParam(Controllers.ISSUE_DATE, "2022-05-22T12:03:00+00:00")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(ForecastInstanceControllerTestIT.PATH + specId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("spec.spec-id", equalTo(specId))
+            .body("spec.designator", equalTo(designator))
+            .body("spec.location-id", equalTo(locationId2));
+
+        // Step 5) Delete specs/instances
+        truncateFcstTimeSeries();
+
+        // Step 6) Verify getAll no longer returns the deleted specs
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)

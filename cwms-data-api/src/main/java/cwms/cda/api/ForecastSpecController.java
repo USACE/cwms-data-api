@@ -2,6 +2,7 @@ package cwms.cda.api;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.ForecastSpecDao;
 import cwms.cda.data.dao.JooqDao;
@@ -52,10 +53,26 @@ public final class ForecastSpecController extends BaseCrudHandler {
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
             ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
 
-            dao.create(forecastSpec);
+            try {
+                ForecastSpec existing = dao.getForecastSpec(forecastSpec.getOfficeId(), forecastSpec.getSpecId(), forecastSpec.getDesignator());
+                if(locationsAreDifferent(forecastSpec, existing)) {
+                    dao.updateSpecWithLocationIdChange(forecastSpec);
+                } else {
+                    dao.create(forecastSpec);
+                }
+            } catch (NotFoundException e) {
+                dao.create(forecastSpec);
+            }
 
             ctx.status(HttpServletResponse.SC_CREATED);
         }
+    }
+
+    private static boolean locationsAreDifferent(ForecastSpec forecastSpec, ForecastSpec existing) {
+        String newLocationId = forecastSpec.getLocationId();
+        String existingLocationId = existing.getLocationId();
+        return (newLocationId == null && existingLocationId != null)
+                || (newLocationId != null && !newLocationId.equalsIgnoreCase(existingLocationId));
     }
 
     @OpenApi(
@@ -240,7 +257,12 @@ public final class ForecastSpecController extends BaseCrudHandler {
             ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
-            dao.update(forecastSpec);
+            ForecastSpec existing = dao.getForecastSpec(forecastSpec.getOfficeId(), forecastSpec.getSpecId(), forecastSpec.getDesignator());
+            if(locationsAreDifferent(forecastSpec, existing)) {
+                dao.updateSpecWithLocationIdChange(forecastSpec);
+            } else {
+                dao.create(forecastSpec);
+            }
             ctx.status(HttpServletResponse.SC_OK);
         }
     }
