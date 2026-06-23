@@ -41,6 +41,7 @@ import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import io.javalin.http.HttpResponseException;
 import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -104,8 +105,13 @@ public final class RssHandler extends BaseHandler {
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
-        NaiveRateLimit.requestPerTimeUnit(ctx, 6, TimeUnit.MINUTES);
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+            // Always set these.
+            ctx.header("Retry-After", "10")
+               .header("RateLimit-Policy", "\"default\";q=6;w=60");
+            // Limit is 1 request per 10 seconds, or 6 a minute.
+            NaiveRateLimit.requestPerTimeUnit(ctx, 6, TimeUnit.MINUTES);
+
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE).toUpperCase();
             String name = ctx.pathParam(NAME);
@@ -123,9 +129,21 @@ public final class RssHandler extends BaseHandler {
             MessageDao dao = new MessageDao(dsl);
             RssFeed feed = dao.retrieveFeed(cursor, pageSize, office, name, since, newLinkTemplate(ctx));
             String result = Formats.format(contentType, feed);
-            ctx.header("Retry-After", "10");
+
             ctx.result(result);
             ctx.contentType(contentType.toString());
+        } catch (HttpResponseException ex) {
+            // an exception to our error handling rules. HttpResponseException, includes multiple other exception
+            // and we don't want to deal with trying to distinguish in ApiServlet. For the time being this logic will
+            // remain here.
+            if (ex.getStatus() == 429) {
+                var cdaError = new CdaError("Too many requests. Limit queue requests to no more than every 10 seconds.");
+                ctx.status(ex.getStatus())
+                   .json(cdaError)
+                   .contentType(io.javalin.http.ContentType.APPLICATION_JSON);
+            } else {
+                throw ex;
+            }
         }
     }
 
