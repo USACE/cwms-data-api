@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE configuration>
-<configuration debug="true">
+<configuration>
     <import class="org.apache.juli.logging.ch.qos.logback.classic.encoder.JsonEncoder"/>
     <import class="org.apache.juli.logging.ch.qos.logback.core.ConsoleAppender"/>
 
