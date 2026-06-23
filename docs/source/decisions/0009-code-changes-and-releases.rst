@@ -68,6 +68,22 @@ Except for Dev, all deployments are from tags.
 
 Any authorized user may tag for release and deploy CDA versions to the given environments.
 
+Tags may be created on any branch as deemed appropriate to a given need. Tags will primarily be on the "develop" branch. In cases
+where prod needs a specific update, but we are not ready to pull in additional changes. a `hotfix/<original-release-date>` branch
+from the current prod tag should be created, with the new tag incrementing the letter position. This action will also be performed
+in cases of base container image updates.
+
+    .. :widths: 30, 40, 20, 65, 65
+
+.. csv-table:: Environments and constraints
+    :header: "Environment", "Source Branch", "Tagging Constraint", "Schedule", "Additional notes"
+
+
+    Dev,"develop-nightly\, develop", `<date>-dev<letter>`,"nightly at midnight UTC", "can also be pushed manually; however, the next automated push will happen."
+    Test,"develop\, hotfix/*-test*", `<date>-test<letter>`,"On-Demand", "Changes from dev will be pushed to test at most weekly."
+    Prod,"develop\, hofix/*", `<date>-<letter>`,"On-Demand", "Changes from test will be pushed to prod at most monthly. Prod will commonly see additional updates for image security vulnerabilities."
+
+https://github.com/USACE/cwms-data-api/blob/develop/RELEASE_DEPLOY.md will be kept up-to-date with actual deployment procedures.
 
 
 Opinions
@@ -85,7 +101,7 @@ descriptive text
 Decision Status
 ===============
 
-Status: request for comments | proposed 
+(Status: accepted)
 
 References
 ==========

@@ -113,7 +113,7 @@ Example CSVs
 Decision Status
 ===============
 
-(Status: proposed)
+(Status: accepted)
 
 
 References

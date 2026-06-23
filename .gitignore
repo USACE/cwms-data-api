@@ -16,3 +16,4 @@ etl.env
 cwms-data-api/features.properties
 cda-etl/logs
 cda-etl/cache
+**/.venv
