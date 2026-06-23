@@ -21,7 +21,7 @@ Author: Mike Perryman
 
 **Standards**
 
-Continue using ``javax.jms.MapMessage`` with the following characteristics to encapsulate notifications
+Continue using ``jakarta.jms.MapMessage`` with the following characteristics to encapsulate notifications
 
 1. Every message has a ``String`` value named¹ ``'type'``, which specifies the message type².
 2. Every message has a ``String`` value named ``'office_id'`` which specifies the office performing the action and/or owning
