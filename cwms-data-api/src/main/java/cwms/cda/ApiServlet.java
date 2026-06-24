@@ -185,6 +185,7 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -646,7 +647,7 @@ public class ApiServlet extends HttpServlet {
         addUserManagementHandlers();
 
         get("/version/", new CdaVersionHandler(metrics), requiredRoles);
-        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics), requiredRoles);
+        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics));
     }
 
     private void addUserManagementHandlers() {
@@ -675,7 +676,7 @@ public class ApiServlet extends HttpServlet {
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
         /**
-         * The POST handlers for /ratings/rate-* intentionally do not have 
+         * The POST handlers for /ratings/rate-* intentionally do not have
          * require roles. Instead they are rate limited if not authenticated.
          * POST is used as sending a body with GET is not standard and we cannot
          * be sure clients, or future servers, would correctly support that.
@@ -933,7 +934,19 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
+                api.getPaths().forEach((key,path) -> {
+                    setSecurityRequirements(key,path,secReqs);
+                    // yeah, we really need to figure out how to update everything, this is supported as an annotation in
+                    // newer versions.
+                    if (key.startsWith("/rss")) {
+                        path.getGet().getResponses().forEach((p, r) -> {
+                            var retryAfter = new io.swagger.v3.oas.models.headers.Header();
+                            retryAfter.description("Amount of time (in seconds) to wait before making the next request.");
+                            r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
+                        });
+                    }
+            });
+                
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -942,6 +955,7 @@ public class ApiServlet extends HttpServlet {
                 doc.json("401", CdaError.class);
                 doc.json("403", CdaError.class);
                 doc.json("404", CdaError.class);
+                doc.json("429", CdaError.class);
                 doc.header(IS_NEW_LRTS,
                     Boolean.class,
                     p -> p.description(
