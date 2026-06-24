@@ -17,12 +17,14 @@ public class CatalogRequestParameters {
     private final String tsGroupLike;
     private final String boundingOfficeLike;
     private final boolean includeExtents;
+    private final boolean includeVersions;
     private final boolean excludeEmpty;
     private final String locationKind;
     private final String locationType;
     private final boolean includeAliases;
     private final boolean filterBaseLocations;
     private final boolean negateLocationKindLike;
+    private final String searchText;
 
     private CatalogRequestParameters(Builder builder) {
         this.office = builder.office;
@@ -34,12 +36,14 @@ public class CatalogRequestParameters {
         this.tsGroupLike = builder.tsGroupLike;
         this.boundingOfficeLike = builder.boundingOfficeLike;
         this.includeExtents = builder.includeExtents;
+        this.includeVersions = builder.includeVersions;
         this.excludeEmpty = builder.excludeEmpty;
         this.locationKind = builder.locationKind;
         this.locationType = builder.locationType;
         this.includeAliases = builder.includeAliases;
         this.filterBaseLocations = builder.filterBaseLocations;
         this.negateLocationKindLike = builder.negateLocationKindLike;
+        this.searchText = builder.searchText;
     }
 
     public String getBoundingOfficeLike() {
@@ -52,6 +56,10 @@ public class CatalogRequestParameters {
 
     public boolean isIncludeExtents() {
         return includeExtents;
+    }
+
+    public boolean isIncludeVersions() {
+        return includeVersions;
     }
 
     public String getLocCatLike() {
@@ -102,6 +110,10 @@ public class CatalogRequestParameters {
         return negateLocationKindLike;
     }
 
+    public String getSearchText() {
+        return searchText;
+    }
+
     public static class Builder {
         String office;
         String idLike;
@@ -112,12 +124,14 @@ public class CatalogRequestParameters {
         String tsGroupLike;
         String boundingOfficeLike;
         boolean includeExtents = false;
+        boolean includeVersions = false;
         private boolean excludeEmpty = true;
         String locationKind;
         String locationType;
         private boolean includeAliases = false;
         private boolean filterBaseLocations = false;
         private boolean negateLocationKindLike = false;
+        private String searchText;
 
         public Builder() {
 
@@ -168,6 +182,11 @@ public class CatalogRequestParameters {
             return this;
         }
 
+        public Builder withIncludeVersions(boolean includeVersions) {
+            this.includeVersions = includeVersions;
+            return this;
+        }
+
         public Builder withExcludeEmpty(boolean excludeExtents) {
             this.excludeEmpty = excludeExtents;
             return this;
@@ -198,6 +217,11 @@ public class CatalogRequestParameters {
             return this;
         }
 
+        public Builder withSearchText(String searchText) {
+            this.searchText = searchText;
+            return this;
+        }
+
         public static Builder from(CatalogRequestParameters params) {
             // This NEEDS to include every field in the CatalogRequestParameters
             return new Builder()
@@ -210,11 +234,13 @@ public class CatalogRequestParameters {
                     .withTsGroupLike(params.tsGroupLike)
                     .withBoundingOfficeLike(params.boundingOfficeLike)
                     .withIncludeExtents(params.includeExtents)
+                    .withIncludeVersions(params.includeVersions)
                     .withExcludeEmpty(params.excludeEmpty)
                     .withLocationKind(params.locationKind)
                     .withLocationType(params.locationType)
                     .withFilterBaseLocations(params.filterBaseLocations)
                     .withNegateLocationKindLike(params.negateLocationKindLike)
+                    .withSearchText(params.searchText)
                     ;
         }
 

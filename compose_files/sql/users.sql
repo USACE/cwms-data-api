@@ -1,6 +1,5 @@
    set define on
 define OFFICE_EROC=&1
-defin API_KEY=&2
 begin
    cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'All Users', 'HQ');
    cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'All Users', 'SPK');
@@ -10,6 +9,7 @@ begin
    cwms_sec.update_edipi('l2hectest', 1234567890);
    cwms_sec.add_user_to_group('l2hectest', 'All Users', 'SPK');
    cwms_sec.add_user_to_group('l2hectest', 'CWMS Users', 'SPK');
+   cwms_sec.add_user_to_group('l2hectest', 'SHOW STACK TRACE', 'SPK');
    cwms_sec.add_user_to_group('l2hectest', 'TS ID Creator', 'SPK');
    cwms_sec.add_cwms_user('l1hectest', null, 'SPL');
     -- intentionally no extra permissions.
@@ -19,6 +19,7 @@ begin
    cwms_sec.add_cwms_user('m5hectest', null, 'SWT');
    cwms_sec.add_user_to_group('m5hectest', 'All Users', 'SWT');
    cwms_sec.add_user_to_group('m5hectest', 'CWMS Users', 'SWT');
+   cwms_sec.add_user_to_group('m5hectest', 'TS ID Creator', 'SWT');
    cwms_sec.add_cwms_user('q0hectest', null, 'SWT');
    cwms_sec.add_user_to_group('q0hectest', 'All Users', 'SWT');
    cwms_sec.add_user_to_group('q0hectest', 'CWMS Users', 'SWT');
@@ -35,21 +36,11 @@ begin
    cwms_sec.add_user_to_group('q0hectest', 'CWMS PD Users', 'LRL');
    cwms_sec.add_user_to_group('q0hectest', 'TS ID Creator', 'LRL');
    execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
-   insert into "CWMS_20"."AT_API_KEYS" (
-      userid,
-      key_name,
-      apikey,
-      created,
-      expires
-   ) values ( 'Q0HECTEST',
-              'test',
-              '&&API_KEY',
-              to_date('2025-06-10 16:10:42','YYYY-MM-DD HH24:MI:SS'),
-              to_date('2029-06-16 16:10:46','YYYY-MM-DD HH24:MI:SS') );
 
     cwms_sec.add_cwms_user('m5hectest',NULL,'SWT');
     cwms_sec.add_user_to_group('m5hectest','All Users', 'SWT');
     cwms_sec.add_user_to_group('m5hectest','CWMS Users', 'SWT');
+    cwms_sec.add_user_to_group('m5hectest','TS ID Creator', 'SWT');
     execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
 
 
@@ -57,6 +48,7 @@ begin
     cwms_sec.add_user_to_group('m5testadmin','All Users', 'LRL');
     cwms_sec.add_user_to_group('m5testadmin','CWMS Users', 'LRL');
     cwms_sec.add_user_to_group('m5testadmin','CWMS User Admins', 'LRL');
+    cwms_sec.add_user_to_group('m5testadmin','SHOW STACK TRACE', 'LRL');
 
 end;
 /

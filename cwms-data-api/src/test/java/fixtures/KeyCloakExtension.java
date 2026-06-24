@@ -121,6 +121,16 @@ public final class KeyCloakExtension implements BeforeAllCallback {
     public static String getTokenUrl() {
         return tokenUrl;
     }
+
+    public static void shutdown() {
+        if (kcc.isRunning()) {
+            kcc.stop();
+        }
+        authUrl = null;
+        issuer = null;
+        codeUrl = null;
+        tokenUrl = null;
+    }
     
     /**
      * Retrieve the Access token for the user.

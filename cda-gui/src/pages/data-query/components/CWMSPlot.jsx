@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Configuration, LevelsApi, TimeSeriesApi } from "cwmsjs";
 import Plotly from "plotly.js-basic-dist";
 import { gwMerge, Skeleton } from "@usace/groundwork";
 import deepmerge from "deepmerge";
-import { useMemo } from "react";
 import PropTypes from "prop-types";
 
 /**
@@ -34,7 +33,7 @@ const normalizeDataProp = (prop) => {
 const getYAxisId = (timeseriesParam) => {
   const yaxis = timeseriesParam?.traceOptions?.yaxis;
   if (!yaxis) return undefined;
-  if (yaxis == "y" || yaxis == "y1") return "yaxis";
+  if ((yaxis == "y") | (yaxis == "y1")) return "yaxis";
   const re = /^y(\d+)$/;
   const match = yaxis.match(re);
   if (match) {
@@ -239,15 +238,15 @@ function CWMSPlot({
     datum,
     end,
     inputTSValues,
+    level_api,
     locationLevelsArray,
     office,
-    level_api,
     timeSeriesArray,
     timezone,
     trim,
-    ts_api,
     unit,
     pageSize,
+    ts_api,
   ]);
 
   useEffect(() => {

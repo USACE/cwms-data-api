@@ -104,11 +104,11 @@ final class MessageUtil {
         }
         try {
             Struct struct = (Struct) userData;
-            String oracleType = struct.getSQLTypeName();
-            if (oracleType.endsWith("JMS_TEXT_MESSAGE")) {
+            String oracleType = struct.getSQLTypeName().replace("\"", "");
+            if (oracleType.contains("JMS_TEXT_MESSAGE")) {
                 return Optional.ofNullable(extractTextMessage(userData));
             }
-            if (oracleType.endsWith("JMS_MAP_MESSAGE")) {
+            if (oracleType.contains("JMS_MAP_MESSAGE")) {
                 Map<?, ?> map = extractMapMessage(userData);
                 return Optional.ofNullable(MAPPER.writeValueAsString(map));   // JACKSON HERE
             }

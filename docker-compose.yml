@@ -69,9 +69,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
+      - ./compose_files/togglz/features.properties:/conf/features.properties:ro
       - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
     environment:
-      - JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
+      - JAVA_OPTS=-Dproperties.file=/conf/features.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
       - CDA_JDBC_USERNAME=q0webtest

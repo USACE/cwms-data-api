@@ -305,6 +305,95 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_with_non_existent_locations(String format) throws Exception {
+        String officeId = user.getOperatingOffice();
+        String locationId = "LocationPostTest";
+        createLocation(locationId, true, officeId);
+        String nonExistentLocationId = "NonExistentLocation";
+        String nonExistentLocationId2 = "NonExistentLocation2";
+        LocationCategory cat = new LocationCategory(officeId, "TestCategory5", "IntegrationTesting");
+        AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasId", 1, locationId);
+        AssignedLocation assignLoc2 = new AssignedLocation(nonExistentLocationId, officeId, "NotALoc", 1, locationId);
+        AssignedLocation assignLoc3 = new AssignedLocation(nonExistentLocationId2, officeId, "NotALoc2", 1, locationId);
+        LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, LocationGroupControllerTestIT.class.getSimpleName(), "IntegrationTesting",
+            "sharedLocAliasId", locationId, 123), List.of(assignLoc, assignLoc2, assignLoc3));
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String categoryXml = Formats.format(contentType, cat);
+        String groupXml = Formats.format(contentType, group);
+        categoriesToCleanup.add(cat);
+
+        // Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create Group with invalid assigned locations
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+            .body("message", equalTo("Location group contains assigned locations that do not exist."));
+
+        // Read, verify rollback occurred successfully
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // Delete Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/category/" + group.getLocationCategory().getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_read_delete_agency_aliases_same_name(String format) throws Exception {
         // Create two location groups of the same name with an agency alias category
         String officeId = user.getOperatingOffice();
@@ -667,6 +756,175 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
             .queryParam(CATEGORY_OFFICE_ID, officeId2)
             .queryParam(GROUP_OFFICE_ID, officeId2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + group2.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+
+    @Test
+    void test_create_read_delete_same_aliases_different_names() throws Exception {
+        // Create two location groups of the same name with an agency alias category
+        String officeId = user.getOperatingOffice();
+        String locationId = "LocGrpTestN1";
+        String locationId2 = "LocGrpTestN2";
+        createLocation(locationId, true, officeId);
+        createLocation(locationId2, true, officeId);
+        LocationCategory cat = new LocationCategory(officeId, "AliasTestCategory", "AliasIntegrationTesting");
+        AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasedId", 1, locationId);
+        AssignedLocation assignLoc2 = new AssignedLocation(locationId2, officeId, "AliasedId", 1, locationId);
+        LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, "LocationGroupTestIT", "IntegrationTesting",
+            "sharedLocAliasId", locationId, 123), Collections.singletonList(assignLoc));
+        LocationGroup group2 = new LocationGroup(new LocationGroup(cat, officeId, "LocationGroupTestIT1", "IntegrationTesting1",
+            "sharedLocAliasId1", locationId, 123), Collections.singletonList(assignLoc2));
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String groupXml = Formats.format(contentType, group);
+        groupsToCleanup.add(group);
+        String categoryXml = Formats.format(contentType, cat);
+        categoriesToCleanup.add(cat);
+        registerCategory(cat);
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //Create Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        //Create Group 2
+        groupXml = Formats.format(contentType, group2);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", equalTo("Bad Request"))
+            .body("details.message", equalTo("Alias (AliasedId) would reference multiple locations.  " +
+                "If you want to allow this, set the CWMSDB/Allow_multiple_locations_for_alias " +
+                "property to T for office id SPK.  Note that this action will eliminate the " +
+                "ability to look up a location using the alias or any others that reference multiple locations."));
+        //Read
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", equalTo(group.getOfficeId()))
+            .body("id", equalTo(group.getId()))
+            .body("description", equalTo(group.getDescription()))
+            .body("assigned-locations[0].location-id", equalTo(locationId))
+            .body("assigned-locations[0].alias-id", equalTo("AliasedId"))
+            .body("assigned-locations[0].ref-location-id", equalTo(locationId));
+        //Read
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + group2.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        //Delete Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+            .queryParam(CASCADE_DELETE, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        //Read Empty
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, group.getLocationCategory().getId())
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        //Read Empty
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, group2.getLocationCategory().getId())
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

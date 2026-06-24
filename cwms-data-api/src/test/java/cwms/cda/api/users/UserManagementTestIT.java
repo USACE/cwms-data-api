@@ -10,6 +10,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 
 import cwms.cda.api.Controllers;
+import cwms.cda.formatters.Formats;
+import fixtures.users.UserSpecSource;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +25,6 @@ import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
 import fixtures.KeyCloakExtension;
 import fixtures.TestAccounts;
-import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
 import io.javalin.http.HttpCode;
 import io.restassured.filter.log.LogDetail;
@@ -30,6 +33,30 @@ import io.restassured.specification.RequestSpecification;
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
 public class UserManagementTestIT extends DataApiTestIT {
+
+    private static final String LOCATION = "SOME_LOCATION";
+    private static final String SWT = "SWT";
+    private static final String SPK = "SPK";
+
+    @BeforeAll
+    public static void setupLocations() throws Exception {
+        createLocation(LOCATION, true, SWT);
+        createLocation(LOCATION, true, SPK);
+    }
+
+    @AfterAll
+    public static void tearDownLocations() {
+        try {
+            deleteLocation(LOCATION, SWT);
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            deleteLocation(LOCATION, SPK);
+        } catch (Exception e) {
+            // ignore
+        }
+    }
     
     @ParameterizedTest
 	@ArgumentsSource(UserSpecSource.class)
@@ -287,6 +314,92 @@ public class UserManagementTestIT extends DataApiTestIT {
         assertTrue(users.getUsers().isEmpty(), "Expected no users returned for regex filter");
     }
 
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NO_ROLES)
+    void test_get_my_info_no_roles_forbidden(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+        .when()
+            .get("/user/profile")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
+            ;
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER)
+    void test_get_my_info_not_cwms_user_succeeds(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        // SPK_NOT_CWMS_USER has cac_auth, but not "CWMS Users" role.
+        // It should still be able to retrieve its own profile.
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .spec(authSpec)
+            .accept(Formats.JSON)
+        .when()
+            .get("/user/profile")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.OK.getStatus()))
+            .body("user-name", equalToIgnoringCase(theUser.getName()))
+        ;
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    void test_cross_office_update_unauthorized(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) throws Exception {
+        // SPK_NORMAL has roles in SPK, but not in SWT.
+        // Try to delete a location in SWT
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam("office", SWT)
+        .when()
+            .delete("/locations/" + LOCATION)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+        ;
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NO_ROLES)
+    void test_roleless_update_forbidden(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) throws Exception {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+            .queryParam("office", SPK)
+        .when()
+            .delete("/locations/" + LOCATION)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
+        ;
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    void test_unauthorized_administrative_actions(String authType, TestAccounts.KeyUser theUser, RequestSpecification authSpec) {
+        // SPK_NORMAL has CWMS Users but NOT CWMS User Admins.
+        // Try to list all users (requires CWMS User Admins)
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+        .when()
+            .get("/users")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
+        ;
+    }
 
     @Test
     void test_list_users_fails_if_no_auth() {

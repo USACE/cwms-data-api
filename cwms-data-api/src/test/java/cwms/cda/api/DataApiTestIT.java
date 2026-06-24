@@ -29,6 +29,7 @@ import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dao.VerticalDatum;
@@ -36,9 +37,11 @@ import cwms.cda.data.dao.basin.BasinDao;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.helpers.ZoneIdHelper;
+import cwms.cda.security.DataApiPrincipal;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
@@ -59,11 +62,13 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.catalina.Manager;
@@ -97,10 +102,10 @@ public class DataApiTestIT {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     protected static String createLocationQuery = null;
+    protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
-    protected static final String registerApiKey = "insert into at_api_keys(userid,key_name,apikey,expires) values(UPPER(?),?,?, null)";
-    protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and apikey = ?";
+    protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
 
     protected static final Configuration freemarkerConfig = new Configuration(Configuration.VERSION_2_3_32);
 
@@ -157,6 +162,11 @@ public class DataApiTestIT {
                         .getClassLoader()
                         .getResourceAsStream("cwms/cda/data/sql_templates/create_location.sql"), "UTF-8"
         );
+        deleteLocationQuery = IOUtils.toString(
+                TimeseriesControllerTestIT.class
+                        .getClassLoader()
+                        .getResourceAsStream("cwms/cda/data/sql_templates/delete_location.sql"), "UTF-8"
+        );
         createTimeseriesQuery = IOUtils.toString(
                 TimeseriesControllerTestIT.class
                         .getClassLoader()
@@ -182,10 +192,10 @@ public class DataApiTestIT {
             final Manager tsm = CwmsDataApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for (TestAccounts.KeyUser user : TestAccounts.KeyUser.values()) {
-                if (user.getApikey() == null) {
+                if (user.getKeyName() == null) {
                     continue;
                 }
-                if (user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES) {
+                if (user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES || user == TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER) {
                     String name = user.getName();
                     String officeId = user.getOperatingOffice(); //"SPK";  // We want user office not db office.
 
@@ -201,20 +211,20 @@ public class DataApiTestIT {
                         }
                     }
 
-                    addUserToGroup(name, "CWMS Users", officeId);
+                    if(user != TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER)
+                    {
+                        addUserToGroup(name, "CWMS Users", officeId);
+                    }
                     addUserToGroup(name, "All Users", officeId);
                     addUserToGroup(name, "TS ID Creator", officeId);
                 }
 
                 db.connection((c) -> {
-                    try (PreparedStatement stmt = c.prepareStatement(registerApiKey)) {
-                        stmt.setString(1, user.getName());
-                        stmt.setString(2, user.getName() + "TestKey");
-                        stmt.setString(3, user.getApikey());
-                        stmt.execute();
-                    } catch (SQLException ex) {
-                        throw new RuntimeException("Unable to register user:" + user.getName(), ex);
-                    }
+                    String key = AuthDao.getInstance(DSL.using(c), null)
+                        .createApiKey(new DataApiPrincipal(user.getName(), Set.of()),
+                            new ApiKey(user.getName(), user.getKeyName(), null,
+                                ZonedDateTime.now(), null)).getApiKey();
+                    user.setApiKey(key);
                 }, "cwms_20");
 
                 StandardSession session = (StandardSession) tsm.createSession(user.getJSessionId());
@@ -258,7 +268,7 @@ public class DataApiTestIT {
                 db.connection((c) -> {
                     try (PreparedStatement stmt = c.prepareStatement(removeApiKeys)) {
                         stmt.setString(1, user.getName());
-                        stmt.setString(2, user.getApikey());
+                        stmt.setString(2, user.getKeyName());
                         stmt.execute();
                     } catch (SQLException ex) {
                         throw new RuntimeException("Unable to delete api key", ex);
@@ -456,6 +466,19 @@ public class DataApiTestIT {
         createLocation(location, active, office,
                 0.0, 0.0, "WGS84",
                 "UTC", kind);
+    }
+
+    protected static void deleteLocation(String location, String office) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(deleteLocationQuery)) {
+                stmt.setString(1, location);
+                stmt.setString(2, office);
+                stmt.execute();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to delete location", ex);
+            }
+        }, "cwms_20");
     }
 
     /**

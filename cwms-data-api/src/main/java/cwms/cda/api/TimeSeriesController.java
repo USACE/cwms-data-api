@@ -1,52 +1,15 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CREATE_AS_LRTS;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.DATUM;
-import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.FORMAT;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.INCLUDE_ENTRY_DATE;
-import static cwms.cda.api.Controllers.MAX_VERSION;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.OVERRIDE_PROTECTION;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_400;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.STORE_RULE;
-import static cwms.cda.api.Controllers.TIMESERIES;
-import static cwms.cda.api.Controllers.TIMEZONE;
-import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
-import static cwms.cda.api.Controllers.UNIT;
-import static cwms.cda.api.Controllers.UNITS;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.VERSION;
-import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.queryParamAsZdt;
-import static cwms.cda.api.Controllers.requiredParam;
-import static cwms.cda.api.Controllers.requiredZdt;
+import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
@@ -78,7 +41,8 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import com.google.common.flogger.FluentLogger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
@@ -222,7 +186,7 @@ public class TimeSeriesController implements CrudHandler {
             dao.create(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
-            CdaError re = new CdaError("Internal Error");
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "Internal Error", ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -391,7 +355,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "offset and timezone."),
                 @OpenApiParam(name = Controllers.TRIM, type = Boolean.class, description = "Specifies "
                         + "whether to trim missing values from the beginning and end of the "
-                        + "retrieved values. "
+                        + "retrieved values. When true and values are returned, the response "
+                        + BEGIN + " and " + END + " fields reflect the returned data window. "
                         + "Only supported for:" + Formats.JSONV2 + " and " + Formats.XMLV2 + ". "
                         + "Default is true."),
                 @OpenApiParam(name = FORMAT,  description = "Specifies the"
@@ -420,7 +385,9 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiParam(name = PAGE_SIZE,
                         type = Integer.class,
                         description = "How many entries per page returned. "
-                                + "Default " + DEFAULT_PAGE_SIZE + ".")
+                                + "Default " + DEFAULT_PAGE_SIZE + ". Use 0 to return an empty values array, "
+                                + "or -1 to return the entire window in one response without a next-page cursor. "
+                                + "Values less than -1 are invalid.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -472,9 +439,10 @@ public class TimeSeriesController implements CrudHandler {
                     String.class, "", metrics, name(TimeSeriesController.class.getName(),
                             GET_ALL));
 
-            int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE  },
+            final int pageSize = Controllers.validateTimeSeriesPageSize(queryParamAsClass(ctx,
+                    new String[]{PAGE_SIZE},
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
-                    name(TimeSeriesController.class.getName(), GET_ALL));
+                    name(TimeSeriesController.class.getName(), GET_ALL)));
 
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
@@ -503,7 +471,26 @@ public class TimeSeriesController implements CrudHandler {
                         .withShouldTrim(trim.getOrDefault(true))
                         .withIncludeEntryDate(includeEntryDate)
                         .build();
-                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+                // Execute DAO call with a timeout so we can return a clearer message instead of a generic 500
+                int apiTimeoutMs = Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000);
+                CompletableFuture<TimeSeries> daoFuture = CompletableFuture.supplyAsync(
+                        () -> dao.getTimeseries(cursor, pageSize, requestParameters));
+                TimeSeries ts;
+                try {
+                    ts = daoFuture.get(apiTimeoutMs, TimeUnit.MILLISECONDS);
+                } catch (java.util.concurrent.TimeoutException ex) {
+                    daoFuture.cancel(true);
+                    cwms.cda.api.errors.CdaError re = new cwms.cda.api.errors.CdaError("Request is taking too long; try narrowing the date range.");
+                    ctx.status(HttpServletResponse.SC_REQUEST_TIMEOUT);
+                    ctx.json(re);
+                    return;
+                } catch (InterruptedException ex) {
+                    daoFuture.cancel(true);
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(ex);
+                } catch (java.util.concurrent.ExecutionException ex) {
+                    throw unwrapExecutionException(ex);
+                }
 
                 if(datum != null) { //this will be null for non-elevation ts
                     // user has requested a specific vertical datum
@@ -551,6 +538,18 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         }
+    }
+
+    static RuntimeException unwrapExecutionException(java.util.concurrent.ExecutionException ex) {
+        Throwable cause = ex.getCause();
+        if (cause instanceof RuntimeException) {
+            // CDA ApplicationException extends RuntimeException.
+            throw (RuntimeException) cause;
+        }
+        if (cause instanceof Error) {
+            throw (Error) cause;
+        }
+        return new RuntimeException(cause);
     }
 
     private void addLinkHeader(@NotNull Context ctx, TimeSeries ts, ContentType contentType) {
@@ -638,7 +637,7 @@ public class TimeSeriesController implements CrudHandler {
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
-            CdaError re = new CdaError("Internal Error");
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "Internal Error", ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }

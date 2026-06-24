@@ -25,8 +25,27 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
+import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.NAMES;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
 import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -39,10 +58,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.DeleteConflictException;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.Location;
@@ -63,7 +84,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -151,7 +171,6 @@ public class LocationController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
@@ -199,17 +218,12 @@ public class LocationController implements CrudHandler {
             addDeprecatedContentTypeWarning(ctx, contentType);
 
             ctx.status(HttpServletResponse.SC_OK);
-
-        } catch (Exception ex) {
-            CdaError re = new CdaError("failed to process request");
-            logger.atSevere().withCause(ex).log("%s", re.toString());
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to get")
+                @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to get")
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -261,7 +275,7 @@ public class LocationController implements CrudHandler {
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (IOException ex) {
             String errorMsg = "Error retrieving " + locationId;
-            CdaError re = new CdaError(errorMsg);
+            CdaError re = ExceptionTraceSupport.buildError(ctx, errorMsg, ex);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
             logger.atSevere().withCause(ex).log("%s", errorMsg);
         }
@@ -303,7 +317,7 @@ public class LocationController implements CrudHandler {
                 "Created Location", locationFromBody.getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
-            CdaError re = new CdaError("failed to process request");
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "failed to process request", ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -311,14 +325,14 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to update")
+                @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to update")
             },
             requestBody = @OpenApiRequestBody(
-                    content = {
-                        @OpenApiContent(from = Location.class, type = Formats.XML),
-                        @OpenApiContent(from = Location.class, type = Formats.JSON)
-                    },
-                    required = true),
+                content = {
+                    @OpenApiContent(from = Location.class, type = Formats.XML),
+                    @OpenApiContent(from = Location.class, type = Formats.JSON)
+                },
+                required = true),
             description = "Update CWMS Location",
             method = HttpMethod.PATCH,
             path = "/locations",
@@ -357,8 +371,8 @@ public class LocationController implements CrudHandler {
                         "Updated Location", updatedLocation.getName()));
             }
         } catch (IOException ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                    "Failed to process request: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -367,7 +381,7 @@ public class LocationController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to delete")
+                @OpenApiParam(name = LOCATION_ID, description = "The ID of the location to delete")
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "

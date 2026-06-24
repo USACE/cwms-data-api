@@ -29,13 +29,14 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.MeasurementDao;
 import cwms.cda.data.dao.MeasurementDaoTestIT;
-import static cwms.cda.data.dao.MeasurementDaoTestIT.MINIMUM_SCHEMA;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.MinimumSchema;
@@ -139,7 +140,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_create_retrieve_delete_measurement(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurement.json");
         assertNotNull(resource);
@@ -271,7 +272,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_create_retrieve_delete_measurement_multiple(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements.json");
         assertNotNull(resource);
@@ -451,7 +452,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void test_delete_does_not_exist() {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         // Delete a Measurement

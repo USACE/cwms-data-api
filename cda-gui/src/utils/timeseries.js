@@ -69,7 +69,7 @@ export function mergeTimeseries(timeseriesList) {
     if (ts?.values.length) {
       merged.tsids.push({ name: ts.name, units: ts.units });
       ts.values.forEach((v) => {
-        // destructure value array [epoch, value, quality_code (not used)]
+        // destructure value array [epoch, value, quality_code]
         let [_d, _v] = v;
         // Parse the value to a float with the correct precision given the units
         _v = parseFloat(_v) || null;
@@ -144,7 +144,7 @@ export const getPrecision = (units) => {
  */
 export function getLatestValue(data) {
   // values is a 2D array of [[timestamp, value, quality_code], ...]
-  for (let index = data?.values.length - 1; index >= 0; index--) {
+  for (let index = data?.values.length - 1; index > 0; index--) {
     const value = data.values[index];
     if (value[1] != null) return value;
   }

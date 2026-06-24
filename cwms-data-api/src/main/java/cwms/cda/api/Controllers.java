@@ -164,6 +164,7 @@ public final class Controllers {
     public static final String QUALITY = "quality";
     public static final String NAMES = "names";
     public static final String FILTER_BASE_LOCATIONS = "filter-base-locations";
+    public static final String SEARCH_TEXT = "search-text";
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
@@ -217,6 +218,7 @@ public final class Controllers {
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
     public static final String INCLUDE_EXTENTS = "include-extents";
+    public static final String INCLUDE_VERSIONS = "include-versions";
     public static final String EXCLUDE_EMPTY = "exclude-empty";
     public static final String DEFAULT_VALUE = "default-value";
     public static final String CATEGORY = "category";
@@ -254,6 +256,13 @@ public final class Controllers {
 
     private Controllers() {
 
+    }
+
+    public static int validateTimeSeriesPageSize(int pageSize) {
+        if (pageSize < -1) {
+            throw new IllegalArgumentException(PAGE_SIZE + " must be -1, 0, or a positive integer");
+        }
+        return pageSize;
     }
 
     /**

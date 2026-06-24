@@ -53,8 +53,8 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
                 .and(view.TS_CATEGORY_ID.eq(categoryId))
                 .fetchOne();
 
-        return fetchOne != null ?
-            Optional.of(fetchOne.into(TimeSeriesCategory.class)) : Optional.empty();
+        return fetchOne != null
+            ? Optional.of(fetchOne.into(TimeSeriesCategory.class)) : Optional.empty();
     }
 
     public List<TimeSeriesCategory> getTimeSeriesCategories(String officeId) {
@@ -64,11 +64,10 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
                 table.CAT_DB_OFFICE_ID, table.TS_CATEGORY_ID,table.TS_CATEGORY_DESC)
                 .from(table);
         Select<?> select;
-        if ( officeId != null && !officeId.isEmpty())
-        {
+        if (officeId != null && !officeId.isEmpty()) {
             select = step.where(table.CAT_DB_OFFICE_ID.eq(officeId.toUpperCase()));
-        }else {
-             select = step;
+        } else {
+            select = step;
         }
 
         return select.fetch().into(TimeSeriesCategory.class);
@@ -80,12 +79,13 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
 
     public void delete(String categoryId, boolean cascadeDelete, String office) {
 
-        if(cascadeDelete){
+        if (cascadeDelete) {
             cascadeDelete(categoryId, office);
         } else {
             connection(dsl, conn -> {
                 DSLContext dslContext = getDslContext(conn, office);
-                CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(dslContext.configuration(), categoryId, formatBool(false), office);
+                CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(dslContext.configuration(), categoryId,
+                    formatBool(false), office);
             });
         }
     }
@@ -94,25 +94,25 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
 
-            if (getDbVersion() > Dao.CWMS_25_07_01) {
+            // Reuse the connection already borrowed above so small test pools don't deadlock.
+            if (getDbVersion(dslContext) > Dao.CWMS_25_07_01) {
                 // With newer schema it should just work, don't need transaction
                 Configuration config = dslContext.configuration();
                 CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(config, categoryId, formatBool(true), office);
             } else {
-                // Before 2/3/2026 DELETE_TS_CATEGORY wasn't removing assignments from groups so we start a transaction and do the deletes
+                // Before 2/3/2026 DELETE_TS_CATEGORY wasn't removing assignments from groups
+                // so we start a transaction and do the deletes
 
                 dslContext.transaction((Configuration trx) -> {
-                    DSLContext context = trx.dsl();
-                    Configuration config = context.configuration();
-
-                    TimeSeriesGroupDao dao = new TimeSeriesGroupDao(context);
-                    List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(null, null, office, false, categoryId, null);
+                    TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dslContext);
+                    List<TimeSeriesGroup> timeSeriesGroups = dao.getTimeSeriesGroups(null,
+                        null, office, false, categoryId, null);
                     for (TimeSeriesGroup group : timeSeriesGroups) {
                         dao.delete(categoryId, group.getId(), office, true);
                     }
 
                     // Before 2/3/2026 DELETE_TS_CATEGORY wasn't removing assignments from groups
-                    CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(config, categoryId, formatBool(true), office);
+                    CWMS_TS_PACKAGE.call_DELETE_TS_CATEGORY(trx, categoryId, formatBool(true), office);
                 });
             }
 
@@ -134,12 +134,13 @@ public class TimeSeriesCategoryDao extends JooqDao<TimeSeriesCategory> {
         String office = category.getOfficeId();
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            if(!Objects.equals(oldCategoryId, category.getId()))
-            {
+            if (!Objects.equals(oldCategoryId, category.getId())) {
                 // When the old and new are the same RENAME throws
-                CWMS_TS_PACKAGE.call_RENAME_TS_CATEGORY(dslContext.configuration(), oldCategoryId, category.getId(), office);
+                CWMS_TS_PACKAGE.call_RENAME_TS_CATEGORY(dslContext.configuration(), oldCategoryId,
+                    category.getId(), office);
             }
-            CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(dslContext.configuration(), category.getId(), category.getDescription(), "F", formatBool(ignoreNulls), office);
+            CWMS_TS_PACKAGE.call_STORE_TS_CATEGORY(dslContext.configuration(), category.getId(),
+                category.getDescription(), "F", formatBool(ignoreNulls), office);
         });
     }
 }

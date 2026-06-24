@@ -42,6 +42,7 @@ import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.select;
+import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC.AV_LOC;
 import static usace.cwms.db.jooq.codegen.tables.AV_LOC_ALIAS.AV_LOC_ALIAS;
 
@@ -61,6 +62,7 @@ import cwms.cda.data.dto.catalog.LocationCatalogEntry;
 import cwms.cda.helpers.ZoneIdHelper;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,7 +104,7 @@ import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final long DELETED_TS_MARKER = 0L;
-
+    private static Boolean HAS_SEARCH_COLUMN;
 
 
     public LocationsDaoImpl(DSLContext dsl) {
@@ -142,12 +144,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                     .fetchSize(DEFAULT_SMALL_FETCH_SIZE)
                     .fetch(this::buildLocation);
 
+            if (datum == null || datum.isBlank()) {
+                return results;
+            }
+
             List<Location> finalizedResults = new ArrayList<>();
-            if (datum != null && !datum.isBlank()) {
-                for(Location loc : results) {
-                    loc = convertLocationToVerticalDatum(dslContext, loc, datum, officeId);
-                    finalizedResults.add(loc);
-                }
+            for(Location loc : results) {
+                loc = convertLocationToVerticalDatum(dslContext, loc, datum, officeId);
+                finalizedResults.add(loc);
             }
             return finalizedResults;
         });
@@ -241,22 +245,59 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
 
             Location retVal;
             if (includeAliases) {
-                List<Record> locs = dslContext.select(asterisk())
-                        .from(AV_LOC2.AV_LOC2)
-                        .leftJoin(AV_LOC_ALIAS)
-                        .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
-                                AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
-                        .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId.toUpperCase())
-                                .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
-                                        .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
-                        .fetch();
-                if (locs.isEmpty()) {
-                    throw new NotFoundException("Location not found for office:" + officeId + " and unit "
-                            + "system:" + unitSystem + " and id:" + locationName);
-                }
+                List<Record> locs = dslContext.select(
+                                    AV_LOC2.AV_LOC2.LOCATION_CODE,
+                                    AV_LOC2.AV_LOC2.BASE_LOCATION_CODE,
+                                    AV_LOC2.AV_LOC2.DB_OFFICE_ID,
+                                    AV_LOC2.AV_LOC2.BASE_LOCATION_ID,
+                                    AV_LOC2.AV_LOC2.SUB_LOCATION_ID,
+                                    AV_LOC2.AV_LOC2.LOCATION_ID,
+                                    AV_LOC2.AV_LOC2.LOCATION_TYPE,
+                                    AV_LOC2.AV_LOC2.UNIT_SYSTEM,
+                                    AV_LOC2.AV_LOC2.ELEVATION,
+                                    AV_LOC2.AV_LOC2.UNIT_ID,
+                                    AV_LOC2.AV_LOC2.VERTICAL_DATUM,
+                                    AV_LOC2.AV_LOC2.LONGITUDE,
+                                    AV_LOC2.AV_LOC2.LATITUDE,
+                                    AV_LOC2.AV_LOC2.HORIZONTAL_DATUM,
+                                    AV_LOC2.AV_LOC2.TIME_ZONE_NAME,
+                                    AV_LOC2.AV_LOC2.COUNTY_NAME,
+                                    AV_LOC2.AV_LOC2.STATE_INITIAL,
+                                    AV_LOC2.AV_LOC2.PUBLIC_NAME,
+                                    AV_LOC2.AV_LOC2.LONG_NAME,
+                                    AV_LOC2.AV_LOC2.DESCRIPTION,
+                                    AV_LOC2.AV_LOC2.BASE_LOC_ACTIVE_FLAG,
+                                    AV_LOC2.AV_LOC2.LOC_ACTIVE_FLAG,
+                                    AV_LOC2.AV_LOC2.LOCATION_KIND_ID,
+                                    AV_LOC2.AV_LOC2.MAP_LABEL,
+                                    AV_LOC2.AV_LOC2.PUBLISHED_LATITUDE,
+                                    AV_LOC2.AV_LOC2.PUBLISHED_LONGITUDE,
+                                    AV_LOC2.AV_LOC2.BOUNDING_OFFICE_ID,
+                                    AV_LOC2.AV_LOC2.NATION_ID,
+                                    AV_LOC2.AV_LOC2.NEAREST_CITY,
+                                    AV_LOC2.AV_LOC2.ACTIVE_FLAG,
+                                    AV_LOC2.AV_LOC2.ALIASED_ITEM,
+                                    AV_LOC2.AV_LOC2.LOC_ALIAS_CATEGORY,
+                                    AV_LOC2.AV_LOC2.LOC_ALIAS_GROUP,
+                                    AV_LOC2.AV_LOC2.DB_OFFICE_CODE,
+                                    AV_LOC_ALIAS.CATEGORY_ID,
+                                    AV_LOC_ALIAS.GROUP_ID,
+                                    AV_LOC_ALIAS.ALIAS_ID)
+                            .from(AV_LOC2.AV_LOC2)
+                            .leftJoin(AV_LOC_ALIAS)
+                            .on(AV_LOC2.AV_LOC2.BASE_LOCATION_ID.eq(AV_LOC_ALIAS.BASE_LOCATION_ID).and(
+                                    AV_LOC2.AV_LOC2.LOCATION_CODE.eq(AV_LOC_ALIAS.LOCATION_CODE.cast(Long.class))))
+                            .where(AV_LOC2.AV_LOC2.DB_OFFICE_ID.eq(officeId.toUpperCase())
+                                    .and(AV_LOC2.AV_LOC2.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
+                                            .and(AV_LOC2.AV_LOC2.LOCATION_ID.equalIgnoreCase(locationName))))
+                            .fetch();
+                    if (locs.isEmpty()) {
+                        throw new NotFoundException("Location not found for office:" + officeId + " and unit "
+                                + "system:" + unitSystem + " and id:" + locationName);
+                    }
                 retVal = buildLocation(null, locs, true);
             } else {
-                Record loc = dslContext.select(AV_LOC.asterisk())
+                var loc = dslContext.select(AV_LOC.asterisk())
                         .from(AV_LOC)
                         .where(AV_LOC.DB_OFFICE_ID.eq(officeId.toUpperCase())
                                 .and(AV_LOC.UNIT_SYSTEM.equalIgnoreCase(unitSystem)
@@ -581,6 +622,12 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         //location codes (previous implementation used location_id) for joins, feel free to implement.
         Objects.requireNonNull(params.getIdLike(),
                 "A value must be provided for the idLike field. Specify .* if you don't care.");
+        String textSearch = params.getSearchText();
+        if (textSearch != null && !textSearch.isBlank() && !hasSearchDocColumn(dsl, table)) {
+            throw new IllegalArgumentException(
+                "Text search is not supported because SEARCH_DOC is not present in " + table.getName()
+            );
+        }
 
         // "condition" needs to be used by the count query and the results query.
         Condition condition = buildWhereCondition(params);
@@ -598,7 +645,14 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 .from(table)
                 .where(condition);
             logger.atFiner().log("%s", lazy(() -> count.getSQL(ParamType.INLINED)));
-            total = count.fetchOne().value1();
+            try {
+                total = count.fetchOne(0, int.class);
+            } catch (DataAccessException e) {
+                if (isOracleTextQuerySyntaxError(e)) {
+                    throw invalidSearchTextException(textSearch, e);
+                }
+                throw e;
+            }
         } else {
             cursorLocation = catPage.getCursorId();
             cursorOffice = catPage.getCurOffice();
@@ -678,8 +732,31 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 })
                 .collect(toList());
             return new Catalog(cursorLocation, total, pageSize, entries, params);
+        } catch (DataAccessException e) {
+            if (isOracleTextQuerySyntaxError(e)) {
+                throw new IllegalArgumentException(
+                    "Invalid search-text query syntax. The search-text value could not be parsed by Oracle Text: "
+                        + textSearch, e);
+            }
+            throw e;
         }
     }
+
+    private static boolean isOracleTextQuerySyntaxError(DataAccessException e) {
+        if(!(e.getCause() instanceof SQLException)) {
+            return false;
+        }
+        SQLException sqlException = (SQLException) e.getCause();
+        return sqlException != null
+            && sqlException.getErrorCode() == 30600;
+    }
+
+    private static IllegalArgumentException invalidSearchTextException(String searchText, DataAccessException cause) {
+        return new IllegalArgumentException(
+            "Invalid search-text query syntax. The search-text value could not be parsed: "
+                + searchText, cause);
+    }
+
 
     private static Condition buildWhereCondition(CatalogRequestParameters params) {
         String idLike = params.getIdLike();
@@ -728,7 +805,25 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
             condition = condition.and(fieldMapping.getSubLocationId().isNotNull());
         }
 
+        String textSearch = params.getSearchText();
+        if (textSearch != null && !textSearch.isBlank()) {
+            Field<Integer> containsScore = DSL.field(
+                "CONTAINS({0}, {1})",
+                Integer.class,
+                fieldMapping.getSearchDoc(),
+                DSL.inline(escapeOracleTextQuery(textSearch))
+            );
+
+            condition = condition.and(containsScore.gt(0));
+        }
+
         return condition;
+    }
+
+    private static String escapeOracleTextQuery(String query) {
+        //Loses support for `cat -dog` but since location ids have hyphens that seems like a fine
+        //tradeoff. Workaround is to do `cat NOT dog`
+        return query.replace("-", "\\-");
     }
 
     private static Condition addCursorConditions(Condition condition, String cursorOffice, String cursorLocation,
@@ -756,6 +851,18 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
     private LocationAlias buildLocationAlias(Record row, FieldMapping mapping) {
         return new LocationAlias(row.get(mapping.getAliasCategory()) + "-" + row.get(mapping.getAliasGroup()),
             row.get(mapping.getLocationId()));
+    }
+
+    private static synchronized boolean hasSearchDocColumn(DSLContext dsl, Table<?> table) {
+        if(HAS_SEARCH_COLUMN != null) {
+            return HAS_SEARCH_COLUMN;
+        }
+        HAS_SEARCH_COLUMN =  dsl.meta()
+            .getTables(table.getName())
+            .stream()
+            .flatMap(t -> Arrays.stream(t.fields()))
+            .anyMatch(c -> c.getName().equalsIgnoreCase("SEARCH_DOC"));
+        return HAS_SEARCH_COLUMN;
     }
 
     @NotNull
@@ -886,6 +993,8 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         boolean includesAliases();
 
         Table<Record> getTable();
+
+        Field<String> getSearchDoc();
     }
 
     private static class AvLoc2FieldMapping implements FieldMapping {
@@ -1043,6 +1152,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         public Table getTable() {
             return AV_LOC2.AV_LOC2;
         }
+
+        @Override
+        public Field<String> getSearchDoc() {
+            return DSL.field(DSL.name(getTable().getName(), "SEARCH_DOC"), String.class);
+        }
     }
 
     private static class AvLocFieldMapping implements FieldMapping {
@@ -1194,6 +1308,11 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
         @Override
         public boolean includesAliases() {
             return false;
+        }
+
+        @Override
+        public Field<String> getSearchDoc() {
+            return DSL.field(DSL.name(getTable().getName(), "SEARCH_DOC"), String.class);
         }
 
         @Override

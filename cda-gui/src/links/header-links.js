@@ -7,29 +7,34 @@ export default [
   {
     id: "swagger",
     text: "API Docs",
-    href: "swagger-ui",
+    href: "/swagger-ui",
     children: [
       {
         id: "swagger-ui",
         text: "Swagger UI",
-        href: "swagger-ui",
+        href: "/swagger-ui",
       },
       {
         id: "swagger-schema",
         text: "Swagger Docs Schema",
-        href: "/cwms-data/swagger-docs",
+        href: "/swagger-docs",
       },
     ],
   },
   {
     id: "tools",
     text: "Tools",
-    href: "tools",
+    href: "/data-query",
     children: [
       {
         id: "data-query",
         text: "Data Query",
         href: "/data-query",
+      },
+      {
+        id: "location-search",
+        text: "Location Search",
+        href: "/location-search",
       },
     ],
   },
@@ -56,22 +61,22 @@ export default [
       {
         id: "regex",
         text: "Regular Expressions",
-        href: "regexp",
+        href: "/regexp",
       },
       {
         id: "rsql",
         text: "Filter Expressions (RSQL)",
-        href: "filter-expressions",
+        href: "/filter-expressions",
       },
       {
         id: "times",
         text: "Timestamps (times)",
-        href: "timestamps",
+        href: "/timestamps",
       },
       {
         id: "legacy",
         text: "Legacy Formats",
-        href: "legacy-format",
+        href: "/legacy-format",
       },
     ],
   },

@@ -3,14 +3,34 @@ plugins {
     id 'com.github.node-gradle.node' version '7.1.0'
 }
 
-task buildGui(type:NpxTask) {
+def cdaGuiViteMode = providers.gradleProperty('cdaGuiMode')
+        .orElse(providers.environmentVariable('CDA_GUI_MODE'))
+        .orElse('production')
+
+task buildGuiVite(type:NpxTask) {
     dependsOn npmInstall
-    command = "npm"
-    args = ["run", "build", "--prod"]
-    inputs.files('package.json', 'package-lock.json', 'vite.config.js')
+    command = "vite"
+    args = ["build", "--mode", cdaGuiViteMode.get()]
+    inputs.files('package.json', 'package-lock.json', 'vite.config.js', 'index.html',
+            '.env.development', '.env.localhost', '.env.production', '.env.test')
     inputs.dir('src')
+    inputs.dir('public')
     inputs.dir(fileTree("node_modules").exclude(".cache"))
     outputs.dir('dist')
+}
+
+task buildGuiSitemap(type: Exec) {
+    dependsOn buildGuiVite
+    executable "node"
+    args "scripts/generate-sitemap.mjs"
+    workingDir project.layout.projectDirectory
+    inputs.dir('scripts')
+    inputs.files('src/route-paths.js')
+    outputs.file('dist/sitemap.xml')
+}
+
+task buildGui {
+    dependsOn buildGuiSitemap
 }
 
 task cleanNode(type: Delete) {
@@ -33,9 +53,12 @@ sourceSets {
     java {
         main {
             resources {
-                // This makes the processResources task automatically depend on the buildWebapp one
-                srcDir(buildGui)
+                srcDir(project.layout.projectDirectory.dir('dist'))
             }
         }
     }
+}
+
+tasks.named('processResources') {
+    dependsOn buildGui
 }

@@ -14,26 +14,40 @@ import { useDebounce } from "use-debounce";
 // Catalog client
 const catalogApi = new CatalogApi(
   new Configuration({
-    basePath:
-      import.meta.env.VITE_CDA_URL ||
-      (import.meta.env.BASE_URL || "").replace(/\/$/, "") ||
-      "/cwms-data",
+    basePath: import.meta.env.VITE_CDA_API_ROOT,
     headers: { accept: "application/json;version=2" },
   }),
 );
 
-function getFreshnessColor(lastUpdateIso) {
-  if (!lastUpdateIso) return "gray";
-  const now = dayjs();
-  const updated = dayjs(lastUpdateIso);
-  const diffHours = now.diff(updated, "hour");
-  const diffDays = now.diff(updated, "day");
-  if (diffHours <= 24) return "green";
-  if (diffDays <= 7) return "yellow";
-  return "red";
+function getExtentLastUpdate(extent) {
+  return extent?.lastUpdate || extent?.["last-update"];
 }
 
-export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
+function getFreshnessColor(extents) {
+  const lastUpdates = (extents || [])
+    .map(getExtentLastUpdate)
+    .filter(Boolean)
+    .map((lastUpdate) => dayjs(lastUpdate))
+    .filter((lastUpdate) => lastUpdate.isValid());
+
+  if (!lastUpdates.length) return "red";
+
+  const now = dayjs();
+  const newestLastUpdate = lastUpdates.reduce((newest, lastUpdate) =>
+    lastUpdate.isAfter(newest) ? lastUpdate : newest,
+  );
+
+  return now.diff(newestLastUpdate, "hour", true) <= 24 ? "green" : "yellow";
+}
+
+export default function TimeSeriesDropdown({
+  office,
+  setOffice,
+  tsids,
+  setTsids,
+  setTsidOffices,
+  includeMissingTimeseries,
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 400);
 
@@ -43,31 +57,44 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
     isError,
     error,
   } = useQuery({
-    queryKey: ["tsid-catalog", office, debouncedSearchTerm],
+    queryKey: ["tsid-catalog", office, debouncedSearchTerm, includeMissingTimeseries],
     queryFn: async () => {
-      if (!debouncedSearchTerm || debouncedSearchTerm.length < 3 || !office) return [];
-      const { entries } = await catalogApi.getCatalogWithDataset({
+      if (!debouncedSearchTerm || debouncedSearchTerm.length < 3) return [];
+      const request = {
         dataset: "TIMESERIES",
-        excludeEmpty: false,
+        excludeEmpty: !includeMissingTimeseries,
+        includeAliases: true,
         like: `*${debouncedSearchTerm}*`,
-        office,
         pageSize: 500,
-      });
+      };
+      if (office) request.office = office;
+      const { entries } = await catalogApi.getCatalogWithDataset(request);
       return entries;
     },
-    enabled: !!office && debouncedSearchTerm.length >= 3,
+    enabled: debouncedSearchTerm.length >= 3,
   });
 
   return (
-    <div className="flex w-full">
-      <label className="mb-4 mt-6">Select a timeseries:</label>
-      <div className="flex flex-col my-4 w-3/4 ms-2 me-auto">
+    <div className="flex flex-col sm:flex-row sm:items-start w-full">
+      <label className="mb-2 sm:mb-4 sm:mt-6">Select a timeseries:</label>
+      <div className="flex flex-col my-2 sm:my-4 w-full sm:w-3/4 sm:ms-2 me-auto">
         <Combobox
           value={tsids[0] || ""}
           onChange={(value) => {
             if (!value) return;
-            if ((value.match(/\./g) || []).length === 5) {
-              setTsids((prev) => (prev.includes(value) ? prev : [...prev, value]));
+            const selected = suggestions.find(
+              (entry) => `${entry.office}/${entry.name}` === value,
+            );
+            const tsid = selected?.name || value;
+            if ((tsid.match(/\./g) || []).length === 5) {
+              if (!office && selected?.office) setOffice(selected.office);
+              setTsids((prev) => (prev.includes(tsid) ? prev : [...prev, tsid]));
+              if (selected?.office || office) {
+                setTsidOffices?.((current) => ({
+                  ...current,
+                  [tsid]: selected?.office || office,
+                }));
+              }
             } else {
               alert(
                 "TSID must have 6 parts: Location.Parameter.Type.Interval.Duration.Version",
@@ -79,6 +106,11 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
             onChange={(event) => setSearchTerm(event.target.value)}
             className="px-3 py-2 border rounded w-full"
             placeholder="Search TSID (e.g. Location.Elev.Inst.1Hour.0.Version)"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            name="tsid-search"
           />
           <ComboboxOptions className="bg-white border mt-1 max-h-60 overflow-auto">
             {loading ? (
@@ -87,11 +119,13 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
               <li className="p-2 text-red-600">Error: {error.message}</li>
             ) : (
               suggestions.map((entry, idx) => {
-                const suggestion_color = getFreshnessColor(
-                  entry.extents?.[0]?.lastUpdate,
-                );
+                const suggestion_color = getFreshnessColor(entry.extents);
                 return (
-                  <ComboboxOption key={idx} value={entry.name} as={Fragment}>
+                  <ComboboxOption
+                    key={`${entry.office}/${entry.name}/${idx}`}
+                    value={`${entry.office}/${entry.name}`}
+                    as={Fragment}
+                  >
                     {({ active }) => (
                       <li
                         className={`flex items-center gap-2 ${active ? "bg-blue-100" : ""} p-2 cursor-pointer`}
@@ -102,12 +136,11 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
                               ? "bg-green-500"
                               : suggestion_color === "yellow"
                                 ? "bg-yellow-400"
-                                : suggestion_color === "gray"
-                                  ? "bg-gray-500"
-                                  : "bg-red-500"
+                                : "bg-red-500"
                           }`}
                         />
-                        {entry.name}
+                        <span className="font-semibold">{entry.office}</span>
+                        <span>{entry.name}</span>
                       </li>
                     )}
                   </ComboboxOption>
@@ -122,7 +155,10 @@ export default function TimeSeriesDropdown({ office, tsids, setTsids }) {
 }
 
 TimeSeriesDropdown.propTypes = {
-  office: PropTypes.string.isRequired,
+  office: PropTypes.string,
+  setOffice: PropTypes.func.isRequired,
   tsids: PropTypes.array.isRequired,
   setTsids: PropTypes.func.isRequired,
+  setTsidOffices: PropTypes.func,
+  includeMissingTimeseries: PropTypes.bool.isRequired,
 };

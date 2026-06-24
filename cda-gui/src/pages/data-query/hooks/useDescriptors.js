@@ -2,66 +2,54 @@ import { useQuery } from "@tanstack/react-query";
 import { Configuration, CatalogApi } from "cwmsjs";
 
 const config = new Configuration({
-  basePath:
-    import.meta.env.VITE_CDA_URL ||
-    (import.meta.env.BASE_URL || "").replace(/\/$/, "") ||
-    "/cwms-data",
+  basePath: import.meta.env.VITE_CDA_API_ROOT,
 });
 const cataApi = new CatalogApi(config);
 
-export default function useDescriptors({
-  office,
-  location,
-  parameter,
-  type,
-  interval,
-  duration,
-}) {
+export default function useDescriptors({ includeMissingTimeseries, office, location }) {
   return useQuery({
-    queryKey: [
-      "tsid-descriptors",
-      office,
-      location,
-      parameter,
-      type,
-      interval,
-      duration,
-    ],
+    queryKey: ["tsid-descriptors", includeMissingTimeseries, office, location],
     queryFn: async () => {
-      if (!office) return [];
-      const like = [
-        location || "*",
-        parameter || "*",
-        type || "*",
-        interval || "*",
-        duration || "*",
-      ].join(".");
-      const all = await cataApi.getCatalogWithDataset({
+      const like = [location || "*", "*", "*", "*", "*", "*"].join(".");
+      const request = {
         dataset: "TIMESERIES",
-        excludeEmpty: true,
-        office,
+        excludeEmpty: !includeMissingTimeseries,
         like,
-      });
+      };
+      if (office) request.office = office;
+      const all = await cataApi.getCatalogWithDataset(request);
       return all;
     },
-    enabled: !!office,
+    enabled: !!location,
     select: (descriptors) => {
       const types = new Set();
       const intervals = new Set();
       const durations = new Set();
       const versions = new Set();
       const parameters = new Set();
-      descriptors?.entries.forEach((d) => {
-        const parts = d.name.split(".");
+      const entries = (descriptors?.entries || []).map((d) => {
+        const [entryLocation, parameter, type, interval, duration, version] =
+          d.name.split(".");
         // const locParts = parts[0].split("-");
-        parameters.add(parts[1]);
-        types.add(parts[2]);
-        intervals.add(parts[3]);
-        durations.add(parts[4]);
-        versions.add(parts[5]);
+        parameters.add(parameter);
+        types.add(type);
+        intervals.add(interval);
+        durations.add(duration);
+        versions.add(version);
+        return {
+          duration,
+          interval,
+          location: entryLocation,
+          name: d.name,
+          parameter,
+          type,
+          version,
+        };
       });
 
       return {
+        count: descriptors?.entries?.length || 0,
+        entries,
         parameters: Array.from(parameters),
         types: Array.from(types),
         intervals: Array.from(intervals),

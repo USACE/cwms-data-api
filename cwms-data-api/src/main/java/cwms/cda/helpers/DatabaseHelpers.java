@@ -3,10 +3,11 @@ package cwms.cda.helpers;
 
 public class DatabaseHelpers {
 
+    public static final int LATEST_SCHEMA = 999999;
     
-    public static enum SCHEMA_VERSION {
+    public enum SCHEMA_VERSION {
         V2025_07_01(250701, "25.07.01"),
-        LATEST_DEV(999999, "99.99.99"),
+        LATEST_DEV(LATEST_SCHEMA, "99.99.99"),
         BYPASS(-1, "Bypass")
         ;
 

@@ -185,7 +185,7 @@ public final class WaterSupplyUtils {
     }
 
     static WATER_USER_CONTRACT_REF_T toContractRef(WaterUser waterUser, String contractName) {
-        WATER_USER_CONTRACT_REF_T waterUserContractRefT = new WATER_USER_CONTRACT_REF_T();
+        var waterUserContractRefT = new WATER_USER_CONTRACT_REF_T();
         waterUserContractRefT.setWATER_USER(toWaterUserObjT(waterUser));
         waterUserContractRefT.setCONTRACT_NAME(contractName);
         return waterUserContractRefT;
@@ -233,32 +233,38 @@ public final class WaterSupplyUtils {
 
         for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
             for (PumpTransfer transfer : entry.getValue()) {
-                WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT = getWatUsrContractAcctObjT(accounting, entry, transfer, pumpIn, pumpOut, pumpBelow);
+                var watUsrContractAcctObjT = getWatUsrContractAcctObjT(accounting, entry, transfer,
+                    pumpIn, pumpOut, pumpBelow);
                 watUsrContractAcctObjTList.add(watUsrContractAcctObjT);
             }
         }
         return new WAT_USR_CONTRACT_ACCT_TAB_T(watUsrContractAcctObjTList);
     }
 
-    private static @NonNull WAT_USR_CONTRACT_ACCT_OBJ_T getWatUsrContractAcctObjT(WaterSupplyAccounting accounting, Map.Entry<Instant, List<PumpTransfer>> entry, PumpTransfer transfer, LOCATION_REF_T pumpIn, LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
+    private static @NonNull WAT_USR_CONTRACT_ACCT_OBJ_T getWatUsrContractAcctObjT(WaterSupplyAccounting accounting,
+        Map.Entry<Instant, List<PumpTransfer>> entry, PumpTransfer transfer,
+        LOCATION_REF_T pumpIn, LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
         WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT = new WAT_USR_CONTRACT_ACCT_OBJ_T();
         WATER_USER_CONTRACT_REF_T contractRef = toContractRef(accounting.getWaterUser(),
                 accounting.getContractName());
         watUsrContractAcctObjT.setWATER_USER_CONTRACT_REF(contractRef);
         watUsrContractAcctObjT.setACCOUNTING_REMARKS(transfer.getComment());
         watUsrContractAcctObjT.setPUMP_FLOW(transfer.getFlow());
+        watUsrContractAcctObjT.setPUMP_FLOW_UNIT(transfer.getFlowUnit());
         LOOKUP_TYPE_OBJ_T transferType = toLookupTypeO(new LookupType.Builder()
                 .withDisplayValue(transfer.getTransferTypeDisplay())
                 .withActive(true)
                 .withOfficeId(accounting.getWaterUser().getProjectId().getOfficeId())
                 .build());
         watUsrContractAcctObjT.setPHYSICAL_TRANSFER_TYPE(transferType);
-        watUsrContractAcctObjT.setPUMP_LOCATION_REF(getPumpLocationRef(transfer.getPumpType(), pumpIn, pumpOut, pumpBelow));
+        watUsrContractAcctObjT.setPUMP_LOCATION_REF(getPumpLocationRef(transfer.getPumpType(),
+            pumpIn, pumpOut, pumpBelow));
         watUsrContractAcctObjT.setTRANSFER_START_DATETIME(Timestamp.from(entry.getKey()));
         return watUsrContractAcctObjT;
     }
 
-    private static LOCATION_REF_T getPumpLocationRef(PumpType pumpType, LOCATION_REF_T pumpIn, LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
+    private static LOCATION_REF_T getPumpLocationRef(PumpType pumpType, LOCATION_REF_T pumpIn,
+        LOCATION_REF_T pumpOut, LOCATION_REF_T pumpBelow) {
         switch (pumpType) {
             case IN:
                 return pumpIn;
@@ -305,7 +311,7 @@ public final class WaterSupplyUtils {
     }
 
     static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, WAT_USR_CONTRACT_ACCT_TAB_T
-            watUsrContractAcctTabT, String flowUnits) {
+            watUsrContractAcctTabT) {
 
         List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
         Map<AccountingKey, WaterSupplyAccounting> cacheMap = new TreeMap<>();
@@ -317,15 +323,17 @@ public final class WaterSupplyUtils {
                 .withWaterUser(new WaterUser.Builder()
                     .withWaterRight(watUsrContractRef.getWATER_USER().getWATER_RIGHT())
                     .withEntityName(watUsrContractRef.getWATER_USER().getENTITY_NAME())
-                    .withProjectId(CwmsId.buildCwmsId(watUsrContractRef.getWATER_USER().getPROJECT_LOCATION_REF().getOFFICE_ID(),
+                    .withProjectId(CwmsId.buildCwmsId(watUsrContractRef.getWATER_USER()
+                            .getPROJECT_LOCATION_REF().getOFFICE_ID(),
                             watUsrContractRef.getWATER_USER().getPROJECT_LOCATION_REF().call_GET_LOCATION_ID()))
                     .build())
                 .build();
             if (cacheMap.containsKey(key)) {
                 WaterSupplyAccounting accounting = cacheMap.get(key);
-                addTransfer(watUsrContractAcctObjT, accounting, flowUnits);
+                addTransfer(watUsrContractAcctObjT, accounting, watUsrContractAcctObjT.getPUMP_FLOW_UNIT());
             } else {
-                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT, flowUnits));
+                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT,
+                    watUsrContractAcctObjT.getPUMP_FLOW_UNIT()));
             }
         }
         for (Map.Entry<AccountingKey, WaterSupplyAccounting> entry : cacheMap.entrySet()) {
@@ -334,38 +342,8 @@ public final class WaterSupplyUtils {
         return waterSupplyAccounting;
     }
 
-    // Like the other toWaterSupplyAccountingList but this one takes handgen class.
-    public static List<WaterSupplyAccounting> toWaterSupplyAccountingList(Connection c, cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T
-            watUsrContractAcctTabT) {
-
-        List<WaterSupplyAccounting> waterSupplyAccounting = new ArrayList<>();
-        Map<WaterSupplyUtils.AccountingKey, WaterSupplyAccounting> cacheMap = new TreeMap<>();
-
-        for (cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT : watUsrContractAcctTabT) {
-            WATER_USER_CONTRACT_REF_T watUsrContractRef = watUsrContractAcctObjT.getWATER_USER_CONTRACT_REF();
-            WaterSupplyUtils.AccountingKey key = new WaterSupplyUtils.AccountingKey.Builder()
-                    .withContractName(watUsrContractRef.getCONTRACT_NAME())
-                    .withWaterUser(new WaterUser.Builder()
-                            .withWaterRight(watUsrContractRef.getWATER_USER().getWATER_RIGHT())
-                            .withEntityName(watUsrContractRef.getWATER_USER().getENTITY_NAME())
-                            .withProjectId(CwmsId.buildCwmsId(watUsrContractRef.getWATER_USER().getPROJECT_LOCATION_REF().getOFFICE_ID(),
-                                    watUsrContractRef.getWATER_USER().getPROJECT_LOCATION_REF().call_GET_LOCATION_ID()))
-                            .build())
-                    .build();
-            if (cacheMap.containsKey(key)) {
-                WaterSupplyAccounting accounting = cacheMap.get(key);
-                addTransfer(watUsrContractAcctObjT, accounting, watUsrContractAcctObjT.getPUMP_FLOW_UNIT());
-            } else {
-                cacheMap.put(key, createAccounting(c, watUsrContractAcctObjT, watUsrContractAcctObjT.getPUMP_FLOW_UNIT()));
-            }
-        }
-        for (Map.Entry<WaterSupplyUtils.AccountingKey, WaterSupplyAccounting> entry : cacheMap.entrySet()) {
-            waterSupplyAccounting.add(entry.getValue());
-        }
-        return waterSupplyAccounting;
-    }
-
-    private static WaterSupplyAccounting createAccounting(Connection c, WAT_USR_CONTRACT_ACCT_OBJ_T acctObjT, String flowUnits) {
+    private static WaterSupplyAccounting createAccounting(Connection c, WAT_USR_CONTRACT_ACCT_OBJ_T acctObjT,
+        String flowUnits) {
         WaterContractDao waterContractDao = new WaterContractDao(DSL.using(c));
         WATER_USER_OBJ_T waterUserObjT = acctObjT.getWATER_USER_CONTRACT_REF().getWATER_USER();
         WaterUserContract waterUserContract = waterContractDao.getWaterContract(
@@ -415,57 +393,8 @@ public final class WaterSupplyUtils {
             .build();
     }
 
-    private static WaterSupplyAccounting createAccounting(Connection c, cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T acctObjT, String flowUnits) {
-        WaterContractDao waterContractDao = new WaterContractDao(DSL.using(c));
-        WATER_USER_OBJ_T waterUserObjT = acctObjT.getWATER_USER_CONTRACT_REF().getWATER_USER();
-        WaterUserContract waterUserContract = waterContractDao.getWaterContract(
-                acctObjT.getWATER_USER_CONTRACT_REF().getCONTRACT_NAME(),
-                new CwmsId.Builder()
-                        .withOfficeId(waterUserObjT.getPROJECT_LOCATION_REF().getOFFICE_ID())
-                        .withName(waterUserObjT.getPROJECT_LOCATION_REF().call_GET_LOCATION_ID())
-                        .build(),
-                waterUserObjT.getENTITY_NAME());
-        Map<Instant, List<PumpTransfer>> pumpAccounting = new TreeMap<>();
-        String pumpLocation = acctObjT.getPUMP_LOCATION_REF().call_GET_LOCATION_ID();
-        String pumpOffice = acctObjT.getPUMP_LOCATION_REF().getOFFICE_ID();
-        String transferDisplay = acctObjT.getPHYSICAL_TRANSFER_TYPE().getDISPLAY_VALUE();
-        Location pumpIn = waterUserContract.getPumpInLocation() != null
-                ? waterUserContract.getPumpInLocation().getPumpLocation() : null;
-        Location pumpOut = waterUserContract.getPumpOutLocation() != null
-                ? waterUserContract.getPumpOutLocation().getPumpLocation() : null;
-        Location pumpBelow = waterUserContract.getPumpOutBelowLocation() != null
-                ? waterUserContract.getPumpOutBelowLocation().getPumpLocation() : null;
-        Instant transferStart = acctObjT.getTRANSFER_START_DATETIME().toInstant();
-        String remarks = acctObjT.getACCOUNTING_REMARKS();
-        double flow = acctObjT.getPUMP_FLOW();
-
-        PumpTransfer transfer = null;
-        if (pumpIn != null && pumpIn.getName().equalsIgnoreCase(pumpLocation)
-                && pumpIn.getOfficeId().equalsIgnoreCase(pumpOffice)) {
-            transfer = new PumpTransfer(PumpType.IN, transferDisplay, flow, flowUnits, remarks);
-        } else if (pumpOut != null && pumpOut.getName().equalsIgnoreCase(pumpLocation)
-                && pumpOut.getOfficeId().equalsIgnoreCase(pumpOffice)) {
-            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, flow, flowUnits, remarks);
-        } else if (pumpBelow != null && pumpBelow.getName().equalsIgnoreCase(pumpLocation)
-                && pumpBelow.getOfficeId().equalsIgnoreCase(pumpOffice)) {
-            transfer = new PumpTransfer(PumpType.BELOW, transferDisplay, flow, flowUnits, remarks);
-        }
-        if (transfer != null) {
-            pumpAccounting.put(transferStart, Collections.singletonList(transfer));
-        }
-        return new WaterSupplyAccounting.Builder()
-                .withContractName(acctObjT.getWATER_USER_CONTRACT_REF().getCONTRACT_NAME())
-                .withWaterUser(toWaterUser(waterUserObjT))
-                .withPumpLocations(new PumpLocation.Builder()
-                        .withPumpIn(pumpIn != null ? CwmsId.buildCwmsId(pumpIn.getOfficeId(), pumpIn.getName()) : null)
-                        .withPumpOut(pumpOut != null ? CwmsId.buildCwmsId(pumpOut.getOfficeId(), pumpOut.getName()) : null)
-                        .withPumpBelow(pumpBelow != null ? CwmsId.buildCwmsId(pumpBelow.getOfficeId(), pumpBelow.getName()) : null)
-                        .build())
-                .withPumpAccounting(pumpAccounting)
-                .build();
-    }
-
-    public static void addTransfer(WAT_USR_CONTRACT_ACCT_OBJ_T acctObjTs, WaterSupplyAccounting accounting, String flowUnits) {
+    public static void addTransfer(WAT_USR_CONTRACT_ACCT_OBJ_T acctObjTs, WaterSupplyAccounting accounting,
+        String flowUnits) {
         PumpTransfer transfer = null;
         String transferDisplay = acctObjTs.getPHYSICAL_TRANSFER_TYPE().getDISPLAY_VALUE();
         String accountingRemarks = acctObjTs.getACCOUNTING_REMARKS();
@@ -478,10 +407,12 @@ public final class WaterSupplyUtils {
 
         if (pumpIn != null && pumpIn.getName().equalsIgnoreCase(locationId)
                 && pumpIn.getOfficeId().equalsIgnoreCase(officeId)) {
-            transfer = new PumpTransfer(PumpType.IN, transferDisplay, acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
+            transfer = new PumpTransfer(PumpType.IN, transferDisplay, acctObjTs.getPUMP_FLOW(),
+                flowUnits, accountingRemarks);
         } else if (pumpOut != null && pumpOut.getName().equalsIgnoreCase(locationId)
                 && pumpOut.getOfficeId().equalsIgnoreCase(officeId)) {
-            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
+            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, acctObjTs.getPUMP_FLOW(),
+                flowUnits, accountingRemarks);
         } else if (pumpBelow != null && pumpBelow.getName().equalsIgnoreCase(locationId)
                 && pumpBelow.getOfficeId().equalsIgnoreCase(officeId)) {
             transfer = new PumpTransfer(PumpType.BELOW, transferDisplay,
@@ -495,80 +426,6 @@ public final class WaterSupplyUtils {
         }
         accounting.getPumpAccounting().put(transferStart,
                 Collections.singletonList(transfer));
-    }
-
-    public static void addTransfer(cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T acctObjTs, WaterSupplyAccounting accounting, String flowUnits) {
-        PumpTransfer transfer = null;
-        String transferDisplay = acctObjTs.getPHYSICAL_TRANSFER_TYPE().getDISPLAY_VALUE();
-        String accountingRemarks = acctObjTs.getACCOUNTING_REMARKS();
-        Instant transferStart = acctObjTs.getTRANSFER_START_DATETIME().toInstant();
-        String officeId = acctObjTs.getPUMP_LOCATION_REF().getOFFICE_ID();
-        String locationId = acctObjTs.getPUMP_LOCATION_REF().call_GET_LOCATION_ID();
-        CwmsId pumpIn = accounting.getPumpLocations().getPumpIn();
-        CwmsId pumpOut = accounting.getPumpLocations().getPumpOut();
-        CwmsId pumpBelow = accounting.getPumpLocations().getPumpBelow();
-
-        if (pumpIn != null && pumpIn.getName().equalsIgnoreCase(locationId)
-                && pumpIn.getOfficeId().equalsIgnoreCase(officeId)) {
-            transfer = new PumpTransfer(PumpType.IN, transferDisplay, acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
-        } else if (pumpOut != null && pumpOut.getName().equalsIgnoreCase(locationId)
-                && pumpOut.getOfficeId().equalsIgnoreCase(officeId)) {
-            transfer = new PumpTransfer(PumpType.OUT, transferDisplay, acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
-        } else if (pumpBelow != null && pumpBelow.getName().equalsIgnoreCase(locationId)
-                && pumpBelow.getOfficeId().equalsIgnoreCase(officeId)) {
-            transfer = new PumpTransfer(PumpType.BELOW, transferDisplay,
-                    acctObjTs.getPUMP_FLOW(), flowUnits, accountingRemarks);
-        }
-        if (accounting.getPumpAccounting().get(transferStart) != null) {
-            List<PumpTransfer> transfers = new ArrayList<>(accounting.getPumpAccounting().get(transferStart));
-            transfers.add(transfer);
-            accounting.getPumpAccounting().put(transferStart, transfers);
-            return;
-        }
-        accounting.getPumpAccounting().put(transferStart,
-                Collections.singletonList(transfer));
-    }
-
-    public static cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T toManualWaterUserContractAcctTs(WaterSupplyAccounting accounting) {
-        List<cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T> watUsrContractAcctObjTList = new ArrayList<>();
-        LOCATION_REF_T pumpIn = LocationUtil.getLocationRef(accounting.getPumpLocations().getPumpIn());
-        LOCATION_REF_T pumpOut = LocationUtil.getLocationRef(accounting.getPumpLocations().getPumpOut());
-        LOCATION_REF_T pumpBelow = LocationUtil.getLocationRef(accounting.getPumpLocations().getPumpBelow());
-
-        for (Map.Entry<Instant, List<PumpTransfer>> entry : accounting.getPumpAccounting().entrySet()) {
-            for (PumpTransfer transfer : entry.getValue()) {
-                cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT =
-                        getManualWatUsrContractAcctObjT(accounting, entry, transfer, pumpIn, pumpOut, pumpBelow);
-                watUsrContractAcctObjTList.add(watUsrContractAcctObjT);
-            }
-        }
-        return new cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_TAB_T(watUsrContractAcctObjTList);
-    }
-
-    private static cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T getManualWatUsrContractAcctObjT(
-            WaterSupplyAccounting accounting,
-            Map.Entry<Instant, List<PumpTransfer>> entry,
-            PumpTransfer transfer,
-            LOCATION_REF_T pumpIn,
-            LOCATION_REF_T pumpOut,
-            LOCATION_REF_T pumpBelow) {
-        cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T watUsrContractAcctObjT =
-                new cwms.cda.data.dao.watersupply.handgen.records.WAT_USR_CONTRACT_ACCT_OBJ_T();
-        WATER_USER_CONTRACT_REF_T contractRef = toContractRef(accounting.getWaterUser(),
-                accounting.getContractName());
-        watUsrContractAcctObjT.setWATER_USER_CONTRACT_REF(contractRef);
-        watUsrContractAcctObjT.setACCOUNTING_REMARKS(transfer.getComment());
-        watUsrContractAcctObjT.setPUMP_FLOW(transfer.getFlow());
-        watUsrContractAcctObjT.setPUMP_FLOW_UNIT(transfer.getFlowUnit());
-        LOOKUP_TYPE_OBJ_T transferType = toLookupTypeO(new LookupType.Builder()
-                .withDisplayValue(transfer.getTransferTypeDisplay())
-                .withActive(true)
-                .withOfficeId(accounting.getWaterUser().getProjectId().getOfficeId())
-                .build());
-        watUsrContractAcctObjT.setPHYSICAL_TRANSFER_TYPE(transferType);
-        watUsrContractAcctObjT.setPUMP_LOCATION_REF(getPumpLocationRef(transfer.getPumpType(), pumpIn, pumpOut, pumpBelow));
-        watUsrContractAcctObjT.setTRANSFER_START_DATETIME(Timestamp.from(entry.getKey()));
-        return watUsrContractAcctObjT;
     }
 
     public static class AccountingKey implements Comparable<AccountingKey> {
@@ -624,7 +481,7 @@ public final class WaterSupplyUtils {
                     && waterUser1.getWaterRight().equals(waterUser2.getWaterRight());
         }
 
-        private static final class Builder {
+        static final class Builder {
             private WaterUser waterUser;
             private String contractName;
 

@@ -13,18 +13,28 @@ import SwaggerUI from "./pages/swagger-ui/index";
 import Regexp from "./pages/regexp/index";
 import DataQuery from "./pages/data-query";
 import Layout from "./components/Layout";
+import LocationSearch from "./pages/LocationSearch.jsx";
 
 // Styles
-import "@usace/groundwork/dist/style.css";
+import "@usace/groundwork/dist/groundwork.css";
 import "./css/index.css";
 import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";
 import Timestamps from "./pages/timestamps";
 import LegacyFormat from "./pages/legacy-format/index.jsx";
+import { routePaths } from "./route-paths";
 
 const queryClient = new QueryClient();
-// Remove trailing slash if it exists
-const routerBasename = (import.meta.env.BASE_URL || "/").replace(/\/$/, "") || "/";
+const routeComponents = {
+  home: Home,
+  "swagger-ui": SwaggerUI,
+  "data-query": DataQuery,
+  regexp: Regexp,
+  "filter-expressions": FilterExpressions,
+  timestamps: Timestamps,
+  "legacy-format": LegacyFormat,
+  "location-search": LocationSearch,
+};
 
 const router = createBrowserRouter(
   [
@@ -33,21 +43,17 @@ const router = createBrowserRouter(
       element: <Layout />,
       errorElement: <ErrorFallback />,
       children: [
-        { index: true, element: <Home /> },
-        {
-          path: "swagger-ui",
-          element: <SwaggerUI />,
-        },
-        { path: "data-query", element: <DataQuery /> },
-        { path: "regexp", element: <Regexp /> },
-        { path: "filter-expressions", element: <FilterExpressions /> },
-        { path: "timestamps", element: <Timestamps /> },
-        { path: "legacy-format", element: <LegacyFormat /> },
+        ...routePaths.map(({ id, index, path }) => {
+          const Component = routeComponents[id];
+          return index
+            ? { index: true, element: <Component /> }
+            : { path, element: <Component /> };
+        }),
         { path: "*", element: <NotFound /> },
       ],
     },
   ],
-  { basename: routerBasename },
+  { basename: "/cwms-data" },
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(

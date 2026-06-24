@@ -12,9 +12,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/usace/cwms-data-api/actions/workflows/build.yml">
-    <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/usace/cwms-data-api/build.yml?branch=develop&style=for-the-badge&label=Build&logo=githubactions">
-  </a>
   <a href="https://github.com/usace/cwms-data-api/actions/workflows/codeql.yml">
     <img alt="CodeQL Status" src="https://img.shields.io/github/actions/workflow/status/usace/cwms-data-api/codeql.yml?branch=develop&style=for-the-badge&label=CodeQL&logo=githubactions">
   </a>
@@ -22,6 +19,41 @@
     <img alt="GitHub release" src="https://img.shields.io/github/v/release/usace/cwms-data-api?include_prereleases&style=for-the-badge&logo=github">
   </a>
 </p>
+
+<div align="center">
+  <h2>Detailed Build Status</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>CWMS Database Schema target</th>
+        <th>Status</th>
+        <th>Coverage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Latest</td>
+        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg"></td>
+        <td><img alt="Latest Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest-coverage.svg"></td>
+      </tr>
+      <tr>
+        <td>Current Release</td>
+        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg"></td>
+        <td><img alt="Current Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release-coverage.svg"></td>
+      </tr>
+      <tr>
+        <td>Next Release</td>
+        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg"></td>
+        <td><img alt="Next Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release-coverage.svg"></td>
+      </tr>
+      <tr>
+        <td>Previous Release - NOTE: Not applicable yet</td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg"></td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous-coverage.svg"></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
 <p align="center">
   <strong>
@@ -51,9 +83,62 @@ To build the war:
 
 This will compile the jar and run the basic unit tests.
 
+To run the OWASP dependency vulnerability scan:
+
+     ./gradlew dependencyCheckAggregate
+
+For faster scans, add a free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) to your
+user gradle properties file (`~/.gradle/gradle.properties`):
+
+     nvdApiKey=<your-key>
+
+The report is written to `build/reports/dependency-check-report.html`.
+
 ## Development stack
 
 See the docker-compose.README.md for instructions using the docker-compose environment
+
+### Running CDA locally
+
+To run CDA locally using the Gradle development task:
+
+```bash
+./gradlew run
+```
+
+The `run` task builds the WAR, generates the local Tomcat configuration, and starts an embedded Tomcat instance using the database connection and runtime settings from your Gradle properties.
+
+At minimum, configure the following properties in your user Gradle properties file, `~/.gradle/gradle.properties`:
+
+    CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
+    CDA_JDBC_URL=jdbc:oracle:thin:@localhost/CWMSDB
+    CDA_JDBC_USERNAME=username
+    CDA_JDBC_PASSWORD=password
+    CDA_LISTEN_PORT=7000
+
+By default, the WAR is deployed under the `spk-data` context. To override the context path, set:
+
+    cda.war.context=cwms-data
+
+With the default port and a `cwms-data` context, the API will be available at:
+
+    http://localhost:7000/cwms-data/
+
+### Generating development API keys
+
+For local development, API keys can be generated directly for the HEC test users 
+in the configured CWMS database without requiring external auth provider setup.
+
+Run:
+```bash
+./gradlew seedDevApiKeys
+```
+
+The task finds users whose `USERID` ends with `HECTEST`, 
+creates development API keys for them, and prints the plaintext keys to the console log.
+
+The generated keys are intended for local development only. 
+The plaintext key is only available when it is created.
 
 ## Testing
 
@@ -112,3 +197,9 @@ However it MUST be explicit on each request.
 
 If expanding the functionality of the Base class, do not depend on the SQL wrappers. Either use direct JDBC, or [JDBI3](https://jdbi.org/)
 This is to isolate specific possible errors with various APIs and reduces points of failure in initial setup for traceability.
+
+
+
+# Releasing and Deploying new versios
+
+See (Release and Deployments)[RELEASE_DEPLOY.md] for information about how releases are created and what the different naming means.

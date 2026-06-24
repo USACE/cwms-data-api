@@ -22,6 +22,8 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
+
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
@@ -36,6 +38,7 @@ import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
 import org.testcontainers.images.PullPolicy;
 
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
@@ -68,14 +71,17 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     public static final String VERSION_STRING;
     public static final int VERSION_INT;
 
-    static
-    {
+    static {
         VERSION_STRING = schemaVersion();
         VERSION_INT = versionInt();
     }
 
-    private static String schemaVersion()
-    {
+    static {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+    }
+
+    private static String schemaVersion() {
         String ret;
         if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
         {
@@ -97,7 +103,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         int ret;
         String tmp = schemaVersion();
         if (tmp.equalsIgnoreCase("latest-dev")) {
-            ret = 999999;
+            ret = LATEST_SCHEMA;
         } else if (tmp.equalsIgnoreCase("Bypass")) {
             ret = -1;
         } else if(tmp.toLowerCase().endsWith("staging")) {
@@ -264,6 +270,39 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     public static CwmsDatabaseContainer<?> getDatabaseLink() {
         return cwmsDb;
+    }
+
+    public static void shutdown() throws Exception {
+        Exception failure = null;
+        if (cdaInstance != null) {
+            try {
+                cdaInstance.stop();
+            } catch (Exception e) {
+                failure = e;
+            } finally {
+                cdaInstance = null;
+            }
+        }
+
+        if (cwmsDb != null) {
+            try {
+                cwmsDb.stop();
+            } catch (Exception e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+            } finally {
+                cwmsDb = null;
+            }
+        }
+
+        webUser = null;
+
+        if (failure != null) {
+            throw failure;
+        }
     }
 
     private String loadResourceAsString(String fileName) {
