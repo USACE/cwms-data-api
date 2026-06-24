@@ -1,4 +1,5 @@
 import { Button } from "@usace/groundwork";
+import PropTypes from "prop-types";
 import { FaArrowLeft } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
@@ -23,3 +24,9 @@ export default function ErrorFallback({ error }) {
     </div>
   );
 }
+
+ErrorFallback.propTypes = {
+  error: PropTypes.shape({
+    message: PropTypes.string,
+  }),
+};
