@@ -25,7 +25,25 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.CWMS_OFFICE;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.GROUP_ID;
+import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.INCLUDE_ASSIGNED;
+import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_LOCS;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -33,6 +51,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.LocationGroup;
@@ -48,9 +67,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -128,19 +147,24 @@ public class LocationGroupController implements CrudHandler {
 
                 String result = Formats.format(contentType, grps, LocationGroup.class);
 
-                ctx.result(result);
                 ctx.contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("No location groups for office provided");
                 logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
-
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve location groups");
+            logger.atSevere().withCause(ex).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(
@@ -209,18 +233,24 @@ public class LocationGroupController implements CrudHandler {
                 }
 
             }
-            ctx.result(result);
             ctx.contentType(contentType.toString());
 
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (JsonProcessingException e) {
             CdaError re = new CdaError("Failed to process request");
             logger.atSevere().withCause(e).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (IOException e) {
+            CdaError re = new CdaError("Failed to process request to retrieve location group");
+            logger.atSevere().withCause(e).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(

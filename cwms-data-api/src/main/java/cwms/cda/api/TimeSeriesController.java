@@ -504,7 +504,13 @@ public class TimeSeriesController implements CrudHandler {
 
                 addLinkHeader(ctx, ts, contentType);
 
-                ctx.result(results).contentType(contentType.toString());
+                ctx.contentType(contentType.toString());
+
+                requestResultSize.update(results.length());
+
+                byte[] bytes = results.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 if (versionDate != null) {
                     throw new IllegalArgumentException(String.format("Version date is only supported for:%s and %s",
@@ -523,10 +529,14 @@ public class TimeSeriesController implements CrudHandler {
                 String office = ctx.queryParam(OFFICE);
                 results = dao.getTimeseries(format, names, office, units, datum, beginZdt, endZdt, tz);
                 ctx.status(HttpServletResponse.SC_OK);
-                ctx.result(results);
+
+                requestResultSize.update(results.length());
+
+                byte[] bytes = results.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
-            requestResultSize.update(results.length());
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
             logger.atSevere().withCause(e).log("%s", re.toString());
@@ -537,6 +547,10 @@ public class TimeSeriesController implements CrudHandler {
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve time series");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

@@ -48,12 +48,14 @@ import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -371,8 +373,13 @@ public class CatalogController implements CrudHandler {
             }
             if (cat != null) {
                 String data = Formats.format(contentType, cat);
-                ctx.result(data).contentType(contentType.toString());
+                ctx.contentType(contentType.toString());
+                ctx.status(HttpServletResponse.SC_OK);
                 requestResultSize.update(data.length());
+
+                byte[] bytes = data.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 final CdaError re = new CdaError("Cannot create catalog of requested "
                     + "information");
@@ -380,6 +387,10 @@ public class CatalogController implements CrudHandler {
                 logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
                 ctx.json(re).status(HttpCode.NOT_FOUND);
             }
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve catalog");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve catalog");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
