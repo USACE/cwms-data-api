@@ -60,6 +60,7 @@ import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.HttpResponseException;
@@ -74,7 +75,9 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
@@ -283,7 +286,10 @@ public class LevelsController implements CrudHandler {
             boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
                     .getOrDefault(false);
             if (!unit.equalsIgnoreCase(UnitSystem.SI.getValue()) && !unit.equalsIgnoreCase(UnitSystem.EN.getValue())) {
-                throw new IllegalArgumentException(String.format("Provided unit system is not supported: %s", unit));
+                String errorMessage = String.format("Provided unit system is not supported: %s", unit);
+                Map<String, String> errorDetails = new HashMap<>();
+                errorDetails.put("message", errorMessage);
+                throw new BadRequestResponse(errorMessage, errorDetails);
             }
             String datum = ctx.queryParam(DATUM);
             String begin = ctx.queryParam(BEGIN);
