@@ -62,6 +62,6 @@ def test_download_config_requires_offices(tmp_path):
     config_file = tmp_path / "invalid.yml"
     config_file.write_text("version: 1", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="offices must be a list"):
+    with pytest.raises(ValueError, match="Offices must be a list"):
         DownloadConfig.from_yaml(config_file)
 
