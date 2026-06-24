@@ -30,11 +30,24 @@ RUN mkdir /download && \
     tar xzf apache-tomcat-*tar.gz && \
     mv apache-tomcat-9.0.118 /usr/local/tomcat/ && \
     cd / && \
-    rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
     printf "<%% response.sendRedirect(\"/cwms-data/\"); %%>\n" > /usr/local/tomcat/webapps/ROOT/index.jsp && \
-    printf "User-agent: *\nAllow: /cwms-data/\nDisallow: /cwms-data/auth/\nDisallow: /cwms-data/catalog/\nDisallow: /cwms-data/timeseries/\nDisallow: /cwms-data/swagger-docs\nDisallow: /auth/\nSitemap: https://cwms-data.usace.army.mil/sitemap.xml\n" > /usr/local/tomcat/webapps/ROOT/robots.txt
+        printf "User-agent: *\nAllow: /cwms-data/\nDisallow: /cwms-data/auth/\nDisallow: /cwms-data/catalog/\nDisallow: /cwms-data/timeseries/\nDisallow: /cwms-data/swagger-docs\nDisallow: /auth/\nSitemap: https://cwms-data.usace.army.mil/sitemap.xml\n" > /usr/local/tomcat/webapps/ROOT/robots.txt && \
+    mkdir -p /usr/local/tomcat/conf/Catalina/localhost
+# Now replace the Tomcat logging with logback
+# NOTE: I have reviewed this jar in jd-gui and do not see anything malicious, packages are isolated to avoid issues
+# with other code.
+# Additionally, when we are not also accounting for some legacy systems, we will likely shift to
+# Jetty, or Embedded Tomcat, to simplify the deployment process, making this subtitution unnecessary.
+RUN cd /download && \
+    wget https://repo1.maven.org/maven2/com/github/tomcat-slf4j-logback/tomcat9-slf4j-logback/9.0.115/tomcat9-slf4j-logback-9.0.115.jar && \
+    echo "cb463fb246fbb326d91b04a7280474f2b722b11cc9d3d7f6c3dbbefcff2c07e055f479d436ab785668d6fa90d0bfd325c86c4fa3a9ad9521159a2a3114916d91 *tomcat9-slf4j-logback-9.0.115.jar" > checksum.logback.txt && \
+    sha512sum -c checksum.logback.txt
+RUN cd /download && \
+    cp tomcat9-slf4j-logback-9.0.115.jar /usr/local/tomcat/bin/tomcat-juli.jar && \
+    rm /usr/local/tomcat/conf/logging.properties && \
+    rm -rf /download
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 
 FROM tomcat_base AS api
@@ -45,6 +58,9 @@ COPY --from=builder /builddir/cwms-data-api/build/docker/context.xml /usr/local/
 COPY --from=builder /builddir/cwms-data-api/build/docker/server.xml /usr/local/tomcat/conf
 COPY --from=builder /builddir/cwms-data-api/build/docker/setenv.sh /usr/local/tomcat/bin
 COPY --from=builder /builddir/cwms-data-api/build/docker/libs/ /usr/local/tomcat/lib
+COPY --from=builder /builddir/cwms-data-api/build/docker/logback.xml /logback.xml
+COPY --from=builder /builddir/cwms-data-api/build/docker/logback-juli.xml /logback-juli.xml
+COPY --from=builder /builddir/cwms-data-api/build/docker/app-context.xml /usr/local/tomcat/conf/Catalina/localhost/cwms-data.xml
 
 ENV CDA_JDBC_DRIVER="oracle.jdbc.driver.OracleDriver"
 ENV CDA_JDBC_URL=""

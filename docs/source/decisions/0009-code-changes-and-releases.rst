@@ -1,0 +1,107 @@
+#####
+Code Changes and Releases through environments
+#####
+
+
+Summary
+=======
+
+As this API is critical to both USACE operations and various Cooperators, a formal policy governing the release of changes across the different environments is necessary.
+There must be a well-defined sequence of events for software changes that accounts for:
+
+1. Stability
+2. Constant improvement
+3. Responsiveness to security concerns.
+
+
+Proposal
+========
+
+We have 3 environments available for testing internally and with specific partners
+
+1. Production
+2. Test
+3. Dev
+
+Each environment will see releases in slightly different ways.
+
+Dev
+---
+
+Dev will see nightly changes so that both the software and the infrastructure design can be tested promptly for any major issues.
+While not stable, this is still useful for testing concepts early.
+
+Tags of `develop-nightly` or ending in `-dev` can be deployed to the Dev environment.
+
+Test
+----
+
+Test will see changes pushed at-least weekly, and on an as-needed basis.
+
+Tags ending in `-test` can be deployed to the test environment.
+
+Prod
+----
+
+Prod will see changes pushed at-most monthly, of a release that has been verify in the Test environment. 
+
+*EXCEPT* in cases of reported security vulnerabilities. In which case we will address such issues in a hotfix and deploy as required.
+
+Tags that are just the date or `<date>-<letter>` can be deployed to the Prod environment.
+
+Except for the above hotfix situtation, tags for Prod releases should be on the same commit as that which was verify in Test.
+
+example:
+
+`2026.06.05-testa` has been running in test for a week and users report things are running appropriately. Tag that same commit `2026.06.05-a`
+to prep it to be deployed to prod.
+
+All Environments
+-----------------------------------
+
+Schema updates in each environment will not happen until all current automated CWMS-Data-API tests are passing against that schema version.
+At this time we cannot easily automate Schema updates; once the cwms-database flyway work is finished schema updates will coincide with
+appropriate cwms-data-api versions upon deployment.
+
+Deployments will be pushed from the Github Repository using the Deploy action workflow, Described in the how-to-release documentation.
+Except for Dev, all deployments are from tags. 
+
+Any authorized user may tag for release and deploy CDA versions to the given environments.
+
+Tags may be created on any branch as deemed appropriate to a given need. Tags will primarily be on the "develop" branch. In cases
+where prod needs a specific update, but we are not ready to pull in additional changes. a `hotfix/<original-release-date>` branch
+from the current prod tag should be created, with the new tag incrementing the letter position. This action will also be performed
+in cases of base container image updates.
+
+    .. :widths: 30, 40, 20, 65, 65
+
+.. csv-table:: Environments and constraints
+    :header: "Environment", "Source Branch", "Tagging Constraint", "Schedule", "Additional notes"
+
+
+    Dev,"develop-nightly\, develop", `<date>-dev<letter>`,"nightly at midnight UTC", "can also be pushed manually; however, the next automated push will happen."
+    Test,"develop\, hotfix/*-test*", `<date>-test<letter>`,"On-Demand", "Changes from dev will be pushed to test at most weekly."
+    Prod,"develop\, hofix/*", `<date>-<letter>`,"On-Demand", "Changes from test will be pushed to prod at most monthly. Prod will commonly see additional updates for image security vulnerabilities."
+
+https://github.com/USACE/cwms-data-api/blob/develop/RELEASE_DEPLOY.md will be kept up-to-date with actual deployment procedures.
+
+
+Opinions
+========
+
+Opinion 1
+---------
+
+Summary: Adopt this proposal.
+
+Michael Neilson
+
+descriptive text
+
+Decision Status
+===============
+
+(Status: accepted)
+
+References
+==========

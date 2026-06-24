@@ -9,9 +9,9 @@ export default function Controls({
   endDateTime,
 }) {
   return (
-    <div className="flex flex-row justify-around">
-      <div className="text-center basis-1/4">
-        <div className="dropdown-select">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="w-full min-w-0">
+        <div className="dropdown-select w-full">
           <Field>
             <Label>Begin Datetime</Label>
             <Input
@@ -23,12 +23,13 @@ export default function Controls({
               type="datetime-local"
               placeholder="datetime-local"
               label="label"
+              className="w-full min-w-0"
             />
           </Field>
         </div>
       </div>
-      <div className="text-center basis-1/4">
-        <div className="dropdown-select">
+      <div className="w-full min-w-0">
+        <div className="dropdown-select w-full">
           <Field>
             <Label>End Datetime</Label>
             <Input
@@ -40,6 +41,7 @@ export default function Controls({
               type="datetime-local"
               placeholder="datetime-local"
               label="label"
+              className="w-full min-w-0"
             />
           </Field>
         </div>
