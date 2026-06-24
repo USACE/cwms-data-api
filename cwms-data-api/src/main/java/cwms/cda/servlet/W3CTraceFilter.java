@@ -2,7 +2,9 @@ package cwms.cda.servlet;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -19,12 +21,17 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.ContextKey;
 import io.opentelemetry.context.propagation.TextMapGetter;
 
+/**
+ * 
+ */
 @WebFilter(urlPatterns = {"*"})
-public final class TraceFilter implements Filter {
+public final class W3CTraceFilter implements Filter {
 
     private static final ContextKey<String> TRACE_PARENT = ContextKey.named("traceparent");
+    public static final Pattern TRACE_PARENT_MATCHER =
+        Pattern.compile("[a-z0-9]{2}-[a-z0-9]{32}-[a-z0-9]{16}-[a-z0-9]{2}");
 
-    public TraceFilter() {
+    public W3CTraceFilter() {
         OpenTelemetrySetup.initTelemetry();
     }
 
@@ -35,7 +42,7 @@ public final class TraceFilter implements Filter {
             .spanBuilder("Request")
             .setSpanKind(SpanKind.SERVER);
         var provided = ((HttpServletRequest)request).getHeader(TRACE_PARENT.toString());
-        if (provided != null && !provided.isEmpty()) {
+        if (provided != null && !provided.isEmpty() && TRACE_PARENT_MATCHER.matcher(provided).matches()) {
             var propagator = GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
             var ctx = propagator.extract(Context.current(), provided, new TraceGetter());
             spanBuilder.setParent(ctx);
@@ -43,26 +50,26 @@ public final class TraceFilter implements Filter {
         
         var span = spanBuilder.startSpan();
         try (var scope = span.makeCurrent()) {
-            
             chain.doFilter(request, response);
         } finally {
             span.end();
         }
-        
     }
     
+    /**
+     * A simple wrapper to just get the value in the required way.
+     */
     private static class TraceGetter implements TextMapGetter<String>
     {
-
         @Override
-        public Iterable<String> keys(String carrier)
+        public Iterable<String> keys(@Nonnull String carrier)
         {
             return List.of(TRACE_PARENT.toString());
         }
 
         @Override
         @Nullable
-        public String get(@Nullable String carrier, String key) {
+        public String get(@Nullable String carrier, @Nonnull String key) {
             if (TRACE_PARENT.toString().equalsIgnoreCase(key)) {
                 return carrier;
             } else {
