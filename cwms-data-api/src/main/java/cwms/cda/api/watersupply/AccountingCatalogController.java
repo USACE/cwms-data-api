@@ -43,7 +43,6 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.WATER_USER;
-import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredInstant;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -52,6 +51,7 @@ import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dao.watersupply.WaterSupplyAccountingDao;
 import cwms.cda.data.dto.CwmsId;
@@ -69,6 +69,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -213,8 +214,17 @@ public class AccountingCatalogController implements Handler {
                     ascending, rowLimit);
 
             String result = Formats.format(contentType, accounting, WaterSupplyAccounting.class);
-            ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve pump accounting", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve pump accounting");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 }

@@ -195,6 +195,7 @@ public final class Controllers {
     public static final String STATUS_201 = "201";
     public static final String STATUS_204 = "204";
     public static final String STATUS_404 = "404";
+    public static final String STATUS_429 = "429";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
     public static final String STATUS_401 = "401";

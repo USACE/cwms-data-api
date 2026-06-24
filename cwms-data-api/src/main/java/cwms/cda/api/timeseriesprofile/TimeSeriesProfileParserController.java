@@ -38,6 +38,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
 import cwms.cda.formatters.ContentType;
@@ -50,6 +52,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -103,7 +106,16 @@ public final class TimeSeriesProfileParserController extends TimeSeriesProfilePa
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileParser.class);
             String result = Formats.format(contentType, tspParser);
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(result);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve time series profile parser", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve time series profile parser");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

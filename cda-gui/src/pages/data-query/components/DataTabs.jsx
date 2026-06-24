@@ -1,15 +1,15 @@
 import { Tabs, Skeleton } from "@usace/groundwork";
 import CWMSPlot from "./CWMSPlot";
-import { CWMSTable } from "@usace-watermanagement/groundwork-water";
+import DataQueryTable from "./DataQueryTable";
 import MetaDataTab from "./MetaDataTab";
 import PropTypes from "prop-types";
 
 export default function DataTabs({
   office,
+  officesByTsid = {},
   tsids,
   timeseriesData,
   isLoading,
-  cdaParams,
   timeseriesParams,
   begin,
   end,
@@ -17,6 +17,7 @@ export default function DataTabs({
 }) {
   if (!tsids || !tsids.length) return null;
   if (isLoading) return <Skeleton type="card" className="w-full h-[500px]" />;
+  const primaryOffice = officesByTsid[tsids[0]] || office;
 
   return (
     <Tabs
@@ -31,27 +32,12 @@ export default function DataTabs({
               className="relative z-10 bg-white"
             >
               {timeseriesParams.length > 0 && (
-                <CWMSTable
-                  begin={cdaParams.begin}
-                  end={cdaParams.end}
-                  office={cdaParams.office}
+                <DataQueryTable
                   timeseriesParams={timeseriesParams}
                   dateFormat="YYYY-MM-DD HH:mm:ss"
-                  interval="5"
                   missingString="---"
                   sortAscending={sortAscending}
-                  trim
-                  pageSize={1000000}
-                  tableOptions={{
-                    bleed: true,
-                    dense: true,
-                    grid: true,
-                    overflow: true,
-                    striped: true,
-                    stickyHeader: true,
-                    overflowHeight: "max-h-[55vh]",
-                  }}
-                  inputTSValues={timeseriesData?.raw}
+                  rawSeries={timeseriesData?.raw}
                 />
               )}
             </div>
@@ -62,15 +48,13 @@ export default function DataTabs({
           content: (
             <CWMSPlot
               inputTSValues={timeseriesData?.raw}
-              timeSeries={tsids.map((tsid, index) => ({
-                id: tsid,
+              timeSeries={timeseriesParams.map((param, index) => ({
+                id: param.tsid,
                 traceOptions: {
-                  name: `${tsid.split(".").join(" ")}${
-                    timeseriesData?.tsids?.[index]?.units
-                      ? " (" + timeseriesData?.tsids?.[index]?.units + ")"
-                      : ""
+                  name: `${param.tsid.split(".").join(" ")}${
+                    param.units ? " (" + param.units + ")" : ""
                   }`,
-                  units: timeseriesData?.tsids?.[index]?.units,
+                  units: param.units,
                   yaxis: `y${index + 1}`,
                 },
               }))}
@@ -93,7 +77,7 @@ export default function DataTabs({
                 },
               }}
               unit="EN"
-              office={office}
+              office={primaryOffice}
               begin={begin.format("YYYY-MM-DDTHH:mm:ssZZ")}
               end={end.format("YYYY-MM-DDTHH:mm:ssZZ")}
             />
@@ -101,7 +85,7 @@ export default function DataTabs({
         },
         {
           name: "Metadata",
-          content: <MetaDataTab tsids={tsids} office={office} />,
+          content: <MetaDataTab tsids={tsids} office={primaryOffice} />,
         },
       ]}
     />
@@ -110,10 +94,10 @@ export default function DataTabs({
 
 DataTabs.propTypes = {
   office: PropTypes.string.isRequired,
+  officesByTsid: PropTypes.objectOf(PropTypes.string),
   tsids: PropTypes.array.isRequired,
   timeseriesData: PropTypes.object,
   isLoading: PropTypes.bool,
-  cdaParams: PropTypes.object,
   timeseriesParams: PropTypes.array,
   begin: PropTypes.object.isRequired,
   end: PropTypes.object.isRequired,
