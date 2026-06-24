@@ -4,7 +4,7 @@ import { range } from ".";
 export function getYearRange(start_year, end_year, FORMAT = "YYYY") {
   let _start = dayjs().set("year", start_year);
   let _end = dayjs();
-  if (end_year) _end = _end.set("year", end_year);
+  if (end_year) _end.set("year", end_year);
 
   let _years = [];
   while (_start.unix() <= _end.unix()) {
