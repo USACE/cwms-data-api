@@ -27,7 +27,7 @@ import io.opentelemetry.context.propagation.TextMapGetter;
 @WebFilter(urlPatterns = {"*"})
 public final class W3CTraceFilter implements Filter {
 
-    private static final ContextKey<String> TRACE_PARENT = ContextKey.named("traceparent");
+    public static final ContextKey<String> TRACE_PARENT = ContextKey.named("traceparent");
     public static final Pattern TRACE_PARENT_MATCHER =
         Pattern.compile("[a-z0-9]{2}-[a-z0-9]{32}-[a-z0-9]{16}-[a-z0-9]{2}");
 
