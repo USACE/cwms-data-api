@@ -1,8 +1,6 @@
 package cwms.cda.helpers;
 
 import com.google.common.flogger.FluentLogger;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,6 +15,8 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAccessor;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 
 public class DateUtils {
@@ -60,15 +60,29 @@ public class DateUtils {
         return parseUserDate(text, tz, ZonedDateTime.now(tz));
     }
 
+    /**
+     * Parse a string into a ZonedDateTime. Automatically determined if input provided was
+     * an ISO8061 Date/Time, Period, or Duration string. "now" (time of executation) is used
+     * as the relative starting point by default.
+     * @param text provided date/time string
+     * @param tz desired time zone for the output instance.
+     * @return a valid ZonedDateTime instance
+     */
     @NotNull
-    public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull ZoneId tz){
+    public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull ZoneId tz) {
         return parseUserDate(text, tz, ZonedDateTime.now(tz));
     }
 
-
+    /**
+     * Parse a string into a ZonedDateTime. Automatically determined if input provided was
+     * an ISO8061 Date/Time, Period, or Duration string.
+     * @param text provided date/time string
+     * @param tz desired time zone for the output instance.
+     * @param now starting point for Duration and Period.
+     * @return a valid ZonedDateTime instance
+     */
     @NotNull
     public static ZonedDateTime parseUserDate(@NotNull String text, @NotNull ZoneId tz, @NotNull ZonedDateTime now) {
-
         if (text.startsWith("PT")) {
             return parseUserDuration(text, now);
         } else if (text.startsWith("P")) {
@@ -78,6 +92,13 @@ public class DateUtils {
         }
     }
 
+    /**
+     * Parse the given date/time text and return a ZonedDateTime in the provided timezone.
+     *
+     * @param text date/time string.
+     * @param tz desired Time Zone
+     * @return a valid ZonedDateTime instance
+     */
     @NotNull
     private static ZonedDateTime parseFullDate(@NotNull String text, @NotNull ZoneId tz) {
 
@@ -117,7 +138,13 @@ public class DateUtils {
         return WITH_TZ_INFO.matcher(text).matches();
     }
 
-
+    /**
+     * Parse the given date string wit the default ZonedDateTime.parse, if that fails, 
+     * attempt parse with <pre>yyyy-MM-dd'T'HH:mm:ssZ</pre>
+     * @param text provied date time string
+     * @return A ZonedDateTime instance
+     * @throws DateTimeParseException if the date could not be processed.
+     */
     @NotNull
     private static ZonedDateTime parseZonedDateTime(@NotNull String text) {
         ZonedDateTime zdt;
@@ -129,7 +156,7 @@ public class DateUtils {
             // To match 2022-01-19T20:52:53+0000[UTC]
             String[] possibleDateFormats = { "yyyy-MM-dd'T'HH:mm:ssZ"};  // Can add formats as needed
             Optional<ZonedDateTime> parsed = firstMatch(text, possibleDateFormats);
-            if(parsed.isPresent()) {
+            if (parsed.isPresent()) {
                 zdt = parsed.get();
             } else {
                 throw e;
@@ -139,6 +166,12 @@ public class DateUtils {
         return zdt;
     }
 
+    /**
+     * Part user given date with a series of formats, returning the first valid interpretation.
+     * @param text user provided date string
+     * @param possibleDateFormats list of possible date formats
+     * @return ZonedDateTime if one of the patterns matched. Otherwise Optional.empty().
+     */
     @NotNull
     private static Optional<ZonedDateTime> firstMatch(@NotNull String text, @Nullable String[] possibleDateFormats) {
         Optional<ZonedDateTime> retval = Optional.empty();
@@ -146,14 +179,20 @@ public class DateUtils {
         if (possibleDateFormats != null) {
             for (String format : possibleDateFormats) {
                 retval = parseWithPattern(text, format);
-                if(retval.isPresent())
+                if (retval.isPresent()) {
                     break;
                 }
             }
-
+        }
         return retval;
     }
 
+    /**
+     * Parse the given string text against the provided pattern.
+     * @param text user provided date string
+     * @param pattern expected date pattern to match.
+     * @return ZonedDateTime if the input was valid for the given pattern, otherwise Optional.empty().
+     */
     @NotNull
     public static Optional<ZonedDateTime> parseWithPattern(@NotNull String text, @NotNull String pattern) {
         Optional<ZonedDateTime> retval = Optional.empty();
@@ -172,6 +211,11 @@ public class DateUtils {
         return retval;
     }
 
+    /**
+     * Add ZoneID to the the given DateTimeFormatterBuilder.
+     * @param builder a valid builder instance
+     * @return The same DateTimeFormatterBuilder
+     */
     @NotNull
     private static DateTimeFormatterBuilder appendZoneId(@NotNull DateTimeFormatterBuilder builder) {
         return builder.optionalStart()  // This is to allow for bracket zoneId like [Europe/Paris]
@@ -181,6 +225,12 @@ public class DateUtils {
             .appendLiteral(']');
     }
 
+    /**
+     * Increment the given time instance by a provided ISO8601 formatted Period.
+     * @param text provided ISO8601 period string
+     * @param now a ZoneDateTime instance
+     * @return a new ZonedDateTime instance of now + period(text)
+     */
     @NotNull
     private static ZonedDateTime parserUserPeriod(@NotNull String text, @NotNull ZonedDateTime now) {
         Period period = Period.parse(text);
@@ -189,12 +239,24 @@ public class DateUtils {
                 .plusDays(period.getDays());
     }
 
+    /**
+     * Increment the given time instance by a provided ISO8601 formatted Duartion.
+     * @param text provided ISO8601 duration string
+     * @param now a ZoneDateTime instance
+     * @return a new ZonedDateTime instance of now + duration(text)
+     */
     @NotNull
     private static ZonedDateTime parseUserDuration(@NotNull String text, @NotNull ZonedDateTime now) {
         Duration duration = Duration.parse(text);
         return now.plus(duration);
     }
 
+    /**
+     * Convert a {@link java.sql.Timestamp} value to a ZonedDateTime.
+     * ZonedDateTime returned will be in UTC.
+     * @param time provided java.sql.Timestamp, or null.
+     * @return ZoneDateTime if time is not null, otherwise null.
+     */
     @Nullable
     public static ZonedDateTime toZdt(@Nullable final Timestamp time) {
         if (time != null) {

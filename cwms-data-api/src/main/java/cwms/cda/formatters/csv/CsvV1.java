@@ -30,7 +30,8 @@ public class CsvV1 implements CsvFormatter {
             } else if (dto instanceof CwmsCsvDTO) {
                 return format((CwmsCsvDTO<?>) dto, new CsvConfiguration.Builder().build());
             } else {
-                throw new FormattingException(dto.getClass().getName() + " is not currently supported for CSV formatting.");
+                throw new FormattingException(dto.getClass().getName()
+                    + " is not currently supported for CSV formatting.");
             }
         } catch (Exception e) {
             throw new FormattingException("Could not serialize:" + dto.getClass().getName(), e);
@@ -56,7 +57,8 @@ public class CsvV1 implements CsvFormatter {
             } else if (dto instanceof LocationGroup) {
                 return new CsvV1LocationGroup().format(dtoList);
             } else {
-                throw new FormattingException(dto.getClass().getName() + " is not currently supported for CSV formatting.");
+                throw new FormattingException(dto.getClass().getName()
+                    + " is not currently supported for CSV formatting.");
             }
         }
         return null;

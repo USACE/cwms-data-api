@@ -1,19 +1,21 @@
 package cwms.cda.helpers;
 
+import com.google.common.flogger.FluentLogger;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 
 public final class ResourceHelper {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
     /**
      * Returns resource as a string, null if resource can't be found.
      * @param resource The path to the resource
      * @param context The class context to load the resource from
      * @return The contents of the resource
+     * 
      * */
     public static String getResourceAsString(String resource, Class<?> context) {
         InputStream formatList = getResourceAsStream(resource, context);
@@ -25,7 +27,7 @@ public final class ResourceHelper {
         return null;
     }
 
-        /**
+    /**
      * Returns resource as a string, null if resource can't be found.
      * @param resource The path to the resource
      * @return The contents of the resource

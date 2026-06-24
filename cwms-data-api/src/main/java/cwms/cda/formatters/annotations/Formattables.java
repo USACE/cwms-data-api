@@ -8,5 +8,9 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Formattables {
+    /**
+     * List of Formats that work with this data type.
+     * @return list of appropriate formatters
+     */
     public FormattableWith[] value();
 }
