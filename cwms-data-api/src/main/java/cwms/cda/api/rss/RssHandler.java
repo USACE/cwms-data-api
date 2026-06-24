@@ -47,6 +47,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -98,9 +99,10 @@ public final class RssHandler extends BaseHandler {
             @OpenApiResponse(status = STATUS_200, content = {
                 @OpenApiContent(from = RssFeed.class, type = Formats.RSS)
             }),
-            @OpenApiResponse(status = STATUS_404, description = "Unknown Feed")
+            @OpenApiResponse(status = STATUS_404, description = "Unknown Feed"),
+            @OpenApiResponse(status = STATUS_429, description = "Rate Limit exceeded.")            
         },
-        description = "Returns RSS feed items limited to the last week.",
+        description = "Returns RSS feed items limited to the last week. End point is limited to 1 request per 10 seconds per client per feed.",
         tags = {TAG}
     )
     @Override

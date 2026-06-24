@@ -934,7 +934,19 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
+                api.getPaths().forEach((key,path) -> {
+                    setSecurityRequirements(key,path,secReqs);
+                    // yeah, we really need to figure out how to update everything, this is supported as an annotation in
+                    // newer versions.
+                    if (key.startsWith("/rss")) {
+                        path.getGet().getResponses().forEach((p, r) -> {
+                            var retryAfter = new io.swagger.v3.oas.models.headers.Header();
+                            retryAfter.description("Amount of time (in seconds) to wait before making the next request.");
+                            r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
+                        });
+                    }
+            });
+                
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -943,6 +955,7 @@ public class ApiServlet extends HttpServlet {
                 doc.json("401", CdaError.class);
                 doc.json("403", CdaError.class);
                 doc.json("404", CdaError.class);
+                doc.json("429", CdaError.class);
                 doc.header(IS_NEW_LRTS,
                     Boolean.class,
                     p -> p.description(
