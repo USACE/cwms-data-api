@@ -314,6 +314,11 @@ task prepareDockerBuild(type: Copy, dependsOn: war) {
         into "cda/webapps"
         rename(".*\\.war", "cwms-data.war")
     }
+
+    from(project(":cda-gui").tasks.named("war")) {
+        into "cda/webapps"
+        rename(".*\\.war", "cwms-data-ui.war")
+    }
 }
 
 task generateTimeSeriesSamples(type: JavaExec) {

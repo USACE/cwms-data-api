@@ -1,0 +1,30 @@
+plugins {
+    id 'cda.deps-conventions'
+    id 'war'
+    id 'com.github.node-gradle.node' version '7.1.0'
+}
+
+node {
+    download = true
+    version = '22.17.0'
+}
+
+dependencies {
+    compileOnly(libs.javaee.web.api)
+}
+
+task buildGui(type: NpmTask) {
+    dependsOn npmInstall
+    args = ['run', 'build']
+    inputs.files('package.json', 'package-lock.json', 'vite.config.js', 'index.html')
+    inputs.files('.env.development', '.env.production', '.env.test')
+    inputs.dir('src')
+    inputs.dir('public')
+    outputs.dir('dist')
+}
+
+war {
+    dependsOn buildGui
+    archiveBaseName = 'cwms-data-ui'
+    from(project.layout.projectDirectory.dir('dist'))
+}

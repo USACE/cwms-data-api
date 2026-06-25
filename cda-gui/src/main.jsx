@@ -43,7 +43,7 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: "/cwms-data" }
+  { basename: "/cwms-data-ui" }
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(
