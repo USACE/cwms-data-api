@@ -835,7 +835,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new UnsupportedOperationException("CWMS currently does not support the requested operation", cause);
     }
 
-    private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
+    protected static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
         if (localizedMessage != null && !localizedMessage.isEmpty()) {
             int length = localizedMessage.length();
             PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
