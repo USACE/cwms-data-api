@@ -817,6 +817,62 @@
       ]
     },
     {
+      "id": "9620b229-ea0e-48f9-9f2f-cb601f2d6ee1",
+      "clientId": "cwms-batch-airflow-swt",
+      "name": "CWMS Batch Airflow SWT",
+      "description": "Local test service account for SWT scheduled batch job triggers",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "local-cwms-batch-airflow-swt-secret",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "client_credentials.use_refresh_token": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "id": "e8865c36-fb89-45cb-8b81-a20562c5a154",
+          "name": "cwms audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cwms",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
       "id": "7bed3c57-6b95-45a7-b94f-1d85103776e2",
       "clientId": "cwms-batch-runner-spk",
       "name": "CWMS Batch Runner SPK",
@@ -2490,6 +2546,16 @@
       "enabled": true,
       "emailVerified": false,
       "serviceAccountClientId": "cwms-batch-runner-swt",
+      "realmRoles": [
+        "cwms_user"
+      ]
+    },
+    {
+      "id": "b70c2e60-ce11-42c7-8271-10bb2b3fd4bd",
+      "username": "service-account-cwms-batch-airflow-swt",
+      "enabled": true,
+      "emailVerified": false,
+      "serviceAccountClientId": "cwms-batch-airflow-swt",
       "realmRoles": [
         "cwms_user"
       ]

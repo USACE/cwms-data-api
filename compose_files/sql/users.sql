@@ -70,6 +70,22 @@ begin
     begin
         insert into at_sec_cwms_users(userid, createdby, principle_name)
         values(
+            'SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT',
+            'CWMS_20',
+            'http://localhost:8081/auth/realms/cwms::b70c2e60-ce11-42c7-8271-10bb2b3fd4bd'
+        );
+    exception
+        when dup_val_on_index then
+            update at_sec_cwms_users
+            set principle_name = 'http://localhost:8081/auth/realms/cwms::b70c2e60-ce11-42c7-8271-10bb2b3fd4bd'
+            where userid = 'SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT';
+    end;
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT', 'All Users', 'SWT');
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT', 'CWMS Users', 'SWT');
+
+    begin
+        insert into at_sec_cwms_users(userid, createdby, principle_name)
+        values(
             'SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SPK',
             'CWMS_20',
             'http://localhost:8081/auth/realms/cwms::d2d6f91b-a5dd-40c3-8ee6-49a52da9892e'
