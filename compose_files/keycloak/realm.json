@@ -729,6 +729,154 @@
       ]
     },
     {
+      "id": "76dbdfad-5201-4a9d-bac4-ee9b89a794f1",
+      "clientId": "cwms-batch-runner-swt",
+      "name": "CWMS Batch Runner SWT",
+      "description": "Local test service account for SWT batch jobs",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "local-cwms-batch-runner-swt-secret",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "client_credentials.use_refresh_token": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "id": "74f0d829-2921-4df2-93d4-468d6cd77d38",
+          "name": "machine_auth",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "machine_auth",
+            "claim.value": "true",
+            "id.token.claim": "false",
+            "jsonType.label": "boolean",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "id": "422385db-9fd4-4c8c-b1c7-8d12ce41418c",
+          "name": "run_as_office",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "run_as_office",
+            "claim.value": "SWT",
+            "id.token.claim": "false",
+            "jsonType.label": "String",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
+      "id": "7bed3c57-6b95-45a7-b94f-1d85103776e2",
+      "clientId": "cwms-batch-runner-spk",
+      "name": "CWMS Batch Runner SPK",
+      "description": "Local test service account for SPK batch jobs",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "local-cwms-batch-runner-spk-secret",
+      "redirectUris": [],
+      "webOrigins": [],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "client_credentials.use_refresh_token": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "id": "019637fa-9fe7-4ee1-b372-5d20cb8b4a05",
+          "name": "machine_auth",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "machine_auth",
+            "claim.value": "true",
+            "id.token.claim": "false",
+            "jsonType.label": "boolean",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "id": "f6fde48e-c253-472d-8ed1-6267b4db1227",
+          "name": "run_as_office",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "run_as_office",
+            "claim.value": "SPK",
+            "id.token.claim": "false",
+            "jsonType.label": "String",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    },
+    {
       "id": "f09103f0-5563-4dc0-bc70-2ff0309edae7",
       "clientId": "realm-management",
       "name": "${client_realm-management}",
@@ -2320,6 +2468,26 @@
       "realmRoles": [
           "cwms_user",
           "new_user"
+      ]
+    },
+    {
+      "id": "a4e88497-0ffc-41d5-b0fd-cc91760e366b",
+      "username": "service-account-cwms-batch-runner-swt",
+      "enabled": true,
+      "emailVerified": false,
+      "serviceAccountClientId": "cwms-batch-runner-swt",
+      "realmRoles": [
+        "cwms_user"
+      ]
+    },
+    {
+      "id": "d2d6f91b-a5dd-40c3-8ee6-49a52da9892e",
+      "username": "service-account-cwms-batch-runner-spk",
+      "enabled": true,
+      "emailVerified": false,
+      "serviceAccountClientId": "cwms-batch-runner-spk",
+      "realmRoles": [
+        "cwms_user"
       ]
     }
   ]
