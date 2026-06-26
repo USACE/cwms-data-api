@@ -68,6 +68,70 @@ sequenceDiagram
     CDA-->>Runner: CDA response
 ```
 
+### Current Scheduled M2M Flow
+
+```mermaid
+flowchart LR
+    subgraph Airflow["Airflow scheduler"]
+        DAG["SWT hourly DAG<br/>cwms_batch_events_swt_hourly"]
+        SchedulerClient["Scheduler client<br/>cwms-batch-airflow-swt"]
+    end
+
+    subgraph Identity["Keycloak"]
+        Keycloak["Token endpoint"]
+        SchedulerToken["Scheduler access token<br/>azp=cwms-batch-airflow-swt"]
+        RunnerToken["Runner access token<br/>machine_auth=true<br/>run_as_office=SWT"]
+    end
+
+    subgraph BatchEvents["Batch Events"]
+        API["POST /jobs"]
+        RoleCheck["Validate JWT<br/>allow listed azp<br/>CDA profile roles"]
+        JobDB[("Jobs and scripts DB<br/>SWT hourly<br/>bin/hourly.sh<br/>runtime=shell")]
+        Queue["SQS or ElasticMQ"]
+        Dispatcher["Dispatcher<br/>Lambda or local loop"]
+        Broker["Runtime env broker<br/>/internal/jobs/{job}/runtime-env"]
+    end
+
+    subgraph Runtime["Shared runtime"]
+        Batch["AWS Batch or local Docker<br/>shared shell runner job definition"]
+        Runner["Runner container<br/>cwbi-wm-images"]
+        Script["SWT office script<br/>bin/hourly.sh<br/>uses CDA_BEARER_TOKEN"]
+    end
+
+    subgraph Secrets["Office secret store"]
+        SecretStore[("cwms-batch-jobs-swd-secrets<br/>SWT_CDA_CLIENT_ID<br/>SWT_CDA_CLIENT_SECRET")]
+    end
+
+    subgraph CDA["CWMS Data API"]
+        Profile["/user/profile<br/>scheduler service account has SWT roles"]
+        CdaAuth["OIDC validation<br/>registered machine principal<br/>normal CDA and DB auth"]
+        DbAuth[("CWMS database roles")]
+    end
+
+    DAG --> SchedulerClient
+    SchedulerClient -->|"client_credentials"| Keycloak
+    Keycloak --> SchedulerToken
+    SchedulerToken -->|"Bearer token"| API
+    API --> RoleCheck
+    RoleCheck -->|"resolve caller roles"| Profile
+    RoleCheck -->|"create authorized job"| JobDB
+    JobDB --> Queue
+    Queue --> Dispatcher
+    Dispatcher -->|"submit runtime job"| Batch
+    Batch --> Runner
+    Runner -->|"job id + runtime token"| Broker
+    Broker --> SecretStore
+    Broker -->|"CDA client creds + script env"| Runner
+    Runner -->|"client_credentials"| Keycloak
+    Keycloak --> RunnerToken
+    RunnerToken --> Runner
+    Runner --> Script
+    Script -->|"CDA_BEARER_TOKEN"| CdaAuth
+    CdaAuth --> DbAuth
+```
+
+The scheduler identity and runner identity are intentionally separate. Airflow's office-specific service account is authorized to request a job. The runner's office-specific service account is the machine principal used when the job calls CDA.
+
 ### Keycloak-Minted Run Context
 
 When available, Keycloak mints the batch run context into the normal access token. CDA validates that token through the existing OIDC flow and reads these claims:
