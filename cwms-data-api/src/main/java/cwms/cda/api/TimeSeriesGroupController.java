@@ -70,6 +70,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -150,11 +151,19 @@ public class TimeSeriesGroupController implements CrudHandler {
 
                 String result = Formats.format(contentType, grps, TimeSeriesGroup.class);
 
-                ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failure to process request to retrieve time series groups");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series groups");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
     }
@@ -204,19 +213,24 @@ public class TimeSeriesGroupController implements CrudHandler {
             if (group != null) {
                 String result = Formats.format(contentType, group);
 
-                ctx.result(result);
                 ctx.contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find group based on parameters given");
                 logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
-
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failure to process request to retrieve time series group");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series group");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(

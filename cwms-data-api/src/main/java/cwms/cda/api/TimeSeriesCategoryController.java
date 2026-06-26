@@ -33,6 +33,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.formatters.ContentType;
@@ -46,6 +47,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
@@ -88,7 +90,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                         + "Data", tags = {TAG})
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
@@ -101,12 +103,20 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
             String result = Formats.format(contentType, cats, TimeSeriesCategory.class);
 
-            ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
-        }
+            ctx.contentType(contentType.toString());
 
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve TimeSeries Categories", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve TimeSeries Categories");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 
     @OpenApi(
@@ -133,7 +143,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
             description = "Retrieves requested timeseries category", tags = {TAG})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String categoryId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
@@ -146,15 +156,23 @@ public class TimeSeriesCategoryController implements CrudHandler {
             if (grp.isPresent()) {
                 String result = Formats.format(contentType, grp.get());
 
-                ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find category based on parameters given");
                 logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve TimeSeries Category");
+            logger.atSevere().withCause(ex).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -176,7 +194,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.req.getContentType();

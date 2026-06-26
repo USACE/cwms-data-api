@@ -5,6 +5,8 @@ import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
+import cwms.cda.formatters.csv.CsvConfiguration;
+
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -59,5 +61,11 @@ public interface TimeSeriesDao {
 
     List<RecentValue> findMostRecentsInRange(String office, List<String> tsIds, Timestamp pastLimit,
                                              Timestamp futureLimit, UnitSystem unitSystem);
+
+    void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters,
+                                      StreamConsumer consumer,
+                                      CsvConfiguration csvConfig,
+                                      Integer dbFetchSize,
+                                      Integer rowsPerBuffer);
 
 }

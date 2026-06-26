@@ -1,4 +1,5 @@
-import { UsaceBox, BadgeButton, Code, Divider, H3, H4 } from "@usace/groundwork";
+/* eslint-disable react/no-unescaped-entities */
+import { UsaceBox, Code, Divider, H3, H4 } from "@usace/groundwork";
 
 export default function FilterExpressions() {
   return (

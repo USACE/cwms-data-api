@@ -16,7 +16,7 @@ import Layout from "./components/Layout";
 import LocationSearch from "./pages/LocationSearch.jsx";
 
 // Styles
-import "@usace/groundwork/dist/style.css";
+import "@usace/groundwork/dist/groundwork.css";
 import "./css/index.css";
 import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";

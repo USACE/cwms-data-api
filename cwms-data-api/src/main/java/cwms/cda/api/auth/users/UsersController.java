@@ -1,17 +1,24 @@
 package cwms.cda.api.auth.users;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CURSOR;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_ROLES;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.USERNAME_LIKE;
+import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
-
-import javax.servlet.http.HttpServletResponse;
-import org.jooq.DSLContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.UserDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.auth.users.User;
@@ -27,8 +34,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
+import org.jooq.DSLContext;
 
 public class UsersController implements CrudHandler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
     private static final int DEFAULT_PAGE_SIZE = 100;
     public static final String TAG = "User Management";
@@ -59,7 +70,7 @@ public class UsersController implements CrudHandler {
         queryParams = {
             @OpenApiParam(allowEmptyValue = true, name = OFFICE,
                     description = "Show only users with active privileges in a given office." 
-                                + Controllers.OFFICE_DESCRIPTION ),
+                                + Controllers.OFFICE_DESCRIPTION),
             @OpenApiParam(name = USERNAME_LIKE,
                     description = "Posix <a href=\"regexp.html\">regular expression</a> "
                             + " matching against the username"),
@@ -124,8 +135,17 @@ public class UsersController implements CrudHandler {
 
             String result = Formats.format(contentType, users);
 
-            ctx.result(result);
             ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Users", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Users");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -148,15 +168,26 @@ public class UsersController implements CrudHandler {
     )
     @Override
     public void getOne(Context ctx, String userName) {
-        DSLContext dsl = getDslContext(ctx);
-        UserDao dao = new UserDao(dsl);
-        User user = dao.getByUniqueName(userName, null).orElse(null);
-        String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeader(formatHeader, User.class);
-        String result = Formats.format(contentType, user);
+        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            DSLContext dsl = getDslContext(ctx);
+            UserDao dao = new UserDao(dsl);
+            User user = dao.getByUniqueName(userName, null).orElse(null);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, User.class);
+            String result = Formats.format(contentType, user);
 
-        ctx.result(result);
-        ctx.contentType(contentType.toString());
+            ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve User", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve User");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 
     @OpenApi(

@@ -132,8 +132,15 @@ public class RatingTemplateController implements CrudHandler {
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, ratingTemplates);
-            ctx.result(result);
             requestResultSize.update(result.length());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error while writing response ");
+            logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
     }
@@ -164,7 +171,7 @@ public class RatingTemplateController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, String templateId) {
+    public void getOne(Context ctx, @NotNull String templateId) {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeader(formatHeader, RatingTemplate.class);
 
@@ -180,17 +187,24 @@ public class RatingTemplateController implements CrudHandler {
             if (template.isPresent()) {
                 String result = Formats.format(contentType, template.get());
 
-                ctx.result(result);
                 ctx.contentType(contentType.toString());
 
                 requestResultSize.update(result.length());
                 ctx.status(HttpServletResponse.SC_OK);
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find Rating Template based on "
                         + "parameters given");
                 logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error while writing response ");
+            logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -210,7 +224,7 @@ public class RatingTemplateController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
+    public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)){
             DSLContext dsl = getDslContext(ctx);
 
@@ -252,7 +266,7 @@ public class RatingTemplateController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String locationCode) {
+    public void update(@NotNull Context ctx, @NotNull String locationCode) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
@@ -271,7 +285,7 @@ public class RatingTemplateController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, String ratingTemplateId) {
+    public void delete(@NotNull Context ctx, @NotNull String ratingTemplateId) {
         try (final Timer.Context ignored = markAndTime(DELETE)){
             DSLContext dsl = getDslContext(ctx);
 

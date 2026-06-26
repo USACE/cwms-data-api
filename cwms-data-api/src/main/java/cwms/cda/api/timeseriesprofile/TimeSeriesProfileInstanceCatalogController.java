@@ -36,6 +36,9 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
 import cwms.cda.formatters.ContentType;
@@ -48,6 +51,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -55,6 +59,7 @@ import org.jooq.DSLContext;
 
 
 public final class TimeSeriesProfileInstanceCatalogController extends TimeSeriesProfileInstanceBase implements Handler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     public TimeSeriesProfileInstanceCatalogController(MetricRegistry metrics) {
         tspMetrics(metrics);
     }
@@ -99,8 +104,17 @@ public final class TimeSeriesProfileInstanceCatalogController extends TimeSeries
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, TimeSeriesProfileInstance.class);
             String result = Formats.format(contentType, retrievedInstances, TimeSeriesProfileInstance.class);
-            ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve time series profile instances", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve time series profile instances");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 }

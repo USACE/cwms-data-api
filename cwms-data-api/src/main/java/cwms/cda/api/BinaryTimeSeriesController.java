@@ -31,7 +31,6 @@ import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
@@ -44,6 +43,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.binarytimeseries.TimeSeriesBinaryDao;
@@ -51,7 +51,6 @@ import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -60,11 +59,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Instant;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -160,10 +158,13 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, binaryTimeSeries);
-            ctx.result(result);
 
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (URISyntaxException | UnsupportedEncodingException ex) {
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (URISyntaxException | IOException ex) {
             CdaError re = ExceptionTraceSupport.buildError(ctx,
                     "Failed to process request: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re);

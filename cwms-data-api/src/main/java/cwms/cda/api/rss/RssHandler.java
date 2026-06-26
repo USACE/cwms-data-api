@@ -29,9 +29,11 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.rss.MessageDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.rss.RssFeed;
@@ -41,21 +43,27 @@ import cwms.cda.helpers.ReplaceUtils;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import io.javalin.http.HttpResponseException;
+import io.javalin.http.util.NaiveRateLimit;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class RssHandler extends BaseHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private static final int DEFAULT_PAGE_SIZE = 500;
     private static final String TAG = "RSS";
@@ -95,14 +103,21 @@ public final class RssHandler extends BaseHandler {
             @OpenApiResponse(status = STATUS_200, content = {
                 @OpenApiContent(from = RssFeed.class, type = Formats.RSS)
             }),
-            @OpenApiResponse(status = STATUS_404, description = "Unknown Feed")
+            @OpenApiResponse(status = STATUS_404, description = "Unknown Feed"),
+            @OpenApiResponse(status = STATUS_429, description = "Rate Limit exceeded.")
         },
-        description = "Returns RSS feed items limited to the last week.",
+        description = "Returns RSS feed items limited to the last week. End point is limited to 1 request per 10 seconds per client per feed.",
         tags = {TAG}
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
+            // Always set these.
+            ctx.header("Retry-After", "10")
+               .header("RateLimit-Policy", "\"default\";q=6;w=60");
+            // Limit is 1 request per 10 seconds, or 6 a minute.
+            NaiveRateLimit.requestPerTimeUnit(ctx, 6, TimeUnit.MINUTES);
+
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE).toUpperCase();
             String name = ctx.pathParam(NAME);
@@ -120,8 +135,30 @@ public final class RssHandler extends BaseHandler {
             MessageDao dao = new MessageDao(dsl);
             RssFeed feed = dao.retrieveFeed(cursor, pageSize, office, name, since, newLinkTemplate(ctx));
             String result = Formats.format(contentType, feed);
-            ctx.result(result);
+
             ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (HttpResponseException ex) {
+            // an exception to our error handling rules. HttpResponseException, includes multiple other exception
+            // and we don't want to deal with trying to distinguish in ApiServlet. For the time being this logic will
+            // remain here.
+            if (ex.getStatus() == 429) {
+                var cdaError = new CdaError("Too many requests. Limit queue requests to no more than every 10 seconds.");
+                ctx.status(ex.getStatus())
+                   .json(cdaError)
+                   .contentType(io.javalin.http.ContentType.APPLICATION_JSON);
+            } else {
+                throw ex;
+            }
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve data as RSS feed", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve data as RSS feed");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

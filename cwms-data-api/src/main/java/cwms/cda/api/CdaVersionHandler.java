@@ -32,21 +32,27 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.CdaVersionDao;
 import cwms.cda.data.dto.CdaVersion;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class CdaVersionHandler implements Handler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     static final String TAG = "Version";
     private final MetricRegistry metrics;
 
@@ -75,9 +81,17 @@ public final class CdaVersionHandler implements Handler {
             CdaVersionDao dao = new CdaVersionDao(dsl, metrics);
             CdaVersion cdaVersion = dao.getCdaVersion();
             String serialized = Formats.format(new ContentType(Formats.JSON), cdaVersion);
-            ctx.result(serialized);
             ctx.contentType(Formats.JSON);
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve CWMS Data API version", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve CWMS Data API version");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 }

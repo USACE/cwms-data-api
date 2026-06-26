@@ -24,6 +24,21 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.INTERVAL;
+import static cwms.cda.api.Controllers.LEVEL_ID;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.LocationLevelsDao;
@@ -34,21 +49,16 @@ import cwms.cda.helpers.DateUtils;
 import hec.data.level.JDomLocationLevelRef;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import org.jooq.DSLContext;
-
-import javax.servlet.http.HttpServletResponse;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 public class LevelsAsTimeSeriesController extends BaseHandler {
 

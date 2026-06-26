@@ -25,4 +25,5 @@ Some decisions may also be a proposal and marked appropriately.
     CDA Authorization Filtering <./0006-cda-authorization-filtering.md>
     Access Management Clients <./0007-access-management-clients.md>
     Timeseries CSV Format <./0008-timeseries-csv-format.rst>
-    Signed Batch Machine Run Context <./0009-batch-machine-run-context.md>
+    Handling Releases <./0009-code-changes-and-releases.rst>
+    Batch Machine Run Context <./0010-batch-machine-run-context.md>

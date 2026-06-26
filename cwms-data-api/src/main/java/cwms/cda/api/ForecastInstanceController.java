@@ -1,11 +1,26 @@
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.DESIGNATOR;
+import static cwms.cda.api.Controllers.FORECAST_DATE;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.ISSUE_DATE;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.ForecastInstanceDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastInstance;
@@ -14,7 +29,6 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -28,12 +42,12 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class ForecastInstanceController extends BaseCrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     public static final String TAG = "Forecast";
     private static final int KILO_BYTE_LIMIT = Integer.parseInt(System.getProperty("cda.api.forecast.file.max.length.kB", "64"));
@@ -162,12 +176,21 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastInstance.class);
             String result = Formats.format(contentType, instances, ForecastInstance.class);
 
-            ctx.result(result).contentType(contentType.toString());
             updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (URISyntaxException e) {
             throw new FormattingException("Could not build file download URL", e);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Forecast Instances", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Forecast Instances");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -232,12 +255,21 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastInstance.class);
             String result = Formats.format(contentType, instance);
 
-            ctx.result(result).contentType(contentType.toString());
             updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (URISyntaxException e) {
             throw new FormattingException("Could not build file download URL", e);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Forecast Instance", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Forecast Instance");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

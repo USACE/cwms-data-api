@@ -2,7 +2,7 @@
 
 | Status         | Proposed                |
 | :------------- | :---------------------- |
-| **ADR #**      | 0009                    |
+| **ADR #**      | 0010                    |
 | **Author(s)**  | CWBI Batch Runtime Team |
 | **Sponsor**    | HEC/USACE               |
 | **Date**       | 6/8/2026                |

@@ -193,31 +193,48 @@ public class LocationController implements CrudHandler {
             if (contentType.getType().equals(Formats.GEOJSON)) {
                 FeatureCollection collection = locationsDao.buildFeatureCollection(names, units,
                         office);
-                ctx.json(collection);
-
-                requestResultSize.update(ctx.res.getBufferSize());
                 ctx.contentType(contentType.toString());
+
+                ObjectMapper mapper = ctx.appAttribute("ObjectMapper");
+                String result = mapper.writeValueAsString(collection);
+                requestResultSize.update(result.length());
+
+                ctx.status(HttpServletResponse.SC_OK);
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else if (formatParm.isEmpty() && !isLegacyFormat) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);
                 results = Formats.format(contentType, locations, Location.class);
-                ctx.result(results);
-                requestResultSize.update(results.length());
                 ctx.contentType(contentType.toString());
+                requestResultSize.update(results.length());
+
+                ctx.status(HttpServletResponse.SC_OK);
+                byte[] bytes = results.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 String format = Formats.getLegacyTypeFromContentType(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
-                ctx.result(results);
-                requestResultSize.update(results.length());
+
                 if (isLegacyFormat) {
                     ctx.contentType(contentType.toString());
                 } else {
                     ctx.contentType(contentType.getType());
                 }
+                requestResultSize.update(results.length());
+
+                ctx.status(HttpServletResponse.SC_OK);
+                byte[] bytes = results.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
 
             addDeprecatedContentTypeWarning(ctx, contentType);
-
-            ctx.status(HttpServletResponse.SC_OK);
+        } catch (IOException ex) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Locations", ex);
+            logger.atSevere().withCause(ex).log("%s", re.toString());
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -271,7 +288,14 @@ public class LocationController implements CrudHandler {
             LocationsDao locationDao = getLocationsDao(dsl);
             Location location = locationDao.getLocation(locationId, units, office, includeAliases, datum);
             String serializedLocation = Formats.format(contentType, location);
-            ctx.result(serializedLocation);
+            ctx.contentType(contentType.toString());
+            requestResultSize.update(serializedLocation.length());
+
+            ctx.status(HttpServletResponse.SC_OK);
+            byte[] bytes = serializedLocation.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (IOException ex) {
             String errorMsg = "Error retrieving " + locationId;

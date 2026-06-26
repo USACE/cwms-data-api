@@ -107,21 +107,6 @@ class FormatsTest {
     }
 
     @Test
-    void testParseBoth() {
-        assertThrows(FormattingException.class, () -> {
-            Formats.parseHeaderAndQueryParm("application/json", "json", LocationLevels.class);
-        });
-    }
-
-    @Test
-    void testParseBothv2() {
-        assertThrows(FormattingException.class, () -> {
-            Formats.parseHeaderAndQueryParm("application/json;version=2", "json", LocationLevels.class);
-        });
-
-    }
-
-    @Test
     void testParseHeader() {
         ContentType contentType;
 

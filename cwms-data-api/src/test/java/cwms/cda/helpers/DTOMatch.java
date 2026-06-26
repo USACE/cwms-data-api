@@ -34,6 +34,8 @@ import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.LocationToPublishedData;
 import cwms.cda.data.dto.LocationToPublishedDataList;
 import cwms.cda.data.dto.PublishedTimeSeriesData;
+import cwms.cda.data.dto.csv.TimeSeriesCsv;
+import cwms.cda.data.dto.csv.TimeSeriesCsvRow;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -404,6 +406,29 @@ public final class DTOMatch {
             () -> assertMatch(first.getWaterUser(), second.getWaterUser()),
             () -> assertMatch(first.getPumpAccounting(), second.getPumpAccounting()),
             () -> assertMatch(first.getPumpLocations(), second.getPumpLocations())
+        );
+    }
+
+    public static void assertMatch(TimeSeriesCsv first, TimeSeriesCsv second) {
+        assertAll(
+            () -> assertEquals(first.getTimeSeriesId(), second.getTimeSeriesId(), "Time series IDs do not match"),
+            () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office IDs do not match"),
+            () -> assertEquals(first.getVersionDate(), second.getVersionDate(), "Version dates do not match"),
+            () -> assertMatch(first.getRows(), second.getRows())
+        );
+    }
+
+    public static void assertMatch(List<TimeSeriesCsvRow> first, List<TimeSeriesCsvRow> second) {
+        assertMatch(first, second, DTOMatch::assertMatch);
+    }
+
+    public static void assertMatch(TimeSeriesCsvRow first, TimeSeriesCsvRow second) {
+        assertAll(
+            () -> assertEquals(first.getDateTime(), second.getDateTime(), "Date times do not match"),
+            () -> assertEquals(first.getDataEntryDate(), second.getDataEntryDate(), "Data entry dates do not match"),
+            () -> assertEquals(first.getUnits(), second.getUnits(), "Units do not match"),
+            () -> assertEquals(first.getValue(), second.getValue(), "Values do not match"),
+            () -> assertEquals(first.getQualityCode(), second.getQualityCode(), "Quality codes do not match")
         );
     }
 

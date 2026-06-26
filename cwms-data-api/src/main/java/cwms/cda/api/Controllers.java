@@ -40,7 +40,9 @@ import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -127,6 +129,8 @@ public final class Controllers {
     public static final String MATCH_NULL_PARENTS = "match-null-parents";
     public static final String ENTITY_ID = "entity-id";
     public static final String PARENT_ENTITY_ID = "parent-entity-id";
+    public static final String INCLUDE_METADATA_AS_CSV_COMMENTS = "include-metadata-as-comments";
+    public static final String INCLUDE_OPTIONAL_CSV_COLUMNS = "include-optional-csv-columns";
 
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
@@ -172,9 +176,8 @@ public final class Controllers {
     public static final String TS_IDS = "ts-ids";
 
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
-    public static final String DATE_FORMAT = "YYYY-MM-dd'T'hh:mm:ss[Z'['VV']']";
-    public static final String TIME_FORMAT_DESC = "The <a href=\"times.html\">format for this field</a> is ISO 8601 extended" +
-            ", with optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '" + EXAMPLE_DATE + "'."            ;
+    public static final String TIME_FORMAT_DESC = "The <a href=\"times.html\">format for this field</a> " +
+            "is ISO 8601 extended in UTC, e.g., 2026-06-18T19:42:00Z";
 
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";
@@ -195,6 +198,7 @@ public final class Controllers {
     public static final String STATUS_201 = "201";
     public static final String STATUS_204 = "204";
     public static final String STATUS_404 = "404";
+    public static final String STATUS_429 = "429";
     public static final String STATUS_501 = "501";
     public static final String STATUS_400 = "400";
     public static final String STATUS_401 = "401";
@@ -214,6 +218,8 @@ public final class Controllers {
     public static final String AREA_UNIT = "area-unit";
     public static final String STATION_UNIT = "station-unit";
     public static final String STAGE_UNIT = "stage-unit";
+    public static final String DATE_FORMAT = "date-format";
+    public static final String DATE_FORMAT_PATTERN = "date-format-pattern";
     public static final String TRIM = "trim";
     public static final String DESIGNATOR = "designator";
     public static final String DESIGNATOR_MASK = "designator-mask";
