@@ -129,6 +129,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final String VALUE_AT_MAX_DATE = "value_at_max_date";
     private static final String CWMS_20 = "CWMS_20";
     private static final String UNIT_ID = "UNIT_ID";
+    private static final DateTimeFormatter ORACLE_DATE_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
@@ -240,8 +242,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
         Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
+        String beginTimestampText = beginTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
+        String endTimestampText = endTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
 
         AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
+        Field<Timestamp> dateTimeField = field(name("CWMS_20", "AV_TSV_DQU", DATE_TIME), Timestamp.class);
+        Field<Timestamp> versionDateField = field(name("CWMS_20", "AV_TSV_DQU", VERSION_DATE), Timestamp.class);
 
         Field<BigDecimal> qualityForNormalization = DSL.nvl(
                 view.QUALITY_CODE.cast(BigDecimal.class),
@@ -258,15 +264,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .and(view.TS_CODE.eq(tsCode))
                 .and(view.OFFICE_ID.eq(officeId))
                 .and(view.UNIT_ID.equalIgnoreCase(units))
-                .and(view.DATE_TIME.ge(beginTimestamp))
-                .and(view.DATE_TIME.le(endTimestamp))
-                .and(view.START_DATE.le(endTimestamp))
-                .and(view.END_DATE.gt(beginTimestamp));
+                .and(DSL.condition("{0} >= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
+                        dateTimeField, DSL.val(beginTimestampText)))
+                .and(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
+                        dateTimeField, DSL.val(endTimestampText)))
+                .and(view.START_DATE.isNull()
+                        .or(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
+                                view.START_DATE, DSL.val(endTimestampText))))
+                .and(view.END_DATE.isNull()
+                        .or(DSL.condition("{0} > to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
+                                view.END_DATE, DSL.val(beginTimestampText))));
 
         ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
         if (versionDate != null) {
             query = buildVersionedRowsQuery(
                     view,
+                    dateTimeField,
+                    versionDateField,
                     value,
                     normalizedQuality,
                     baseCondition,
@@ -276,6 +290,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         } else {
             query = buildMaxVersionRowsQuery(
                     view,
+                    dateTimeField,
+                    versionDateField,
                     value,
                     normalizedQuality,
                     baseCondition,
@@ -1011,43 +1027,48 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
             AV_TSV_DQU view,
+            Field<Timestamp> dateTime,
+            Field<Timestamp> versionDateField,
             Field<Double> value,
             Field<BigDecimal> normalizedQuality,
             Condition baseCondition,
             ZonedDateTime versionDate,
             boolean includeEntryDate) {
-        Field<Timestamp> versionTimestamp = CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
-                DSL.val(versionDate.toInstant().toEpochMilli()));
+        String versionTimestampText = Timestamp.from(versionDate.toInstant()).toLocalDateTime()
+                .format(ORACLE_DATE_FORMATTER);
         Field<Timestamp> dataEntryDateField = includeEntryDate
                 ? view.DATA_ENTRY_DATE
                 : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE);
 
         return dsl.select(
-                        view.DATE_TIME,
+                        dateTime,
                         value,
                         normalizedQuality,
                         dataEntryDateField)
                 .from(view)
-                .where(baseCondition.and(view.VERSION_DATE.eq(versionTimestamp)))
-                .orderBy(view.DATE_TIME.asc());
+                .where(baseCondition.and(DSL.condition("{0} = to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
+                        versionDateField, DSL.val(versionTimestampText))))
+                .orderBy(dateTime.asc());
     }
 
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
             AV_TSV_DQU view,
+            Field<Timestamp> dateTime,
+            Field<Timestamp> versionDateField,
             Field<Double> value,
             Field<BigDecimal> normalizedQuality,
             Condition baseCondition,
             boolean includeEntryDate) {
         var rankedRows = dsl.select(
-                        view.DATE_TIME.as(DATE_TIME),
+                        dateTime.as(DATE_TIME),
                         value,
                         normalizedQuality,
                         includeEntryDate
                                 ? view.DATA_ENTRY_DATE.as(DATA_ENTRY_DATE)
                                 : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE),
                         DSL.rowNumber()
-                                .over(partitionBy(view.DATE_TIME)
-                                        .orderBy(view.VERSION_DATE.desc(), view.DATA_ENTRY_DATE.desc()))
+                                .over(partitionBy(dateTime)
+                                        .orderBy(versionDateField.desc(), view.DATA_ENTRY_DATE.desc()))
                                 .as("version_rank"))
                 .from(view)
                 .where(baseCondition)
