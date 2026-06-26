@@ -9,10 +9,9 @@ const __dirname = path.dirname(__filename);
 const projectDir = path.resolve(__dirname, "..");
 const outputPath = path.join(projectDir, "dist", "sitemap.xml");
 
-const siteOrigin = (process.env.SITE_ORIGIN ?? "https://cwms-data.usace.army.mil").replace(
-  /\/+$/,
-  "",
-);
+const siteOrigin = (
+  process.env.SITE_ORIGIN ?? "https://cwms-data.usace.army.mil"
+).replace(/\/+$/, "");
 const siteBasePath = (process.env.SITE_BASE_PATH ?? "/cwms-data").replace(/\/+$/, "");
 
 const urls = sitemapPaths.map((routePath) => {

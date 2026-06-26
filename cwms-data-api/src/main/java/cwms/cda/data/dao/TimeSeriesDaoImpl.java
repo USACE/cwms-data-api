@@ -1,6 +1,19 @@
 package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
+
+import cwms.cda.api.errors.InvalidItemException;
+import cwms.cda.data.dao.rsql.FieldResolver;
+import cwms.cda.data.dao.rsql.MapFieldResolver;
+import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
+import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
+import cwms.cda.data.dto.catalog.TimeSeriesAlias;
+import cwms.cda.formatters.csv.CsvConfiguration;
+import cwms.cda.helpers.DateUtils;
+
+import java.io.IOException;
+import java.sql.Connection;
+
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
@@ -10,6 +23,7 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
+import static org.jooq.impl.DSL.selectOne;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
@@ -25,9 +39,6 @@ import com.google.common.cache.CacheStats;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
-import cwms.cda.data.dao.rsql.FieldResolver;
-import cwms.cda.data.dao.rsql.MapFieldResolver;
-import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.RecentValue;
@@ -38,15 +49,11 @@ import cwms.cda.data.dto.TsvDqu;
 import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
-import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
-import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.formatters.xml.XMLv1;
-import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ZoneIdHelper;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -99,6 +106,9 @@ import usace.cwms.db.jooq.codegen.udt.records.DATE_RANGE_T;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
 
+import cwms.cda.formatters.csv.CsvV1;
+import cwms.cda.formatters.Formats;
+
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -119,8 +129,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final String VALUE_AT_MAX_DATE = "value_at_max_date";
     private static final String CWMS_20 = "CWMS_20";
     private static final String UNIT_ID = "UNIT_ID";
-    private static final DateTimeFormatter ORACLE_DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
@@ -179,12 +187,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private final Histogram getRequestedTimeSeriesResultsReturnedHistogram;
     @NotNull
     private final Histogram getRequestedTimeSeriesRequestWindowMillisHistogram;
-    @NotNull
-    private final MetricRegistry metrics;
 
     public TimeSeriesDaoImpl(DSLContext dsl, @NotNull MetricRegistry metrics) {
         super(dsl);
-        this.metrics = metrics;
 
         String className = this.getClass().getName();
         CacheStats stats = isVersionedCache.stats();
@@ -223,6 +228,117 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 begin.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 end.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 timezone.getId(), office);
+    }
+
+    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildTsvDquQuery(
+            long tsCode, String officeId, String units,
+            TimeSeriesRequestParameters requestParameters,
+            boolean includeEntryDate) {
+        ZonedDateTime beginTime = requestParameters.getBeginTime();
+        ZonedDateTime endTime = requestParameters.getEndTime();
+        ZonedDateTime versionDate = requestParameters.getVersionDate();
+
+        Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
+        Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
+
+        AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
+
+        Field<BigDecimal> qualityForNormalization = DSL.nvl(
+                view.QUALITY_CODE.cast(BigDecimal.class),
+                DSL.val(BigDecimal.valueOf(5))
+        );
+
+        Field<BigDecimal> normalizedQuality = CWMS_TS_PACKAGE.call_NORMALIZE_QUALITY(
+                qualityForNormalization
+        ).as("quality_norm");
+
+        Field<Double> value = view.VALUE.as(VALUE);
+
+        Condition baseCondition = view.ALIASED_ITEM.isNull()
+                .and(view.TS_CODE.eq(tsCode))
+                .and(view.OFFICE_ID.eq(officeId))
+                .and(view.UNIT_ID.equalIgnoreCase(units))
+                .and(view.DATE_TIME.ge(beginTimestamp))
+                .and(view.DATE_TIME.le(endTimestamp))
+                .and(view.START_DATE.le(endTimestamp))
+                .and(view.END_DATE.gt(beginTimestamp));
+
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
+        if (versionDate != null) {
+            query = buildVersionedRowsQuery(
+                    view,
+                    value,
+                    normalizedQuality,
+                    baseCondition,
+                    versionDate,
+                    includeEntryDate
+            );
+        } else {
+            query = buildMaxVersionRowsQuery(
+                    view,
+                    value,
+                    normalizedQuality,
+                    baseCondition,
+                    includeEntryDate
+            );
+        }
+        return query;
+    }
+
+    @Override
+    public void streamRequestedTimeSeriesCsv(TimeSeriesRequestParameters requestParameters, StreamConsumer consumer,
+                                             CsvConfiguration csvConfiguration, Integer dbFetchSize, Integer rowsPerBuffer) {
+
+        boolean includeDataEntryDate = csvConfiguration.includeOptionalColumns();
+
+        DirectReadMetadata metadata = fetchRequestedTimeSeriesMetadataRecord(requestParameters);
+        if (metadata == null) {
+            throw new DataAccessException("Unable to resolve time series metadata for " + requestParameters.getNames());
+        }
+
+        long tsCode = metadata.tsCode;
+        String tsIdStr = metadata.tsId;
+        String officeResolved = metadata.officeId;
+        String resolvedUnits = metadata.units;
+
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved,
+                resolvedUnits, requestParameters, includeDataEntryDate);
+
+        logger.atFine().log("%s", lazy(query::getSQL));
+
+        int effectiveFetchSize = (dbFetchSize != null && dbFetchSize > 0)
+                ? dbFetchSize
+                : 1000;
+
+        if (rowsPerBuffer != null && rowsPerBuffer > 0 && effectiveFetchSize < rowsPerBuffer) {
+            effectiveFetchSize = rowsPerBuffer;
+        }
+
+        query.fetchSize(effectiveFetchSize);
+
+        ZonedDateTime versionDate = requestParameters.getVersionDate();
+        Timestamp versionTs = versionDate != null ? Timestamp.from(versionDate.toInstant()) : null;
+
+        try (Cursor<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query.fetchLazy()) {
+            CsvV1 csvFormatter = new CsvV1();
+
+            CsvOnDemandInputStream stream = new CsvOnDemandInputStream(
+                    recCursor,
+                    csvFormatter,
+                    tsIdStr,
+                    officeResolved,
+                    resolvedUnits,
+                    versionTs,
+                    csvConfiguration,
+                    rowsPerBuffer
+            );
+
+            try (stream) {
+                consumer.accept(stream, Formats.CSV);
+            } catch (IOException | SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     /**
@@ -674,59 +790,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private TimeSeries getRequestedTimeSeriesDirect(String page, int pageSize,
                                                     @NotNull TimeSeriesRequestParameters requestParameters) {
-        if (isPseudoIrregularOldStyleLocalRegularId(requestParameters)) {
-            return getRequestedTimeSeriesDirectWithOldLrtsFormatting(page, pageSize, requestParameters);
-        }
-        return getRequestedTimeSeriesDirectForSession(page, pageSize, requestParameters);
-    }
-
-    private TimeSeries getRequestedTimeSeriesDirectWithOldLrtsFormatting(String page, int pageSize,
-                                                                         @NotNull TimeSeriesRequestParameters
-                                                                         requestParameters) {
-        DirectReadMetadata metadata = connectionResult(dsl, conn -> {
-            DSLContext oldLrtsDsl = DSL.using(conn, SQLDialect.ORACLE18C);
-            setOldLrtsFormatting(oldLrtsDsl);
-            return fetchRequestedTimeSeriesMetadataRecord(oldLrtsDsl, requestParameters);
-        });
-        return getRequestedTimeSeriesDirectForSession(page, pageSize, requestParameters, metadata);
-    }
-
-    private boolean isPseudoIrregularOldStyleLocalRegularId(@NotNull TimeSeriesRequestParameters requestParameters) {
-        if (!isOldStyleLocalRegularId(requestParameters.getNames())) {
-            return false;
-        }
-        return connectionResult(dsl, conn -> {
-            DSLContext oldLrtsDsl = DSL.using(conn, SQLDialect.ORACLE18C);
-            setOldLrtsFormatting(oldLrtsDsl);
-            DirectReadMetadata metadata = fetchRequestedTimeSeriesMetadataRecord(oldLrtsDsl, requestParameters);
-            return metadata != null && metadata.intervalUtcOffset == UTC_OFFSET_IRREGULAR;
-        });
-    }
-
-    private static void setOldLrtsFormatting(DSLContext oldLrtsDsl) {
-        CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(oldLrtsDsl.configuration(),
-                SESSION_USE_LRTS_ID_FORMAT, formatBool(false), REQUIRE_OLD_LRTS_ID_FORMAT);
-    }
-
-    private static void clearLrtsFormatting(DSLContext lrtsDsl) {
-        CWMS_UTIL_PACKAGE.call_RESET_SESSION_INFO(lrtsDsl.configuration(), SESSION_USE_LRTS_ID_FORMAT);
-    }
-
-    private static boolean isOldStyleLocalRegularId(String tsId) {
-        String[] parts = splitTimeSeriesId(tsId);
-        String intervalPart = getTimeSeriesIdPart(parts, 3);
-        return intervalPart != null && intervalPart.startsWith("~");
-    }
-
-    private TimeSeries getRequestedTimeSeriesDirectForSession(String page, int pageSize,
-                                                              @NotNull TimeSeriesRequestParameters
-                                                              requestParameters) {
-        return getRequestedTimeSeriesDirectForSession(page, pageSize, requestParameters, null);
-    }
-
-    private TimeSeries getRequestedTimeSeriesDirectForSession(String page, int pageSize,
-                                                              @NotNull TimeSeriesRequestParameters requestParameters,
-                                                              DirectReadMetadata suppliedMetadata) {
         String names = requestParameters.getNames();
         String office = requestParameters.getOffice();
         String requestedUnits = requestParameters.getUnits();
@@ -756,12 +819,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
 
-        DirectReadMetadata metadata = suppliedMetadata != null
-                ? suppliedMetadata
-                : fetchRequestedTimeSeriesMetadataRecord(requestParameters);
+        DirectReadMetadata metadata = fetchRequestedTimeSeriesMetadataRecord(requestParameters);
         if (metadata == null) {
             throw new DataAccessException("Unable to resolve time series metadata for " + names);
         }
+
         long tsCode = metadata.tsCode;
         String tsId = metadata.tsId;
         String[] tsIdParts = splitTimeSeriesId(tsId);
@@ -780,7 +842,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (shouldFetchVerticalDatum(parmPart)) {
             verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, requestedUnits, office);
         }
-        validateRequestedUnits(nativeUnits, requestedUnits);
 
         VersionType finalDateVersionType = getDirectReadVersionType(
                 metadata.versionFlag, versionDate != null);
@@ -788,9 +849,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // Pagination happens after regular-interval gap rows are merged
         //  fetch the full raw window first
         List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId,
-                metadataUnits, requestParameters, includeEntryDate, intervalOffset == UTC_OFFSET_IRREGULAR);
+                metadataUnits, requestParameters, includeEntryDate);
         long effectiveIntervalOffset = intervalOffset;
-        if (isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)) {
+        if (isRegularSeries(intervalMinutes, intervalPart)) {
             effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts, rawRows);
         }
 
@@ -807,7 +868,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 beginTime,
                 endTime,
                 metadataUnits,
-                resolveIntervalDuration(intervalMinutes, intervalOffset, intervalPart, isLrts),
+                resolveIntervalDuration(intervalMinutes, intervalPart),
                 verticalDatumInfo,
                 effectiveIntervalOffset,
                 timeZoneId,
@@ -825,11 +886,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private DirectReadMetadata fetchRequestedTimeSeriesMetadataRecord(
             TimeSeriesRequestParameters requestParameters) {
-        return fetchRequestedTimeSeriesMetadataRecord(dsl, requestParameters);
-    }
-
-    private DirectReadMetadata fetchRequestedTimeSeriesMetadataRecord(DSLContext metadataDsl,
-                                                                     TimeSeriesRequestParameters requestParameters) {
         String names = requestParameters.getNames();
         String office = requestParameters.getOffice();
         String units = requestParameters.getUnits();
@@ -838,6 +894,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 office != null ? DSL.val(office) : CWMS_UTIL_PACKAGE.call_USER_OFFICE_ID());
         final Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
         final Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names), officeId);
+
+        validateUnits(units, tsCode, officeId, names);
 
         Table<Record3<BigDecimal, String, String>> validTs =
                 select(tsCode.as("tscode"),
@@ -868,7 +926,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         var tsIdView = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
 
         SelectJoinStep<?> metadataQuery =
-                metadataDsl.with(valid)
+                dsl.with(valid)
                         .select(
                                 valid.field("tscode", BigDecimal.class).as("tscode"),
                                 valid.field("tsid", String.class).as("tsid"),
@@ -904,131 +962,92 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 record.getValue("version_flag", String.class)));
     }
 
-    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId, String requestedUnits,
-                                                                 TimeSeriesRequestParameters requestParameters,
-                                                                 boolean includeEntryDate, boolean irregular) {
-        if (irregular) {
-            return connectionResult(dsl, conn -> {
-                DSLContext rowDsl = DSL.using(conn, SQLDialect.ORACLE18C);
-                clearLrtsFormatting(rowDsl);
-                return fetchRequestedTimeSeriesRows(rowDsl, tsCode, officeId, requestedUnits, requestParameters,
-                        includeEntryDate);
-            });
+    private void validateUnits(String units, Field<BigDecimal> tsCode, Field<String> officeId, String name) {
+        if(!units.equalsIgnoreCase("SI") && !units.equalsIgnoreCase("EN")) {
+
+            boolean tsExists = dsl.fetchExists(
+                    selectOne()
+                            .from(AV_TSV_DQU.AV_TSV_DQU)
+                            .where(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(tsCode.cast(Long.class)))
+                            .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(officeId))
+            );
+            if(tsExists) {
+                boolean unitRequestedExists = dsl.fetchExists(
+                        selectOne()
+                                .from(AV_TSV_DQU.AV_TSV_DQU)
+                                .where(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(tsCode.cast(Long.class)))
+                                .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(officeId))
+                                .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(units))
+                );
+
+                if (!unitRequestedExists) {
+                    String msg = sanitizeOrNull(units + " is not a valid unit for time series " + name);
+                    throw new InvalidItemException(msg, new IllegalArgumentException(msg));
+                }
+            }
         }
-        return fetchRequestedTimeSeriesRows(dsl, tsCode, officeId, requestedUnits, requestParameters, includeEntryDate);
     }
 
-    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(DSLContext rowDsl, long tsCode, String officeId,
+    private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId,
                                                                  String requestedUnits,
                                                                  TimeSeriesRequestParameters requestParameters,
                                                                  boolean includeEntryDate) {
-        ZonedDateTime beginTime = requestParameters.getBeginTime();
-        ZonedDateTime endTime = requestParameters.getEndTime();
-        ZonedDateTime versionDate = requestParameters.getVersionDate();
-        Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
-        Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
-        String beginTimestampText = beginTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
-        String endTimestampText = endTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
-
-        AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
-        Field<Timestamp> dateTimeField = field(name("CWMS_20", "AV_TSV_DQU", DATE_TIME), Timestamp.class);
-        Field<Timestamp> versionDateField = field(name("CWMS_20", "AV_TSV_DQU", VERSION_DATE), Timestamp.class);
-        Field<BigDecimal> qualityCode = view.QUALITY_CODE.cast(BigDecimal.class).as(QUALITY_CODE);
-        Field<Double> value = view.VALUE.as(VALUE);
-
-        Condition baseCondition = view.ALIASED_ITEM.isNull()
-                .and(view.TS_CODE.eq(tsCode))
-                .and(view.OFFICE_ID.eq(officeId))
-                .and(view.UNIT_ID.equalIgnoreCase(requestedUnits))
-                .and(DSL.condition("{0} >= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                        dateTimeField, DSL.val(beginTimestampText)))
-                .and(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                        dateTimeField, DSL.val(endTimestampText)))
-                .and(view.START_DATE.isNull()
-                        .or(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                                view.START_DATE, DSL.val(endTimestampText))))
-                .and(view.END_DATE.isNull()
-                        .or(DSL.condition("{0} > to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                                view.END_DATE, DSL.val(beginTimestampText))));
-
-        ResultQuery<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
-        if (versionDate != null) {
-            query = buildVersionedRowsQuery(rowDsl, view, dateTimeField, versionDateField, value, qualityCode,
-                    baseCondition, versionDate,
-                    includeEntryDate);
-        } else {
-            query = buildMaxVersionRowsQuery(rowDsl, view, dateTimeField, versionDateField, value, qualityCode,
-                    baseCondition, includeEntryDate);
-        }
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeId,
+                requestedUnits, requestParameters, includeEntryDate);
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
         return query.fetch(record -> {
             Timestamp dateTime = record.getValue(0, Timestamp.class);
-            Double dataValue = record.getValue(1, Double.class);
-            int quality = normalizeQualityCode(record.getValue(2, BigDecimal.class));
+            Double value = record.getValue(1, Double.class);
+            int qualityCode = record.getValue(2, BigDecimal.class).intValue();
             Timestamp dataEntryDate = record.getValue(3, Timestamp.class);
             if (dataEntryDate != null) {
-                return new TimeSeries.Record(dateTime, dataValue, quality, dataEntryDate);
+                return new TimeSeries.Record(dateTime, value, qualityCode, dataEntryDate);
             }
-            return new TimeSeries.Record(dateTime, dataValue, quality);
+            return new TimeSeries.Record(dateTime, value, qualityCode);
         });
     }
 
-    private static int normalizeQualityCode(BigDecimal qualityCode) {
-        long quality = qualityCode == null ? 5L : qualityCode.longValue();
-        if (quality > Integer.MAX_VALUE) {
-            quality -= 4_294_967_296L;
-        }
-        return (int) quality;
-    }
-
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
-            DSLContext rowDsl,
             AV_TSV_DQU view,
-            Field<Timestamp> dateTime,
-            Field<Timestamp> versionDateField,
             Field<Double> value,
-            Field<BigDecimal> qualityCode,
+            Field<BigDecimal> normalizedQuality,
             Condition baseCondition,
             ZonedDateTime versionDate,
             boolean includeEntryDate) {
-        String versionTimestampText = Timestamp.from(versionDate.toInstant()).toLocalDateTime()
-                .format(ORACLE_DATE_FORMATTER);
+        Field<Timestamp> versionTimestamp = CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                DSL.val(versionDate.toInstant().toEpochMilli()));
         Field<Timestamp> dataEntryDateField = includeEntryDate
                 ? view.DATA_ENTRY_DATE
                 : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE);
 
-        return rowDsl.select(
-                        dateTime,
+        return dsl.select(
+                        view.DATE_TIME,
                         value,
-                        qualityCode,
+                        normalizedQuality,
                         dataEntryDateField)
                 .from(view)
-                .where(baseCondition.and(DSL.condition("{0} = to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                        versionDateField, DSL.val(versionTimestampText))))
-                .orderBy(dateTime.asc());
+                .where(baseCondition.and(view.VERSION_DATE.eq(versionTimestamp)))
+                .orderBy(view.DATE_TIME.asc());
     }
 
     private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
-            DSLContext rowDsl,
             AV_TSV_DQU view,
-            Field<Timestamp> dateTime,
-            Field<Timestamp> versionDateField,
             Field<Double> value,
-            Field<BigDecimal> qualityCode,
+            Field<BigDecimal> normalizedQuality,
             Condition baseCondition,
             boolean includeEntryDate) {
-        var rankedRows = rowDsl.select(
-                        dateTime.as(DATE_TIME),
+        var rankedRows = dsl.select(
+                        view.DATE_TIME.as(DATE_TIME),
                         value,
-                        qualityCode,
+                        normalizedQuality,
                         includeEntryDate
                                 ? view.DATA_ENTRY_DATE.as(DATA_ENTRY_DATE)
                                 : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE),
                         DSL.rowNumber()
-                                .over(partitionBy(dateTime)
-                                        .orderBy(versionDateField.desc(), view.DATA_ENTRY_DATE.desc()))
+                                .over(partitionBy(view.DATE_TIME)
+                                        .orderBy(view.VERSION_DATE.desc(), view.DATA_ENTRY_DATE.desc()))
                                 .as("version_rank"))
                 .from(view)
                 .where(baseCondition)
@@ -1036,20 +1055,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Field<Timestamp> dateTimeCol = rankedRows.field(DATE_TIME, Timestamp.class);
         Field<Double> valueCol = rankedRows.field(VALUE, Double.class);
-        Field<BigDecimal> qualityCol = rankedRows.field(QUALITY_CODE, BigDecimal.class);
+        Field<BigDecimal> qualityCol = rankedRows.field("quality_norm", BigDecimal.class);
         Field<Timestamp> dataEntryDateCol = rankedRows.field(DATA_ENTRY_DATE, Timestamp.class);
         Field<Integer> versionRankCol = rankedRows.field("version_rank", Integer.class);
 
-        return rowDsl.select(dateTimeCol, valueCol, qualityCol, dataEntryDateCol)
+        return dsl.select(dateTimeCol, valueCol, qualityCol, dataEntryDateCol)
                 .from(rankedRows)
                 .where(versionRankCol.eq(1))
                 .orderBy(dateTimeCol.asc());
-    }
-
-    private void validateRequestedUnits(String nativeUnits, String requestedUnits) {
-        if (nativeUnits != null && requestedUnits != null) {
-            CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), 0.0D, nativeUnits, requestedUnits);
-        }
     }
 
     private List<Timestamp> fetchExpectedRegularTimes(long intervalMinutes, long intervalOffset, String timeZoneId,
@@ -1057,7 +1070,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                                       TimeSeriesRequestParameters requestParameters,
                                                       List<TimeSeries.Record> rawRows) {
         boolean shouldTrim = requestParameters.isShouldTrim();
-        if (!isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)) {
+        if (!isRegularSeries(intervalMinutes, intervalPart)) {
             return Collections.emptyList();
         }
         // Trimmed requests collapse to the observed data window
@@ -1135,17 +1148,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return (rawRows.get(0).getDateTime().getTime() - topOfInterval.getTime()) / TimeUnit.MINUTES.toMillis(1);
     }
 
-    private boolean isRegularSeries(long intervalMinutes, long intervalOffset, String intervalPart, boolean isLrts) {
-        return intervalOffset != UTC_OFFSET_IRREGULAR
-                && (intervalMinutes != 0L || (isLrts && isLocalRegularInterval(intervalPart)));
+    private boolean isRegularSeries(long intervalMinutes, String intervalPart) {
+        return intervalMinutes != 0L || isLocalRegularInterval(intervalPart);
     }
 
-    private Duration resolveIntervalDuration(long intervalMinutes, long intervalOffset,
-                                             String intervalPart, boolean isLrts) {
-        if (!isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)) {
-            return Duration.ZERO;
-        }
-
+    private Duration resolveIntervalDuration(long intervalMinutes, String intervalPart) {
         if (intervalMinutes != 0L) {
             return Duration.ofMinutes(intervalMinutes);
         }

@@ -24,7 +24,6 @@
 
 package cwms.cda.api.rating;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.AT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CREATE;
@@ -39,8 +38,6 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.REPLACE_BASE_CURVE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
@@ -55,12 +52,11 @@ import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.BaseCrudHandler;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import cwms.cda.api.Controllers;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JsonRatingUtils;
@@ -79,7 +75,6 @@ import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
@@ -92,10 +87,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
-
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.metadata.VerticalDatumException;
 import org.jetbrains.annotations.NotNull;
@@ -353,9 +346,17 @@ public class RatingController extends BaseCrudHandler {
                     end, timezone);
 
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);
             addDeprecatedContentTypeWarning(ctx, contentType);
             updateResultSize(results.length());
+
+            byte[] bytes = results.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException e) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Ratings", e);
+            logger.atInfo().withCause(e).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -426,9 +427,16 @@ public class RatingController extends BaseCrudHandler {
 
             String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, verticalDatum);
             if (body != null) {
-                ctx.result(body);
                 ctx.status(HttpCode.OK);
+                byte[] bytes = body.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
+        } catch (IOException e) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve RatingSet", e);
+            logger.atInfo().withCause(e).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

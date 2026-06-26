@@ -185,7 +185,10 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
+import cwms.cda.data.dto.csv.CwmsCsvDTO;
+import cwms.cda.formatters.csv.CsvExampleGenerator;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
@@ -193,6 +196,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
 import java.io.IOException;
@@ -223,6 +228,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 
 
 /**
@@ -646,7 +653,7 @@ public class ApiServlet extends HttpServlet {
         addUserManagementHandlers();
 
         get("/version/", new CdaVersionHandler(metrics), requiredRoles);
-        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics), requiredRoles);
+        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics));
     }
 
     private void addUserManagementHandlers() {
@@ -675,7 +682,7 @@ public class ApiServlet extends HttpServlet {
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
         /**
-         * The POST handlers for /ratings/rate-* intentionally do not have 
+         * The POST handlers for /ratings/rate-* intentionally do not have
          * require roles. Instead they are rate limited if not authenticated.
          * POST is used as sending a body with GET is not standard and we cannot
          * be sure clients, or future servers, would correctly support that.
@@ -933,7 +940,49 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
+                api.getPaths().forEach((key,path) -> {
+                    setSecurityRequirements(key,path,secReqs);
+                    // yeah, we really need to figure out how to update everything, this is supported as an annotation in
+                    // newer versions.
+                    if (key.startsWith("/rss")) {
+                        path.getGet().getResponses().forEach((p, r) -> {
+                            var retryAfter = new io.swagger.v3.oas.models.headers.Header();
+                            retryAfter.description("Amount of time (in seconds) to wait before making the next request.");
+                            r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
+                        });
+                    }
+            });
+                Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
+                try (ScanResult scanResult = new ClassGraph()
+                        .acceptPackages("cwms.cda.data.dto")
+                        .scan()) {
+                    List<Class<CwmsCsvDTO>> csvDtoClasses = scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
+                            .loadClasses(CwmsCsvDTO.class);
+                    for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
+                        schemaToClass.put(clazz.getSimpleName(), clazz);
+                    }
+                }
+                api.getPaths().values().forEach(pathItem -> {
+                    for (Operation op : pathItem.readOperations()) {
+                        if (op.getResponses() != null) {
+                            for (ApiResponse resp : op.getResponses().values()) {
+                                if (resp.getContent() != null && resp.getContent().containsKey(Formats.CSV)) {
+                                    MediaType csvMedia = resp.getContent().get(Formats.CSV);
+                                    if (csvMedia.getSchema() != null && csvMedia.getSchema().get$ref() != null) {
+                                        String ref = csvMedia.getSchema().get$ref();
+                                        String schemaName = ref.substring(ref.lastIndexOf('/') + 1);
+                                        @SuppressWarnings("unchecked")
+                                        Class<? extends CwmsCsvDTO<?>> dtoClass = (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
+
+                                        if (dtoClass != null) {
+                                            csvMedia.setExample(CsvExampleGenerator.getExample(dtoClass));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -942,6 +991,7 @@ public class ApiServlet extends HttpServlet {
                 doc.json("401", CdaError.class);
                 doc.json("403", CdaError.class);
                 doc.json("404", CdaError.class);
+                doc.json("429", CdaError.class);
                 doc.header(IS_NEW_LRTS,
                     Boolean.class,
                     p -> p.description(

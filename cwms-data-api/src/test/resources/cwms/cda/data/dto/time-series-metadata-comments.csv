@@ -1,0 +1,8 @@
+# time-series-id: ALAT2.Flow-Out.Inst.1Hour.0.Rev-SWF-REGI
+# office-id: SWT
+# version-date: aggregate
+date-time, value (cfs)
+2021-06-21T00:00:00Z, 0.0
+2021-06-22T00:00:00Z, 1.0
+2021-06-23T00:00:00Z, 2.0
+2021-06-24T00:00:00Z, 3.0

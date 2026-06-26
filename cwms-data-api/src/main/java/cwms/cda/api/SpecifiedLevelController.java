@@ -41,7 +41,9 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.SpecifiedLevelDao;
 import cwms.cda.data.dto.SpecifiedLevel;
 import cwms.cda.formatters.ContentType;
@@ -55,12 +57,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class SpecifiedLevelController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String TAG = "Levels";
     private final MetricRegistry metrics;
 
@@ -119,9 +123,17 @@ public class SpecifiedLevelController implements CrudHandler {
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, levels, SpecifiedLevel.class);
-            ctx.result(result);
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Specified Levels", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Specified Levels");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
 
     }

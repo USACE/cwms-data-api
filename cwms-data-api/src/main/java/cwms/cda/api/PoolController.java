@@ -10,11 +10,9 @@ import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.api.Controllers.INCLUDE_EXPLICIT;
 import static cwms.cda.api.Controllers.INCLUDE_IMPLICIT;
 import static cwms.cda.api.Controllers.NAME_MASK;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.PARAMETER_ID;
 import static cwms.cda.api.Controllers.POOL_ID;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RESULTS;
@@ -30,7 +28,9 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.PoolDao;
 import cwms.cda.data.dto.Pool;
 import cwms.cda.data.dto.Pools;
@@ -43,7 +43,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import com.google.common.flogger.FluentLogger;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -106,7 +106,7 @@ public class PoolController implements CrudHandler {
             tags = {"Pools"})
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);
@@ -143,12 +143,20 @@ public class PoolController implements CrudHandler {
 
             String result = Formats.format(contentType, pools);
 
-            ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
-        }
+            ctx.contentType(contentType.toString());
 
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Pools", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Pools");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 
     @OpenApi(
@@ -186,13 +194,13 @@ public class PoolController implements CrudHandler {
             description = "Retrieves requested Pool", tags = {"Pools"})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);
 
             // These are required
-            String office = requiredParam(ctx, OFFICE);;
+            String office = requiredParam(ctx, OFFICE);
             String projectId = requiredParam(ctx, PROJECT_ID);
 
             // These are optional
@@ -222,11 +230,19 @@ public class PoolController implements CrudHandler {
 
                 String result = Formats.format(contentType, pool);
 
-                ctx.result(result);
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Pool", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Pool");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

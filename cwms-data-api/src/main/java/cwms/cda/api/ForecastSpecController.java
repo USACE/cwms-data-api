@@ -1,7 +1,29 @@
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.DESIGNATOR;
+import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.ID_MASK;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.SOURCE_ENTITY;
+import static cwms.cda.api.Controllers.SOURCE_ENTITY_LIKE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.ForecastSpecDao;
 import cwms.cda.data.dao.JooqDao;
@@ -16,13 +38,14 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-import static cwms.cda.api.Controllers.*;
 
 public final class ForecastSpecController extends BaseCrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     public static final String TAG = "Forecast";
 
@@ -160,10 +183,20 @@ public final class ForecastSpecController extends BaseCrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
             String result = Formats.format(contentType, specs, ForecastSpec.class);
 
-            ctx.result(result).contentType(contentType.toString());
             updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve forecast specs", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve forecast specs");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -209,10 +242,19 @@ public final class ForecastSpecController extends BaseCrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
             String result = Formats.format(contentType, spec);
 
-            ctx.result(result).contentType(contentType.toString());
             updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve forecast spec", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve forecast spec");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

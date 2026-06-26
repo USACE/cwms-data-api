@@ -141,6 +141,13 @@ final class RssHandlerIT extends DataApiTestIT {
 
             pagesVisited++;
             nextHref = nextLinkHref(nextXml);
+            String waitStr = nextPage.header("Retry-After");
+            int wait = waitStr != null && !waitStr.isEmpty() ? Integer.parseInt(waitStr) : 10;
+            try {
+                Thread.sleep(wait*1000);
+            } catch (InterruptedException ex) {
+                LOGGER.atFine().withCause(ex).log("Next query wait was interrupted.");
+            }
         }
 
         assertTrue(pagesVisited > 1, "Expected to visit more than one page");

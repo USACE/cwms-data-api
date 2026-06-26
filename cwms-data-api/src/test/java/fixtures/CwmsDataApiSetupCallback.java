@@ -22,6 +22,8 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
+
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
@@ -69,14 +71,17 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     public static final String VERSION_STRING;
     public static final int VERSION_INT;
 
-    static
-    {
+    static {
         VERSION_STRING = schemaVersion();
         VERSION_INT = versionInt();
     }
 
-    private static String schemaVersion()
-    {
+    static {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+    }
+
+    private static String schemaVersion() {
         String ret;
         if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
         {
