@@ -851,7 +851,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (shouldFetchVerticalDatum(parmPart)) {
             verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, requestedUnits, office);
         }
-        validateRequestedUnits(nativeUnits, requestedUnits);
+        validateRequestedUnits(nativeUnits, metadataUnits);
 
         VersionType finalDateVersionType = getDirectReadVersionType(
                 metadata.versionFlag, versionDate != null);
@@ -1041,8 +1041,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             Condition baseCondition,
             ZonedDateTime versionDate,
             boolean includeEntryDate) {
+        Field<Timestamp> versionTimestamp = CWMS_UTIL_PACKAGE.call_TO_TIMESTAMP__2(
+                DSL.val(versionDate.toInstant().toEpochMilli()));
         String versionTimestampText = Timestamp.from(versionDate.toInstant()).toLocalDateTime()
                 .format(ORACLE_DATE_FORMATTER);
+        Condition versionDateCondition = versionDateField.eq(versionTimestamp)
+                .or(DSL.condition("{0} = to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
+                        versionDateField, DSL.val(versionTimestampText)));
         Field<Timestamp> dataEntryDateField = includeEntryDate
                 ? view.DATA_ENTRY_DATE
                 : DSL.castNull(Timestamp.class).as(DATA_ENTRY_DATE);
@@ -1053,8 +1058,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         qualityCode,
                         dataEntryDateField)
                 .from(view)
-                .where(baseCondition.and(DSL.condition("{0} = to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                        versionDateField, DSL.val(versionTimestampText))))
+                .where(baseCondition.and(versionDateCondition))
                 .orderBy(dateTime.asc());
     }
 
