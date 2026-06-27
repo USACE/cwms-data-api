@@ -2541,6 +2541,22 @@
       ]
     },
     {
+      "id": "7e6d24c7-3a13-4054-a4e4-d37f4f2ac850",
+      "username": "m5batcheventadmin",
+      "enabled": true,
+      "email": "noreply-batch-admin@data.test",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "m5batcheventadmin"
+        }
+      ],
+      "realmRoles": [
+        "cwms_user"
+      ]
+    },
+    {
       "id": "a4e88497-0ffc-41d5-b0fd-cc91760e366b",
       "username": "service-account-cwms-batch-runner-swt",
       "enabled": true,

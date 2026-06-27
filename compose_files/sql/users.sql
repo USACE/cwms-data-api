@@ -53,6 +53,23 @@ begin
     begin
         insert into at_sec_cwms_users(userid, createdby, principle_name)
         values(
+            'M5BATCHEVENTADMIN',
+            'CWMS_20',
+            'http://localhost:8081/auth/realms/cwms::7e6d24c7-3a13-4054-a4e4-d37f4f2ac850'
+        );
+    exception
+        when dup_val_on_index then
+            update at_sec_cwms_users
+            set principle_name = 'http://localhost:8081/auth/realms/cwms::7e6d24c7-3a13-4054-a4e4-d37f4f2ac850'
+            where userid = 'M5BATCHEVENTADMIN';
+    end;
+    cwms_sec.add_user_to_group('M5BATCHEVENTADMIN', 'All Users', 'SWT');
+    cwms_sec.add_user_to_group('M5BATCHEVENTADMIN', 'CWMS Users', 'SWT');
+    cwms_sec.add_user_to_group('M5BATCHEVENTADMIN', 'Data Acquisition Mgr', 'SWT');
+
+    begin
+        insert into at_sec_cwms_users(userid, createdby, principle_name)
+        values(
             'SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SWT',
             'CWMS_20',
             'http://localhost:8081/auth/realms/cwms::a4e88497-0ffc-41d5-b0fd-cc91760e366b'
