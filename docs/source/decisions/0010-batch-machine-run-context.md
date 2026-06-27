@@ -154,6 +154,29 @@ The signing secret belongs in a managed secret store. A later hardening step sho
 
 When Keycloak mints the batch run context directly, CDA does not need the signing secret for those requests. The machine principal must still be registered in CDA and the CWMS database.
 
+### Keycloak Client and Service Account Shape
+
+The local Keycloak realm uses confidential OIDC clients with service accounts to model non-human batch actors. In CWBI/cloud Keycloak, the same shape needs to be recreated for each environment. These are Keycloak clients and service-account users, not AWS Batch job definitions.
+
+Some configuration is common to all offices:
+
+| Item | Purpose |
+| ---- | ------- |
+| `machine_auth` access-token claim | Marks a service-account token as a CDA batch machine token. CDA uses this to distinguish machine run tokens from normal user OIDC tokens. |
+| `run_as_office` access-token claim | Carries the office context authorized for the launch. For office-specific clients this value is stable, such as `SWT`, `SPK`, or another office code. |
+| CDA/CWMS user registration for runner service accounts | CDA rejects unregistered machine principals. The corresponding service-account principal must exist in CDA and the CWMS database with the roles needed for the resource offices it will access. |
+| Batch Events user/CAC roles | Human users keep using normal Keycloak/CAC sessions. Batch Events checks those user roles before allowing interactive job creation, editing, or submission. |
+
+Office-specific clients are replicated per office or per trust boundary. In the examples below, `swt` is the office suffix; a production rollout would create equivalent clients such as `cwms-batch-runner-spk` or `cwms-batch-airflow-mvp` where those offices are enabled.
+
+| Name pattern | Local example | Replicate per office? | Used by | Why it exists |
+| ------------ | ------------- | --------------------- | ------- | ------------- |
+| `cwms-batch-runner-<office>` | `cwms-batch-runner-swt` | Yes | The job runner container | This is the identity used by the running script when it calls CDA. Its token should include `machine_auth=true` and `run_as_office=<office>`. CDA maps the token subject to a registered machine principal and then normal CDA/database roles decide which resource offices it may access. |
+| `cwms-batch-airflow-<office>` | `cwms-batch-airflow-swt` | Yes, when Airflow schedules jobs for that office | Airflow scheduled DAGs | This is the scheduler identity used to call Batch Events and request due jobs for an office. It should be allowed to list and submit scheduled Batch Events jobs for that office, but it is not the CDA write identity used inside the running job. |
+| Normal user/OIDC client and CAC user roles | Existing user login clients and users | No per-office service-account pattern, but user roles are office-scoped | Interactive Batch Events UI/API users | Human users authenticate with their CAC-backed Keycloak session. Batch Events authorizes whether the user may create scripts, manage schedules, or submit jobs for an office. The user's login does not become the CDA token used by the runner. |
+
+Keeping scheduler and runner identities separate prevents permission bleed. Airflow needs permission to trigger jobs for an office; the runner needs CDA/database roles to read or write data while the job executes. A user logged into the Batch Events UI needs permission to request a job, but the job itself still uses the office runner service account and trusted run context.
+
 ## Alternatives Considered
 
 ### Per-Office Keycloak Service Accounts
