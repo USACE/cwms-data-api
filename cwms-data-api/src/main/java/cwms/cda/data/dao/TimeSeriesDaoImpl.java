@@ -261,13 +261,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .and(DSL.condition("{0} >= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
                         dateTimeField, DSL.val(beginTimestampText)))
                 .and(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                        dateTimeField, DSL.val(endTimestampText)))
-                .and(view.START_DATE.isNull()
-                        .or(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                                view.START_DATE, DSL.val(endTimestampText))))
-                .and(view.END_DATE.isNull()
-                        .or(DSL.condition("{0} > to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
-                                view.END_DATE, DSL.val(beginTimestampText))));
+                        dateTimeField, DSL.val(endTimestampText)));
 
         ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
         if (versionDate != null) {
