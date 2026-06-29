@@ -14,8 +14,7 @@ public class DatabaseHelpers {
         private final int numeric;
         private final String text;
 
-        SCHEMA_VERSION(int numeric, String text)
-        {
+        SCHEMA_VERSION(int numeric, String text) {
             this.numeric = numeric;
             this.text = text;
         }
@@ -28,12 +27,15 @@ public class DatabaseHelpers {
             return this.text;
         }
 
-        public static SCHEMA_VERSION fromNumeric(int value)
-        {
-            for(var tmp: SCHEMA_VERSION.values())
-            {
-                if (tmp.numeric == value)
-                {
+        /**
+         * Return Schema enum constant from provided database version integer.
+         * @param value the integer representation of the database schema version.
+         * @return the appropriate Enum
+         * @throws IllegalArgumentException if the value cannot be mapped.
+         */
+        public static SCHEMA_VERSION fromNumeric(int value) {
+            for (var tmp: SCHEMA_VERSION.values()) {
+                if (tmp.numeric == value) {
                     return tmp;
                 }
             }
