@@ -139,7 +139,7 @@ public class DateUtils {
     }
 
     /**
-     * Parse the given date string wit the default ZonedDateTime.parse, if that fails, 
+     * Parse the given date string wit the default ZonedDateTime.parse, if that fails,
      * attempt parse with <pre>yyyy-MM-dd'T'HH:mm:ssZ</pre>
      * @param text provied date time string
      * @return A ZonedDateTime instance

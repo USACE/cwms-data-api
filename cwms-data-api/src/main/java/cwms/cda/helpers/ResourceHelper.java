@@ -15,7 +15,7 @@ public final class ResourceHelper {
      * @param resource The path to the resource
      * @param context The class context to load the resource from
      * @return The contents of the resource
-     * 
+     *
      * */
     public static String getResourceAsString(String resource, Class<?> context) {
         InputStream formatList = getResourceAsStream(resource, context);
