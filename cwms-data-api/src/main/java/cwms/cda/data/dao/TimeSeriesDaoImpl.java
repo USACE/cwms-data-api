@@ -1182,7 +1182,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private boolean isRegularSeries(long intervalMinutes, long intervalOffset, String intervalPart, boolean isLrts) {
         return intervalOffset != UTC_OFFSET_IRREGULAR
-                && (intervalMinutes != 0L || (isLrts && isLocalRegularInterval(intervalPart)));
+                && (intervalMinutes != 0L || isLrts);
     }
 
     private Duration resolveIntervalDuration(long intervalMinutes, long intervalOffset,
@@ -1358,13 +1358,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             return "~" + intervalPart.substring(0, intervalPart.length() - 5);
         }
         return intervalPart;
-    }
-
-    private boolean isLocalRegularInterval(String intervalPart) {
-        if (intervalPart == null) {
-            return false;
-        }
-        return normalizeIntervalNameForNucleus(intervalPart).startsWith("~");
     }
 
     private boolean shouldFetchVerticalDatum(String parmPart) {
