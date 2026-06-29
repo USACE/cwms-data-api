@@ -610,6 +610,27 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         ;
     }
 
+    @Test
+    void test_ts_get_all_error() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(UNIT, "cfs")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", is("Bad Request"))
+            .body("source", is("User Input"))
+            .body("details.message", is("Provided unit system is not supported: cfs"))
+        ;
+    }
 
     @Test
     void test_get_all_location_level() throws Exception {
