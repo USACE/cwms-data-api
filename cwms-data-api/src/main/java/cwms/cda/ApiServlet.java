@@ -24,7 +24,6 @@
 
 package cwms.cda;
 
-import cwms.cda.api.PublishedController;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
@@ -78,13 +77,13 @@ import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
+import cwms.cda.api.PublishedController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
-import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -100,6 +99,7 @@ import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
+import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
@@ -169,12 +169,22 @@ import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.rss.QueueManager;
+import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.csv.CwmsCsvDTO;
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
+import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
+import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
+import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.csv.CsvExampleGenerator;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -185,16 +195,14 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
-import cwms.cda.data.dto.csv.CwmsCsvDTO;
-import cwms.cda.formatters.csv.CsvExampleGenerator;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.responses.ApiResponse;
@@ -203,6 +211,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -223,13 +232,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ScanResult;
 
 
 /**
@@ -1004,8 +1012,8 @@ public class ApiServlet extends HttpServlet {
                 );
             })
             .activateAnnotationScanningFor("cwms.cda.api");
+        addEndpointExamples(ops);
         config.registerPlugin(new OpenApiPlugin(ops));
-
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
@@ -1059,4 +1067,86 @@ public class ApiServlet extends HttpServlet {
         return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
     }
 
+    // Enum to define example configurations by endpoint
+    // Add examples here for other endpoints
+    private enum EndpointExamples {
+        LEVELS(Arrays.asList(
+            new ExampleConfig(LocationLevel.class, "Constant Location Level",
+                ConstantLocationLevel.class, "cwms/cda/data/levels/levels_constant_create.json"),
+            new ExampleConfig(LocationLevel.class, "Seasonal Location Level",
+                SeasonalLocationLevel.class, "cwms/cda/data/levels/levels_seasonal_create.json"),
+            new ExampleConfig(LocationLevel.class, "Timeseries Location Level",
+                TimeSeriesLocationLevel.class, "cwms/cda/data/levels/levels_timeseries_create.json"),
+            new ExampleConfig(LocationLevel.class, "Virtual Location Level",
+                VirtualLocationLevel.class, "cwms/cda/data/levels/levels_virtual_create.json")
+        ));
+        // Add more endpoints as needed
+
+        private final List<ExampleConfig> examples;
+
+        EndpointExamples(List<ExampleConfig> examples) {
+            this.examples = examples;
+        }
+
+        public List<ExampleConfig> getExamples() {
+            return examples;
+        }
+    }
+
+    /**
+     * Method to add specific input examples to API endpoints as defaults.
+     * Can be overridden with controller annotations.
+     * Primarily for use with endpoints that accept multiple classes as input and cannot be represented via annotations.
+     * Current annotation limitations are due to legacy Javalin library.
+     *
+     * @param ops the OpenApiOptions object to add the examples to.
+     */
+    private static void addEndpointExamples(OpenApiOptions ops) {
+        String swaggerPath = "/swagger-docs";
+        for (EndpointExamples endpoint : EndpointExamples.values()) {
+            endpoint.getExamples().forEach(config ->
+                ops.path(swaggerPath)
+                    .addExample(config.targetClass, config.displayName,
+                        buildExample(config.exampleClass, config.resourcePath))
+            );
+        }
+    }
+
+    /**
+     * Builds an example object for the given class and resource path.
+     * @param exampleClass the class of the example object
+     * @param path the path to the example resource
+     * @return Example object
+     */
+    private static Example buildExample(Class<? extends CwmsDTOBase> exampleClass, String path) {
+        cwms.cda.formatters.ContentType contentType = Formats.parseHeader(Formats.JSON, exampleClass);
+        Example example = new Example();
+        try (InputStream stream = ApiServlet.class.getClassLoader().getResourceAsStream(path)) {
+            if (stream == null) {
+                throw new IllegalArgumentException("Unable to find example file: " + path);
+            }
+            String ex = IOUtils.toString(stream, StandardCharsets.UTF_8);
+            ex = Formats.format(contentType, Formats.parseContent(contentType, ex, exampleClass));
+            example.value(ex);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Unable to load example file: " + path, ex);
+        }
+        return example;
+    }
+
+    // Data class to define an example configuration
+    private static class ExampleConfig {
+        final Class<? extends CwmsDTOBase> targetClass;
+        final String displayName;
+        final Class<? extends CwmsDTOBase> exampleClass;
+        final String resourcePath;
+
+        ExampleConfig(Class<? extends CwmsDTOBase> targetClass, String displayName,
+            Class<? extends CwmsDTOBase> exampleClass, String resourcePath) {
+            this.targetClass = targetClass;
+            this.displayName = displayName;
+            this.exampleClass = exampleClass;
+            this.resourcePath = resourcePath;
+        }
+    }
 }
