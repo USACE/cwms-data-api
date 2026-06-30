@@ -166,7 +166,7 @@ Several districts have been usually the PseudoRegular 1Day (\~1Day) interval to 
 required exclusion or stored the "missing values" so various reports would line up.
 
 There is an additional confusion. The first attempt to allow for the Local Regular nature of a time series to be
-determined by combining the visual `~<Interval>` with meta data stored on the time series. This made in non-obvious
+determined was by combining the visual `~<Interval>` with meta data stored on the time series. This made in non-obvious
 which data was actually psuedo regular vs which was local regular. So the `<Interval>Local` was introduced. To avoid
 breaking existing systems CWMS-Data-API by default shows the `~<Interval>` form. A header can be added to each request,
 `X-CWMS-LRTS-Formatting`, and if set to value of `true`, will show (as well as expect on input) Local Regular Time Series
