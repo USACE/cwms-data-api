@@ -73,8 +73,6 @@ where prod needs a specific update, but we are not ready to pull in additional c
 from the current prod tag should be created, with the new tag incrementing the letter position. This action will also be performed
 in cases of base container image updates.
 
-    .. :widths: 30, 40, 20, 65, 65
-
 .. csv-table:: Environments and constraints
     :header: "Environment", "Source Branch", "Tagging Constraint", "Schedule", "Additional notes"
 
