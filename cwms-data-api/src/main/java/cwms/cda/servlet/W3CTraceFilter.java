@@ -14,15 +14,15 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 
-import cwms.cda.OpenTelemetrySetup;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.ContextKey;
 import io.opentelemetry.context.propagation.TextMapGetter;
 
 /**
- * 
+ *
  */
 @WebFilter(urlPatterns = {"*"})
 public final class W3CTraceFilter implements Filter {
@@ -31,31 +31,36 @@ public final class W3CTraceFilter implements Filter {
     public static final Pattern TRACE_PARENT_MATCHER =
         Pattern.compile("[a-z0-9]{2}-[a-z0-9]{32}-[a-z0-9]{16}-[a-z0-9]{2}");
 
-    public W3CTraceFilter() {
-        OpenTelemetrySetup.initTelemetry();
-    }
-
+    @SuppressWarnings("java:S1181") // We're catching Throwable intentionally so it can be recorded in the span.
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        var spanBuilder = GlobalOpenTelemetry.getTracer("cda")
-            .spanBuilder("Request")
+
+        var httpRequest = (HttpServletRequest)request;
+        var spanBuilder = GlobalOpenTelemetry.getTracer("cwms-data-api")
+            // using the full URI here results in too high of cardinality so spans can't be grouped
+            // endpoints can/should add the route as attributes to the current span.
+            .spanBuilder(httpRequest.getMethod() + " " + request.getServletContext())
             .setSpanKind(SpanKind.SERVER);
-        var provided = ((HttpServletRequest)request).getHeader(TRACE_PARENT.toString());
+        var provided = httpRequest.getHeader(TRACE_PARENT.toString());
         if (provided != null && !provided.isEmpty() && TRACE_PARENT_MATCHER.matcher(provided).matches()) {
             var propagator = GlobalOpenTelemetry.getPropagators().getTextMapPropagator();
             var ctx = propagator.extract(Context.current(), provided, new TraceGetter());
             spanBuilder.setParent(ctx);
         }
-        
+
         var span = spanBuilder.startSpan();
         try (var scope = span.makeCurrent()) {
             chain.doFilter(request, response);
+        } catch (Throwable t) {
+            span.recordException(t);
+            span.setStatus(StatusCode.ERROR);
+            throw t;
         } finally {
             span.end();
         }
     }
-    
+
     /**
      * A simple wrapper to just get the value in the required way.
      */
