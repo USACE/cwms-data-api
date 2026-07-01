@@ -191,6 +191,7 @@ import cwms.cda.data.dto.csv.CwmsCsvDTO;
 import cwms.cda.formatters.csv.CsvExampleGenerator;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -223,6 +224,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
+
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.exception.DataAccessException;
@@ -301,9 +303,6 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
-
-
-
     private MetricRegistry metrics;
     private Meter totalRequests;
 
@@ -369,6 +368,11 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options", "nosniff");
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+                })
+                .before(ctx -> {
+                    // now that we can get the generic route, update the name.
+                    var span = Span.current();
+                    span.updateName(ctx.method() + " " + ctx.matchedPath());
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
                     CdaError re = ExceptionTraceSupport.buildError(ctx, e.getCdaErrorMessage(),
