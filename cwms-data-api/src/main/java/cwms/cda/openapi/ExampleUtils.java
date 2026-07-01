@@ -110,18 +110,18 @@ public final class ExampleUtils {
             this.examples = examples;
         }
 
-        public List<ExampleConfig> getExamples() {
+        private List<ExampleConfig> getExamples() {
             return examples;
         }
     }
 
     private static class ExampleConfig {
-        final Class<? extends CwmsDTOBase> targetClass;
-        final String displayName;
-        final Class<? extends CwmsDTOBase> exampleClass;
-        final String resourcePath;
+        private final Class<? extends CwmsDTOBase> targetClass;
+        private final String displayName;
+        private final Class<? extends CwmsDTOBase> exampleClass;
+        private final String resourcePath;
 
-        ExampleConfig(Class<? extends CwmsDTOBase> targetClass, String displayName,
+        private ExampleConfig(Class<? extends CwmsDTOBase> targetClass, String displayName,
             Class<? extends CwmsDTOBase> exampleClass, String resourcePath) {
             this.targetClass = targetClass;
             this.displayName = displayName;
