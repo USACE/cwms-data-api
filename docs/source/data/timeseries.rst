@@ -46,7 +46,7 @@ Every "measurement", or "calculated value", often refered to as a "sample", whic
 we are measuring.
 
 The Type, is information about how the sample was calculated or measured. For example Stage is considered "Inst", or
-instananeous. Precipitation can be either Total or Cumulative. Total would be the total over some duration (additional
+instantaneous. Precipitation can be either Total or Cumulative. Total would be the total over some duration (additional
 description later) while cumulative would be the instantaneous value at time of measurement. For some clarity, the data
 directly tipping bucket rain gauge is always the "total between measurements"; e.g. rain falls into the bucket, each tip
 increases a counter based on calibrated volume, with the data logger then reading and reseting to 0 that value on some
@@ -73,8 +73,9 @@ Tables of Types, Intervals, and Durations
     Inst, Instantenous, Samples measured \"now\". For example if you take a measuring type and measure the length of a piece of wood.
     Ave, Average, "Samples are a composite of other samples, using some averaging technique."
     Total, Total, "Samples are a composite of other samples, using sum of inputs over time."
+    Cum, Cumulative, "Samples represent an accumulation of the measurement. E.g. a Catch tube rain gauge 'accumulates' precipitation.""
     Inc, Incremental, "Samples are a difference in time. Similar to total; however the intent is different."
-    Const, Constnat, "Sample value doesn't change. Usually with an duration of UntilChanged."
+    Const, Constant, "Sample value doesn't change. Usually with an duration of UntilChanged."
     Median, Median, "Median value of a set of inputs."
     Min, Minimum, "Minimum value of a set of inputs."
     Max, Maximum, "Maximum value of a set of inputs."
@@ -90,7 +91,7 @@ Tables of Types, Intervals, and Durations
     Irr, Irregular, "See `0`."
     1Day, 1 Day, "Value is sampled once a day (exactly 24 hours, or 86400 seconds.)"
     ~1Day, Pseudo Regular 1 Day, "Value is expected once a day, but may either include more samples, or time of sample may vary."
-    1DayLocal, 1 Day Local Regular, "See Psuedo vs Local Regular for more information. Measured every 1 Day, as 1 Day is
+    1DayLocal, 1 Day Local Regular, "See Pseudo vs Local Regular for more information. Measured every 1 Day, as 1 Day is
     defined in the local time zone. Accounts for the normal 24 hour day, as well as the 23 and 25 hours days around
     daylight savings transitions."
 
@@ -98,7 +99,7 @@ Tables of Types, Intervals, and Durations
     :header: "Duration", "Long Name", "Description"
 
     0,Instantaneous,Sample is not a composite of inputs over time.
-    1DayBOP, 1 Day (Begining of Period), "USACE, for composite samples stores at the ""end of period"" by default.
+    1DayBOP, 1 Day (Beginning of Period), "USACE, for composite samples stores at the ""end of period"" by default.
     Should a given value be stored that is not calculated in this way it will have an duration ending in BOP."
     1Hour, 1Hour, "Sample is a composite of input data over a 1 hour window regardless of the number of input samples
     in that window."
@@ -118,7 +119,7 @@ In reports using the `2400` time value the would be for `2026/06/30 @ 2400`. Thi
 in CWMS may include the BOP marker in durations.
 
 
-Offets
+Offsets
 ~~~~~~
 
 A given USACE district, for many practical purposes operates in their local time zone. Sometimes more than one. However,
@@ -130,10 +131,10 @@ if it does not. At this point you may be thinking... but what about daylight sav
 beyond offsets and is covered in the next section.
 
 
-Regular, Irregular, Psuedo Regular, and Local Regular
-=====================================================
+Regular, Irregular, Pseudo Regular, and Local Regular
+-----------------------------------------------------
 
-Whether a given time series is considered Regular, Irregular, Psuedo Regular, or Local Regular sets the expectation
+Whether a given time series is considered Regular, Irregular, Pseudo Regular, or Local Regular sets the expectation
 of sample times for that time series. Whether the sample times are predictable in some way determines which one it is.
 
 A time series is of regular interval if, **and only if** the times between samples are a consant amount of seconds.
@@ -167,7 +168,7 @@ required exclusion or stored the "missing values" so various reports would line 
 
 There is an additional confusion. The first attempt to allow for the Local Regular nature of a time series to be
 determined was by combining the visual `~<Interval>` with meta data stored on the time series. This made in non-obvious
-which data was actually psuedo regular vs which was local regular. So the `<Interval>Local` was introduced. To avoid
+which data was actually pseudo regular vs which was local regular. So the `<Interval>Local` was introduced. To avoid
 breaking existing systems CWMS-Data-API by default shows the `~<Interval>` form. A header can be added to each request,
 `X-CWMS-LRTS-Formatting`, and if set to value of `true`, will show (as well as expect on input) Local Regular Time Series
 Names with the `<Interval>Local` intervals.
