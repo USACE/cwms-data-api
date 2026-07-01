@@ -50,6 +50,73 @@ begin
     cwms_sec.add_user_to_group('m5testadmin','CWMS User Admins', 'LRL');
     cwms_sec.add_user_to_group('m5testadmin','SHOW STACK TRACE', 'LRL');
 
+    begin
+        insert into at_sec_cwms_users(userid, createdby, principle_name)
+        values(
+            'M5BATCHEVENTADMIN',
+            'CWMS_20',
+            'http://localhost:8081/auth/realms/cwms::6049479d-e783-4c7f-9024-57a7d29649f7'
+        );
+    exception
+        when dup_val_on_index then
+            update at_sec_cwms_users
+            set principle_name = 'http://localhost:8081/auth/realms/cwms::6049479d-e783-4c7f-9024-57a7d29649f7'
+            where userid = 'M5BATCHEVENTADMIN';
+    end;
+    cwms_sec.add_user_to_group('M5BATCHEVENTADMIN', 'All Users', 'SWT');
+    cwms_sec.add_user_to_group('M5BATCHEVENTADMIN', 'CWMS Users', 'SWT');
+    cwms_sec.add_user_to_group('M5BATCHEVENTADMIN', 'Data Acquisition Mgr', 'SWT');
+
+    begin
+        insert into at_sec_cwms_users(userid, createdby, principle_name)
+        values(
+            'SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SWT',
+            'CWMS_20',
+            'http://localhost:8081/auth/realms/cwms::a4e88497-0ffc-41d5-b0fd-cc91760e366b'
+        );
+    exception
+        when dup_val_on_index then
+            update at_sec_cwms_users
+            set principle_name = 'http://localhost:8081/auth/realms/cwms::a4e88497-0ffc-41d5-b0fd-cc91760e366b'
+            where userid = 'SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SWT';
+    end;
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SWT', 'All Users', 'SWT');
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SWT', 'CWMS Users', 'SWT');
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SWT', 'TS ID Creator', 'SWT');
+
+    begin
+        insert into at_sec_cwms_users(userid, createdby, principle_name)
+        values(
+            'SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT',
+            'CWMS_20',
+            'http://localhost:8081/auth/realms/cwms::b70c2e60-ce11-42c7-8271-10bb2b3fd4bd'
+        );
+    exception
+        when dup_val_on_index then
+            update at_sec_cwms_users
+            set principle_name = 'http://localhost:8081/auth/realms/cwms::b70c2e60-ce11-42c7-8271-10bb2b3fd4bd'
+            where userid = 'SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT';
+    end;
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT', 'All Users', 'SWT');
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-AIRFLOW-SWT', 'CWMS Users', 'SWT');
+
+    begin
+        insert into at_sec_cwms_users(userid, createdby, principle_name)
+        values(
+            'SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SPK',
+            'CWMS_20',
+            'http://localhost:8081/auth/realms/cwms::d2d6f91b-a5dd-40c3-8ee6-49a52da9892e'
+        );
+    exception
+        when dup_val_on_index then
+            update at_sec_cwms_users
+            set principle_name = 'http://localhost:8081/auth/realms/cwms::d2d6f91b-a5dd-40c3-8ee6-49a52da9892e'
+            where userid = 'SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SPK';
+    end;
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SPK', 'All Users', 'SPK');
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SPK', 'CWMS Users', 'SPK');
+    cwms_sec.add_user_to_group('SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SPK', 'TS ID Creator', 'SPK');
+
 end;
 /
 quit;

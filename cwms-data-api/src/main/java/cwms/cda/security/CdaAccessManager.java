@@ -41,6 +41,7 @@ public final class CdaAccessManager implements AccessManager {
         }
         checkRateLimit(ctx);
         prepareContext(ctx, principal);
+        BatchJobContext.applyRunContext(ctx);
         handler.handle(ctx);
     }
 

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="760" viewBox="0 0 1120 760" role="img" aria-labelledby="title desc">
+  <title id="title">End user Batch Events UI job flow</title>
+  <desc id="desc">A user signs into the Batch Events UI, creates or selects a script registry row, submits a job, and then views status and logs while the shared runner executes the job and calls CDA with machine credentials.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+    <style>
+      .box{fill:#fff;stroke:#334155;stroke-width:1.6;rx:10}
+      .ui{fill:#eff6ff;stroke:#2563eb}
+      .api{fill:#f0fdf4;stroke:#16a34a}
+      .run{fill:#fff7ed;stroke:#ea580c}
+      .auth{fill:#ecfeff;stroke:#0891b2}
+      .text{font-family:Arial,Helvetica,sans-serif;fill:#0f172a;font-size:15px}
+      .small{font-size:12px;fill:#475569}
+      .title{font-size:22px;font-weight:700}
+      .step{font-size:13px;font-weight:700;fill:#334155}
+      .arrow{stroke:#334155;stroke-width:1.8;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1120" height="760" fill="#ffffff"/>
+  <text x="32" y="40" class="text title">End User UI Flow</text>
+  <text x="32" y="64" class="text small">Manual user flow through Scripts Manager and Submit Job using the Batch Events registry.</text>
+
+  <rect x="60" y="105" width="210" height="95" class="box auth"/>
+  <text x="78" y="130" class="step">1. Sign in</text>
+  <text x="78" y="158" class="text">User authenticates</text>
+  <text x="78" y="180" class="text small">PKCE token carries user roles</text>
+
+  <rect x="335" y="105" width="230" height="95" class="box ui"/>
+  <text x="353" y="130" class="step">2. Pick office</text>
+  <text x="353" y="158" class="text">Scripts Manager filters</text>
+  <text x="353" y="180" class="text small">admin offices from CDA profile</text>
+
+  <rect x="630" y="105" width="270" height="120" class="box ui"/>
+  <text x="648" y="130" class="step">3. Register script</text>
+  <text x="648" y="158" class="text">Choose GitHub path or command</text>
+  <text x="648" y="180" class="text small">runtime, resource profile, timeout,</text>
+  <text x="648" y="198" class="text small">schedule timezone, roles, env vars</text>
+
+  <rect x="630" y="275" width="270" height="104" class="box ui"/>
+  <text x="648" y="300" class="step">4. Optional path browse</text>
+  <text x="648" y="328" class="text">Browse repository directories</text>
+  <text x="648" y="350" class="text small">runtime type hints are case-insensitive;</text>
+  <text x="648" y="368" class="text small">browse can select any file</text>
+
+  <rect x="335" y="275" width="230" height="104" class="box api"/>
+  <text x="353" y="300" class="step">5. Save registry row</text>
+  <text x="353" y="328" class="text">Batch Events validates</text>
+  <text x="353" y="350" class="text small">reserved env names, schedule shape,</text>
+  <text x="353" y="368" class="text small">timezone, timeout, runtime</text>
+
+  <rect x="60" y="275" width="210" height="104" class="box ui"/>
+  <text x="78" y="300" class="step">6. Submit job</text>
+  <text x="78" y="328" class="text">User selects script</text>
+  <text x="78" y="350" class="text small">Batch Events checks required roles</text>
+
+  <rect x="60" y="450" width="210" height="104" class="box api"/>
+  <text x="78" y="475" class="step">7. Create job</text>
+  <text x="78" y="503" class="text">Jobs DB row + queue</text>
+  <text x="78" y="525" class="text small">office, script, timeout, resources</text>
+
+  <rect x="335" y="450" width="230" height="104" class="box run"/>
+  <text x="353" y="475" class="step">8. Dispatch runtime</text>
+  <text x="353" y="503" class="text">Shared runner job definition</text>
+  <text x="353" y="525" class="text small">resource overrides at submit time</text>
+
+  <rect x="630" y="450" width="270" height="104" class="box run"/>
+  <text x="648" y="475" class="step">9. Execute script</text>
+  <text x="648" y="503" class="text">Runner fetches brokered env</text>
+  <text x="648" y="525" class="text small">gets CDA bearer with runner client</text>
+
+  <rect x="630" y="610" width="270" height="88" class="box api"/>
+  <text x="648" y="635" class="step">10. Status and logs</text>
+  <text x="648" y="663" class="text">UI shows job result</text>
+  <text x="648" y="685" class="text small">office-scoped lookup and logs</text>
+
+  <path d="M270 153 H335" class="arrow"/>
+  <path d="M565 153 H630" class="arrow"/>
+  <path d="M765 225 V275" class="arrow"/>
+  <path d="M630 327 H565" class="arrow"/>
+  <path d="M335 327 H270" class="arrow"/>
+  <path d="M165 379 V450" class="arrow"/>
+  <path d="M270 502 H335" class="arrow"/>
+  <path d="M565 502 H630" class="arrow"/>
+  <path d="M765 554 V610" class="arrow"/>
+</svg>

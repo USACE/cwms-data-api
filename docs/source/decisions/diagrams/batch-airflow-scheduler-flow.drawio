@@ -1,0 +1,29 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Batch Airflow Scheduler Flow" id="batch-airflow-scheduler-flow">
+    <mxGraphModel dx="1120" dy="720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1120" pageHeight="720" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Airflow Scheduled Flow" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left" vertex="1" parent="1"><mxGeometry x="30" y="20" width="420" height="40" as="geometry"/></mxCell>
+        <mxCell id="a1" value="1. Every-minute DAG&#xa;loops configured offices" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f3ff;strokeColor=#7c3aed" vertex="1" parent="1"><mxGeometry x="55" y="115" width="225" height="92" as="geometry"/></mxCell>
+        <mxCell id="a2" value="2. Scheduler token&#xa;cwms-batch-airflow-&lt;office&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfeff;strokeColor=#0891b2" vertex="1" parent="1"><mxGeometry x="335" y="115" width="225" height="92" as="geometry"/></mxCell>
+        <mxCell id="a3" value="3. GET /scripts/scheduled&#xa;Batch Events filters by roles" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a" vertex="1" parent="1"><mxGeometry x="615" y="115" width="255" height="92" as="geometry"/></mxCell>
+        <mxCell id="a4" value="4. Timezone due check&#xa;hourly minute or cron; DST gaps skipped, repeats once" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a" vertex="1" parent="1"><mxGeometry x="615" y="280" width="255" height="108" as="geometry"/></mxCell>
+        <mxCell id="a5" value="5. POST /jobs&#xa;due rows only, nonblocking" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a" vertex="1" parent="1"><mxGeometry x="335" y="280" width="225" height="108" as="geometry"/></mxCell>
+        <mxCell id="a6" value="6. Job row + queue&#xa;registry values copied to job" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a" vertex="1" parent="1"><mxGeometry x="55" y="280" width="225" height="108" as="geometry"/></mxCell>
+        <mxCell id="a7" value="7. Shared runtime&#xa;job definition by language, resources at submit time" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#ea580c" vertex="1" parent="1"><mxGeometry x="55" y="465" width="225" height="108" as="geometry"/></mxCell>
+        <mxCell id="a8" value="8. Runner broker&#xa;fetch env and office runner credentials" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#ea580c" vertex="1" parent="1"><mxGeometry x="335" y="465" width="225" height="108" as="geometry"/></mxCell>
+        <mxCell id="a9" value="9. CDA bearer token&#xa;machine_auth + run_as_office" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfeff;strokeColor=#0891b2" vertex="1" parent="1"><mxGeometry x="615" y="465" width="255" height="108" as="geometry"/></mxCell>
+        <mxCell id="a10" value="10. CDA request&#xa;registered machine principal + normal DB roles" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eff6ff;strokeColor=#2563eb" vertex="1" parent="1"><mxGeometry x="920" y="465" width="170" height="108" as="geometry"/></mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="a1" target="a2" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="a2" target="a3" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="a3" target="a4" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="a4" target="a5" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="a5" target="a6" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="a6" target="a7" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="a7" target="a8" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="a8" target="a9" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="a9" target="a10" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,27 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Batch UI Job Flow" id="batch-ui-job-flow">
+    <mxGraphModel dx="1120" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1120" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/><mxCell id="1" parent="0"/>
+        <mxCell id="title" value="End User UI Flow" style="text;html=1;strokeColor=none;fillColor=none;fontSize=22;fontStyle=1;align=left" vertex="1" parent="1"><mxGeometry x="30" y="20" width="360" height="40" as="geometry"/></mxCell>
+        <mxCell id="s1" value="1. Sign in&#xa;PKCE user token carries offices and roles" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ecfeff;strokeColor=#0891b2" vertex="1" parent="1"><mxGeometry x="50" y="120" width="210" height="90" as="geometry"/></mxCell>
+        <mxCell id="s2" value="2. Pick office&#xa;Scripts Manager filters admin offices" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eff6ff;strokeColor=#2563eb" vertex="1" parent="1"><mxGeometry x="330" y="120" width="220" height="90" as="geometry"/></mxCell>
+        <mxCell id="s3" value="3. Register script&#xa;GitHub path or command, runtime, size, timeout, schedule, env" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eff6ff;strokeColor=#2563eb" vertex="1" parent="1"><mxGeometry x="620" y="120" width="285" height="110" as="geometry"/></mxCell>
+        <mxCell id="s4" value="4. Browse repository&#xa;runtime hints, extension-agnostic file picker" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eff6ff;strokeColor=#2563eb" vertex="1" parent="1"><mxGeometry x="620" y="285" width="285" height="100" as="geometry"/></mxCell>
+        <mxCell id="s5" value="5. Save registry row&#xa;Batch Events validates schedule, timezone, env, timeout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a" vertex="1" parent="1"><mxGeometry x="330" y="285" width="250" height="100" as="geometry"/></mxCell>
+        <mxCell id="s6" value="6. Submit job&#xa;role check, job row, queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a" vertex="1" parent="1"><mxGeometry x="50" y="285" width="220" height="100" as="geometry"/></mxCell>
+        <mxCell id="s7" value="7. Dispatch shared runtime&#xa;resource overrides and timeout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#ea580c" vertex="1" parent="1"><mxGeometry x="50" y="455" width="220" height="100" as="geometry"/></mxCell>
+        <mxCell id="s8" value="8. Runner executes&#xa;brokered env, CDA bearer token, script logs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#ea580c" vertex="1" parent="1"><mxGeometry x="330" y="455" width="250" height="100" as="geometry"/></mxCell>
+        <mxCell id="s9" value="9. UI status and logs&#xa;office-scoped lookup" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f0fdf4;strokeColor=#16a34a" vertex="1" parent="1"><mxGeometry x="620" y="455" width="285" height="100" as="geometry"/></mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="s1" target="s2" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="s2" target="s3" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="s3" target="s4" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="s4" target="s5" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="s5" target="s6" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="s6" target="s7" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="s7" target="s8" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="s8" target="s9" style="endArrow=block;html=1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

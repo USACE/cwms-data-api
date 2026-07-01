@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -161,5 +162,42 @@ public final class KeyCloakExtension implements BeforeAllCallback {
             logger.atWarning().withCause(ex).log("Unable to retrieve token for user %s", username);
             return Optional.empty();
         }
+    }
+
+    /**
+     * Retrieve an access token for a confidential client service account.
+     * This is needed to verify CDA's machine-to-machine path with the same
+     * client_credentials flow a batch runner uses. Password-grant user tokens
+     * do not exercise Keycloak service-account subjects or built-in client
+     * mappers for machine_auth and run_as_office claims.
+     * @param clientId Keycloak client ID
+     * @param clientSecret Keycloak client secret
+     * @return Access token only
+     */
+    public static Optional<String> tokenForClientCredentials(String clientId, String clientSecret) {
+        try {
+            Response response =
+                given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .contentType(ContentType.URLENC)
+                    .formParam("client_id", clientId)
+                    .formParam("grant_type", "client_credentials")
+                    .formParam("client_secret", clientSecret)
+                    .formParam("scope", "openid profile email")
+                .when()
+                    .post(new URL(getTokenUrl()));
+
+            logger.atFine().log(response.asPrettyString());
+            JsonNode tokenInfo = mapper.readTree(response.asString());
+            return Optional.of(tokenInfo.get("access_token").asText());
+        } catch (JsonProcessingException | MalformedURLException ex) {
+            logger.atWarning().withCause(ex).log("Unable to retrieve token for client %s", clientId);
+            return Optional.empty();
+        }
+    }
+
+    public static JsonNode claims(String token) throws IOException {
+        String[] parts = token.split("\\.");
+        return mapper.readTree(Base64.getUrlDecoder().decode(parts[1]));
     }
 }
