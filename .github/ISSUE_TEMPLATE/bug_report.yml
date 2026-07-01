@@ -1,8 +1,9 @@
 name: CDA Bug report
 description: Create a report to help us improve
-title: ""
+title: "[Bug]: "
 labels:
   - bug
+  - priority:medium
 assignees:
   - CWMS Developers
 body:

@@ -199,6 +199,7 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -310,9 +311,6 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
-
-
-
     private MetricRegistry metrics;
     private Meter totalRequests;
 
@@ -378,6 +376,11 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options", "nosniff");
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+                })
+                .before(ctx -> {
+                    // now that we can get the generic route, update the name.
+                    var span = Span.current();
+                    span.updateName(ctx.method() + " " + ctx.matchedPath());
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
                     CdaError re = ExceptionTraceSupport.buildError(ctx, e.getCdaErrorMessage(),
