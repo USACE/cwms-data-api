@@ -153,7 +153,10 @@ final class TimeSeriesVersionsControllerTestIT extends DataApiTestIT {
             .body("ts-id.name", equalTo(TS_ID))
             .body("ts-id.office-id", equalTo(OFFICE_ID))
             .body("versions", notNullValue())
-            .body("versions.size()", is(2));
+            .body("versions.size()", is(2))
+            .body("total", is(2))
+            .body("versions[0].version-time", equalTo("2020-11-07T21:53:20Z"))
+            .body("versions[1].version-time", equalTo("2020-07-15T04:06:40Z"));
     }
 
     @Test
@@ -207,6 +210,8 @@ final class TimeSeriesVersionsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("versions.size()", is(1))
             .body("next-page", notNullValue())
+            .body("total", is(2))
+            .body("versions[0].version-time", equalTo("2020-11-07T21:53:20Z"))
             .extract().path("next-page");
 
         // Page 2
@@ -223,6 +228,27 @@ final class TimeSeriesVersionsControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("versions.size()", is(1))
-            .body("next-page", nullValue());
+            .body("next-page", nullValue())
+            .body("total", is(2))
+            .body("versions[0].version-time", equalTo("2020-07-15T04:06:40Z"));
+
+        //test page-size = -1
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .queryParam(NAME, TS_ID)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(PAGE_SIZE, -1)
+        .when()
+            .get("/timeseries/versions/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("versions.size()", is(2))
+            .body("next-page", nullValue())
+            .body("total", is(2))
+            .body("versions[0].version-time", equalTo("2020-11-07T21:53:20Z"))
+            .body("versions[1].version-time", equalTo("2020-07-15T04:06:40Z"));
     }
 }

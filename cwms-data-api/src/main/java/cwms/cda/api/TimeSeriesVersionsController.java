@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.GET_ALL;
@@ -34,9 +35,11 @@ import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.validateTimeSeriesPageSize;
 import static cwms.cda.api.TimeSeriesController.DEFAULT_PAGE_SIZE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -55,7 +58,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.time.ZonedDateTime;
+
+import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -79,38 +83,26 @@ public final class TimeSeriesVersionsController implements Handler {
     }
 
     @OpenApi(
-            description = "Returns TimeSeries versions and their extents for a given TimeSeries identifier",
+            description = "Returns TimeSeries versions and their extents for a given TimeSeries identifier. Aliases are supported for the TimeSeries identifier.",
             queryParams = {
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the "
                             + "name of the time series whose data is to be included in the "
                             + "response. A case insensitive comparison is used to match names."),
-                    @OpenApiParam(name = OFFICE,  description = "Specifies the"
+                    @OpenApiParam(name = OFFICE,  required = true, description = "Specifies the"
                             + " owning office of the time series(s) whose data is to be included "
                             + "in the response."),
                     @OpenApiParam(name = BEGIN,  description = "Specifies the "
                             + "start of the time window for data to be included in the response. "
-                            + "If this field is not specified, any required time window begins 24"
-                            + " hours prior to the specified or default end time. "
                             + TIME_FORMAT_DESC),
                     @OpenApiParam(name = END,  description = "Specifies the "
-                            + "end of the time window for data to be included in the response. If"
-                            + " this field is not specified, any required time window ends at the"
-                            + " current time. "
+                            + "end of the time window for data to be included in the response. "
                             + TIME_FORMAT_DESC),
-                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
-                            + "the time zone of the values of the begin and end fields (unless "
-                            + "otherwise specified)."
-                            + "If this field is not specified, the default time zone "
-                            + "of UTC shall be used.\r\nIgnored if begin was specified with "
-                            + "offset and timezone."),
                     @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                             + "of data as a series of pages. This parameter is used to describes the "
                             + "current location in the response stream.  This is an opaque "
                             + "value, and can be obtained from the 'next-page' value in the response."),
                     @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "How many entries per page returned. "
-                            + "For JSON/XML paging, this controls page size. "
-                            + "For CSV, this controls the internal fetch batch size used while streaming a single response. "
-                            + "CSV clients do not request subsequent pages. "
+                            + "For paging, this controls page size. "
                             + "Default " + DEFAULT_PAGE_SIZE +". Use 0 to return an empty values array, "
                             + "or -1 to return the entire window in one response without a next-page cursor. "
                             + "Values less than -1 are invalid."),
@@ -129,16 +121,13 @@ public final class TimeSeriesVersionsController implements Handler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
 
             String tsId = requiredParam(ctx, NAME);
-            String office = ctx.queryParam(OFFICE);
-            String beginStr = ctx.queryParam(BEGIN);
-            String endStr = ctx.queryParam(END);
-            String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
+            String office = requiredParam(ctx, OFFICE);
+            Instant begin = queryParamAsInstant(ctx, BEGIN);
+            Instant end = queryParamAsInstant(ctx, END);
             String cursor = ctx.queryParam(PAGE);
-            int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(DEFAULT_PAGE_SIZE);
-
-            ZonedDateTime begin = beginStr != null ? Controllers.queryParamAsZdt(ctx, BEGIN, timezone) : null;
-            ZonedDateTime end = endStr != null ? Controllers.queryParamAsZdt(ctx, END, timezone) : null;
-
+            int pageSize = validateTimeSeriesPageSize(queryParamAsClass(ctx,
+                    new String[]{PAGE_SIZE}, Integer.class, DEFAULT_PAGE_SIZE, metrics,
+                    name(TimeSeriesVersionsController.class.getName(), GET_ALL)));
             TimeSeriesVersions versions = dao.getTimeSeriesVersions(cursor, pageSize, tsId, office, begin, end);
 
             String formatHeader = ctx.header(Header.ACCEPT);

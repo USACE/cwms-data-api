@@ -223,11 +223,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
     @Override
-    public TimeSeriesVersions getTimeSeriesVersions(String cursor, int pageSize, String names, String office,
-                                                   ZonedDateTime begin, ZonedDateTime end) {
-        Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.eq(names);
+    public TimeSeriesVersions getTimeSeriesVersions(String cursor, int pageSize, String name, String office,
+                                                    Instant begin, Instant end) {
+        Condition condition = AV_CWMS_TS_ID2.CWMS_TS_ID.equalIgnoreCase(name);
         if (office != null) {
-            condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(office.toUpperCase()));
+            condition = condition.and(AV_CWMS_TS_ID2.DB_OFFICE_ID.equalIgnoreCase(office.toUpperCase()));
         }
         condition = condition.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 
@@ -237,7 +237,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .fetchOne();
 
         if (tsRecord == null) {
-            throw new NotFoundException("Could not find time series for identifier: " + names);
+            throw new NotFoundException("Could not find time series for identifier: " + name);
         }
 
         BigDecimal tsCode = tsRecord.get(AV_CWMS_TS_ID2.TS_CODE);
@@ -246,10 +246,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Condition extentsCondition = AV_TS_EXTENTS_UTC.TS_CODE.coerce(BigDecimal.class).eq(tsCode);
         if (begin != null) {
-            extentsCondition = extentsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.ge(Timestamp.from(begin.toInstant())));
+            extentsCondition = extentsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.ge(Timestamp.from(begin)));
         }
         if (end != null) {
-            extentsCondition = extentsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.le(Timestamp.from(end.toInstant())));
+            extentsCondition = extentsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.le(Timestamp.from(end)));
         }
 
         Condition pagingCondition = noCondition();
@@ -265,17 +265,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .from(AV_TS_EXTENTS_UTC)
                 .where(extentsCondition)
                 .fetchOne(0, Integer.class);
-        
-        Result<? extends Record> results = dsl.select(AV_TS_EXTENTS_UTC.VERSION_TIME,
+
+        var query = dsl.select(
+                        AV_TS_EXTENTS_UTC.VERSION_TIME,
                         AV_TS_EXTENTS_UTC.EARLIEST_TIME,
                         AV_TS_EXTENTS_UTC.LATEST_TIME,
                         AV_TS_EXTENTS_UTC.LAST_UPDATE)
                 .from(AV_TS_EXTENTS_UTC)
                 .where(extentsCondition)
                 .and(pagingCondition)
-                .orderBy(AV_TS_EXTENTS_UTC.VERSION_TIME.desc().nullsFirst())
-                .limit(pageSize)
-                .fetch();
+                .orderBy(AV_TS_EXTENTS_UTC.VERSION_TIME.desc().nullsFirst());
+
+        Result<? extends Record> results;
+        if (pageSize > -1) {
+            results = query.limit(pageSize).fetch();
+        } else {
+            results = query.fetch();
+        }
 
         TimeSeriesVersions.Builder builder = new TimeSeriesVersions.Builder()
                 .withTsId(new CwmsId.Builder()
@@ -299,7 +305,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             Record lastRecord = results.get(results.size() - 1);
             Timestamp lastVersionTime = lastRecord.get(AV_TS_EXTENTS_UTC.VERSION_TIME);
             if (lastVersionTime != null) {
-                builder.withNextPage(CwmsDTOPaginated.encodeCursor(DateUtils.toZdt(lastVersionTime).format(DateTimeFormatter.ISO_INSTANT), pageSize, total));
+                builder.withNextPage(CwmsDTOPaginated.encodeCursor(lastVersionTime.toInstant(), pageSize, total));
             }
         }
 
