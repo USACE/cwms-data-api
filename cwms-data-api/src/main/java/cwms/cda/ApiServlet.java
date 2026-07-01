@@ -31,6 +31,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.openapi.ExampleUtils.addEndpointExamples;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -1065,88 +1066,5 @@ public class ApiServlet extends HttpServlet {
             office = "HQ";
         }
         return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
-    }
-
-    // Enum to define example configurations by endpoint
-    // Add examples here for other endpoints
-    private enum EndpointExamples {
-        LEVELS(Arrays.asList(
-            new ExampleConfig(LocationLevel.class, "Constant Location Level",
-                ConstantLocationLevel.class, "cwms/cda/data/levels/levels_constant_create.json"),
-            new ExampleConfig(LocationLevel.class, "Seasonal Location Level",
-                SeasonalLocationLevel.class, "cwms/cda/data/levels/levels_seasonal_create.json"),
-            new ExampleConfig(LocationLevel.class, "Timeseries Location Level",
-                TimeSeriesLocationLevel.class, "cwms/cda/data/levels/levels_timeseries_create.json"),
-            new ExampleConfig(LocationLevel.class, "Virtual Location Level",
-                VirtualLocationLevel.class, "cwms/cda/data/levels/levels_virtual_create.json")
-        ));
-        // Add more endpoints as needed
-
-        private final List<ExampleConfig> examples;
-
-        EndpointExamples(List<ExampleConfig> examples) {
-            this.examples = examples;
-        }
-
-        public List<ExampleConfig> getExamples() {
-            return examples;
-        }
-    }
-
-    /**
-     * Method to add specific input examples to API endpoints as defaults.
-     * Can be overridden with controller annotations.
-     * Primarily for use with endpoints that accept multiple classes as input and cannot be represented via annotations.
-     * Current annotation limitations are due to legacy Javalin library.
-     *
-     * @param ops the OpenApiOptions object to add the examples to.
-     */
-    private static void addEndpointExamples(OpenApiOptions ops) {
-        String swaggerPath = "/swagger-docs";
-        for (EndpointExamples endpoint : EndpointExamples.values()) {
-            endpoint.getExamples().forEach(config ->
-                ops.path(swaggerPath)
-                    .addExample(config.targetClass, config.displayName,
-                        buildExample(config.exampleClass, config.resourcePath))
-            );
-        }
-    }
-
-    /**
-     * Builds an example object for the given class and resource path.
-     * @param exampleClass the class of the example object
-     * @param path the path to the example resource
-     * @return Example object
-     */
-    private static Example buildExample(Class<? extends CwmsDTOBase> exampleClass, String path) {
-        cwms.cda.formatters.ContentType contentType = Formats.parseHeader(Formats.JSON, exampleClass);
-        Example example = new Example();
-        try (InputStream stream = ApiServlet.class.getClassLoader().getResourceAsStream(path)) {
-            if (stream == null) {
-                throw new IllegalArgumentException("Unable to find example file: " + path);
-            }
-            String ex = IOUtils.toString(stream, StandardCharsets.UTF_8);
-            ex = Formats.format(contentType, Formats.parseContent(contentType, ex, exampleClass));
-            example.value(ex);
-        } catch (IOException ex) {
-            throw new IllegalStateException("Unable to load example file: " + path, ex);
-        }
-        return example;
-    }
-
-    // Data class to define an example configuration
-    private static class ExampleConfig {
-        final Class<? extends CwmsDTOBase> targetClass;
-        final String displayName;
-        final Class<? extends CwmsDTOBase> exampleClass;
-        final String resourcePath;
-
-        ExampleConfig(Class<? extends CwmsDTOBase> targetClass, String displayName,
-            Class<? extends CwmsDTOBase> exampleClass, String resourcePath) {
-            this.targetClass = targetClass;
-            this.displayName = displayName;
-            this.exampleClass = exampleClass;
-            this.resourcePath = resourcePath;
-        }
     }
 }
