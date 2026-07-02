@@ -24,7 +24,6 @@
 
 package cwms.cda;
 
-import cwms.cda.api.PublishedController;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
@@ -32,6 +31,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.openapi.ExampleUtils.addEndpointExamples;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -78,13 +78,13 @@ import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
+import cwms.cda.api.PublishedController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
-import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -100,6 +100,7 @@ import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
+import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
@@ -169,12 +170,16 @@ import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.rss.QueueManager;
+import cwms.cda.data.dto.csv.CwmsCsvDTO;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.csv.CsvExampleGenerator;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -185,10 +190,7 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
-import cwms.cda.data.dto.csv.CwmsCsvDTO;
-import cwms.cda.formatters.csv.CsvExampleGenerator;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.opentelemetry.api.trace.Span;
@@ -224,14 +226,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
-
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ScanResult;
 
 
 /**
@@ -1008,8 +1007,8 @@ public class ApiServlet extends HttpServlet {
                 );
             })
             .activateAnnotationScanningFor("cwms.cda.api");
+        addEndpointExamples(ops);
         config.registerPlugin(new OpenApiPlugin(ops));
-
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
@@ -1062,5 +1061,4 @@ public class ApiServlet extends HttpServlet {
         }
         return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
     }
-
 }
