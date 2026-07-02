@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
@@ -97,6 +98,12 @@ public final class TimeSeriesVersionsController implements Handler {
                     @OpenApiParam(name = END,  description = "Specifies the "
                             + "end of the time window for data to be included in the response. "
                             + TIME_FORMAT_DESC),
+                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                            + "the time zone of the values of the begin and end fields (unless "
+                            + "otherwise specified)."
+                            + "If this field is not specified, the default time zone "
+                            + "of UTC shall be used.\r\nIgnored if begin was specified with "
+                            + "offset and timezone."),
                     @OpenApiParam(name = PAGE, description = "This end point can return large amounts "
                             + "of data as a series of pages. This parameter is used to describes the "
                             + "current location in the response stream.  This is an opaque "
