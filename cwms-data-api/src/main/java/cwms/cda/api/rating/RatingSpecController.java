@@ -32,6 +32,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.RatingSpecDao;
 import cwms.cda.data.dto.rating.RatingSpec;
@@ -49,6 +50,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Optional;
 
 import com.google.common.flogger.FluentLogger;
@@ -135,9 +138,17 @@ public class RatingSpecController implements CrudHandler {
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, ratingSpecs);
-            ctx.result(result);
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException e) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Ratings", e);
+            logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
     }
@@ -164,7 +175,7 @@ public class RatingSpecController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void getOne(Context ctx, String ratingId) {
+    public void getOne(Context ctx, @NotNull String ratingId) {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeader(formatHeader, RatingSpec.class);
 
@@ -179,17 +190,30 @@ public class RatingSpecController implements CrudHandler {
             if (template.isPresent()) {
                 String result = Formats.format(contentType, template.get());
 
-                ctx.result(result);
                 ctx.contentType(contentType.toString());
 
                 requestResultSize.update(result.length());
                 ctx.status(HttpServletResponse.SC_OK);
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                OutputStream os = ctx.res.getOutputStream();
+                if (os != null) {
+                    os.write(bytes);
+                } else {
+                    ctx.result(result);
+                }
             } else {
                 CdaError re = new CdaError("Unable to find Rating Spec based on parameters "
                         + "given");
                 logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
+        } catch (IOException e) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Ratings", e);
+            logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -215,7 +239,7 @@ public class RatingSpecController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
+    public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
@@ -247,7 +271,7 @@ public class RatingSpecController implements CrudHandler {
 
     @OpenApi(ignore = true)
     @Override
-    public void update(Context ctx, String locationCode) {
+    public void update(Context ctx, @NotNull String locationCode) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
@@ -266,7 +290,7 @@ public class RatingSpecController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NotNull String ratingSpecId) {
+    public void delete(@NotNull Context ctx, @NotNull String ratingSpecId) {
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
 

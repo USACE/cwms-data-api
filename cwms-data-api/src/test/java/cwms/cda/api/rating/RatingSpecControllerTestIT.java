@@ -39,6 +39,7 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.servlet.W3CTraceFilter;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.stream.IntStream;
@@ -58,6 +59,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_empty_rating_spec() throws Exception {
+        final String TRACE_PARENT_VALUE = "00-f64a0407859e1a735c1a89c5c5b4f47f-09d07b8aaba94e49-01";
         String locationId = "RatingSpecTestEmpty";
         String officeId = "SPK";
         createLocation(locationId, true, officeId);
@@ -77,6 +79,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .contentType(Formats.XMLV2)
             .body(templateXml)
             .header("Authorization", user.toHeaderValue())
+            .header(W3CTraceFilter.TRACE_PARENT.toString(), TRACE_PARENT_VALUE)
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -93,6 +96,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .contentType(Formats.XMLV2)
             .body(specXml)
             .header("Authorization", user.toHeaderValue())
+            .header(W3CTraceFilter.TRACE_PARENT.toString(), TRACE_PARENT_VALUE)
             .queryParam(OFFICE, officeId)
         .when()
             .redirects().follow(true)
@@ -110,6 +114,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .queryParam(PAGE_SIZE, 500)
+            .header(W3CTraceFilter.TRACE_PARENT.toString(), TRACE_PARENT_VALUE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -129,6 +134,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .queryParam(OFFICE, officeId)
                 .queryParam(RATING_ID_MASK, specContainer.specId)
+                .header(W3CTraceFilter.TRACE_PARENT.toString(), TRACE_PARENT_VALUE)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -148,6 +154,7 @@ class RatingSpecControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(METHOD, JooqDao.DeleteMethod.DELETE_ALL)
+            .header(W3CTraceFilter.TRACE_PARENT.toString(), TRACE_PARENT_VALUE)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

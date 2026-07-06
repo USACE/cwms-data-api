@@ -9,17 +9,15 @@ package cwms.cda.formatters;
 
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
 
 final class ContentTypeAliasMap {
     private final Map<ContentType, ContentType> contentTypeMap = new ConcurrentHashMap<>();
     private static final Map<Class<? extends CwmsDTOBase>, ContentTypeAliasMap> ALIAS_MAP = new ConcurrentHashMap<>();
 
-    private ContentTypeAliasMap()
-    {
+    private ContentTypeAliasMap() {
     }
 
     private ContentTypeAliasMap(Class<? extends CwmsDTOBase> dtoClass) {

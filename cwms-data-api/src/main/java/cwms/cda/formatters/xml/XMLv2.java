@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
@@ -17,13 +18,11 @@ import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.InternalServerErrorResponse;
 import java.time.Instant;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZoneId;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
+import org.jetbrains.annotations.NotNull;
 
 public class XMLv2 implements OutputFormatter {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -92,6 +91,10 @@ public class XMLv2 implements OutputFormatter {
         }
     }
 
+    /**
+     * Default instance of XmlMapper with suitable configuration of XML Version 2 Data.
+     * @return XmlMapper instance.
+     */
     public static @NotNull XmlMapper buildXmlMapper() {
         XmlMapper retval = new XmlMapper();
         retval.findAndRegisterModules();

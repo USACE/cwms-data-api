@@ -24,7 +24,6 @@
 
 package cwms.cda;
 
-import cwms.cda.api.PublishedController;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
@@ -32,6 +31,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.openapi.ExampleUtils.addEndpointExamples;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -78,13 +78,13 @@ import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
+import cwms.cda.api.PublishedController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
-import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
@@ -100,6 +100,7 @@ import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
+import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
@@ -169,12 +170,16 @@ import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.rss.QueueManager;
+import cwms.cda.data.dto.csv.CwmsCsvDTO;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.csv.CsvExampleGenerator;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -185,15 +190,17 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpResponseException;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
 import java.io.IOException;
@@ -295,9 +302,6 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
-
-
-
     private MetricRegistry metrics;
     private Meter totalRequests;
 
@@ -363,6 +367,11 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Content-Type-Options", "nosniff");
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+                })
+                .before(ctx -> {
+                    // now that we can get the generic route, update the name.
+                    var span = Span.current();
+                    span.updateName(ctx.method() + " " + ctx.matchedPath());
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
                     CdaError re = ExceptionTraceSupport.buildError(ctx, e.getCdaErrorMessage(),
@@ -946,7 +955,37 @@ public class ApiServlet extends HttpServlet {
                         });
                     }
             });
-                
+                Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
+                try (ScanResult scanResult = new ClassGraph()
+                        .acceptPackages("cwms.cda.data.dto")
+                        .scan()) {
+                    List<Class<CwmsCsvDTO>> csvDtoClasses = scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
+                            .loadClasses(CwmsCsvDTO.class);
+                    for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
+                        schemaToClass.put(clazz.getSimpleName(), clazz);
+                    }
+                }
+                api.getPaths().values().forEach(pathItem -> {
+                    for (Operation op : pathItem.readOperations()) {
+                        if (op.getResponses() != null) {
+                            for (ApiResponse resp : op.getResponses().values()) {
+                                if (resp.getContent() != null && resp.getContent().containsKey(Formats.CSV)) {
+                                    MediaType csvMedia = resp.getContent().get(Formats.CSV);
+                                    if (csvMedia.getSchema() != null && csvMedia.getSchema().get$ref() != null) {
+                                        String ref = csvMedia.getSchema().get$ref();
+                                        String schemaName = ref.substring(ref.lastIndexOf('/') + 1);
+                                        @SuppressWarnings("unchecked")
+                                        Class<? extends CwmsCsvDTO<?>> dtoClass = (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
+
+                                        if (dtoClass != null) {
+                                            csvMedia.setExample(CsvExampleGenerator.getExample(dtoClass));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -968,8 +1007,8 @@ public class ApiServlet extends HttpServlet {
                 );
             })
             .activateAnnotationScanningFor("cwms.cda.api");
+        addEndpointExamples(ops);
         config.registerPlugin(new OpenApiPlugin(ops));
-
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
@@ -1022,5 +1061,4 @@ public class ApiServlet extends HttpServlet {
         }
         return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
     }
-
 }

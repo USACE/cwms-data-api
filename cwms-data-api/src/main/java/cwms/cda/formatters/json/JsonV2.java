@@ -40,12 +40,11 @@ import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import java.time.Instant;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZoneId;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Formatter for CDA generated JSON.
@@ -63,6 +62,10 @@ public class JsonV2 implements OutputFormatter {
         this.om = om;
     }
 
+    /**
+     * Create ObjectMapper instance with system expected default settings.
+     * @return ObjectMapper instance.
+     */
     @NotNull
     public static ObjectMapper buildObjectMapper() {
         ObjectMapper retVal = new ObjectMapper();

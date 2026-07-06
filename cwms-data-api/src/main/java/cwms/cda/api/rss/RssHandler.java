@@ -29,9 +29,11 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.rss.MessageDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.rss.RssFeed;
@@ -47,7 +49,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -55,11 +57,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class RssHandler extends BaseHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     private static final int DEFAULT_PAGE_SIZE = 500;
     private static final String TAG = "RSS";
@@ -100,7 +104,7 @@ public final class RssHandler extends BaseHandler {
                 @OpenApiContent(from = RssFeed.class, type = Formats.RSS)
             }),
             @OpenApiResponse(status = STATUS_404, description = "Unknown Feed"),
-            @OpenApiResponse(status = STATUS_429, description = "Rate Limit exceeded.")            
+            @OpenApiResponse(status = STATUS_429, description = "Rate Limit exceeded.")
         },
         description = "Returns RSS feed items limited to the last week. End point is limited to 1 request per 10 seconds per client per feed.",
         tags = {TAG}
@@ -132,8 +136,12 @@ public final class RssHandler extends BaseHandler {
             RssFeed feed = dao.retrieveFeed(cursor, pageSize, office, name, since, newLinkTemplate(ctx));
             String result = Formats.format(contentType, feed);
 
-            ctx.result(result);
             ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (HttpResponseException ex) {
             // an exception to our error handling rules. HttpResponseException, includes multiple other exception
             // and we don't want to deal with trying to distinguish in ApiServlet. For the time being this logic will
@@ -146,6 +154,11 @@ public final class RssHandler extends BaseHandler {
             } else {
                 throw ex;
             }
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve data as RSS feed", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve data as RSS feed");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

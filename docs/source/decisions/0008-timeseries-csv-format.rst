@@ -38,7 +38,7 @@ Key points
      - Optional (off by default): ``quality-code``, ``data-entry-date``
      - Because headers are always included, optional columns can be toggled without breaking parsing. Clients should rely on column names, not indices. Given units are in the `value` header, clients will need to handle this appropriately to determine the correct column index.
    * - Metadata fields
-     - Emitted as top-of-payload comments (``metadata-format=comments``)
+     - Emitted as top-of-payload comments if query parameter is set to include (``include-metadata-as-comments=true`` (default = false)), otherwise omitted.
      - The following fields can be treated as metadata comments at top-of-payload: ``time-series-id``, ``office-id``, ``version-date``. These are optional (off by default). It is assumed that the only comments in the payload will be metadata comments, and as such, clients can parse out metadata by reading comment lines until the first non-comment line is reached. Metadata will not be provided as columns.
    * - Units location
      - Express units only in the value column header via parentheses (e.g., ``value (cfs)``)
@@ -56,8 +56,8 @@ Key points
      - Kebab-case names
      - Keeps naming consistent with JSON and XML.
    * - Accept header for format and columns
-     - Use HTTP Accept header parameters to select date format and optional columns
-     - Default CSV serialization uses ISO-8601 strings. Examples: ``text/csv;date-format=ISO8601-Instant`` (default), ``text/csv;date-format=epoch-millis``. Use Accept header parameters to enable optional columns (e.g., ``quality=present``, ``data-entry-date=present``). If these were query params instead, toggling would be easier in a browser, but Accept keeps content negotiation consistent.
+     - Use query parameters to select date format and optional columns
+     - Default CSV serialization uses ISO-8601 strings. Examples: ``date-format=ISO8601-Instant`` (default), ``date-format=epoch-millis``. Likewise, optional columns can be toggled with ``include-optional-columns=true`` (default: false).
    * - Quality representation
      - ``quality`` (aka quality-code) is an optional integer bitmask
      - A bitmask (integer) compactly represents multiple boolean flags with fast native bitwise operations; a ``byte[]`` adds overhead without improving expressiveness for fixed flag sets.
