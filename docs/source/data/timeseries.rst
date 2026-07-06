@@ -34,11 +34,10 @@ See the individual endpoint documentation for details on each available operatio
 Parameters, Types, Intervals, Durations, and Offsets
 ----------------------------------------------------
 
-The for components listed in the title description what, and part of how, data is acquired. The parameter is what
-we are measuring or have calculated. For example "Stage" is the height of a river, generally from it's lowest point.
-"Elev" is the water surface elevation in a given datum, for example Mean Seal Level or NAVD88.
-The description below may feel somewhat out of order. To provide solid examples to further the narative, it is
-difficult to avoid using all the terms together. Additionally we will provide some example of measurements to describe
+The four components listed in the title describe:  what, and part of how, data is acquired. The parameter is what
+we are measuring or have calculated. For example "Stage" is the height of water in a river, generally from it's lowest point.
+"Elev" is the water surface elevation in a given datum, for example Mean Sea Level or NAVD88.
+The description below gives examples where some terms, need to be used, before the definition, to provide solid examples to further the narrative.  Additionally we will provide some examples of measurements to describe
 concept that may seem odd, in some cases they are but useful for description, in others they are actively useful in
 different concepts; explaining which is which or why one would be used is beyond the scope of this document.
 
@@ -59,10 +58,10 @@ So we can take those 15 Minute interval values, average them, and create a 1 Hou
 Another form of average is a "moving average" or "running average" depending on what text your are reading.
 In this case the interval is less than the duration. For example, a 1 hour interval, 3 hour duration, centered moving
 average will take 1 hour interval sample input, and for each sample take the sample before (t-1), the current sample (t),
-and the sample after (t+1) (if available), average those, and output a sample at time (t) that is the average of those 3.
+and the sample after (t+1) (if available), average those, and output a sample at time (t) that is the average of those three.
 
-The interval is the time between each sample. The duration is the window over in input time series that the output was
-derived from. Example a 1Day interval simple average has a duration of 1Day.
+The interval is the time between each sample. The duration is the window over the input time series that the output was
+derived from. For example, a 1Day interval simple average has a duration of 1Day.
 
 Tables of Types, Intervals, and Durations
 +++++++++++++++++++++++++++++++++++++++++
@@ -70,10 +69,10 @@ Tables of Types, Intervals, and Durations
 .. csv-table:: Types
     :header: "Type", "Long name", "Description"
 
-    Inst, Instantenous, Samples measured \"now\". For example if you take a measuring type and measure the length of a piece of wood.
+    Inst, Instantenous, Samples measured \"now\". For example if you take a measuring tape and measure the length of a piece of wood.
     Ave, Average, "Samples are a composite of other samples, using some averaging technique."
     Total, Total, "Samples are a composite of other samples, using sum of inputs over time."
-    Cum, Cumulative, "Samples represent an accumulation of the measurement. E.g. a Catch tube rain gauge 'accumulates' precipitation.""
+    Cum, Cumulative, "Samples represent an accumulation of the measurement. E.g. a Catch tube rain gauge 'accumulates' precipitation."
     Inc, Incremental, "Samples are a difference in time. Similar to total; however the intent is different."
     Const, Constant, "Sample value doesn't change. Usually with an duration of UntilChanged."
     Median, Median, "Median value of a set of inputs."
@@ -83,7 +82,7 @@ Tables of Types, Intervals, and Durations
 .. csv-table:: Intervals (not exhaustive list)
     :header: "Interval", "Long Name", "Description"
 
-    15Minutes,15Minutes , "Value is sampled every 15 minutes (900 seconds)."
+    15Minutes, 15Minutes , "Value is sampled every 15 minutes (900 seconds)."
     1Hour, 1Hour (exactly 60 minutes), "Value is sampled every 1 Hour (3600 seconds)."
     ~15Minutes, Pseudo Regular 15 Minutes, "Value is **usually** sampled every 15 minutes but may
     include either more frequent or ""off interval"" samples."
@@ -127,7 +126,7 @@ A given USACE district, for many practical purposes operates in their local time
 sample of some data how is that done? For regular interval data, the *first* value stored is used to determine an offset
 from the "top of the interval". For 1 Day data the top of interval is `00:00:00`, so the `7AM Local Time` offset would
 be 7 hours. All samples stored to that time series is checked to confirm the input data matches that offset and rejected
-if it does not. At this point you may be thinking... but what about daylight savings? YOu are correct; However, that goes
+if it does not. At this point you may be thinking... but what about daylight savings? You are correct; However, that goes
 beyond offsets and is covered in the next section.
 
 
@@ -142,7 +141,7 @@ E.g. a 1Hour interval time series **expects** a value every 3600 seconds. If a v
 "missing." In this case the sample times can be considered predictable.
 
 A time series were there is no expectation of when a measurement will be provided is irregular. Any sample time
-(except duplicates) is valid, and there is no automated way to dinstinguish if a sample is missing or never existed.
+(except duplicates) is valid, and there is no automated way to distinguish if a sample is missing or never existed.
 In this case the sample times are not predicatable.
 (In CWMS one can store an artifical "missing value", e.g. a sample with a time but no value, when it is known something
 should be present)
@@ -159,7 +158,7 @@ interval that allows for say `7AM Pacific Standard Time` sampled data to coexist
 As all data is stored in UTC in the CWMS Database, when Daily, and down to 2 Hour interval day, The offset will change
 twice a year. If we attempt to store this data (correctly) as a pure regular 1 Day time series, the data will be rejected
 as the offset has changed. The `Local Regular` concept allows this specific expected interval change, while automatically
-excluding erroneous samples widly off the expected offests. It also allows the time series retrieval mechanism to automatically
+excluding erroneous samples wildly off the expected offsets. It also allows the time series retrieval mechanism to automatically
 include missing values as the UTC time of each sample is **known**. In this case the interval is a **requirement**
 and not a **hint**.
 
