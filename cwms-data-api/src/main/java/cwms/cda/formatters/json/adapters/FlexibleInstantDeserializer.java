@@ -59,6 +59,12 @@ public final class FlexibleInstantDeserializer extends JsonDeserializer<Instant>
         }
 
         try {
+            return Instant.ofEpochMilli(Long.parseLong(value));
+        } catch (DateTimeParseException | NumberFormatException ignored) {
+            // Try the next supported format.
+        }
+
+        try {
             return ZonedDateTime.parse(value).toInstant();
         } catch (DateTimeParseException ignored) {
             throw context.weirdStringException(
