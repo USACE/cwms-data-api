@@ -37,7 +37,9 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
+import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
+import java.time.Instant;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZoneId;
@@ -80,6 +82,7 @@ public class JsonV2 implements OutputFormatter {
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
         retVal.registerModule(module);
 
         return retVal;

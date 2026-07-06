@@ -14,8 +14,10 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
+import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.InternalServerErrorResponse;
+import java.time.Instant;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZoneId;
@@ -106,6 +108,7 @@ public class XMLv2 implements OutputFormatter {
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
         retval.registerModule(module);
         return retval;
     }
