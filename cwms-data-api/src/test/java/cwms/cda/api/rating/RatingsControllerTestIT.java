@@ -546,5 +546,44 @@ class RatingsControllerTestIT extends DataApiTestIT
                 .statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
+    @Test
+    void test_1758_rating_post() throws IOException {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String ratingId = "FSMI.Stage;Flow.EXSA.PRODUCTION";
+        ratingId = ratingId.replaceAll("FSMI", EXISTING_LOC);
+        String body = readResourceFile("cwms/cda/data/dto/rating/rating_post.json");
+        body = body.replaceAll("FSMI", EXISTING_LOC);
+        // Create the set
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV2)
+            .body(body)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSONV2)
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings/" + ratingId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(is(Formats.JSONV2))
+            .body("office-id", is(SPK));
+    }
 }
 

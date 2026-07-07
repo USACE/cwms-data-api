@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
@@ -54,13 +56,65 @@ public class JsonRatingUtils {
         ObjectMapper om = new ObjectMapper();
 
         JsonNode jsonNode = om.readTree(json);
-
+        ObjectWriter writer;
         XmlMapper mapper = new XmlMapper();
-        ObjectWriter writer = mapper.writer()
-                .withRootName("ratings");
+        JsonNode ratings = jsonNode.findPath("ratings");
+        writer = mapper.writer()
+            .withRootName("ratings");
+        if (!ratings.isEmpty()) {
+            jsonNode = transformJsonStructure(ratings);
+        }
         String xml = writer.writeValueAsString(jsonNode);
 
         return cleanupXml(xml);
+    }
+
+    private static JsonNode transformJsonStructure(JsonNode ratingInput) {
+        String ratingSpecs = "rating-specs";
+        String simpleRating = "simple-rating";
+        String ratingTemplates = "rating-templates";
+        String ratings = "ratings";
+        String name = "name";
+        String parametersString = "parameters-string";
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode transformed = mapper.createObjectNode();
+
+        if (ratingInput.has(ratingSpecs)) {
+            JsonNode ratingSpec = ratingInput.get(ratingSpecs).get(0);
+            ObjectNode temp = mapper.createObjectNode();
+            ratingSpec.forEachEntry(temp::set);
+            if (temp.has("name")) {
+                temp.set("rating-spec-id", temp.get("name"));
+                temp.remove("name");
+            }
+            temp.set("active", JsonNodeFactory.instance.booleanNode(true));
+            transformed.set("rating-spec", temp);
+        }
+        if (ratingInput.has(ratingTemplates)) {
+            JsonNode ratingTemplate = ratingInput.get(ratingTemplates).get(0);
+            ObjectNode temp = mapper.createObjectNode();
+            ratingTemplate.forEachEntry(temp::set);
+            if (temp.has(parametersString)) {
+                temp.set("parameters-id", temp.get(parametersString));
+                temp.remove(parametersString);
+            }
+            if (temp.has(name)) {
+                temp.set("template-id", temp.get(name));
+                temp.remove(name);
+            }
+            transformed.set("rating-template", temp);
+        }
+        if (ratingInput.has(ratings) && ratingInput.get(ratings).get(0).has(simpleRating)) {
+            JsonNode rating = ratingInput.get(ratings).get(0).get(simpleRating);
+            ObjectNode temp = mapper.createObjectNode();
+            rating.forEachEntry(temp::set);
+            if (temp.has(name)) {
+                temp.set("rating-spec-id", temp.get(name));
+                temp.remove(name);
+            }
+            transformed.set(simpleRating, temp);
+        }
+        return transformed;
     }
 
     private static String cleanupXml(String xml) throws TransformerException {
