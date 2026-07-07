@@ -67,8 +67,8 @@ public class TimeSeriesRecordSerializer extends StdSerializer<TimeSeries.Record>
                 gen.writeNumber(recordValue.getValue());
             }
             gen.writeNumber(recordValue.getQualityCode());
-            // Used to include the dataEntryDate in the serialized output if requested. Modifies length of the output array.
-            // If the dataEntryDate is requested, it will always be non-null
+            // Used to include the dataEntryDate in the serialized output if requested. Modifies length of
+            // the output array. If the dataEntryDate is requested, it will always be non-null
             // Without the dataEntryDate, the array will have 3 elements: [dateTime, value, qualityCode]
             if (recordValue.getDataEntryDate() != null) {
                 gen.writeNumber(recordValue.getDataEntryDate().getTime());

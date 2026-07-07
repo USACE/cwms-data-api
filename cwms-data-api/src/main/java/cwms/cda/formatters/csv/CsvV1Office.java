@@ -1,26 +1,25 @@
 package cwms.cda.formatters.csv;
 
-import java.util.List;
-
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OutputFormatter;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 
 @Schema(
     name = "Office_CSV",
     description = "Single Office or List of Offices in comma separated format",
     example =
-    "#Office Name,Long Name,Office Type,Reports To Office\r\n"+
-    "CERL,Construction Engineering Research Laboratory,Field Operating Activity	ERD\r\n"+
-    "CHL,Coastal and Hydraulics Laboratory,Field Operating Activity	ERD\r\n" +
-    "NAB,Baltimore District,District,NAD\r\n"+
-    "NAD,North Atlantic Division,Division Headquarters,HQ"
+    "#Office Name,Long Name,Office Type,Reports To Office\r\n"
+    + "CERL,Construction Engineering Research Laboratory,Field Operating Activity    ERD\r\n"
+    + "CHL,Coastal and Hydraulics Laboratory,Field Operating Activity    ERD\r\n"
+    + "NAB,Baltimore District,District,NAD\r\n"
+    + "NAD,North Atlantic Division,Division Headquarters,HQ"
 )
 public class CsvV1Office implements OutputFormatter {
 
-    public String Office;
+    public String office;
     public String longName;
     public String officeType;
     public String reportsToOffice;
@@ -47,7 +46,7 @@ public class CsvV1Office implements OutputFormatter {
         List<Office> offices = (List<Office>)dtoList;
         StringBuilder builder = new StringBuilder();
         builder.append(getOfficeTabHeader()).append("\r\n");
-        for( Office office: offices){
+        for (Office office: offices) {
             builder.append(officeRow(office)).append("\r\n");
         }
         return builder.toString();

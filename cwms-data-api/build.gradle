@@ -142,6 +142,10 @@ dependencies {
     implementation project(":access-manager-api")
 
     implementation(libs.bundles.metrics)
+    implementation(libs.io.opentelemetry.api)
+    implementation(libs.io.opentelemetry.sdk)
+    implementation(libs.io.opentelemetry.exporter.logging)
+    implementation(libs.io.opentelemetry.instrumentation.java)
 
     implementation(libs.bundles.jackson)
 
@@ -171,6 +175,7 @@ dependencies {
     }
 
     baseLibs(libs.ch.qos.logback)
+    baseLibs(libs.io.opentelemetry.instrumentation.logback.mdc)
 
     testImplementation(libs.bundles.testcontainers)
 
@@ -322,6 +327,7 @@ task integrationTests(type: Test) {
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+    //jvmArgs += "-Dflogger.backend_factory=com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance"
 }
 
 task timeseriesReadBenchmark(type: JavaExec) {

@@ -50,7 +50,7 @@
     "whatwg-fetch": "^3.0.0"
   },
   "devDependencies": {
-    "@openapitools/openapi-generator-cli": "^2.15.3",
+    "@openapitools/openapi-generator-cli": "^2.38.0",
     "@types/url-parse": "1.4.4",
     "babel-cli": "^6.26.0",
     "node-jq": "^6.0.1",

@@ -1,0 +1,9 @@
+{
+  "seasonal-time-series-id": "Sacramento.Stage.Inst.5Minutes.0.Bottom of Inlet",
+  "level-units-id": "ft",
+  "level-date": "2008-12-03T10:15:30+01:00[UTC]",
+  "level-comment": "Bottom of Inlet, lowest level",
+  "interpolate-string": "F",
+  "location-level-id": "Sacramento.Elev.Inst.0.Bottom of Inlet",
+  "office-id": "LRL"
+}

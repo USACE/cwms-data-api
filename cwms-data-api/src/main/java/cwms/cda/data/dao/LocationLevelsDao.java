@@ -31,10 +31,9 @@ import cwms.cda.data.dto.TimeSeries;
 import hec.data.level.ILocationLevelRef;
 import mil.army.usace.hec.metadata.Interval;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 
 public interface LocationLevelsDao {
-    void deleteLocationLevel(String locationLevelName, ZonedDateTime date, String officeId,
+    void deleteLocationLevel(String locationLevelName, Instant date, String officeId,
                              Boolean cascadeDelete);
 
     void storeLocationLevel(LocationLevel level);
@@ -42,7 +41,7 @@ public interface LocationLevelsDao {
     void renameLocationLevel(String oldLocationLevelName, String newLocationLevelName, String officeId);
 
     LocationLevel retrieveLocationLevel(String locationLevelName, String unitSystem,
-                                        ZonedDateTime effectiveDate, String officeId, boolean exactDateMatch);
+                                        Instant effectiveDate, String officeId, boolean exactDateMatch);
 
     String getLocationLevels(String format, String names, String office, String unit,
                              String datum, String begin,
@@ -50,7 +49,7 @@ public interface LocationLevelsDao {
 
     LocationLevels getLocationLevels(String cursor, int pageSize,
                                      String names, String office, String unit, String datum,
-                                     ZonedDateTime beginZdt, ZonedDateTime endZdt, boolean includeAliases);
+                                     Instant beginZdt, Instant endZdt, boolean includeAliases);
 
     TimeSeries retrieveLocationLevelAsTimeSeries(ILocationLevelRef levelRef, Instant start, Instant end,
                                                  Interval interval, String units);

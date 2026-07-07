@@ -21,9 +21,8 @@
     <logger name="org.apache.catalina.core.ContainerBase.[Catalina]" level="INFO" additivity="false">
         <appender-ref ref="STDERR" />
     </logger>
-    
 
     <root level="INFO">
         <appender-ref ref="STDERR"/>
-    </root>   
+    </root>
 </configuration>
