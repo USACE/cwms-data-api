@@ -131,6 +131,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static final String UNIT_ID = "UNIT_ID";
     private static final DateTimeFormatter ORACLE_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private static final long UNSIGNED_INT_MODULUS = 1L << Integer.SIZE;
 
     public static final boolean OVERRIDE_PROTECTION = true;
     public static final int TS_ID_MISSING_CODE = 20001;
@@ -1023,7 +1024,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private static int normalizeQualityCode(BigDecimal qualityCode) {
         long quality = qualityCode == null ? 5L : qualityCode.longValue();
         if (quality > Integer.MAX_VALUE) {
-            quality -= 4_294_967_296L;
+            quality -= UNSIGNED_INT_MODULUS;
         }
         return (int) quality;
     }
