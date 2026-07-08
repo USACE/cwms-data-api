@@ -75,7 +75,7 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,6 +123,12 @@ public class LevelsController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             LocationLevel level = deserializeLocationLevel(ctx);
             level.validate();
+
+            if (!level.getLevelDate().truncatedTo(ChronoUnit.MINUTES).equals(level.getLevelDate())) {
+                Map<String, String> errorDetails = new HashMap<>();
+                errorDetails.put("message", "Level effective date cannot have seconds");
+                throw new BadRequestResponse("", errorDetails);
+            }
 
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);

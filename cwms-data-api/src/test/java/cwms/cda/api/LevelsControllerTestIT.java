@@ -24,6 +24,33 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
+import static cwms.cda.api.Controllers.EFFECTIVE_DATE_EXACT;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
+import static cwms.cda.api.Controllers.INTERVAL;
+import static cwms.cda.api.Controllers.LEVEL_ID_MASK;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.START;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
+import static helpers.FloatCloseTo.floatCloseTo;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isOneOf;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
@@ -33,9 +60,9 @@ import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
+import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
-import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
 import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
@@ -44,11 +71,24 @@ import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
+import hec.data.RatingException;
+import hec.data.cwmsRating.io.RatingSetContainer;
+import hec.data.cwmsRating.io.RatingSpecContainer;
 import io.restassured.filter.log.LogDetail;
-
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
@@ -60,32 +100,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-
-import hec.data.RatingException;
-import hec.data.cwmsRating.io.RatingSetContainer;
-import hec.data.cwmsRating.io.RatingSpecContainer;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
-import static helpers.FloatCloseTo.floatCloseTo;
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag("integration")
 public class LevelsControllerTestIT extends DataApiTestIT {
@@ -2412,6 +2426,42 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("levels.size()", is(0))
         ;
+    }
+
+    @Test
+    void test_create_subminute_level() throws Exception {
+        String locName = "subminuteloc";
+        createLocation(locName, true, OFFICE);
+        String levelId = String.format("%s.Elev.Ave.1Day.Top of Inlet", locName);
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:25Z"), ZoneId.of("UTC"));
+        ConstantLocationLevel level = new ConstantLocationLevel.Builder(levelId, time.toInstant())
+            .withOfficeId(OFFICE)
+            .withLevelUnitsId("ft")
+            .withConstantValue(8675.309)
+            .withExpirationDate(time.toInstant())
+            .build();
+
+        String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("details.message", is("Level effective date cannot have seconds"))
+            .body("message", is("Bad Request"))
+            .body("source", is("User Input"));
     }
 
     enum GetAllTestNewAliases {
