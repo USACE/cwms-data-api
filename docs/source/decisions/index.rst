@@ -28,3 +28,4 @@ Some decisions may also be a proposal and marked appropriately.
     Handling Releases <./0009-code-changes-and-releases.rst>
     Vertical Datum Policy <./0010-vertical-datum.rst>
     JMS Queue Message Structure <./0011-queue-messages.rst>
+    Vertical Datum Storage <./0012-vertical-datum-storage.rst>
