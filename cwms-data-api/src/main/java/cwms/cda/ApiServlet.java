@@ -91,6 +91,7 @@ import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesFilteredController;
 import cwms.cda.api.TimeSeriesGroupController;
+import cwms.cda.api.TimeSeriesVersionsController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
@@ -502,6 +503,10 @@ public class ApiServlet extends HttpServlet {
         String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
+
+        String versionsPath = "/timeseries/versions/";
+        get(versionsPath, new TimeSeriesVersionsController(metrics));
+        addCacheControl(versionsPath, 5, TimeUnit.MINUTES);
 
         String filteredPath = "/timeseries/filtered";
         get(filteredPath, new TimeSeriesFilteredController(metrics));

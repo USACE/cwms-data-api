@@ -1,0 +1,24 @@
+{
+  "ts-id": {
+    "name": "Buckhorn.Temp-Water.Inst.1Day.0.cda-test",
+    "office-id": "SPK"
+  },
+  "versions": [
+    {
+      "earliest-time": "2020-01-01T00:00:00Z",
+      "latest-time": "2021-01-01T00:00:00Z",
+      "version-time": "2019-01-01T00:00:00Z",
+      "last-update": "2022-01-01T00:00:00Z"
+    },
+    {
+      "earliest-time": "2020-02-01T00:00:00Z",
+      "latest-time": "2021-02-01T00:00:00Z",
+      "version-time": "2019-02-01T00:00:00Z",
+      "last-update": "2022-02-01T00:00:00Z"
+    }
+  ],
+  "page": "page",
+  "page-size": 10,
+  "total": 2
+}
+
