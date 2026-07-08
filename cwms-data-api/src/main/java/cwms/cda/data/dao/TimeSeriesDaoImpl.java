@@ -245,6 +245,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Timestamp beginTimestamp = Timestamp.from(beginTime.toInstant());
         Timestamp endTimestamp = Timestamp.from(endTime.toInstant());
+        // AV_TSV_DQU.DATE_TIME is backed by Oracle DATE behavior; direct Timestamp binds
+        // dropped rows in parity tests, so keep these request-bound comparisons aligned with retrieve_ts.
         String beginTimestampText = beginTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
         String endTimestampText = endTimestamp.toLocalDateTime().format(ORACLE_DATE_FORMATTER);
 
