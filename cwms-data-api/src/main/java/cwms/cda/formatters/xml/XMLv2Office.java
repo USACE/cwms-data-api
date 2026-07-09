@@ -8,22 +8,20 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.xml.JacksonXmlModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OutputFormatter;
 import io.javalin.http.InternalServerErrorResponse;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
-
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An entire day was spent trying to get FasterXML to behave correctly
@@ -76,18 +74,18 @@ public class XMLv2Office implements OutputFormatter {
             for (CwmsDTOBase dto: dtoList) {
                 Office office = (Office)dto;
                 writer.writeStartElement("office");
-                    writer.writeStartElement("name");
-                        writer.writeCharacters(office.getName());
-                    writer.writeEndElement();
-                    writer.writeStartElement("long-name");
-                        writer.writeCharacters(office.getLongName());
-                    writer.writeEndElement();
-                    writer.writeStartElement("type");
-                        writer.writeCharacters(office.getType());
-                    writer.writeEndElement();
-                    writer.writeStartElement("reports-to");
-                        writer.writeCharacters(office.getReportsTo());
-                    writer.writeEndElement();
+                writer.writeStartElement("name");
+                writer.writeCharacters(office.getName());
+                writer.writeEndElement();
+                writer.writeStartElement("long-name");
+                writer.writeCharacters(office.getLongName());
+                writer.writeEndElement();
+                writer.writeStartElement("type");
+                writer.writeCharacters(office.getType());
+                writer.writeEndElement();
+                writer.writeStartElement("reports-to");
+                writer.writeCharacters(office.getReportsTo());
+                writer.writeEndElement();
                 writer.writeEndElement();
             }
             writer.writeEndElement();
@@ -95,10 +93,9 @@ public class XMLv2Office implements OutputFormatter {
             return out.toString();
 
         } catch (XMLStreamException ex) {
-            String msg = dtoList != null ?
-                    "Error rendering '" + dtoList + "' to XML"
-                    :
-                    "Null element passed to formatter";
+            String msg = dtoList != null
+                    ? "Error rendering '" + dtoList + "' to XML"
+                    : "Null element passed to formatter";
             logger.atWarning().withCause(ex).log(msg);
             throw new InternalServerErrorResponse("Invalid Parameters");
         }

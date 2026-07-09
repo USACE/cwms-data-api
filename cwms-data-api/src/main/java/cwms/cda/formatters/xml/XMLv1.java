@@ -7,23 +7,24 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
+import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.InternalServerErrorResponse;
-import java.util.Set;
-import org.jetbrains.annotations.NotNull;
-
+import java.time.Instant;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
+import java.util.Set;
+import org.jetbrains.annotations.NotNull;
 
 public class XMLv1 implements OutputFormatter {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -48,7 +49,6 @@ public class XMLv1 implements OutputFormatter {
     @Override
     public String format(CwmsDTOBase dto) {
         try {
-
             if (dto instanceof Office) {
                 return om.writeValueAsString(new XMLv1Office(Collections.singletonList((Office)dto)));
             }
@@ -68,7 +68,6 @@ public class XMLv1 implements OutputFormatter {
     @SuppressWarnings("unchecked") // we're ALWAYS checking before conversion in this function
     public String format(List<? extends CwmsDTOBase> dtoList) {
         try {
-
             if (!dtoList.isEmpty() && dtoList.get(0) instanceof Office) {
                 return om.writeValueAsString(new XMLv1Office((List<Office>) dtoList));
             }
@@ -97,6 +96,10 @@ public class XMLv1 implements OutputFormatter {
         }
     }
 
+    /**
+     * Create instance of XmlMapper with default settings for XML Version 1 Data.
+     * @return XmlMapper instance
+     */
     public static @NotNull XmlMapper buildObjectMapper() {
         XmlMapper retval = new XmlMapper();
 
@@ -131,6 +134,7 @@ public class XMLv1 implements OutputFormatter {
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
         retval.registerModule(module);
         return retval;
     }
