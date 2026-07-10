@@ -64,7 +64,7 @@ public final class PublishedController implements CrudHandler {
     private static final String TAG = "Published";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
-    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int DEFAULT_PAGE_SIZE = 500;
 
     public PublishedController(MetricRegistry metrics) {
         this.metrics = metrics;
