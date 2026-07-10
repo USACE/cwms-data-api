@@ -97,7 +97,8 @@ public final class PublishedController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description = "Office Id used to filter the results."),
-                    @OpenApiParam(name = LOCATION_MASK, description = "Location Id used to filter the results."),
+                    @OpenApiParam(name = LOCATION_MASK, description = "A pipe-separated list of Location IDs used to filter the results. "
+                            + "For example, 'Location1|Location2'."),
                     @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque "
