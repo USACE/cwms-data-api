@@ -56,6 +56,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Arrays;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -64,7 +66,7 @@ public final class PublishedController implements CrudHandler {
     private static final String TAG = "Published";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
-    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int DEFAULT_PAGE_SIZE = 500;
 
     public PublishedController(MetricRegistry metrics) {
         this.metrics = metrics;
@@ -131,7 +133,8 @@ public final class PublishedController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             PublishedTimeSeriesDao dao = new PublishedTimeSeriesDao(dsl);
-            PublishedRetrievalParameters retrievalParams = new PublishedRetrievalParameters(locationIdMask, officeIdMask);
+            List<String> locationIds = locationIdMask != null ? Arrays.asList(locationIdMask.split("\\|")) : null;
+            PublishedRetrievalParameters retrievalParams = new PublishedRetrievalParameters(locationIds, officeIdMask);
             LocationToPublishedDataList result = dao.retrievePublishedTimeSeriesIds(retrievalParams, cursor, pageSize);
 
             String formatHeader = ctx.header(Header.ACCEPT);

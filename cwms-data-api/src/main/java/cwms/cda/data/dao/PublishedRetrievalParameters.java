@@ -22,19 +22,21 @@
  * SOFTWARE.
  */
 package cwms.cda.data.dao;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 public class PublishedRetrievalParameters {
-    private final String locationIdsMask;
+    private final List<String> locationIds;
     private final String officeIdsMask;
 
-    public PublishedRetrievalParameters(String locationIdsMask, String officeIdsMask) {
-        this.locationIdsMask = locationIdsMask;
+    public PublishedRetrievalParameters(List<String> locationIds, String officeIdsMask) {
+        this.locationIds = locationIds != null ? Collections.unmodifiableList(locationIds) : Collections.emptyList();
         this.officeIdsMask = officeIdsMask;
     }
 
-    public Optional<String> getLocationId() {
-        return Optional.ofNullable(locationIdsMask);
+    public List<String> getLocationIds() {
+        return locationIds;
     }
 
     public Optional<String> getOfficeId() {
