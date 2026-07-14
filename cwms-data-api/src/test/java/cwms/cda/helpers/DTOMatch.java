@@ -29,11 +29,14 @@ import cwms.cda.data.dto.Entity;
 import cwms.cda.data.dto.ParameterLegacy;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesVersions;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.LocationToPublishedData;
 import cwms.cda.data.dto.LocationToPublishedDataList;
 import cwms.cda.data.dto.PublishedTimeSeriesData;
+import cwms.cda.data.dto.csv.TimeSeriesCsv;
+import cwms.cda.data.dto.csv.TimeSeriesCsvRow;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -407,6 +410,29 @@ public final class DTOMatch {
         );
     }
 
+    public static void assertMatch(TimeSeriesCsv first, TimeSeriesCsv second) {
+        assertAll(
+            () -> assertEquals(first.getTimeSeriesId(), second.getTimeSeriesId(), "Time series IDs do not match"),
+            () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office IDs do not match"),
+            () -> assertEquals(first.getVersionDate(), second.getVersionDate(), "Version dates do not match"),
+            () -> assertMatch(first.getRows(), second.getRows())
+        );
+    }
+
+    public static void assertMatch(List<TimeSeriesCsvRow> first, List<TimeSeriesCsvRow> second) {
+        assertMatch(first, second, DTOMatch::assertMatch);
+    }
+
+    public static void assertMatch(TimeSeriesCsvRow first, TimeSeriesCsvRow second) {
+        assertAll(
+            () -> assertEquals(first.getDateTime(), second.getDateTime(), "Date times do not match"),
+            () -> assertEquals(first.getDataEntryDate(), second.getDataEntryDate(), "Data entry dates do not match"),
+            () -> assertEquals(first.getUnits(), second.getUnits(), "Units do not match"),
+            () -> assertEquals(first.getValue(), second.getValue(), "Values do not match"),
+            () -> assertEquals(first.getQualityCode(), second.getQualityCode(), "Quality codes do not match")
+        );
+    }
+
     public static void assertMatch(Map<Instant, List<PumpTransfer>> first, Map<Instant, List<PumpTransfer>> second) {
         assertAll(
             () -> assertEquals(first.size(), second.size(), "Pump accounting sizes do not match"),
@@ -623,6 +649,13 @@ public final class DTOMatch {
             () -> assertEquals(first.getVersionTime(), second.getVersionTime(), "Version time does not match"),
             () -> assertEquals(first.getEarliestTime(), second.getEarliestTime(), "Earliest time does not match"),
             () -> assertEquals(first.getLatestTime(), second.getLatestTime(), "Latest time does not match")
+        );
+    }
+
+    public static void assertMatch(TimeSeriesVersions first, TimeSeriesVersions second) {
+        assertAll(
+            () -> assertMatch(first.getTsId(), second.getTsId()),
+            () -> assertMatch(first.getVersions(), second.getVersions(), DTOMatch::assertMatch)
         );
     }
 

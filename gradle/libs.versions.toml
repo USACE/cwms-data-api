@@ -39,6 +39,9 @@ openapi-validation = "2.44.9"
 javaparser = "3.26.2"
 togglz = "3.3.3"
 minio = "8.6.0"
+opentelemetry = "1.63.0"
+opentelemetry-java = "2.29.0"
+opentelemetry-java-logging = "2.29.0-alpha"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -63,6 +66,12 @@ google-flogger-api = { module = "com.google.flogger:flogger", version.ref = "flo
 google-flogger-system-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "flogger" }
 google-flogger-slf4j-backend = { module = "com.google.flogger:flogger-slf4j-backend", version.ref = "flogger" }
 ch-qos-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+io-opentelemetry-instrumentation-logback-mdc = { module = "io.opentelemetry.instrumentation:opentelemetry-logback-mdc-1.0", version.ref = "opentelemetry-java-logging" }
+io-opentelemetry-api = { module="io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+io-opentelemetry-sdk = { module="io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
+io-opentelemetry-exporter-logging = { module="io.opentelemetry:opentelemetry-exporter-logging", version.ref="opentelemetry" }
+io-opentelemetry-instrumentation-java = { module="io.opentelemetry.instrumentation:opentelemetry-instrumentation-api", version.ref = "opentelemetry-java" }
+
 google-findbugs = { module = "com.google.code.findbugs:jsr305", version.ref = "google-findbugs" }
 google-errorProne = { module = "com.google.errorprone:error_prone_annotations", version.ref = "error_prone_annotations"}
 nucleus-data = { module = "mil.army.usace.hec:hec-nucleus-data", version.ref = "hec-nucleus" }

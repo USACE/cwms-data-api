@@ -1,0 +1,21 @@
+{
+  "seasonal-values": [
+    {
+      "value": 10,
+      "offset-minutes": 0,
+      "offset-months": 0
+    }, {
+      "value": 15,
+      "offset-minutes": 0,
+      "offset-months": 1
+    }
+  ],
+  "level-units-id": "ft",
+  "level-date": "2008-12-03T10:15:30+01:00[UTC]",
+  "level-comment": "Lowest Point",
+  "interval-origin": "2008-12-03T10:15:30+01:00[UTC]",
+  "interval-months": 1,
+  "interpolate-string": "F",
+  "location-level-id": "Sacramento.Elev.Inst.0.Bottom of Inlet",
+  "office-id": "LRL"
+}

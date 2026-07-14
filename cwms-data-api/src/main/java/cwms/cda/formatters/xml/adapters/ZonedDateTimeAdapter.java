@@ -2,7 +2,6 @@ package cwms.cda.formatters.xml.adapters;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 public class ZonedDateTimeAdapter extends XmlAdapter<String, ZonedDateTime> {
