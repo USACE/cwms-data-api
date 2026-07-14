@@ -24,12 +24,14 @@
 
 package cwms.cda.api;
 
+import com.codahale.metrics.MetricRegistry;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
+import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
@@ -39,6 +41,7 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
 import cwms.cda.data.dto.locationlevel.SeasonalValueBean;
 import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
+import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -49,6 +52,9 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.time.Duration;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
@@ -102,7 +108,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             DSLContext dsl = dslContext(c, OFFICE);
             LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
             for (LocationLevel level : levelList) {
-                dao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(), false);
+                try {
+                    dao.deleteLocationLevel(level.getLocationLevelId(), level.getLevelDate(), level.getOfficeId(),
+                        false);
+                } catch (Exception ex) {
+                    // ignore
+                }
             }
         });
     }
@@ -2391,6 +2402,94 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         ;
     }
 
+    @Test
+    void test_tsid_failure_bulk_creation() throws Exception {
+        String locId = "level_bulk_fail";
+        String levelId = locId + ".Elev.Ave.1Day.Regulating";
+        String virtualLevelId = locId + ".Elev.Inst.0.Virtual";
+        String tsId = locId + ".Elev.Inst.0.0.Regulating";
+        createLocation(locId, true, OFFICE);
+        final ZonedDateTime time = ZonedDateTime.of(2023, 6, 1, 0, 0, 0, 0, ZoneId.of("America"
+            + "/Los_Angeles"));
+        String specXml = createRatingSpec(locId);
+        String setXml = createRatingSet(locId);
+        String ratingId = locId + ".Stage;Flow.COE.Production";
+        createVirtualLocation(specXml, setXml, time, virtualLevelId, null, "m");
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(dsl, new MetricRegistry());
+            TimeSeries ts = buildTimeSeries(tsId, OFFICE, time, "m");
+            tsDao.create(ts);
+            for (int i = 1; i <= 100; i++) {
+                if (i % 3 == 0) {
+                    LocationLevel level = new SeasonalLocationLevel.Builder(levelId, time.plusHours(i * 1L))
+                        .withOfficeId(OFFICE)
+                        .withLevelUnitsId("m")
+                        .withIntervalOrigin(time)
+                        .withIntervalMinutes(60 * 12)
+                        .withSeasonalValues(buildSeasonalValues(i))
+                        .withInterpolateString("F")
+                        .build();
+                    levelList.add(level);
+                    dao.storeLocationLevel(level);
+                } else if (i % 3 == 1) {
+                    LocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time.plusHours(i * 1L), tsId)
+                        .withOfficeId(OFFICE)
+                        .withLevelUnitsId("m")
+                        .withInterpolateString("F")
+                        .build();
+                    levelList.add(level);
+                    dao.storeLocationLevel(level);
+                } else {
+                    LocationLevel level = new ConstantLocationLevel.Builder(levelId, time.plusHours(i * 1L))
+                        .withOfficeId(OFFICE)
+                        .withLevelUnitsId("m")
+                        .withConstantValue(10.3 * i)
+                        .withInterpolateString("F")
+                        .build();
+                    levelList.add(level);
+                    dao.storeLocationLevel(level);
+                }
+            }
+            List<VirtualLocationLevel.RatingConstituent> ratingConstituents = new ArrayList<>();
+            VirtualLocationLevel.RatingConstituent constituent = new VirtualLocationLevel.RatingConstituent.Builder("R1", "RATING", ratingId).build();
+            ratingConstituents.add(constituent);
+            VirtualLocationLevel.LocationLevelConstituent levelConstituent = new VirtualLocationLevel.LocationLevelConstituent.Builder("L1", "LOCATION_LEVEL", levelId, "Stor", 2.0).build();
+            ratingConstituents.add(levelConstituent);
+            LocationLevel level = new VirtualLocationLevel.Builder(virtualLevelId, time)
+                .withOfficeId(OFFICE)
+                .withLevelUnitsId("m")
+                .withConstituents(ratingConstituents)
+                .withConstituentConnections("L1=R1I1")
+                .withExpirationDate(time.plusWeeks(12))
+                .withInterpolateString("F")
+                .build();
+            levelList.add(level);
+            dao.storeLocationLevel(level);
+        });
+
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LEVEL_ID_MASK, locId + ".*")
+            .queryParam(BEGIN, time.toString())
+            .queryParam(END, time.plusHours(100).toString())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        assertThat(response.path("levels.size()"),is(100));
+    }
+
     enum GetAllTestNewAliases {
         DEFAULT(Formats.DEFAULT, Formats.JSONV2),
         JSON(Formats.JSON, Formats.JSONV2),
@@ -2415,6 +2514,27 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         return RatingSpecXmlFactory.toXml(specContainer, "", 0, true);
     }
 
+    private List<SeasonalValueBean> buildSeasonalValues(int i) {
+        List<SeasonalValueBean> seasonalValues = new ArrayList<>();
+        for (int j = 0; j < 12; j++) {
+            SeasonalValueBean bean = new SeasonalValueBean.Builder()
+                .withValue(11.7 * i * j)
+                .withOffsetMinutes(BigInteger.valueOf(60L * j))
+                .build();
+            seasonalValues.add(bean);
+        }
+        return seasonalValues;
+    }
+
+    private TimeSeries buildTimeSeries(String name, String officeId, ZonedDateTime begin, String units) {
+        TimeSeries ts = new TimeSeries(null, 10, 10, name, officeId, begin, begin.plusDays(1L), units, Duration.ZERO);
+        for (int j = 0; j < 24; j++) {
+            Timestamp time = Timestamp.from(begin.plusHours(j).toInstant());
+            ts.addValue(time, 3.45 * j, 0);
+        }
+        return ts;
+    }
+
     private String createRatingSet(String locationName) throws Exception {
         String ratingXml = readResourceFile("cwms/cda/api/Zanesville_Stage_Flow_COE_Production.xml");
         ratingXml = ratingXml.replaceAll("Zanesville", locationName);
@@ -2424,6 +2544,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     private void createVirtualLocation(String specXml, String setXml, ZonedDateTime time, String levelId, String levelId2) throws SQLException {
+        createVirtualLocation(specXml, setXml, time, levelId, levelId2, "ac-ft");
+    }
+
+    private void createVirtualLocation(String specXml, String setXml, ZonedDateTime time, String levelId, String levelId2, String units) throws SQLException {
         CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
             DSLContext dsl = dslContext(c, OFFICE);
             RatingDao ratingDao = new RatingSetDao(dsl);
@@ -2441,7 +2565,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             }
             LocationLevel level = new ConstantLocationLevel.Builder(levelId, time)
                     .withOfficeId(OFFICE)
-                    .withLevelUnitsId("ac-ft")
+                    .withLevelUnitsId(units)
                     .withConstantValue(1.0)
                     .build();
             levelList.add(level);
@@ -2450,7 +2574,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             if (levelId2 != null) {
                 level = new ConstantLocationLevel.Builder(levelId2, time)
                         .withOfficeId(OFFICE)
-                        .withLevelUnitsId("ac-ft")
+                        .withLevelUnitsId(units)
                         .withConstantValue(10.0)
                         .build();
                 levelList.add(level);
