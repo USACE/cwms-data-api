@@ -6,10 +6,10 @@ Summary
 =======
 
 This ADR defines a standardized design for CDA catalog endpoints and distinguishes them from getAll endpoints.
-GetAll endpoints shall return data that can be passed to the POST endpoint as input (roundtripable).
+GetAll endpoints shall return data that can be passed to the associated Post endpoint as input (roundtrip).
 Catalog endpoints shall only be concerned with retrieval of data without consideration of storing
 the data in the same shape it is retrieved in. Data types currently supported by the catalog endpoints are
-timeseries and locations.
+time series and locations.
 
 Opinions
 ========
@@ -36,6 +36,10 @@ Key Points
     * - Base Path
       - Catalog endpoints shall be grouped into the `/catalog/` path group.
       - Consistent data access across data types.
+    * - Paging
+      - Catalog endpoints shall support paging.
+      - Efficient retrieval for larger data sets.
+
 
 Existing catalog endpoints
 ==========================
