@@ -17,6 +17,7 @@ import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
+import cwms.cda.util.LruTtlMap;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
@@ -112,6 +113,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      */
     private static ThreadLocal<AuthDao> instance = new ThreadLocal<>();
 
+    // start with ten second cache
+    private static final LruTtlMap<String, DataApiPrincipal> authCache = new LruTtlMap<>(150, 10_000);
+
     private AuthDao(DSLContext dsl, String defaultOffice) {
         super(dsl);
         if (getDbVersion(dsl) < Dao.CWMS_23_03_16) {
@@ -180,9 +184,11 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @throws CwmsAuthException throw for any issue with verification of Key or user information.
      */
     public DataApiPrincipal getByApiKey(String apikey) throws CwmsAuthException {
-        String userName = checkKey(apikey);
-        Set<RouteRole> roles = getRolesForUser(userName);
-        return new DataApiPrincipal(userName,roles);
+        return authCache.computeIfAbsent(apikey, providedKey -> {
+            String userName = checkKey(providedKey);
+            Set<RouteRole> roles = getRolesForUser(userName);
+            return new DataApiPrincipal(userName,roles);
+        });
     }
 
     /**
@@ -637,16 +643,18 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @throws CwmsAuthException if anything goes wrong with the database query.
      */
     public Optional<DataApiPrincipal> getPrincipalFromPrincipal(String principal) throws CwmsAuthException {
-        String user = userForPrincipal(principal);
-        if (user != null) {
-            Set<RouteRole> roles = this.getRolesForUser(user);
-            // In this case "cac_auth" just means the user is an actually user verify by some sort of
-            // identify management system. E.g. "not an apikey"
-            roles.add(new Role("cac_auth"));
-            return Optional.of(new DataApiPrincipal(user, roles));
-        } else {
-            return Optional.empty();
-        }
+        return Optional.ofNullable(authCache.computeIfAbsent(principal, newPrincipal -> {
+            String user = userForPrincipal(principal);
+            if (user != null) {
+                Set<RouteRole> roles = this.getRolesForUser(user);
+                // In this case "cac_auth" just means the user is an actually user verify by some sort of
+                // identify management system. E.g. "not an apikey"
+                roles.add(new Role("cac_auth"));
+                return new DataApiPrincipal(user, roles);
+            } else {
+                return null;
+            }
+        }));
     }
 
 
