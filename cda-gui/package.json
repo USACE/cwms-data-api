@@ -25,7 +25,7 @@
     "@headlessui/react": "^2.2.10",
     "@tanstack/react-query": "^5.64.1",
     "@tanstack/react-virtual": "^3.14.3",
-    "@usace-watermanagement/groundwork-water": "^3.9.0",
+    "@usace-watermanagement/groundwork-water": "github:USACE-WaterManagement/groundwork-water#agent/cwms-plot-cda-parity",
     "@usace/groundwork": "^3.14.18",
     "cwmsjs": "^2.3.2-2025.3.19",
     "dayjs": "^1.11.13",

@@ -13,7 +13,11 @@ import DataTabs from "./components/DataTabs";
 import TimeSeriesBuilder from "./components/TimeSeriesBuilder";
 import TimeSeriesManager from "./components/TimeSeriesManager";
 import SettingsMenu from "./components/SettingsMenu";
-import { buildCsvContent, buildTableRows, downloadBlob } from "./utils/tableData";
+import {
+  buildCsvContent,
+  buildTableRows,
+  downloadBlob,
+} from "@usace-watermanagement/groundwork-water";
 const CDA_DATE_FORMAT = "YYYY-MM-DDTHH:mm:ssZ";
 
 const v2_config = new Configuration({
