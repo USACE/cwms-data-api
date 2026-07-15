@@ -67,7 +67,7 @@
   <rect x="612" y="470" width="245" height="96" class="box auth"/>
   <text x="632" y="496" class="step">9. Runner token</text>
   <text x="632" y="524" class="text">client_credentials</text>
-  <text x="632" y="546" class="text small">machine_auth + run_as_office</text>
+  <text x="632" y="546" class="text small">machine_auth + signed context</text>
 
   <rect x="902" y="470" width="175" height="96" class="box cda"/>
   <text x="922" y="496" class="step">10. CDA call</text>

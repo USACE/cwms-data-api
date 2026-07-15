@@ -6,14 +6,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.security.BatchJobContext;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.KeyCloakExtension;
 import io.javalin.http.HttpCode;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.restassured.filter.log.LogDetail;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.util.Base64;
+import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +39,14 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
     private static final String SPK_BATCH_CLIENT = "cwms-batch-runner-spk";
     private static final String SPK_BATCH_CLIENT_SECRET = "local-cwms-batch-runner-spk-secret";
     private static final String SPK_BATCH_USER = "SERVICE-ACCOUNT-CWMS-BATCH-RUNNER-SPK";
+    private static final KeyPair JOB_CONTEXT_KEY_PAIR = rsaKeyPair();
+
+    @AfterEach
+    void clearBatchContextProperties() {
+        System.clearProperty(BatchJobContext.PUBLIC_KEY_PROPERTY);
+        System.clearProperty(BatchJobContext.ISSUER_PROPERTY);
+        System.clearProperty(BatchJobContext.AUDIENCE_PROPERTY);
+    }
 
     @Test
     void test_keycloak_user_is_created() {
@@ -69,6 +89,7 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
             SPK_BATCH_CLIENT_SECRET);
         assertTrue(spkToken.isPresent());
         assertBatchClaims(spkToken.get(), "SPK", SPK_BATCH_CLIENT);
+        String spkContext = configureSignedJobContext("SPK");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -84,6 +105,7 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("Authorization", "Bearer " + spkToken.get())
+            .header(BatchJobContext.HEADER, spkContext)
         .when()
             .get("/user/profile")
         .then()
@@ -97,11 +119,13 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
             SWT_BATCH_CLIENT_SECRET);
         assertTrue(swtToken.isPresent());
         assertBatchClaims(swtToken.get(), "SWT", SWT_BATCH_CLIENT);
+        String swtContext = configureSignedJobContext("SWT");
         registerBatchMachinePrincipal(SWT_BATCH_USER, swtToken.get(), "SWT");
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .header("Authorization", "Bearer " + swtToken.get())
+            .header(BatchJobContext.HEADER, swtContext)
         .when()
             .get("/user/profile")
         .then()
@@ -114,9 +138,40 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
 
     private static void assertBatchClaims(String token, String office, String clientId) throws Exception {
         assertEquals(true, KeyCloakExtension.claims(token).get("machine_auth").asBoolean());
-        assertEquals(office, KeyCloakExtension.claims(token).get("run_as_office").asText());
         assertEquals("service-account-" + clientId,
             KeyCloakExtension.claims(token).get("preferred_username").asText());
+    }
+
+    private static String configureSignedJobContext(String office) {
+        System.setProperty(BatchJobContext.PUBLIC_KEY_PROPERTY, publicKeyPem(JOB_CONTEXT_KEY_PAIR));
+        System.setProperty(BatchJobContext.ISSUER_PROPERTY, "cwms-batch-events");
+        System.setProperty(BatchJobContext.AUDIENCE_PROPERTY, "cwms-data-api");
+        return Jwts.builder()
+            .setHeaderParam("kid", "current")
+            .setIssuer("cwms-batch-events")
+            .setAudience("cwms-data-api")
+            .setIssuedAt(Date.from(Instant.now()))
+            .setExpiration(Date.from(Instant.now().plusSeconds(300)))
+            .addClaims(Map.of("run_as_office", office))
+            .signWith((PrivateKey) JOB_CONTEXT_KEY_PAIR.getPrivate(), SignatureAlgorithm.RS256)
+            .compact();
+    }
+
+    private static KeyPair rsaKeyPair() {
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            generator.initialize(2048);
+            return generator.generateKeyPair();
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to generate test key pair", e);
+        }
+    }
+
+    private static String publicKeyPem(KeyPair keyPair) {
+        return "-----BEGIN PUBLIC KEY-----\n"
+            + Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.UTF_8))
+                .encodeToString(keyPair.getPublic().getEncoded())
+            + "\n-----END PUBLIC KEY-----";
     }
 
     private static void registerBatchMachinePrincipal(String userName, String token, String office) throws Exception {

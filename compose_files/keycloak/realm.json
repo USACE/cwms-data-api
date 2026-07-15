@@ -785,21 +785,6 @@
             "jsonType.label": "boolean",
             "userinfo.token.claim": "false"
           }
-        },
-        {
-          "id": "422385db-9fd4-4c8c-b1c7-8d12ce41418c",
-          "name": "run_as_office",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-hardcoded-claim-mapper",
-          "consentRequired": false,
-          "config": {
-            "access.token.claim": "true",
-            "claim.name": "run_as_office",
-            "claim.value": "SWT",
-            "id.token.claim": "false",
-            "jsonType.label": "String",
-            "userinfo.token.claim": "false"
-          }
         }
       ],
       "defaultClientScopes": [
@@ -913,21 +898,6 @@
             "claim.value": "true",
             "id.token.claim": "false",
             "jsonType.label": "boolean",
-            "userinfo.token.claim": "false"
-          }
-        },
-        {
-          "id": "f6fde48e-c253-472d-8ed1-6267b4db1227",
-          "name": "run_as_office",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-hardcoded-claim-mapper",
-          "consentRequired": false,
-          "config": {
-            "access.token.claim": "true",
-            "claim.name": "run_as_office",
-            "claim.value": "SPK",
-            "id.token.claim": "false",
-            "jsonType.label": "String",
             "userinfo.token.claim": "false"
           }
         }

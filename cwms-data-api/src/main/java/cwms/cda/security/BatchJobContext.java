@@ -11,11 +11,18 @@ import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SigningKeyResolverAdapter;
 import io.jsonwebtoken.security.Keys;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.Map;
@@ -34,6 +41,8 @@ public final class BatchJobContext {
 
     public static final String SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.secret";
     public static final String PREVIOUS_SECRET_PROPERTY = "cwms.dataapi.batch.jobContext.previousSecret";
+    public static final String PUBLIC_KEY_PROPERTY = "cwms.dataapi.batch.jobContext.publicKey";
+    public static final String PREVIOUS_PUBLIC_KEY_PROPERTY = "cwms.dataapi.batch.jobContext.previousPublicKey";
     public static final String KEY_ID_PROPERTY = "cwms.dataapi.batch.jobContext.keyId";
     public static final String ISSUER_PROPERTY = "cwms.dataapi.batch.jobContext.issuer";
     public static final String AUDIENCE_PROPERTY = "cwms.dataapi.batch.jobContext.audience";
@@ -69,7 +78,7 @@ public final class BatchJobContext {
     public static void prepareContext(Context ctx, DataApiPrincipal principal, Claims claims)
         throws CwmsAuthException {
         if (hasMachineAuthClaim(claims)) {
-            setRunOfficeFromClaims(ctx, claims);
+            prepareSignedContext(ctx);
             return;
         }
         prepareContext(ctx, principal);
@@ -80,6 +89,10 @@ public final class BatchJobContext {
             return;
         }
 
+        prepareSignedContext(ctx);
+    }
+
+    private static void prepareSignedContext(Context ctx) throws CwmsAuthException {
         String token = ctx.header(HEADER);
         if (token == null || token.isBlank()) {
             throw new CwmsAuthException("Batch machine request missing signed job context",
@@ -145,23 +158,48 @@ public final class BatchJobContext {
     }
 
     private static Claims parse(String token) {
-        String secret = secretForToken(token);
-        if (secret.length() < 32) {
-            throw new IllegalArgumentException("Batch job context secret must be at least 32 characters");
-        }
-        Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        Key key = verificationKeyForToken(token);
         return Jwts.parserBuilder()
             .requireIssuer(readSetting(ISSUER_PROPERTY, DEFAULT_ISSUER))
             .requireAudience(readSetting(AUDIENCE_PROPERTY, DEFAULT_AUDIENCE))
-            .setSigningKey(key)
+            .setSigningKeyResolver(new SigningKeyResolverAdapter() {
+                @Override
+                public Key resolveSigningKey(JwsHeader header, Claims claims) {
+                    return key;
+                }
+            })
             .build()
             .parseClaimsJws(token)
             .getBody();
     }
 
-    private static String secretForToken(String token) {
-        String expectedKeyId = readSetting(KEY_ID_PROPERTY, "current");
+    private static Key verificationKeyForToken(String token) {
         String keyId = keyIdForToken(token);
+        String publicKey = publicKeyForToken(keyId);
+        if (!publicKey.isBlank()) {
+            return parsePublicKey(publicKey);
+        }
+
+        String secret = secretForToken(keyId);
+        if (secret.length() < 32) {
+            throw new IllegalArgumentException("Batch job context secret must be at least 32 characters");
+        }
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String publicKeyForToken(String keyId) {
+        String expectedKeyId = readSetting(KEY_ID_PROPERTY, "current");
+        if (keyId == null || keyId.isBlank() || expectedKeyId.equals(keyId)) {
+            return readSetting(PUBLIC_KEY_PROPERTY, "");
+        }
+        if ("previous".equals(keyId)) {
+            return readSetting(PREVIOUS_PUBLIC_KEY_PROPERTY, "");
+        }
+        throw new IllegalArgumentException("Batch job context key id is not recognized");
+    }
+
+    private static String secretForToken(String keyId) {
+        String expectedKeyId = readSetting(KEY_ID_PROPERTY, "current");
         if (keyId == null || keyId.isBlank() || expectedKeyId.equals(keyId)) {
             return readSetting(SECRET_PROPERTY, "");
         }
@@ -183,6 +221,19 @@ public final class BatchJobContext {
             return keyId instanceof String ? (String) keyId : null;
         } catch (IllegalArgumentException | IOException e) {
             throw new IllegalArgumentException("Batch job context token header is malformed", e);
+        }
+    }
+
+    private static PublicKey parsePublicKey(String value) {
+        String normalized = value
+            .replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replaceAll("\\s", "");
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(normalized);
+            return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(keyBytes));
+        } catch (IllegalArgumentException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new IllegalArgumentException("Batch job context public key is malformed", e);
         }
     }
 

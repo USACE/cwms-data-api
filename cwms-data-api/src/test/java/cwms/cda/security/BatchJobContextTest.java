@@ -19,10 +19,15 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.io.PrintWriter;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,11 +46,15 @@ class BatchJobContextTest {
     private static final String ISSUER = "cwms-batch-events";
     private static final String AUDIENCE = "cwms-data-api";
     private static final String MACHINE_USER = "SERVICE-ACCOUNT-CWMS-BATCH-RUNNER";
+    private static final KeyPair CURRENT_KEY_PAIR = rsaKeyPair();
+    private static final KeyPair OTHER_KEY_PAIR = rsaKeyPair();
 
     @AfterEach
     void clearProperties() {
         System.clearProperty(BatchJobContext.SECRET_PROPERTY);
         System.clearProperty(BatchJobContext.PREVIOUS_SECRET_PROPERTY);
+        System.clearProperty(BatchJobContext.PUBLIC_KEY_PROPERTY);
+        System.clearProperty(BatchJobContext.PREVIOUS_PUBLIC_KEY_PROPERTY);
         System.clearProperty(BatchJobContext.KEY_ID_PROPERTY);
         System.clearProperty(BatchJobContext.ISSUER_PROPERTY);
         System.clearProperty(BatchJobContext.AUDIENCE_PROPERTY);
@@ -76,11 +85,14 @@ class BatchJobContextTest {
     }
 
     @Test
-    void machineAuthClaimSetsRunContextWithoutSignedHeader() throws CwmsAuthException {
-        Context ctx = contextWithHeaders(Map.of());
+    void machineAuthClaimRequiresSignedHeaderAndUsesSignedRunContext() throws CwmsAuthException {
+        configureBatchContext();
+        String token = rsaToken(Map.of("run_as_office", "swt"), CURRENT_KEY_PAIR.getPrivate(), ISSUER, AUDIENCE,
+            Instant.now().plusSeconds(300));
+        Context ctx = contextWithHeaders(Map.of(BatchJobContext.HEADER, token));
         Claims claims = Jwts.claims(Map.of(
             BatchJobContext.MACHINE_AUTH_CLAIM, true,
-            BatchJobContext.RUN_AS_OFFICE_CLAIM, "swt"
+            BatchJobContext.RUN_AS_OFFICE_CLAIM, "spk"
         ));
 
         BatchJobContext.prepareContext(ctx, machinePrincipal(), claims);
@@ -89,21 +101,26 @@ class BatchJobContextTest {
     }
 
     @Test
-    void machineAuthStringClaimSetsRunContextWithoutSignedHeader() throws CwmsAuthException {
+    void machineAuthStringClaimRequiresSignedHeader() {
         Context ctx = contextWithHeaders(Map.of());
         Claims claims = Jwts.claims(Map.of(
             BatchJobContext.MACHINE_AUTH_CLAIM, "true",
             BatchJobContext.RUN_AS_OFFICE_CLAIM, "spk"
         ));
 
-        BatchJobContext.prepareContext(ctx, machinePrincipal(), claims);
+        CwmsAuthException ex = assertThrows(CwmsAuthException.class,
+            () -> BatchJobContext.prepareContext(ctx, machinePrincipal(), claims));
 
-        assertEquals("SPK", ctx.attribute(BatchJobContext.RUN_AS_OFFICE_ATTR));
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, ex.getAuthFailCode());
+        assertEquals("Batch machine request missing signed job context", ex.getMessage());
     }
 
     @Test
-    void machineAuthClaimRequiresRunAsOffice() {
-        Context ctx = contextWithHeaders(Map.of());
+    void machineAuthClaimRequiresSignedRunAsOffice() {
+        configureBatchContext();
+        String token = rsaToken(Map.of("job_id", "job-123"), CURRENT_KEY_PAIR.getPrivate(), ISSUER, AUDIENCE,
+            Instant.now().plusSeconds(300));
+        Context ctx = contextWithHeaders(Map.of(BatchJobContext.HEADER, token));
         Claims claims = Jwts.claims(Map.of(BatchJobContext.MACHINE_AUTH_CLAIM, true));
 
         CwmsAuthException ex = assertThrows(CwmsAuthException.class,
@@ -128,12 +145,12 @@ class BatchJobContextTest {
     @Test
     void validTokenSetsRunContextAttribute() throws CwmsAuthException {
         configureBatchContext();
-        String token = token(Map.of(
+        String token = rsaToken(Map.of(
             "run_as_office", "swt",
             "job_id", "job-123",
             "requested_by", "m5hectest",
             "dispatch_source", "api"
-        ), SECRET, ISSUER, AUDIENCE, Instant.now().plusSeconds(300));
+        ), CURRENT_KEY_PAIR.getPrivate(), ISSUER, AUDIENCE, Instant.now().plusSeconds(300));
         Context ctx = contextWithHeaders(Map.of(BatchJobContext.HEADER, token));
 
         BatchJobContext.prepareContext(ctx, machinePrincipal());
@@ -156,7 +173,7 @@ class BatchJobContextTest {
     @Test
     void expiredTokenThrowsSpecificUnauthorizedMessage() {
         configureBatchContext();
-        String token = token(Map.of("run_as_office", "SWT"), SECRET, ISSUER, AUDIENCE,
+        String token = rsaToken(Map.of("run_as_office", "SWT"), CURRENT_KEY_PAIR.getPrivate(), ISSUER, AUDIENCE,
             Instant.now().minusSeconds(60));
         Context ctx = contextWithHeaders(Map.of(BatchJobContext.HEADER, token));
 
@@ -170,7 +187,7 @@ class BatchJobContextTest {
     @Test
     void forgedTokenThrowsInvalidMessage() {
         configureBatchContext();
-        String token = token(Map.of("run_as_office", "SWT"), OTHER_SECRET, ISSUER, AUDIENCE,
+        String token = rsaToken(Map.of("run_as_office", "SWT"), OTHER_KEY_PAIR.getPrivate(), ISSUER, AUDIENCE,
             Instant.now().plusSeconds(300));
         Context ctx = contextWithHeaders(Map.of(BatchJobContext.HEADER, token));
 
@@ -184,9 +201,9 @@ class BatchJobContextTest {
     @Test
     void wrongIssuerOrAudienceIsRejected() {
         configureBatchContext();
-        String wrongIssuer = token(Map.of("run_as_office", "SWT"), SECRET, "other-issuer",
+        String wrongIssuer = rsaToken(Map.of("run_as_office", "SWT"), CURRENT_KEY_PAIR.getPrivate(), "other-issuer",
             AUDIENCE, Instant.now().plusSeconds(300));
-        String wrongAudience = token(Map.of("run_as_office", "SWT"), SECRET, ISSUER,
+        String wrongAudience = rsaToken(Map.of("run_as_office", "SWT"), CURRENT_KEY_PAIR.getPrivate(), ISSUER,
             "other-audience", Instant.now().plusSeconds(300));
 
         CwmsAuthException issuerEx = assertThrows(CwmsAuthException.class,
@@ -203,7 +220,7 @@ class BatchJobContextTest {
     @Test
     void legacyOfficeClaimIsUsedWhenRunAsOfficeIsMissing() throws CwmsAuthException {
         configureBatchContext();
-        String token = token(Map.of("office", "spk"), SECRET, ISSUER, AUDIENCE,
+        String token = rsaToken(Map.of("office", "spk"), CURRENT_KEY_PAIR.getPrivate(), ISSUER, AUDIENCE,
             Instant.now().plusSeconds(300));
         Context ctx = contextWithHeaders(Map.of(BatchJobContext.HEADER, token));
 
@@ -236,17 +253,32 @@ class BatchJobContextTest {
     }
 
     private static void configureBatchContext() {
+        System.setProperty(BatchJobContext.PUBLIC_KEY_PROPERTY, publicKeyPem(CURRENT_KEY_PAIR.getPublic()));
+        System.setProperty(BatchJobContext.ISSUER_PROPERTY, ISSUER);
+        System.setProperty(BatchJobContext.AUDIENCE_PROPERTY, AUDIENCE);
+        System.setProperty(BatchJobContext.MACHINE_USERS_PROPERTY, MACHINE_USER);
+    }
+
+    @Test
+    void legacyHmacTokenSetsRunContextWhenPublicKeyIsNotConfigured() throws CwmsAuthException {
         System.setProperty(BatchJobContext.SECRET_PROPERTY, SECRET);
         System.setProperty(BatchJobContext.ISSUER_PROPERTY, ISSUER);
         System.setProperty(BatchJobContext.AUDIENCE_PROPERTY, AUDIENCE);
         System.setProperty(BatchJobContext.MACHINE_USERS_PROPERTY, MACHINE_USER);
+        String token = hmacToken(Map.of("run_as_office", "SWT"), SECRET, ISSUER, AUDIENCE,
+            Instant.now().plusSeconds(300));
+        Context ctx = contextWithHeaders(Map.of(BatchJobContext.HEADER, token));
+
+        BatchJobContext.prepareContext(ctx, machinePrincipal());
+
+        assertEquals("SWT", ctx.attribute(BatchJobContext.RUN_AS_OFFICE_ATTR));
     }
 
     private static DataApiPrincipal machinePrincipal() {
         return new DataApiPrincipal(MACHINE_USER, Set.of());
     }
 
-    private static String token(Map<String, Object> claims, String secret, String issuer,
+    private static String hmacToken(Map<String, Object> claims, String secret, String issuer,
         String audience, Instant expiration) {
         Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         return Jwts.builder()
@@ -258,6 +290,35 @@ class BatchJobContextTest {
             .addClaims(claims)
             .signWith(key, SignatureAlgorithm.HS256)
             .compact();
+    }
+
+    private static String rsaToken(Map<String, Object> claims, PrivateKey key, String issuer,
+        String audience, Instant expiration) {
+        return Jwts.builder()
+            .setHeaderParam("kid", "current")
+            .setIssuer(issuer)
+            .setAudience(audience)
+            .setIssuedAt(Date.from(Instant.now()))
+            .setExpiration(Date.from(expiration))
+            .addClaims(claims)
+            .signWith(key, SignatureAlgorithm.RS256)
+            .compact();
+    }
+
+    private static KeyPair rsaKeyPair() {
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            generator.initialize(2048);
+            return generator.generateKeyPair();
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to generate test key pair", e);
+        }
+    }
+
+    private static String publicKeyPem(PublicKey key) {
+        return "-----BEGIN PUBLIC KEY-----\n"
+            + Base64.getMimeEncoder(64, "\n".getBytes(StandardCharsets.UTF_8)).encodeToString(key.getEncoded())
+            + "\n-----END PUBLIC KEY-----";
     }
 
     private static Context contextWithHeaders(Map<String, String> headers) {

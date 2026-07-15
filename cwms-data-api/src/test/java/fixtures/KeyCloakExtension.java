@@ -169,7 +169,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
      * This is needed to verify CDA's machine-to-machine path with the same
      * client_credentials flow a batch runner uses. Password-grant user tokens
      * do not exercise Keycloak service-account subjects or built-in client
-     * mappers for machine_auth and run_as_office claims.
+     * mappers for the machine_auth claim.
      * @param clientId Keycloak client ID
      * @param clientSecret Keycloak client secret
      * @return Access token only

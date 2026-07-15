@@ -46,7 +46,7 @@
   <rect x="245" y="458" width="130" height="100" class="box identity"/>
   <text x="266" y="490" class="text">Runner token</text>
   <text x="266" y="511" class="text small">machine_auth</text>
-  <text x="266" y="529" class="text small">run_as_office</text>
+  <text x="266" y="529" class="text small">signed context</text>
 
   <rect x="425" y="88" width="245" height="540" class="lane"/>
   <text x="445" y="116" class="text laneTitle">Batch Events</text>
