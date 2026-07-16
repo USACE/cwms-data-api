@@ -32,6 +32,7 @@ import static cwms.cda.api.Controllers.CWMS_OFFICE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.IGNORE_MISSING;
 import static cwms.cda.api.Controllers.IGNORE_NULLS;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_LOCS;
@@ -69,6 +70,7 @@ import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.TestAccounts;
+import io.javalin.http.HttpCode;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -406,6 +408,182 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_create_ignore_missing(String format) throws Exception {
+        String officeId = user.getOperatingOffice();
+        String timeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda";
+        String nonExistentTimeSeriesId = "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.notReal";
+        createLocation(timeSeriesId.split("\\.")[0],true,officeId);
+        TimeSeriesCategory cat = new TimeSeriesCategory(officeId, "test_create_read_delete", "IntegrationTesting");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_create_read_delete", "IntegrationTesting",
+            "sharedTsAliasId", timeSeriesId);
+        List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
+
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
+
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,timeSeriesId, "AliasId", timeSeriesId, 1));
+        assignedTimeSeries.add(new AssignedTimeSeries(officeId,nonExistentTimeSeriesId, "AliasId", nonExistentTimeSeriesId, 1));
+        ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesCategory.class);
+        String categoryXml = Formats.format(contentType, cat);
+        String groupXml = Formats.format(contentType, group);
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(categoryXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        //Create Group, not ignoring missing time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+            .body("message", equalTo("Time series group contains assigned time series that do not exist."))
+            .body("details.missing-time-series", equalTo("The timeseries identifier \""
+                + nonExistentTimeSeriesId + "\" was not found for office \"" + officeId + "\""));
+        //Read Empty
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        //Create Group, ignore missing time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .queryParam(IGNORE_MISSING, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpCode.MULTI_STATUS.getStatus()))
+            .body("missing-time-series", equalTo(nonExistentTimeSeriesId));
+        //Read Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("office-id", equalTo(group.getOfficeId()));
+        //Clear Assigned TS
+        group.getAssignedTimeSeries().clear();
+        groupXml = Formats.format(contentType, group);
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupXml)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
+            .queryParam(REPLACE_ASSIGNED_TS, true)
+            .queryParam(OFFICE, group.getOfficeId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/timeseries/group/"+ group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+        //Delete Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/group/" + group.getId())
+            .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+        //Read Empty
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        //Delete Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/category/" + group.getTimeSeriesCategory().getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
     @ParameterizedTest

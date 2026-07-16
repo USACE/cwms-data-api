@@ -58,7 +58,6 @@ import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
-import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
@@ -290,8 +289,13 @@ public class TimeSeriesGroupController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_CREATED);
             } else {
                 Map<String, String> detailsMap = new HashMap<>();
-                detailsMap.put("missing-timeseries", Formats.format(contentType, missingTimeSeries,
-                    AssignedTimeSeries.class));
+                StringBuilder sb = new StringBuilder();
+                for (CwmsId cwmsId : missingTimeSeries) {
+                    sb.append(cwmsId.getName());
+                    sb.append(", ");
+                }
+                sb.delete(sb.length() - 2, sb.length());
+                detailsMap.put("missing-time-series", sb.toString());
                 if (ignoreMissing) {
                     ctx.status(HttpCode.MULTI_STATUS);
 
@@ -363,7 +367,13 @@ public class TimeSeriesGroupController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
             } else {
                 Map<String, String> detailsMap = new HashMap<>();
-                detailsMap.put("missing-timeseries", Formats.format(contentType, missingTimeSeries, CwmsId.class));
+                StringBuilder sb = new StringBuilder();
+                for (CwmsId cwmsId : missingTimeSeries) {
+                    sb.append(cwmsId.getName());
+                    sb.append(", ");
+                }
+                sb.delete(sb.length() - 2, sb.length());
+                detailsMap.put("missing-timeseries", sb.toString());
                 if (ignoreMissing) {
                     ctx.status(HttpCode.MULTI_STATUS);
                 } else {
