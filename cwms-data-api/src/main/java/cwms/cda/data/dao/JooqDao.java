@@ -39,6 +39,7 @@ import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSetMetaData;
@@ -521,7 +522,21 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         NotFoundException exception;
         if (input.getMessage().contains("ASSIGN_LOC_GROUPS")) {
-            exception = new NotFoundException("Location group contains assigned locations that do not exist.", cause);
+            Map<String, Serializable> errorDetails = new HashMap<>();
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    localizedMessage = parts[0];
+                    if (localizedMessage.startsWith("ORA-")) {
+                        localizedMessage = localizedMessage
+                            .substring(localizedMessage.indexOf("LOCATION_ID_NOT_FOUND:") + 23);
+                    }
+                }
+            }
+            errorDetails.put("missing-locations", localizedMessage);
+            exception = new NotFoundException("Location group contains assigned locations that do not exist.",
+                errorDetails, cause);
         } else {
             exception = new NotFoundException(cause);
 

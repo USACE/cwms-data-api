@@ -28,9 +28,11 @@ import static java.util.stream.Collectors.toList;
 import static org.jooq.impl.DSL.noCondition;
 
 import cwms.cda.data.dto.AssignedLocation;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.LocationGroup;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -39,7 +41,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
 import org.geojson.Feature;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
@@ -60,8 +61,8 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
-import usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_ARRAY3;
-import usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_TYPE3;
+import usace.cwms.db.jooq.codegen_latest.udt.records.LOC_ALIAS_ARRAY3;
+import usace.cwms.db.jooq.codegen_latest.udt.records.LOC_ALIAS_TYPE3;
 
 
 public final class LocationGroupDao extends JooqDao<LocationGroup> {
@@ -476,19 +477,30 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
     /**
      * Create a location group.
      * @param group The location group to create.
+     * @return A list of assigned locations that did not exist when attempting to assign them.
      */
-    public void create(LocationGroup group) {
+    public List<CwmsId> create(LocationGroup group) {
+        return create(group, false);
+    }
+
+    /**
+     * Create a location group.
+     * @param group The location group to create.
+     * @param allowPartialAssignment Whether to allow partial assignment.
+     * @return A list of assigned locations that did not exist when attempting to assign them.
+     */
+    public List<CwmsId> create(LocationGroup group, boolean allowPartialAssignment) {
         String office =  group.getOfficeId();
         String categoryId = group.getLocationCategory().getId();
 
-        connection(dsl, conn -> {
+        return connectionResult(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
-            dslContext.transaction((Configuration trx) -> {
+            return dslContext.transactionResult((Configuration trx) -> {
                 Configuration config = trx.dsl().configuration();
                 CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(config, categoryId,
                     group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
                     group.getSharedRefLocationId());
-                assignLocs(config, group, office);
+                return assignLocs(config, group, office, allowPartialAssignment);
             });
         });
     }
@@ -524,6 +536,13 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
         });
     }
 
+    public List<CwmsId> assignLocs(LocationGroup group, String office, boolean ignoreMissing) {
+        return connectionResult(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
+            return assignLocs(dslContext.configuration(), group, office, ignoreMissing);
+        });
+    }
+
     public void assignLocs(LocationGroup group, String office) {
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
@@ -536,8 +555,24 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @param config a DSL configuration to use for the operation
      * @param group the location group to assign locations to
      * @param office the office to use for the operation
+     * @return a list of assigned locations that did not exist when attempting to assign them.
+     *         Empty list if all locations were assigned.
      */
-    public void assignLocs(Configuration config, LocationGroup group, String office) {
+    public List<CwmsId> assignLocs(Configuration config, LocationGroup group, String office) {
+        return assignLocs(config, group, office, false);
+    }
+
+    /**
+     * Used when an appropriate context already exists to avoid opening a second connection.
+     * @param config a DSL configuration to use for the operation
+     * @param group the location group to assign locations to
+     * @param office the office to use for the operation
+     * @param ignoreMissing whether to fail when attempting to assign a location that does not exist.
+     * @return a list of assigned locations that did not exist when attempting to assign them.
+     *         Empty list if all locations were assigned.
+     */
+    public List<CwmsId> assignLocs(Configuration config, LocationGroup group, String office, boolean ignoreMissing) {
+        List<CwmsId> nonExistentLocs = new ArrayList<>();
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if (assignedLocations != null) {
             List<LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
@@ -553,7 +588,15 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                     .collect(toList());
             LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
             LocationCategory cat = group.getLocationCategory();
-            CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(config, cat.getId(), group.getId(), assignedLocs, office);
+            LOC_ALIAS_ARRAY3 missingLocs = usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE
+                .call_ASSIGN_LOC_GROUPS_SUPPORTS_MISSING(config, cat.getId(), group.getId(),
+                    assignedLocs, office, formatBool(ignoreMissing));
+            if (!missingLocs.isEmpty()) {
+                for (LOC_ALIAS_TYPE3 loc : missingLocs) {
+                    nonExistentLocs.add(CwmsId.buildCwmsId(office, loc.getLOCATION_ID()));
+                }
+            }
         }
+        return nonExistentLocs;
     }
 }

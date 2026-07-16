@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.GROUP_ID;
 import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
+import static cwms.cda.api.Controllers.IGNORE_MISSING;
 import static cwms.cda.api.Controllers.IGNORE_NULLS;
 import static cwms.cda.api.Controllers.INCLUDE_ASSIGNED;
 import static cwms.cda.api.Controllers.OFFICE;
@@ -57,6 +58,8 @@ import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
+import cwms.cda.data.dto.AssignedTimeSeries;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -71,7 +74,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -243,6 +248,8 @@ public class TimeSeriesGroupController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true"),
+            @OpenApiParam(name = IGNORE_MISSING, type = Boolean.class, description = "If true, do not fail when "
+                + "attempting to assign a time series that does not exist to the group"),
             @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
                         description = "Ignore null values in the request body.  Caution, if " + FAIL_IF_EXISTS
                                 + " is false and " + IGNORE_NULLS + " is false, then the create will proceed whether "
@@ -276,9 +283,26 @@ public class TimeSeriesGroupController implements CrudHandler {
 
             boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
-            dao.create(deserialize, failIfExists, ignoreNulls);
-            ctx.status(HttpServletResponse.SC_CREATED);
+            List<CwmsId> missingTimeSeries = dao.create(deserialize, failIfExists, ignoreNulls, ignoreMissing);
+            if (missingTimeSeries.isEmpty()) {
+                ctx.status(HttpServletResponse.SC_CREATED);
+            } else {
+                Map<String, String> detailsMap = new HashMap<>();
+                detailsMap.put("missing-timeseries", Formats.format(contentType, missingTimeSeries,
+                    AssignedTimeSeries.class));
+                if (ignoreMissing) {
+                    ctx.status(HttpCode.MULTI_STATUS);
+
+                } else {
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                    detailsMap.put("message",
+                        "One or more time series were not found and could not be assigned to the group");
+                }
+                ctx.json(detailsMap);
+            }
+
         }
     }
 
@@ -298,6 +322,8 @@ public class TimeSeriesGroupController implements CrudHandler {
             @OpenApiParam(name = REPLACE_ASSIGNED_TS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing time series before assigning new time series specified in the content body "
                 + "Default: false"),
+            @OpenApiParam(name = IGNORE_MISSING, type = Boolean.class, description = "If true, do not fail when "
+                + "time series to assign does not exist. Default is false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "office of the user making the request. This is the office that the timeseries, group, and category "
                 + "belong to. If the group and/or category belong to the CWMS office, "
@@ -331,8 +357,22 @@ public class TimeSeriesGroupController implements CrudHandler {
                 timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(),
                     group.getOfficeId(), office);
             }
-            timeSeriesGroupDao.assignTs(group, office);
-            ctx.status(HttpServletResponse.SC_OK);
+            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
+            List<CwmsId> missingTimeSeries = timeSeriesGroupDao.assignTs(group, office, ignoreMissing);
+            if (missingTimeSeries.isEmpty()) {
+                ctx.status(HttpServletResponse.SC_OK);
+            } else {
+                Map<String, String> detailsMap = new HashMap<>();
+                detailsMap.put("missing-timeseries", Formats.format(contentType, missingTimeSeries, CwmsId.class));
+                if (ignoreMissing) {
+                    ctx.status(HttpCode.MULTI_STATUS);
+                } else {
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                    detailsMap.put("message",
+                        "One or more time series were not found and could not be assigned to the group");
+                }
+                ctx.json(detailsMap);
+            }
         }
     }
 

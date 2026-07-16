@@ -54,7 +54,7 @@ jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "jooq-codegen" }
 cwms-db-jooq-codegen-legacy = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version = "24.12.04-2025.01.21" }
-cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version = "latest-dev_sha256_f1-oracle19c" }
+cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version = "latest-dev_sha256_e7740339fdf4-oracle19c" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
