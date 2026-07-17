@@ -59,7 +59,7 @@ Key Points
       - Introduced in `RFC 10008`, the `QUERY` HTTP method allows for significantly more complex queries without
         running into URL length restrictions or requiring `POST` usage. Unlike `POST`, the `QUERY` method is
         idempotent and cacheable, resulting in consistent behavior when a request is received once and when it
-        is received many times. Like `POST`, `QUERY` permits request data to be included in the body, reducing the
+        is received many times. Like `POST`, `QUERY` supports data provided in the request body, reducing the
         need for a lengthy assortment of query parameters.
 
 Existing catalog endpoints
@@ -67,7 +67,7 @@ Existing catalog endpoints
 
 .. list-table::
     :header-rows: 1
-    :widths: 20 25 20 35
+    :widths: 20 25 35
 
     * - Endpoint path
       - Controller
@@ -84,5 +84,5 @@ Decision Status
 References
 ==========
 
-- RFC 10008: [https://www.rfc-editor.org/info/rfc10008](https://www.rfc-editor.org/info/rfc10008)
+- RFC 10008: https://www.rfc-editor.org/info/rfc10008
 
