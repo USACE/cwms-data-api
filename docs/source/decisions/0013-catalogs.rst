@@ -53,6 +53,14 @@ Key Points
     * - Catalog endpoint count
       - Each data type shall have at most one catalog endpoint. The endpoint shall provide as much data as users might want.
       - Prevents inconsistency and confusion about the proper endpoint to use for desired data. Reduces maintenance burden.
+    * - Catalog endpoint HTTP method type
+      - Catalog endpoints currently support `GET all` requests. Support for `QUERY` requests shall be implemented for
+        improved functionality.
+      - Introduced in `RFC 10008`, the `QUERY` HTTP method allows for significantly more complex queries without
+        running into URL length restrictions or requiring `POST` usage. Unlike `POST`, the `QUERY` method is
+        idempotent and cacheable, resulting in consistent behavior when a request is received once and when it
+        is received many times. Like `POST`, `QUERY` permits request data to be included in the body, reducing the
+        need for a lengthy assortment of query parameters.
 
 Existing catalog endpoints
 ==========================
@@ -66,7 +74,7 @@ Existing catalog endpoints
       - Notes
     * - /catalog/{dataset}
       - CatalogController
-      - Currently supports TimeSeries and Location data types
+      - Currently supports TimeSeries and Location data types. Uses `GET all` HTTP method.
 
 Decision Status
 ===============
@@ -76,5 +84,5 @@ Decision Status
 References
 ==========
 
-
+- RFC 10008: [https://www.rfc-editor.org/info/rfc10008](https://www.rfc-editor.org/info/rfc10008)
 
