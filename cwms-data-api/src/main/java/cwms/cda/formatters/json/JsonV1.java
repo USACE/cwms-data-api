@@ -16,10 +16,12 @@ import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.BadRequestResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
@@ -38,10 +40,18 @@ public class JsonV1 implements OutputFormatter {
         this(OBJECT_MAPPER);
     }
 
+    /**
+     * Create a V1 instance using the project ObjectMapper.
+     * @param om ObjectMapper with its own settings.
+     */
     public JsonV1(ObjectMapper om) {
         this.om = om;
     }
 
+    /**
+     * Build an ObjectMapper with appropriate default settings for V1 JSON.
+     * @return ObjectMapper Instance.
+     */
     @NotNull
     public static ObjectMapper buildObjectMapper() {
         ObjectMapper retVal = new ObjectMapper();
@@ -55,6 +65,7 @@ public class JsonV1 implements OutputFormatter {
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
         retVal.registerModule(module);
 
         return retVal;
@@ -132,22 +143,9 @@ public class JsonV1 implements OutputFormatter {
             }
             throw new BadRequestResponse(
                     String.format("Format %s not implemented for data of class:%s",
-							getContentType(), klassName));
+                                  getContentType(), klassName));
         }
         return retVal;
-    }
-
-    private boolean isFormattableWith(Class<?> klass) {
-        FormattableWith[] formats = klass.getAnnotationsByType(FormattableWith.class);
-        for (FormattableWith format : formats) {
-            /*
-             * Compare against the actual formatter not the name
-             */
-            if (format.formatter().equals(JsonV1.class)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Object buildFormatting(List<? extends CwmsDTOBase> daoList) {
@@ -182,4 +180,16 @@ public class JsonV1 implements OutputFormatter {
         return retVal;
     }
 
+    private boolean isFormattableWith(Class<?> klass) {
+        FormattableWith[] formats = klass.getAnnotationsByType(FormattableWith.class);
+        for (FormattableWith format : formats) {
+            /*
+             * Compare against the actual formatter not the name
+             */
+            if (format.formatter().equals(JsonV1.class)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

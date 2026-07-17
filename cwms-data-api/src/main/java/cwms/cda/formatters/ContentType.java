@@ -5,6 +5,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Stores an instance of ContentType and it's parameters.
+ * Example <pre>application/json;q=1</pre> is different than <pre>application/json;q=2</pre>
+ */
 public class ContentType implements Comparable<ContentType> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String PARAM_DELIM = ";";
@@ -13,8 +17,13 @@ public class ContentType implements Comparable<ContentType> {
     private final String mediaType;
     private final Map<String, String> parameters;
 
-    private String charset = null;
+    private String instanceCharset = null;
 
+    /**
+     * Create a ContentType instance given the provide ContentType or Accept Header.
+     * The contructor will parse query parameters out of the provided string.
+     * @param contentTypeHeader provided ContentType or Accept header text
+     */
     public ContentType(String contentTypeHeader) {
         parameters = new LinkedHashMap<>();
         String[] parts = contentTypeHeader.split(PARAM_DELIM);
@@ -26,7 +35,7 @@ public class ContentType implements Comparable<ContentType> {
                     String key = keyVal[0].trim();
                     String value = keyVal[1].trim();
                     if (CHARSET.equalsIgnoreCase(key)) {
-                        charset = value;
+                        instanceCharset = value;
                     } else {
                         parameters.put(key, value);
                     }
@@ -43,17 +52,19 @@ public class ContentType implements Comparable<ContentType> {
         return new LinkedHashMap<>(parameters);
     }
 
-    public String getCharset() {
-        return charset;
+    public String getInstanceCharset() {
+        return instanceCharset;
     }
 
     /**
      * For the purposes of cwms-data-api content-type equals we only care about the following
-     * fields matching:
-     * 
+     * fields matching.
+     *
+     * <p>
      *  - the mimetype itself
      *  - the version parameter
-     * 
+     *
+     * <p>
      * For us everything else is informational or used indirectly
      */
     @Override
@@ -67,7 +78,7 @@ public class ContentType implements Comparable<ContentType> {
             return false;
         }
 
-        /** We loop through instead of using contains key. 
+        /* We loop through instead of using contains key.
          *  Content-type parameter names are not case sensitive.
          */
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
@@ -116,7 +127,7 @@ public class ContentType implements Comparable<ContentType> {
     /**
      * Used for quick comparisons where we don't further need the content type
      * so we can streamline the code a little.
-     *      
+     *
      * @param a first content type to check
      * @param b second content type to check
      * @return whether they are equivalent

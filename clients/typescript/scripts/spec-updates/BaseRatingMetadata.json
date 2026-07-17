@@ -1,0 +1,37 @@
+{
+  "BaseRatingMetadata": {
+    "type": "object",
+    "properties": {
+      "office-id": {
+        "type": "string"
+      },
+      "rating-spec-id": {
+        "type": "string"
+      },
+      "units-id": {
+        "type": "string"
+      },
+      "active": {
+        "type": "boolean"
+      },
+      "effective-date": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "create-date": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "transition-date": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "description": {
+        "type": "string"
+      },
+      "vertical-datum-info": {
+        "$ref": "#/components/schemas/vertical-datum-info"
+      }
+    }
+  }
+}

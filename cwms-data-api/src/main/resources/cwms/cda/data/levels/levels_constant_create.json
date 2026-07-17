@@ -1,0 +1,9 @@
+{
+  "constant-value": 10,
+  "level-units-id": "ft",
+  "level-date": "2008-12-03T10:15:30+01:00[UTC]",
+  "level-comment": "Lowest Point",
+  "interpolate-string": "F",
+  "location-level-id": "Sacramento.Elev.Inst.0.Bottom of Inlet",
+  "office-id": "LRL"
+}

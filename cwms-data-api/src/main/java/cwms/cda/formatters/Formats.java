@@ -24,11 +24,9 @@
 
 package cwms.cda.formatters;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
-
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import com.google.common.flogger.FluentLogger;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -96,13 +95,19 @@ public class Formats {
     }
 
 
-    private final Map<ContentType, Map<Class<? extends CwmsDTOBase>, OutputFormatter>> formatters = new LinkedHashMap<>();
+    private final Map<ContentType, Map<Class<? extends CwmsDTOBase>, OutputFormatter>> formatters =
+        new LinkedHashMap<>();
 
     private static final Formats formats = new Formats();
 
     private Formats() {
     }
 
+    /**
+     * Given the provided content type, get the appropriate legacy content-type.
+     * @param contentType given ContentType
+     * @return a previously configured contenttype value, or the value of {@link JSON_LEGACY}
+     */
     public static String getLegacyTypeFromContentType(ContentType contentType) {
         return typeMap.entrySet()
                       .stream()
@@ -172,8 +177,8 @@ public class Formats {
         }
     }
 
-    private <T extends CwmsDTOBase> List<T> parseContentListFromType(ContentType type, String content, Class<T> rootType)
-        throws FormattingException {
+    private <T extends CwmsDTOBase> List<T> parseContentListFromType(ContentType type, String content,
+        Class<T> rootType) throws FormattingException {
         OutputFormatter outputFormatter = getOutputFormatterInternal(type, rootType);
         if (outputFormatter != null) {
             List<T> retval = outputFormatter.parseContentList(content, rootType);
@@ -218,29 +223,78 @@ public class Formats {
         return outputFormatter;
     }
 
+    /**
+     * Retrieve the appropriate OutputFormatter for the given ContentType and DTO Class.
+     * @param ct ContentType desired
+     * @param klass CwmsDto
+     * @return Appropriate formatter for the given ContentType and klass
+     */
     public static OutputFormatter getOutputFormatter(ContentType ct, Class<? extends CwmsDTOBase> klass) {
-            return formats.getOutputFormatterInternal(ct, klass);
+        return formats.getOutputFormatterInternal(ct, klass);
     }
 
+    /**
+     * Retrieve the formatted output for the given ContentType and DTO Instance.
+     * @param type ContentType Desired
+     * @param toFormat Instance to format
+     * @return String containing text of the DTO in the appropriate format
+     * @throws FormattingException issues with Formatter lookup or formatting.
+     */
     public static String format(ContentType type, CwmsDTOBase toFormat) throws FormattingException {
         return formats.getFormatted(type, toFormat);
     }
 
-    public static String format(ContentType type, List<? extends CwmsDTOBase> toFormat, Class<?
-            extends CwmsDTOBase> rootType) throws FormattingException {
+    /**
+     * Retrieve the formatted output for the given ContentType and DTO Instances and a DTO Type.
+     * @param type content type desired
+     * @param toFormat list of objects to format
+     * @param rootType DTO type of the list members
+     * @return Formatted String
+     * @throws FormattingException if the list of objects could not be converted.
+     */
+    public static String format(ContentType type, List<? extends CwmsDTOBase> toFormat,
+            Class<? extends CwmsDTOBase> rootType) throws FormattingException {
         return formats.getFormatted(type, toFormat, rootType);
     }
 
+    /**
+     * Given a ContentType, text, and a given DTO type, parse the text and return an Object instance of the DTO type.
+     * @param <T> DTO Type
+     * @param type ContentType of the input
+     * @param content data to parase
+     * @param rootType expected DTO type
+     * @return an instance of that DTO with the provided data.
+     * @throws FormattingException any issues with lookup of parser or parsing.
+     */
     public static <T extends CwmsDTOBase> T parseContent(ContentType type, String content, Class<T> rootType)
             throws FormattingException {
         return formats.parseContentFromType(type, content, rootType);
     }
 
+    /**
+     * Given a ContentType, text, and a given DTO type, parse the text and return an Object instance of the DTO type.
+     * @param <T> DTO Type
+     * @param type ContentType of the input.
+     * @param inputStream source of data to parse.
+     * @param rootType expected DTO type.
+     * @return an instance of that DTO with the provided data.
+     * @throws FormattingException any issues with lookup of parser or parsing.
+     */
     public static <T extends CwmsDTOBase> T parseContent(ContentType type, InputStream inputStream, Class<T> rootType)
             throws FormattingException {
         return formats.parseContentFromType(type, inputStream, rootType);
     }
 
+    /**
+     * Given a ContentType, text, and a given DTO type, parse the text and return a list of Object instance of the DTO
+     * type.
+     * @param <T> DTO Type
+     * @param type ContentType of the input
+     * @param content data to parase
+     * @param rootType expected DTO type
+     * @return an instance of that DTO with the provided data.
+     * @throws FormattingException any issues with lookup of parser or parsing.
+     */
     public static <T extends CwmsDTOBase> List<T> parseContentList(ContentType type, String content, Class<T> rootType)
         throws FormattingException {
         return formats.parseContentListFromType(type, content, rootType);
@@ -258,6 +312,7 @@ public class Formats {
      *                   <code>FormattableWith</code> annotations.
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if neither header nor queryParam can be parsed into a supported content type
+     * @throws UnsupportedFormatException if preconditions aren't met or format is not supported.
      */
     public static ContentType parseHeaderAndQueryParm(String header, String queryParam, Class<? extends CwmsDTOBase> klass) {
         // If a query parameter is provided, it overrides the header.
@@ -284,7 +339,8 @@ public class Formats {
      * @return ContentType appropriate to the given selection.
      * @throws UnsupportedFormatException if there is no matching content type for the given class
      */
-    public static ContentType parseQueryOrHeaderParam(String headerParam, String queryParam, Class<? extends CwmsDTOBase> klass) {
+    public static ContentType parseQueryOrHeaderParam(String headerParam, String queryParam,
+        Class<? extends CwmsDTOBase> klass) {
         ContentType ct = null;
         if (!(queryParam == null || queryParam.isEmpty())) {
             ct = parseQueryParam(queryParam, klass);
@@ -294,27 +350,30 @@ public class Formats {
             ct = parseHeader(DEFAULT, klass);
         }
         if (ct == null) {
-            throw new UnsupportedFormatException("Content-Type " + (headerParam == null ? queryParam : headerParam) + " is not available.");
+            throw new UnsupportedFormatException("Content-Type " + (headerParam == null ? queryParam : headerParam)
+                + " is not available.");
         }
         return ct;
     }
 
-    public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass)
-    {
+    /**
+     * Given the ContentType provided in a queryParameter extract and convert to a ContentType issue.
+     * @param queryParam value of the "format" query parameter.
+     * @param klass type of DTO expected.
+     * @return instance of ContentType
+     */
+    public static ContentType parseQueryParam(String queryParam, Class<? extends CwmsDTOBase> klass) {
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.empty();
         if (klass != null) {
             aliasMap = ContentTypeAliasMap.forDtoClass(klass);
         }
 
         ContentType retVal = null;
-        if (queryParam != null && !queryParam.isEmpty())
-        {
+        if (queryParam != null && !queryParam.isEmpty()) {
             String val = typeMap.get(queryParam);
-            if (val != null)
-            {
+            if (val != null) {
                 retVal = aliasMap.getContentType(val);
-                if (retVal == null)
-                {
+                if (retVal == null) {
                     retVal = new ContentType(val);
                 }
             }
@@ -331,6 +390,7 @@ public class Formats {
      *               {@link cwms.cda.formatters.annotations.FormattableWith} annotations.
      * @return an appropriate standard mimetype for lookup
      * @throws FormattingException if the header can't be identified as a mimetype
+     * @throws UnsupportedFormatException if header is invalid or for a format that is not supported.
      */
     public static @NotNull ContentType parseHeader(@Nullable String header,
         @NotNull Class<? extends CwmsDTOBase> klass) {
@@ -338,7 +398,7 @@ public class Formats {
         ContentTypeAliasMap aliasMap = ContentTypeAliasMap.forDtoClass(klass);
         //Swap out null content type with */* for flexibility.
         //This routine will match DTO's when the DEFAULT alias specified by the format annotations.
-        if(header == null || header.trim().isEmpty()) {
+        if (header == null || header.trim().isEmpty()) {
             header = DEFAULT;
         }
         //TreeSet will sort based on prioritized content type
@@ -357,7 +417,7 @@ public class Formats {
                 //Only use the ContentType classes initialized in contentTypeList rather than
                 //the client headers itself
                 ContentType type = new ContentType(ct);
-                if(contentTypeList.contains(type)) {
+                if (contentTypeList.contains(type)) {
                     contentTypes.add(type);
                 }
             }
