@@ -29,6 +29,8 @@ package cwms.cda.data.dto.locationlevel;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,7 +97,8 @@ public abstract class LocationLevel extends CwmsDTO {
     @Schema(description = "Units the provided levels are in")
 
     private final String levelUnitsId;
-    @Schema(description = "The date/time at which this location level configuration takes effect.")
+    @Schema(description = "The date/time at which this location level configuration takes effect. "
+        + "Must be limited to minute accuracy.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
 
     private final Instant levelDate;
@@ -500,5 +503,9 @@ public abstract class LocationLevel extends CwmsDTO {
         validator.required(getOfficeId(), "office-id");
         validator.required(getLocationLevelId(), "location-level-id");
         validator.required(getLevelDate(), "level-date");
+    }
+
+    public static ZonedDateTime truncateDate(ZonedDateTime date) {
+        return date.truncatedTo(ChronoUnit.MINUTES);
     }
 }
