@@ -127,7 +127,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 db.connection(c -> {
                     MeasurementDao measDao = new MeasurementDao(getDslContext(c, OFFICE_ID));
                     try {
-                        measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null);
+                        measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null, null);
                     } catch (Exception e) {
                         LOGGER.atInfo().log("Failed to delete measurements for: " + measLoc + ". Measurement(s) likely already deleted");
                     }
@@ -170,7 +170,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body(IDENTIFIER, isEmptyString());
 
         String locationId = measurement.getLocationId();
-        String number = measurement.getNumber();
+        String number = measurement.getMeasurementId();
 
         // Retrieve the Measurement and assert that it exists
         given()
@@ -201,7 +201,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[0].party", equalTo(measurement.getParty()))
                 .body("[0].wm-comments", equalTo(measurement.getWmComments()))
                 .body("[0].instant", equalTo(measurement.getInstant().toString()))
-                .body("[0].number", equalTo(measurement.getNumber()))
+                .body("[0].number", equalTo(measurement.getMeasurementId()))
                 .body("[0].id.name", equalTo(measurement.getLocationId()))
                 .body("[0].id.office-id", equalTo(measurement.getOfficeId()))
                 .body("[0].streamflow-measurement.gage-height", equalTo(measurement.getStreamflowMeasurement().getGageHeight().floatValue()))
@@ -328,7 +328,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[0].party", equalTo(measurement1.getParty()))
                 .body("[0].wm-comments", equalTo(measurement1.getWmComments()))
                 .body("[0].instant", equalTo(measurement1.getInstant().toString()))
-                .body("[0].number", equalTo(measurement1.getNumber()))
+                .body("[0].number", equalTo(measurement1.getMeasurementId()))
                 .body("[0].id.name", equalTo(measurement1.getLocationId()))
                 .body("[0].id.office-id", equalTo(measurement1.getOfficeId()))
                 .body("[0].streamflow-measurement.gage-height", equalTo(measurement1.getStreamflowMeasurement().getGageHeight().floatValue()))
@@ -367,7 +367,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[1].party", equalTo(measurement2.getParty()))
                 .body("[1].wm-comments", equalTo(measurement2.getWmComments()))
                 .body("[1].instant", equalTo(measurement2.getInstant().toString()))
-                .body("[1].number", equalTo(measurement2.getNumber()))
+                .body("[1].number", equalTo(measurement2.getMeasurementId()))
                 .body("[1].id.name", equalTo(measurement2.getLocationId()))
                 .body("[1].id.office-id", equalTo(measurement2.getOfficeId()))
                 .body("[1].streamflow-measurement.gage-height", equalTo(measurement2.getStreamflowMeasurement().getGageHeight().floatValue()))
@@ -468,6 +468,177 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.JSONV2})
+    @MinimumSchema(LATEST_SCHEMA)
+    void test_measurement_pagination(String format) throws Exception {
+        String testLoc = "PaginationLoc";
+        createAndStoreTestStream(testLoc);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Store 5 measurements
+        List<Measurement> measurements = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            measurements.add(new Measurement.Builder()
+                    .withId(new CwmsId.Builder()
+                            .withName(testLoc)
+                            .withOfficeId(OFFICE_ID)
+                            .build())
+                    .withMeasurementId(String.valueOf(i))
+                    .withInstant(Instant.parse("2024-01-0" + i + "T00:00:00Z"))
+                    .withHeightUnit("ft")
+                    .withFlowUnit("cfs")
+                    .withTempUnit("F")
+                    .withVelocityUnit("ft/s")
+                    .withAreaUnit("ft2")
+                    .withAgency("USGS")
+                    .withParty("Party")
+                    .withUsed(true)
+                    .withWmComments("Comments")
+                    .build());
+        }
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSONV1)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .body(Formats.format(Formats.parseHeader(Formats.JSONV1, Measurement.class), measurements, Measurement.class))
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        boolean isV2 = format.equals(Formats.JSONV2);
+        String measurementsPath = isV2 ? "measurements" : "";
+        String nextPagePath = isV2 ? "next-page" : "[1].next-page";
+        String numberField = isV2 ? "measurement-id" : "number";
+
+        // Retrieve first page with pageSize=2
+        String cursor = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, OFFICE_ID)
+                .queryParam(Controllers.ID_MASK, testLoc)
+                .queryParam(Controllers.PAGE_SIZE, 2)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "size()", is(2))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "[0]." + numberField, is("1"))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "[1]." + numberField, is("2"))
+                .extract().path(nextPagePath);
+
+        // Retrieve second page
+        String nextCursor = given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, OFFICE_ID)
+                .queryParam(Controllers.ID_MASK, testLoc)
+                .queryParam(Controllers.PAGE, cursor)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "size()", is(2))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "[0]." + numberField, is("3"))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "[1]." + numberField, is("4"))
+                .extract().path(nextPagePath);
+
+        // Retrieve third page
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, OFFICE_ID)
+                .queryParam(Controllers.ID_MASK, testLoc)
+                .queryParam(Controllers.PAGE, nextCursor)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "size()", is(1))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "[0]." + numberField, is("5"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.JSONV2})
+    @MinimumSchema(LATEST_SCHEMA)
+    void test_measurement_id_filter(String format) throws Exception {
+        String testLoc = "IdFilterLoc";
+        createAndStoreTestStream(testLoc);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Store 2 measurements
+        List<Measurement> measurements = new ArrayList<>();
+        measurements.add(new Measurement.Builder()
+                .withId(new CwmsId.Builder()
+                        .withName(testLoc)
+                        .withOfficeId(OFFICE_ID)
+                        .build())
+                .withMeasurementId("100")
+                .withInstant(Instant.parse("2024-01-01T00:00:00Z"))
+                .build());
+        measurements.add(new Measurement.Builder()
+                .withId(new CwmsId.Builder()
+                        .withName(testLoc)
+                        .withOfficeId(OFFICE_ID)
+                        .build())
+                .withMeasurementId("200")
+                .withInstant(Instant.parse("2024-01-02T00:00:00Z"))
+                .build());
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(format)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .body(Formats.format(Formats.parseHeader(format, Measurement.class), measurements, Measurement.class))
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Filter by measurement ID (number in this case, although procedure supports UUIDs too)
+        boolean isV2 = format.equals(Formats.JSONV2);
+        String measurementsPath = isV2 ? "measurements" : "";
+        String numberField = isV2 ? "measurement-id" : "number";
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE, OFFICE_ID)
+                .queryParam(Controllers.ID_MASK, testLoc)
+                .queryParam(Controllers.MEASUREMENT_ID, "100")
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "size()", is(1))
+                .body(measurementsPath + (measurementsPath.isEmpty() ? "" : ".") + "[0]." + numberField, is("100"));
     }
 
 }

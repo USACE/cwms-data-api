@@ -160,6 +160,7 @@ public final class Controllers {
     public static final String INCLUDE_ALIASES = "include-aliases";
     public static final String MIN_NUMBER = "min-number";
     public static final String MAX_NUMBER = "max-number";
+    public static final String MEASUREMENT_ID = "measurement-id";
     public static final String MIN_HEIGHT = "min-height";
     public static final String MAX_HEIGHT = "max-height";
     public static final String MIN_FLOW = "min-flow";

@@ -1,7 +1,7 @@
 [versions]
 jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
-jooq-codegen = "26.02.17-RC01-oracle19c"
+jooq-codegen = "latest-dev_sha256_e7740339fdf4-oracle19c"
 jooq = "3.18.7-jdk11"
 slf4j = "2.0.17"
 hec-monolith = "3.3.20"

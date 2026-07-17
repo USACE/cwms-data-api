@@ -55,8 +55,8 @@ public final class Measurement extends CwmsDTOBase {
     private final Instant instant;
     @JsonProperty(required = true)
     private final CwmsId id;
-    @JsonProperty(required = true)
-    private final String number;
+    @JsonProperty(value = "number", required = true)
+    private final String measurementId;
     private final StreamflowMeasurement streamflowMeasurement;
     private final SupplementalStreamflowMeasurement supplementalStreamflowMeasurement;
     private final UsgsMeasurement usgsMeasurement;
@@ -75,7 +75,7 @@ public final class Measurement extends CwmsDTOBase {
         this.supplementalStreamflowMeasurement = builder.supplementalStreamflowMeasurement;
         this.usgsMeasurement = builder.usgsMeasurement;
         this.id = builder.id;
-        this.number = builder.number;
+        this.measurementId = builder.measurementId;
         this.instant = builder.instant;
     }
 
@@ -134,8 +134,8 @@ public final class Measurement extends CwmsDTOBase {
         return instant;
     }
 
-    public String getNumber() {
-        return number;
+    public String getMeasurementId() {
+        return measurementId;
     }
 
     public StreamflowMeasurement getStreamflowMeasurement() {
@@ -164,7 +164,7 @@ public final class Measurement extends CwmsDTOBase {
         private SupplementalStreamflowMeasurement supplementalStreamflowMeasurement;
         private UsgsMeasurement usgsMeasurement;
         private Instant instant;
-        private String number;
+        private String measurementId;
         private CwmsId id;
 
         public Builder withHeightUnit(String heightUnit) {
@@ -232,8 +232,8 @@ public final class Measurement extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withNumber(String number) {
-            this.number = number;
+        public Builder withMeasurementId(String measurementId) {
+            this.measurementId = measurementId;
             return this;
         }
 

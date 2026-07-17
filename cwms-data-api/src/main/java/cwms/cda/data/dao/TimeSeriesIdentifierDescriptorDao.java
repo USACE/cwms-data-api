@@ -126,7 +126,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         } else {
             Table<?> innerTable = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.as("alias_table");
             Field<String> tsId = innerTable.field("CWMS_TS_ID", String.class);
-            Field<BigDecimal> innerTsCode = innerTable.field("TS_CODE", BigDecimal.class);
+            Field<Long> innerTsCode = innerTable.field("TS_CODE", Long.class);
             Field<String> aliasedItem = innerTable.field("ALIASED_ITEM", String.class);
             retval = dsl
                 .select(AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.DB_OFFICE_ID,
@@ -226,7 +226,7 @@ public class TimeSeriesIdentifierDescriptorDao extends JooqDao<TimeSeriesIdentif
         AV_CWMS_TS_ID2 view = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
         Table<?> innerTable = AV_CWMS_TS_ID2.AV_CWMS_TS_ID2.as("alias_table");
             Field<String> tsId = innerTable.field("CWMS_TS_ID", String.class);
-            Field<BigDecimal> innerTsCode = innerTable.field("TS_CODE", BigDecimal.class);
+            Field<Long> innerTsCode = innerTable.field("TS_CODE", Long.class);
             Field<String> aliasedItem = innerTable.field("ALIASED_ITEM", String.class);
         return dsl
                 .select(view.DB_OFFICE_ID,

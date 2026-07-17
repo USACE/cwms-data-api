@@ -99,7 +99,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas)
                 .withUsgsMeasurement(usgsMeas)
@@ -115,7 +115,7 @@ final class MeasurementTest {
                 () -> assertEquals("Survey Party", item.getParty(), "Party"),
                 () -> assertEquals("Measurement made during normal flow conditions.", item.getWmComments(), "Comments"),
                 () -> assertNotNull(item.getInstant(), "Instant"),
-                () -> assertEquals("123456", item.getNumber(), "Measurement number"),
+                () -> assertEquals("123456", item.getMeasurementId(), "Measurement number"),
                 () -> DTOMatch.assertMatch(cwmsId, item.getId()),
                 () -> DTOMatch.assertMatch(sfm, item.getStreamflowMeasurement()),
                 () -> DTOMatch.assertMatch(supplementalStreamflowMeas, item.getSupplementalStreamflowMeasurement()),
@@ -129,7 +129,7 @@ final class MeasurementTest {
             Measurement item = new Measurement.Builder()
                     .withHeightUnit("ft")
                     .withFlowUnit("cfs")
-                    .withNumber("123456")
+                    .withMeasurementId("123456")
                     .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
                     .build();
 
@@ -202,7 +202,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas)
                 .withUsgsMeasurement(usgsMeas)
@@ -269,7 +269,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas)
                 .withUsgsMeasurement(usgsMeas)
@@ -338,7 +338,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm1)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas1)
                 .withUsgsMeasurement(usgsMeas1)
@@ -397,7 +397,7 @@ final class MeasurementTest {
                 .withParty("Second Survey Party")
                 .withWmComments("Measurement made after recent rainfall.")
                 .withInstant(Instant.parse("2024-09-17T12:00:00Z"))
-                .withNumber("654321")
+                .withMeasurementId("654321")
                 .withStreamflowMeasurement(sfm2)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas2)
                 .withUsgsMeasurement(usgsMeas2)
@@ -471,7 +471,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm1)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas1)
                 .withUsgsMeasurement(usgsMeas1)
@@ -530,7 +530,7 @@ final class MeasurementTest {
                 .withParty("Second Survey Party")
                 .withWmComments("Measurement made after recent rainfall.")
                 .withInstant(Instant.parse("2024-09-17T12:00:00Z"))
-                .withNumber("654321")
+                .withMeasurementId("654321")
                 .withStreamflowMeasurement(sfm2)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas2)
                 .withUsgsMeasurement(usgsMeas2)

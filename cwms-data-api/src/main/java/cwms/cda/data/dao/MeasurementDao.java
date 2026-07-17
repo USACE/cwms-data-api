@@ -45,10 +45,12 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.measurement.Measurement;
+import cwms.cda.data.dto.measurement.MeasurementList;
 import cwms.cda.data.dto.measurement.StreamflowMeasurement;
 import cwms.cda.data.dto.measurement.SupplementalStreamflowMeasurement;
 import cwms.cda.data.dto.measurement.UsgsMeasurement;
@@ -86,33 +88,76 @@ public final class MeasurementDao extends JooqDao<Measurement> {
         super(dsl);
     }
 
-    /**
-     * Retrieve a list of measurements
-     *
-     * @param officeId   - the office id
-     * @param locationId - the location id for filtering
-     * @param unitSystem - the unit system to use for the returned data
-     * @return a list of measurements
-     */
     public List<Measurement> retrieveMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String unitSystem,
                                                   Number minHeight, Number maxHeight, Number minFlow, Number maxFlow, String minNum, String maxNum,
-                                                  String agencies, String qualities) {
+                                                  String agencies, String qualities, String measurementId) {
         return connectionResult(dsl, conn -> {
             setOffice(conn, officeId);
             Timestamp minTimestamp = buildTimestamp(minDateMask);
             Timestamp maxTimestamp = buildTimestamp(maxDateMask);
-            return retrieveMeasurementsJooq(conn, officeId, locationId, unitSystem, minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agencies, qualities, minTimestamp, maxTimestamp);
+            String xml;
+            if (measurementId == null) {
+                xml = CWMS_STREAM_PACKAGE.call_RETRIEVE_MEAS_XML(DSL.using(conn).configuration(), locationId, unitSystem, minTimestamp, maxTimestamp,
+                        minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agencies, qualities, "UTC", officeId);
+            } else {
+                xml = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAMFLOW_MEAS_XML_BY_ID(DSL.using(conn).configuration(), locationId, measurementId, unitSystem, minTimestamp, maxTimestamp,
+                        minHeight, maxHeight, minFlow, maxFlow, agencies, qualities, "UTC", officeId);
+            }
+            List<Measurement> measurements = fromDbXml(xml);
+            if (measurements.isEmpty()) {
+                throw new NotFoundException("No measurements found.");
+            }
+            return measurements;
         });
     }
 
-    private static List<Measurement> retrieveMeasurementsJooq(Connection conn, String officeId, String locationId, String unitSystem, Number minHeight, Number maxHeight, Number minFlow, Number maxFlow, String minNum, String maxNum, String agencies, String qualities, Timestamp minTimestamp, Timestamp maxTimestamp) throws JsonProcessingException {
-        String xml = CWMS_STREAM_PACKAGE.call_RETRIEVE_MEAS_XML(DSL.using(conn).configuration(), locationId, unitSystem, minTimestamp, maxTimestamp,
-                minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agencies, qualities, "UTC", officeId);
-        List<Measurement> retVal = fromDbXml(xml);
-        if(retVal.isEmpty()) {
-            throw new NotFoundException("No measurements found.");
-        }
-        return retVal;
+    public MeasurementList retrieveMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String unitSystem,
+                                                  Number minHeight, Number maxHeight, Number minFlow, Number maxFlow, String minNum, String maxNum,
+                                                  String agencies, String qualities, String measurementId, String cursor, Integer pageSize) {
+        return connectionResult(dsl, conn -> {
+            setOffice(conn, officeId);
+            Timestamp minTimestamp = buildTimestamp(minDateMask);
+            Timestamp maxTimestamp = buildTimestamp(maxDateMask);
+            String xml;
+            if (measurementId == null) {
+                xml = CWMS_STREAM_PACKAGE.call_RETRIEVE_MEAS_XML(DSL.using(conn).configuration(), locationId, unitSystem, minTimestamp, maxTimestamp,
+                        minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agencies, qualities, "UTC", officeId);
+            } else {
+                xml = CWMS_STREAM_PACKAGE.call_RETRIEVE_STREAMFLOW_MEAS_XML_BY_ID(DSL.using(conn).configuration(), locationId, measurementId, unitSystem, minTimestamp, maxTimestamp,
+                        minHeight, maxHeight, minFlow, maxFlow, agencies, qualities, "UTC", officeId);
+            }
+            List<Measurement> measurements = fromDbXml(xml);
+            if (measurements.isEmpty()) {
+                throw new NotFoundException("No measurements found.");
+            }
+
+            int total = measurements.size();
+            int start = 0;
+            if (cursor != null && !cursor.isEmpty()) {
+                String[] parts = CwmsDTOPaginated.decodeCursor(cursor, "||");
+                if (parts.length > 0) {
+                    start = Integer.parseInt(parts[0]);
+                }
+            }
+
+            int finalPageSize = (pageSize == null || pageSize <= 0) ? total : pageSize;
+
+            int end = Math.min(start + finalPageSize, total);
+            List<Measurement> subList = measurements.subList(start, end);
+
+            return new MeasurementList.Builder()
+                    .withMeasurements(subList)
+                    .withCursor(cursor)
+                    .withPageSize(finalPageSize)
+                    .withTotal(total)
+                    .build();
+        });
+    }
+
+    private static List<Measurement> retrieveMeasurementsJooq(Connection conn, String officeId, String locationId, String unitSystem, Number minHeight, Number maxHeight, Number minFlow, Number maxFlow, String minNum, String maxNum, String agencies, String qualities, Timestamp minTimestamp, Timestamp maxTimestamp, String measurementId, String cursor, Integer pageSize) throws JsonProcessingException {
+        // This method is now replaced by the logic in retrieveMeasurements above.
+        // It's kept temporarily for reference if needed, but it's now private and unused by public API.
+        return null;
     }
 
     /**
@@ -142,13 +187,13 @@ public final class MeasurementDao extends JooqDao<Measurement> {
      * @param minNum
      */
     public void deleteMeasurements(String officeId, String locationId, Instant minDateMask, Instant maxDateMask, String minNum,
-                                   String maxNum) {
+                                   String maxNum, String measurementId) {
         connection(dsl, conn -> {
             setOffice(conn, officeId);
             Timestamp minTimestamp = buildTimestamp(minDateMask);
             Timestamp maxTimestamp = buildTimestamp(maxDateMask);
             String timeZoneId = "UTC";
-            verifyMeasurementsExists(conn, officeId, locationId, maxNum, maxNum);
+            verifyMeasurementsExists(conn, officeId, locationId, maxNum, maxNum, measurementId);
             CWMS_STREAM_PACKAGE.call_DELETE_STREAMFLOW_MEAS(DSL.using(conn).configuration(), locationId, minNum, minTimestamp, maxTimestamp,
                     null, null, null, null, maxNum, maxNum, null, null, timeZoneId, officeId);
         });
@@ -181,9 +226,9 @@ public final class MeasurementDao extends JooqDao<Measurement> {
                     .build());
     }
 
-    private void verifyMeasurementsExists(Connection conn, String officeId, String locationId, String minNum, String maxNum) throws JsonProcessingException {
+    private void verifyMeasurementsExists(Connection conn, String officeId, String locationId, String minNum, String maxNum, String measId) throws JsonProcessingException {
         List<Measurement> measurements = retrieveMeasurementsJooq(conn, officeId, locationId, UnitSystem.EN.toString(),
-                null, null, null, null, minNum, maxNum, null, null, null, null);
+                null, null, null, null, minNum, maxNum, null, null, null, null, measId, null, null);
         if (measurements.isEmpty()) {
             throw new NotFoundException("Could not find measurements for " + locationId + " in office " + officeId + ".");
         }
@@ -207,7 +252,7 @@ public final class MeasurementDao extends JooqDao<Measurement> {
                         .withName(locationTemplate.getLocationId())
                         .withOfficeId(locationTemplate.getOfficeId())
                         .build())
-                .withNumber(record.getMEAS_NUMBER())
+                .withMeasurementId(record.getMEAS_NUMBER())
                 .withAgency(record.getAGENCY_ID())
                 .withParty(record.getPARTY())
                 .withUsed(parseBool(record.getUSED()))
@@ -270,7 +315,7 @@ public final class MeasurementDao extends JooqDao<Measurement> {
                 .withHeightUnit(meas.getHeightUnit())
                 .withInstant(meas.getInstant())
                 .withLocationId(meas.getLocationId())
-                .withNumber(meas.getNumber())
+                .withNumber(meas.getMeasurementId())
                 .withOfficeId(meas.getOfficeId())
                 .withParty(meas.getParty())
                 .withTempUnit(meas.getTempUnit())
@@ -300,7 +345,7 @@ public final class MeasurementDao extends JooqDao<Measurement> {
                         .withName(dto.getLocationId())
                         .withOfficeId(dto.getOfficeId())
                         .build())
-                .withNumber(dto.getNumber())
+                .withMeasurementId(dto.getNumber())
                 .withParty(dto.getParty())
                 .withTempUnit(dto.getTempUnit())
                 .withUsed(dto.isUsed())

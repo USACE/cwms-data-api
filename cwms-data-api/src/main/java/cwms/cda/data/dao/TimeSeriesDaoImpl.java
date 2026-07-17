@@ -246,11 +246,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             throw new NotFoundException("Could not find time series for identifier: " + name);
         }
 
-        BigDecimal tsCode = tsRecord.get(AV_CWMS_TS_ID2.TS_CODE);
+        Long tsCode = tsRecord.get(AV_CWMS_TS_ID2.TS_CODE);
         String officeId = tsRecord.get(AV_CWMS_TS_ID2.DB_OFFICE_ID);
         String tsId = tsRecord.get(AV_CWMS_TS_ID2.CWMS_TS_ID);
 
-        Condition extentsCondition = AV_TS_EXTENTS_UTC.TS_CODE.coerce(BigDecimal.class).eq(tsCode);
+        Condition extentsCondition = AV_TS_EXTENTS_UTC.TS_CODE.coerce(Long.class).eq(tsCode);
         if (begin != null) {
             extentsCondition = extentsCondition.and(AV_TS_EXTENTS_UTC.VERSION_TIME.ge(Timestamp.from(begin)));
         }
@@ -687,7 +687,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                 AV_CWMS_TS_ID2.DB_OFFICE_ID.eq(valid.field("office_id",
                                                 String.class))
                                         .and(AV_CWMS_TS_ID2.TS_CODE.eq(valid.field("tscode",
-                                                BigDecimal.class)))
+                                                Long.class)))
                                         .and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull())
                         );
 
@@ -1045,7 +1045,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         .from(valid)
                         .leftOuterJoin(tsIdView)
                         .on(tsIdView.DB_OFFICE_ID.eq(valid.field("office_id", String.class))
-                                .and(tsIdView.TS_CODE.eq(valid.field("tscode", BigDecimal.class))));
+                                .and(tsIdView.TS_CODE.eq(valid.field("tscode", Long.class))));
 
         logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
@@ -1620,7 +1620,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Condition> whereConditions = buildWhereConditions(params);
         List<Condition> pagingConditions = buildPagingConditions(cwmsTsIdFields, cursorOffice, cursorTsId);
         CommonTableExpression<?> limiter = buildWithClause(cwmsTsIdFields, params, whereConditions, pagingConditions, pageSize, false);
-        Field<BigDecimal> limiterCode = limiter.field(cwmsTsIdFields.getTsCode());
+        Field<Long> limiterCode = limiter.field(cwmsTsIdFields.getTsCode());
         SelectOnConditionStep<?> tmpQuery = dsl.with(limiter)
                                         .select(pageEntryFields)
                                         .from(limiter)
@@ -2086,7 +2086,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
             // helper subquery for SELECT ts_code FROM base_ids
-            Select<Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
+            Select<Record1<Long>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
                     .from(baseIds);
 
             // references to appropriate year tables, current year and past year
@@ -2096,12 +2096,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             Select<Record> prevYearSelect = select(asterisk())
                     .from(AT_TSV_PREV_YEAR_TABLE)
                     .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                    .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+                    .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), Long.class).in(tsCodeSubquery));
 
             Select<Record> currYearSelect = select(asterisk())
                     .from(AT_TSV_CURR_YEAR_TABLE)
                     .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                    .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+                    .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), Long.class).in(tsCodeSubquery));
 
             // union tables if start and end date are not in the same year
             Select<Record> combinedSelect = (year1 == year2)
@@ -2237,7 +2237,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
         // helper subquery for SELECT ts_code FROM base_ids
-        Select<Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
+        Select<Record1<Long>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
                 .from(baseIds);
 
         // references to appropriate year tables, current year and past year
@@ -2247,12 +2247,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Select<Record> prevYearSelect = select(asterisk())
                 .from(AT_TSV_PREV_YEAR_TABLE)
                 .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+                .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), Long.class).in(tsCodeSubquery));
 
         Select<Record> currYearSelect = select(asterisk())
                 .from(AT_TSV_CURR_YEAR_TABLE)
                 .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
-                .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
+                .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), Long.class).in(tsCodeSubquery));
 
         // union tables if start and end date are not in the same year
         Select<Record> combinedSelect = (year1 == year2)
@@ -2291,7 +2291,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 )
                         .from(tsvLimited)
                         .join(baseIds).on(field(name(baseIds.getName(), TS_CODE), BigDecimal.class).equal(tsvLimitedTsCode))
-                        .join(AV_CWMS_TS_ID2).on(field(name(baseIds.getName(), TS_CODE), BigDecimal.class).equal(AV_CWMS_TS_ID2.TS_CODE))
+                        .join(AV_CWMS_TS_ID2).on(field(name(baseIds.getName(), TS_CODE), Long.class).equal(AV_CWMS_TS_ID2.TS_CODE))
                         .join(AT_TS_EXTENTS_TABLE).on(
                                 AT_TS_EXTENTS_TS_CODE.equal(tsvLimitedTsCode)
                                         .and(AT_TS_EXTENTS_VERSION_TIME
@@ -2477,7 +2477,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                       formatBool(createAsLrts));
     }
 
-    protected BigDecimal retrieveTsCode(String tsId) {
+    protected Long retrieveTsCode(String tsId) {
 
         return dsl.select(AV_CWMS_TS_ID2.TS_CODE)
                 .from(AV_CWMS_TS_ID2)
@@ -2679,7 +2679,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     private interface FieldMapping {
-        Field<BigDecimal> getTsCode();
+        Field<Long> getTsCode();
         Field<BigDecimal> getLocationCode();
         Field<String> getDbOfficeId();
         Field<String> getCwmsTsId();
@@ -2693,7 +2693,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private static class CwmsTsIdFieldMapping implements FieldMapping {
         @Override
-        public Field<BigDecimal> getTsCode() {
+        public Field<Long> getTsCode() {
             return AV_CWMS_TS_ID.AV_CWMS_TS_ID.TS_CODE;
         }
 
@@ -2745,7 +2745,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     private static class CwmsTsId2FieldMapping implements FieldMapping {
         @Override
-        public Field<BigDecimal> getTsCode() {
+        public Field<Long> getTsCode() {
             return AV_CWMS_TS_ID2.TS_CODE;
         }
 
