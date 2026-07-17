@@ -60,13 +60,7 @@ services:
         condition: service_healthy
       minio-setup:
         condition: service_completed_successfully
-    image: cwms-rest-api:local-dev
-    build:
-      target: api
-      context: .
-      dockerfile: Dockerfile
-    entrypoint: ["/api_entry.sh"]
-    command: ["/usr/local/tomcat/bin/catalina.sh", "run"]
+    image: ${CWMS_DATA_API_IMAGE:-ghcr.io/usace/cwms-data-api:${CWMS_DATA_API_VERSION:-develop-nightly}}
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
@@ -87,8 +81,8 @@ services:
       - cwms.dataapi.access.provider=MultipleAccessManager
       - cwms.dataapi.access.providers=KeyAccessManager,OpenID
       - cwms.dataapi.access.openid.create_users=true
-      - cwms.dataapi.access.openid.wellKnownUrl=http://localhost:${APP_PORT:-8081}/auth/realms/cwms/.well-known/openid-configuration      
-      - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
+      - cwms.dataapi.access.openid.wellKnownUrl=http://localhost:${APP_PORT:-8081}/auth/realms/cwms/.well-known/openid-configuration
+      - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
       - cwms.dataapi.access.openid.clientId=cwms
       # values are not actually used in the local keycloak, however it does fail and leaves them in place for various testing.
       - cwms.dataapi.access.openid.idpHint=federation-eams,login.gov
@@ -121,20 +115,17 @@ services:
       timeout: 1s
       retries: 100
       start_period: 2s
-    ports:
-      - ${AUTH_PORT:-7100}:${AUTH_PORT:-7100}
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
       - KC_HEALTH_ENABLED=true
       - KC_FEATURES=admin-fine-grained-authz
-      - KC_HTTP_PORT=${AUTH_PORT:-7100}
-      - KEYCLOAK_FRONTEND_URL=http://localhost:${AUTH_PORT:-7100}
+      - KC_HTTP_PORT=${APP_PORT:-8081}
+      - KEYCLOAK_FRONTEND_URL=http://localhost:${APP_PORT:-8081}
       - KC_HOSTNAME_STRICT=false
       - KC_PROXY=none
       - KC_HTTP_ENABLED=true
       - KC_HTTP_RELATIVE_PATH=/auth
-      
     volumes:
       - ./compose_files/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
       - ./compose_files/keycloak/healthcheck.sh:/healthcheck.sh:ro
@@ -142,7 +133,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth.rule=PathPrefix(`/auth`)"
       - "traefik.http.routers.auth.entryPoints=web"
-      - "traefik.http.services.auth.loadbalancer.server.port=${AUTH_PORT:-7100}"
+      - "traefik.http.services.auth.loadbalancer.server.port=${APP_PORT:-8081}"
     depends_on:
       traefik:
         condition: service_healthy
