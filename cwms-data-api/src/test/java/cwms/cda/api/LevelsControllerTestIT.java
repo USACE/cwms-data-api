@@ -2095,6 +2095,42 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("constant-value", equalTo(8675.309f));
     }
 
+    @Test
+    void testStoreTimeRestrictedLevel() throws Exception {
+        String locName = "restrictedLoc123";
+        createLocation(locName, true, OFFICE);
+        String levelId = String.format("%s.Elev.Ave.1Day.Regulating", locName);
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:12Z"), ZoneId.of("UTC"));
+        ConstantLocationLevel level = new ConstantLocationLevel.Builder(levelId, time.toInstant())
+            .withOfficeId(OFFICE)
+            .withLevelUnitsId("ft")
+            .withConstantValue(8675.309)
+            .withExpirationDate(time.plusYears(50).toInstant())
+            .build();
+
+        String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("details.message", equalTo("Level effective date cannot have seconds"))
+            .body("source", equalTo("User Input"))
+            .body(MESSAGE, equalTo("Bad Request"));
+    }
+
     enum GetAllTestLegacy {
         JSON(Formats.JSON_LEGACY, Formats.JSON),
         XML(Formats.XML_LEGACY, Formats.XML),
