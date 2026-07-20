@@ -124,7 +124,7 @@ public class LevelsController implements CrudHandler {
             LocationLevel level = deserializeLocationLevel(ctx);
             level.validate();
 
-            if (!level.getLevelDate().truncatedTo(ChronoUnit.MINUTES).equals(level.getLevelDate())) {
+            if (!LocationLevel.truncateDate(level.getLevelDate()).equals(level.getLevelDate())) {
                 Map<String, String> errorDetails = new HashMap<>();
                 errorDetails.put("message", "Level effective date cannot have seconds");
                 throw new BadRequestResponse("", errorDetails);
