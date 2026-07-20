@@ -91,9 +91,9 @@ import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesFilteredController;
 import cwms.cda.api.TimeSeriesGroupController;
-import cwms.cda.api.TimeSeriesVersionsController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
+import cwms.cda.api.TimeSeriesVersionsController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.TurbineChangesDeleteController;
 import cwms.cda.api.TurbineChangesGetController;
@@ -473,6 +473,7 @@ public class ApiServlet extends HttpServlet {
 
         VerticalDatumController vdiController = new VerticalDatumController(metrics);
         String vdiPath = format("/location/{%s}/vertical-datum", Controllers.LOCATION_ID);
+        get("/location/vertical-datum", vdiController::getAll);
         get(vdiPath, ctx -> vdiController.getOne(ctx, ctx.pathParam(Controllers.LOCATION_ID)));
         addCacheControl(vdiPath, 5, TimeUnit.MINUTES);
         post(vdiPath, vdiController::create, requiredRoles);

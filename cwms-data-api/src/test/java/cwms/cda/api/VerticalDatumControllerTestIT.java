@@ -35,6 +35,7 @@ import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 
 import org.junit.jupiter.api.AfterAll;
@@ -249,6 +250,97 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
 
     @MethodSource("provideFormats")
     @ParameterizedTest
+    void test_vertical_datum_getAll(ContentType contentType) {
+        // Build a VerticalDatumInfo payload
+        VerticalDatumInfo.Offset[] offsets = new VerticalDatumInfo.Offset[] {
+            new VerticalDatumInfo.Offset(true, "NAVD-88", -0.5)
+        };
+        VerticalDatumInfo vdi = new VerticalDatumInfo.Builder()
+            .withOffice(OFFICE_ID)
+            .withLocation(TEST_LOCATION)
+            .withUnit("m")
+            .withNativeDatum("NGVD-29")
+            .withElevation(100.0)
+            .withOffsets(offsets)
+            .build();
+
+        String vdiPayload = Formats.format(contentType, vdi);
+
+        KeyUser user = KeyUser.SPK_NORMAL;
+
+        // CREATE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .contentType(contentType.toString())
+            .body(vdiPayload)
+            .queryParam(OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/" + TEST_LOCATION + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // GET
+        String getBody =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(contentType.toString())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(Controllers.UNIT, "m")
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/location/vertical-datum")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .extract()
+                .asString();
+
+        List<VerticalDatumInfo> got = Formats.parseContentList(contentType, getBody, VerticalDatumInfo.class);
+        assertEquals(1, got.size());
+        assertEquals(100.0, got.get(0).getElevation(), 0.001);
+        assertEquals("NGVD-29", got.get(0).getNativeDatum());
+
+        // DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/" + TEST_LOCATION + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //VERIFY DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.UNIT, "m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/" + TEST_LOCATION + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @MethodSource("provideFormats")
+    @ParameterizedTest
     void test_create_vertical_datum_already_exists_fails(ContentType contentType) {
         // Build a VerticalDatumInfo payload
         VerticalDatumInfo.Offset[] offsets = new VerticalDatumInfo.Offset[] {
@@ -300,6 +392,62 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CONFLICT));
+    }
+
+    @MethodSource("provideFormats")
+    @ParameterizedTest
+    void test_create_vertical_datum_already_exists_overwrite(ContentType contentType) {
+        // Build a VerticalDatumInfo payload
+        VerticalDatumInfo.Offset[] offsets = new VerticalDatumInfo.Offset[] {
+            new VerticalDatumInfo.Offset(true, "NAVD-88", -0.5)
+        };
+        VerticalDatumInfo vdi = new VerticalDatumInfo.Builder()
+            .withOffice(OFFICE_ID)
+            .withLocation(TEST_LOCATION)
+            .withUnit("m")
+            .withNativeDatum("NGVD-29")
+            .withElevation(100.0)
+            .withOffsets(offsets)
+            .build();
+
+        String vdiPayload = Formats.format(contentType, vdi);
+
+        KeyUser user = KeyUser.SPK_NORMAL;
+
+        // First CREATE should succeed
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .contentType(contentType.toString())
+            .body(vdiPayload)
+            .queryParam(OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/" + TEST_LOCATION + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Second CREATE with same payload should succeed
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .contentType(contentType.toString())
+            .body(vdiPayload)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.OVERWRITE, true)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/" + TEST_LOCATION + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
     @MethodSource("provideFormats")

@@ -29,7 +29,9 @@ import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.LOCATION_ID;
+import static cwms.cda.api.Controllers.LOCATION_MASK;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OVERWRITE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.UNIT;
@@ -42,6 +44,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.VerticalDatumDao;
@@ -59,6 +62,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -68,6 +72,7 @@ public final class VerticalDatumController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     // NOTE: manually expanded due to limits of OpenApi Annotations.
     private static final String VDI_PATH = "/location/{location-id}/vertical-datum";
+    private static final String VDI_ALL_PATH = "/location/vertical-datum";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -81,9 +86,49 @@ public final class VerticalDatumController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
+    @OpenApi(
+        queryParams = {
+            @OpenApiParam(name = LOCATION_MASK, description = "Filters on the location ID."),
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office."),
+            @OpenApiParam(name = UNIT,
+                description = "Specifies the unit of measure for elevation/offsets (e.g., m or ft). Default is m.")
+        },
+        responses = {
+            @OpenApiResponse(status = Controllers.STATUS_200,
+                content = {@OpenApiContent(type = Formats.JSONV1, from = VerticalDatumInfo.class),
+                    @OpenApiContent(type = Formats.JSON, from = VerticalDatumInfo.class),
+                    @OpenApiContent(type = Formats.XMLV1, from = VerticalDatumInfo.class),
+                    @OpenApiContent(type = Formats.XML, from = VerticalDatumInfo.class)})
+        },
+        description = "Returns Vertical Datum Info for all locations.",
+        path = VDI_ALL_PATH,
+        tags = {LOCATIONS_TAG}
+    )
     @Override
     public void getAll(@NotNull Context ctx) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
+        String office = requiredParam(ctx, OFFICE);
+        String units = ctx.queryParamAsClass(UNIT, String.class).getOrDefault("m");
+        String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault(null);
+        try (Timer.Context ignored = markAndTime(GET_ONE)) {
+            DSLContext dsl = getDslContext(ctx);
+            VerticalDatumDao dao = new VerticalDatumDao(dsl);
+            List<VerticalDatumInfo> info = dao.retrieveVerticalDatumInfoList(office, locationMask, units);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
+            ctx.contentType(contentType.toString());
+            String serialized = Formats.format(contentType, info, VerticalDatumInfo.class);
+            requestResultSize.update(serialized.length());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Vertical Datum Info", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Vertical Datum Info");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 
     @OpenApi(
@@ -117,7 +162,6 @@ public final class VerticalDatumController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, info);
-            ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
             ctx.status(HttpServletResponse.SC_OK);
 
@@ -133,42 +177,54 @@ public final class VerticalDatumController implements CrudHandler {
     }
 
     @OpenApi(
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = VerticalDatumInfo.class, type = Formats.JSONV1),
-                            @OpenApiContent(from = VerticalDatumInfo.class, type = Formats.XMLV1)
-                    },
-                    required = true),
-            queryParams = {
-                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the location id for this vertical-datum-info."),
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office.")
+        requestBody = @OpenApiRequestBody(
+            content = {
+                    @OpenApiContent(from = VerticalDatumInfo.class, type = Formats.JSONV1),
+                    @OpenApiContent(from = VerticalDatumInfo.class, type = Formats.XMLV1)
             },
-            description = "Create Vertical Datum Info for a Location",
-            method = HttpMethod.POST,
-            path = VDI_PATH,
-            tags = {LOCATIONS_TAG},
-            responses = {
-                    @OpenApiResponse(status = Controllers.STATUS_201, description = "Vertical Datum Info successfully stored to CWMS.")
-            }
+            required = true),
+        queryParams = {
+            @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the location id for this vertical-datum-info."),
+            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office."),
+            @OpenApiParam(name = OVERWRITE, type = Boolean.class, description = "If true, will overwrite any existing "
+                + "vertical-datum-info for the specified location. Default is false.")
+        },
+        description = "Create Vertical Datum Info for a Location",
+        method = HttpMethod.POST,
+        path = VDI_PATH,
+        tags = {LOCATIONS_TAG},
+        responses = {
+            @OpenApiResponse(status = Controllers.STATUS_201,
+                description = "Vertical Datum Info successfully stored to CWMS.")
+        }
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String formatHeader = ctx.req.getContentType();
+            boolean overwrite = ctx.queryParamAsClass(OVERWRITE, Boolean.class).getOrDefault(false);
             ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
             VerticalDatumInfo info = Formats.parseContent(contentType, ctx.body(), VerticalDatumInfo.class);
             //allow locationId and office to be specified in either the body or as query params, but require them to be present in one of those places
             String locationId = info.getLocation();
             String office = info.getOffice();
-            if(locationId == null || locationId.isBlank()) {
+            if (locationId == null || locationId.isBlank()) {
                 locationId = requiredParam(ctx, LOCATION_ID);
             }
-            if(office == null || office.isBlank()) {
+            if (office == null || office.isBlank()) {
                 office = requiredParam(ctx, OFFICE);
             }
             DSLContext dsl = getDslContext(ctx);
             VerticalDatumDao dao = new VerticalDatumDao(dsl);
-            dao.createVerticalDatumInfo(office, locationId, info);
+            try {
+                dao.createVerticalDatumInfo(office, locationId, info);
+            } catch (AlreadyExists ex) {
+                if (overwrite) {
+                    dao.updateVerticalDatumInfo(office, locationId, info);
+                } else {
+                    throw ex;
+                }
+            }
             StatusResponse re = new StatusResponse(office,
                     "Vertical Datum Info successfully stored to CWMS.", locationId);
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
