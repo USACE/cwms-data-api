@@ -537,7 +537,6 @@ class LocationControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
-            .queryParam(CASCADE_DELETE, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1229,8 +1228,8 @@ class LocationControllerTestIT extends DataApiTestIT {
             .body("message",
                 equalTo("Cannot delete this record because it is linked to other data in CWMS"))
             .body("details.message", equalTo("Unable to delete requested location: "
-                + "Putah_Creek for office: SPK: ORA-20056: CAN_NOT_DELETE_LOC_2: "
-                + "Can not delete location: \"Putah_Creek\" because dependent data exists: time series identifiers=1; location geometry=1."));
+                + "Putah_Creek for office: SPK: ORA-20031: CAN_NOT_DELETE_LOC_1: "
+                + "Can not delete location: \"Putah_Creek\" because Timeseries Identifiers exist."));
     }
 
     @Test

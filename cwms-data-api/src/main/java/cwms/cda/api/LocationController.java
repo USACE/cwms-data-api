@@ -439,7 +439,7 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (DataAccessException ex) {
             SQLException cause = ex.getCause(SQLException.class);
-            if (cause != null && cause.getErrorCode() == 20056) {
+            if (cause != null && cause.getErrorCode() == 20031) {
                 throw new DeleteConflictException("Unable to delete requested location: "
                         + locationId + " for office: " + office, cause);
             }
