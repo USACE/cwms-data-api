@@ -553,6 +553,24 @@ class RatingsControllerTestIT extends DataApiTestIT
         ratingId = ratingId.replaceAll("FSMI", EXISTING_LOC);
         String body = readResourceFile("cwms/cda/data/dto/rating/rating_post.json");
         body = body.replaceAll("FSMI", EXISTING_LOC);
+        String template = readResourceFile("cwms/cda/api/spk/rating_template.json");
+
+        //Create Template
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(template)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/ratings/template")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
         // Create the set
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
