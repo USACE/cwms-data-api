@@ -1,12 +1,7 @@
-import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
-import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
-
 plugins {
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
     id 'war'
-    id 'com.github.node-gradle.node' version '7.1.0'
-    id "org.openapi.generator" version "7.15.0"
     id 'com.gradleup.shadow' version '8.3.10'
 }
 
@@ -30,6 +25,7 @@ configurations.all {
     exclude group: 'org.apache.xmlbeans'
     exclude group: 'org.apache.poi'
     exclude group: 'org.bouncycastle'
+    exclude group: 'org.apache.tomcat', module: 'tomcat-juli'
 }
 
 dependencies {
@@ -38,7 +34,7 @@ dependencies {
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
     implementation(libs.jaxb.impl)
-    implementation(libs.cwms.db.jooq.codegen) { 
+    implementation(libs.cwms.db.jooq.codegen) {
         exclude group: "com.oracle", module: "*"
         exclude group: "com.oracle.database.jdbc", module: "*"
         exclude group: "org.jooq.pro", module: "*"
@@ -76,6 +72,7 @@ dependencies {
     implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-legacy.jar"))
     implementation(files("$buildDir/libs/${project.name}-${project.version}-codegen-latest.jar"))
 
+    compileOnly(libs.slf4j)
     implementation(libs.slf4j)
 
     implementation(libs.monolith) {
@@ -87,7 +84,7 @@ dependencies {
     implementation(libs.google.flogger.api)
     implementation(libs.google.findbugs)
     implementation(libs.google.errorProne)
-    runtimeOnly(libs.google.flogger.backend)
+    runtimeOnly(libs.google.flogger.system.backend)
 
     implementation(libs.nucleus.data) {
         exclude group: "org.jdom"
@@ -145,6 +142,10 @@ dependencies {
     implementation project(":access-manager-api")
 
     implementation(libs.bundles.metrics)
+    implementation(libs.io.opentelemetry.api)
+    implementation(libs.io.opentelemetry.sdk)
+    implementation(libs.io.opentelemetry.exporter.logging)
+    implementation(libs.io.opentelemetry.instrumentation.java)
 
     implementation(libs.bundles.jackson)
 
@@ -162,19 +163,25 @@ dependencies {
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.rest.assured)
     testImplementation(libs.hamcrest.all)
+    testImplementation(libs.slf4j.jul)
 
     tomcatLibs(libs.bundles.tomcat.embedded)
     tomcatLibs(libs.bundles.tomcat.support)
     tomcatLibs(libs.google.flogger.api)
-    tomcatLibs(libs.google.flogger.backend)
+    tomcatLibs(libs.google.flogger.system.backend)
+
+    baseLibs(libs.google.flogger.slf4j.backend) {
+        exclude group: "org.slf4j"
+    }
+
+    baseLibs(libs.ch.qos.logback)
+    baseLibs(libs.io.opentelemetry.instrumentation.logback.mdc)
 
     testImplementation(libs.bundles.testcontainers)
 
     testImplementation(libs.apache.commons.csv)
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
-
-    testRuntimeOnly("org.slf4j:slf4j-jdk14:2.0.16")    
 
     webjars(project(":cda-gui"))
 
@@ -270,6 +277,7 @@ task run(type: JavaExec) {
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
     jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     jvmArgs += "-DwarContext=/" + context
     jvmArgs += "-Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true"
@@ -279,6 +287,21 @@ task run(type: JavaExec) {
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
     //jvmArgs += "-Dcwms.dataapi.access.openid.wellKnownUrl=https://auth.test:8444/auth/realms/cwms/.well-known/openid-configuration"
     //jvmArgs += "-Dcwms.dataapi.access.openid.issuer=https://auth.test:8444/auth/realms/cwms"
+}
+
+tasks.register('seedDevApiKeys', JavaExec) {
+    group "application"
+    description = "Create development API keys for local **HECTEST users and print the plaintext keys."
+    dependsOn testClasses
+
+    classpath = sourceSets.test.runtimeClasspath
+    classpath += configurations.baseLibs
+    classpath += configurations.tomcatLibs
+
+    mainClass = "fixtures.SeedDevApiKeys"
+
+    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+//    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
 }
 
 task integrationTests(type: Test) {
@@ -299,10 +322,12 @@ task integrationTests(type: Test) {
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
     jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
+    //jvmArgs += "-Dflogger.backend_factory=com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance"
 }
 
 task timeseriesReadBenchmark(type: JavaExec) {
@@ -402,49 +427,6 @@ tasks.register("executeOpenAPIConversion", Test) {
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 
-if (JavaVersion.current() >= JavaVersion.VERSION_11) {
-
-    tasks.register('validateOpenApiSpec', ValidateTask) {
-        group 'documentation'
-        dependsOn executeOpenAPIConversion
-        inputSpec.set("$rootDir/cwms-data-api/build/openapi.json")
-    }
-
-    tasks.register('generateOpenApiDoc', GenerateTask) {
-        group 'documentation'
-        dependsOn executeOpenAPIConversion
-        validateSpec = true
-        inputSpec = "$rootDir/cwms-data-api/build/openapi.json"
-        outputDir = "$rootDir/cda-client/build/generated/openApi"
-        configFile = "$rootDir/cda-client/openapi.config.json"
-        generatorName = "typescript-fetch"
-        globalProperties.set([
-                modelDocs             : "true",
-                modelTests            : "false",
-                apiDocs               : "true",
-                apiTests              : "false",
-                enabledPostProcessFile: "false"
-        ])
-        ignoreFileOverride = "$rootDir/cda-client/.openapi-generator-ignore"
-    }
-
-    tasks.register('compileTypeScriptOpenApiSpec', NpxTask) {
-        group 'documentation'
-        dependsOn npmInstall
-        dependsOn generateOpenApiDoc
-        dependsOn validateOpenApiSpec
-        command = "npm"
-        args = ["run", "build"]
-        inputs.files('package.json', 'package-lock.json')
-        inputs.dir(fileTree("$rootDir/cda-client/node_modules").exclude(".cache"))
-        outputs.dir('dist')
-    }
-
-    node {
-        nodeProjectDir = file("$rootDir/cda-client/")
-    }
-}
-
 tasks.register('shadeCodegenLegacy', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
     archiveClassifier.set('codegen-legacy')
     configurations = [project.configurations.jooqCodegenLegacy]
@@ -463,7 +445,6 @@ tasks.register('shadeCodegenLatest', com.github.jengelman.gradle.plugins.shadow.
     //We can also shade a 'codegen_latest' in the future if needed.
     relocate 'usace.cwms.db.jooq.codegen', 'usace.cwms.db.jooq.codegen_latest'
 }
-tasks.compileJava.dependsOn(tasks.shadeCodegenLegacy)
 tasks.compileJava.dependsOn(tasks.shadeCodegenLatest)
 
 

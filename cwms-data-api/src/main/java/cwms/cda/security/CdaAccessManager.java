@@ -17,6 +17,7 @@ import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import java.util.function.BiPredicate;
 import java.util.concurrent.TimeUnit;
 
 public final class CdaAccessManager implements AccessManager {
@@ -27,11 +28,17 @@ public final class CdaAccessManager implements AccessManager {
     private static final int REQUEST_LIMIT = Integer.parseInt(System.getProperty(REQUEST_LIMIT_KEY, "100"));
     private static final TimeUnit REQUEST_LIMIT_UNIT = TimeUnit.MINUTES;
     private final Map<String, RouteRole[]> rateLimitedPaths = new HashMap<>();
+    private final Map<String, BiPredicate<DataApiPrincipal, Set<RouteRole>>> customAuthorizers = new HashMap<>();
 
     @Override
     public void  manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
         DataApiPrincipal principal = getApiPrincipal(ctx);
-        AuthDao.isAuthorized(ctx, principal, routeRoles);
+        String path = ctx.endpointHandlerPath();
+        if (customAuthorizers.containsKey(path)) {
+            AuthDao.isAuthorized(ctx, principal, routeRoles, customAuthorizers.get(path));
+        } else {
+            AuthDao.isAuthorized(ctx, principal, routeRoles);
+        }
         checkRateLimit(ctx);
         prepareContext(ctx, principal);
         handler.handle(ctx);
@@ -45,7 +52,13 @@ public final class CdaAccessManager implements AccessManager {
                 NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
             } catch (HttpResponseException ex) {
                 try {
-                    AuthDao.isAuthorized(ctx, getApiPrincipal(ctx), new HashSet<>(Arrays.asList(routeRoles)));
+                    DataApiPrincipal principal = getApiPrincipal(ctx);
+                    Set<RouteRole> roles = new HashSet<>(Arrays.asList(routeRoles));
+                    if (customAuthorizers.containsKey(path)) {
+                        AuthDao.isAuthorized(ctx, principal, roles, customAuthorizers.get(path));
+                    } else {
+                        AuthDao.isAuthorized(ctx, principal, roles);
+                    }
                 } catch (CwmsAuthException e) {
                     // If user is unauthorized, rethrow the rate limit exception
                     logger.atFinest().log("Unauthorized access to rate limited path: %s", path, e);
@@ -71,5 +84,9 @@ public final class CdaAccessManager implements AccessManager {
 
     public void addRateLimitedEndpoint(String path, RouteRole[] roles) {
         rateLimitedPaths.put(path, roles);
+    }
+
+    public void addCustomAuthorizer(String path, BiPredicate<DataApiPrincipal, Set<RouteRole>> authorizer) {
+        customAuthorizers.put(path, authorizer);
     }
 }

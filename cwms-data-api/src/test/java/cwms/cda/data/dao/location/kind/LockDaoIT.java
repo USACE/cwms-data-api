@@ -330,38 +330,38 @@ final class LockDaoIT extends ProjectStructureIT {
 
     private List<LocationLevel> createLocationLevelList(Lock lock) {
         List<LocationLevel> retVal = new ArrayList<>();
-        ConstantLocationLevel lowLowerLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var lowLowerLevel = new ConstantLocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
             .withLevelUnitsId(lock.getElevationUnits())
             .withOfficeId(lock.getLowWaterLowerPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId()))
+            .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId())
             .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(lowLowerLevel);
-        ConstantLocationLevel lowUpperLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var lowUpperLevel = new ConstantLocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
             .withLevelUnitsId(lock.getElevationUnits())
             .withOfficeId(lock.getLowWaterUpperPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId()))
+            .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId())
             .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(lowUpperLevel);
-        ConstantLocationLevel highLowerLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var highLowerLevel = new ConstantLocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
             .withLevelUnitsId(lock.getElevationUnits())
             .withOfficeId(lock.getHighWaterLowerPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId()))
+            .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId())
             .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(highLowerLevel);
-        ConstantLocationLevel highUpperLevel = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var highUpperLevel = new ConstantLocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
             .withLevelUnitsId(lock.getElevationUnits())
             .withOfficeId(lock.getHighWaterUpperPoolLocationLevel().getOfficeId())
-            .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId()))
+            .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
             .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(highUpperLevel);
-        ConstantLocationLevel warningBuffer = ((ConstantLocationLevel.Builder) new ConstantLocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
+        var warningBuffer = new ConstantLocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now().toInstant())
                 .withLevelUnitsId(lock.getElevationUnits())
                 .withOfficeId(lock.getLocation().getOfficeId())
-                .withSpecifiedLevelId("Warning Buffer"))
+                .withSpecifiedLevelId("Warning Buffer")
                 .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .build();
         retVal.add(warningBuffer);

@@ -102,6 +102,7 @@ public class DataApiTestIT {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     protected static String createLocationQuery = null;
+    protected static String deleteLocationQuery = null;
     protected static String createTimeseriesQuery = null;
     protected static String createTimeseriesOffsetQuery = null;
     protected static final String removeApiKeys = "delete from at_api_keys where UPPER(userid) = UPPER(?) and key_name = ?";
@@ -161,6 +162,11 @@ public class DataApiTestIT {
                         .getClassLoader()
                         .getResourceAsStream("cwms/cda/data/sql_templates/create_location.sql"), "UTF-8"
         );
+        deleteLocationQuery = IOUtils.toString(
+                TimeseriesControllerTestIT.class
+                        .getClassLoader()
+                        .getResourceAsStream("cwms/cda/data/sql_templates/delete_location.sql"), "UTF-8"
+        );
         createTimeseriesQuery = IOUtils.toString(
                 TimeseriesControllerTestIT.class
                         .getClassLoader()
@@ -189,7 +195,7 @@ public class DataApiTestIT {
                 if (user.getKeyName() == null) {
                     continue;
                 }
-                if (user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES) {
+                if (user == TestAccounts.KeyUser.SPK_OTHER_NORMAL_SAME_ROLES || user == TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER) {
                     String name = user.getName();
                     String officeId = user.getOperatingOffice(); //"SPK";  // We want user office not db office.
 
@@ -205,7 +211,10 @@ public class DataApiTestIT {
                         }
                     }
 
-                    addUserToGroup(name, "CWMS Users", officeId);
+                    if(user != TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER)
+                    {
+                        addUserToGroup(name, "CWMS Users", officeId);
+                    }
                     addUserToGroup(name, "All Users", officeId);
                     addUserToGroup(name, "TS ID Creator", officeId);
                 }
@@ -457,6 +466,19 @@ public class DataApiTestIT {
         createLocation(location, active, office,
                 0.0, 0.0, "WGS84",
                 "UTC", kind);
+    }
+
+    protected static void deleteLocation(String location, String office) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(deleteLocationQuery)) {
+                stmt.setString(1, location);
+                stmt.setString(2, office);
+                stmt.execute();
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to delete location", ex);
+            }
+        }, "cwms_20");
     }
 
     /**

@@ -13,9 +13,10 @@ import SwaggerUI from "./pages/swagger-ui/index";
 import Regexp from "./pages/regexp/index";
 import DataQuery from "./pages/data-query";
 import Layout from "./components/Layout";
+import LocationSearch from "./pages/LocationSearch.jsx";
 
 // Styles
-import "@usace/groundwork/dist/style.css";
+import "@usace/groundwork/dist/groundwork.css";
 import "./css/index.css";
 import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";
@@ -32,6 +33,7 @@ const routeComponents = {
   "filter-expressions": FilterExpressions,
   timestamps: Timestamps,
   "legacy-format": LegacyFormat,
+  "location-search": LocationSearch,
 };
 
 const router = createBrowserRouter(

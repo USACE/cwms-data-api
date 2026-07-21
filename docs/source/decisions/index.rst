@@ -25,3 +25,7 @@ Some decisions may also be a proposal and marked appropriately.
     CDA Authorization Filtering <./0006-cda-authorization-filtering.md>
     Access Management Clients <./0007-access-management-clients.md>
     Timeseries CSV Format <./0008-timeseries-csv-format.rst>
+    Handling Releases <./0009-code-changes-and-releases.rst>
+    Vertical Datum Policy <./0010-vertical-datum.rst>
+    JMS Queue Message Structure <./0011-queue-messages.rst>
+    Vertical Datum Storage <./0012-vertical-datum-storage.rst>

@@ -35,6 +35,11 @@ export const routePaths = [
     path: "legacy-format",
     sitemapPath: "legacy-format",
   },
+  {
+    id: "location-search",
+    path: "location-search",
+    sitemapPath: "location-search",
+  },
 ];
 
 export const sitemapPaths = routePaths.map(({ sitemapPath }) => sitemapPath);

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.WATER_USER;
+import static cwms.cda.openapi.ExampleUtils.addEndpointExamples;
 import static io.javalin.apibuilder.ApiBuilder.crud;
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -39,6 +40,7 @@ import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.prefixPath;
 import static io.javalin.apibuilder.ApiBuilder.staticInstance;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
@@ -76,19 +78,20 @@ import cwms.cda.api.ParametersController;
 import cwms.cda.api.PoolController;
 import cwms.cda.api.ProjectController;
 import cwms.cda.api.PropertyController;
+import cwms.cda.api.PublishedController;
 import cwms.cda.api.SpecifiedLevelController;
 import cwms.cda.api.StandardTextController;
 import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
-import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.TextTimeSeriesController;
 import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesFilteredController;
 import cwms.cda.api.TimeSeriesGroupController;
+import cwms.cda.api.TimeSeriesVersionsController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeZoneController;
@@ -98,6 +101,7 @@ import cwms.cda.api.TurbineChangesPostController;
 import cwms.cda.api.TurbineController;
 import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
+import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.auth.ApiKeyController;
 import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
@@ -107,6 +111,7 @@ import cwms.cda.api.auth.users.roles.GetRolesController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.api.location.kind.GateChangeCreateController;
 import cwms.cda.api.location.kind.GateChangeDeleteController;
 import cwms.cda.api.location.kind.GateChangeGetAllController;
@@ -166,10 +171,16 @@ import cwms.cda.api.watersupply.WaterUserDeleteController;
 import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.rss.QueueManager;
+import cwms.cda.data.dto.csv.CwmsCsvDTO;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.csv.CsvExampleGenerator;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
+import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import io.javalin.Javalin;
 import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
@@ -183,11 +194,14 @@ import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.servers.Server;
 import java.io.IOException;
@@ -202,6 +216,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.Manifest;
 import javax.annotation.Resource;
@@ -244,6 +259,7 @@ import org.owasp.html.PolicyFactory;
     "/stream-locations/*",
     "/stream-reaches/*",
     "/measurements/*",
+    "/published/*",
     "/blobs/*",
     "/clobs/*",
     "/pools/*",
@@ -286,9 +302,6 @@ public class ApiServlet extends HttpServlet {
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
-
-
-
 
     private MetricRegistry metrics;
     private Meter totalRequests;
@@ -356,32 +369,38 @@ public class ApiServlet extends HttpServlet {
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
                 })
+                .before(ctx -> {
+                    // now that we can get the generic route, update the name.
+                    var span = Span.current();
+                    span.updateName(ctx.method() + " " + ctx.matchedPath());
+                })
                 .exception(ApplicationException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getCdaErrorMessage(), e.getSource(), e.getDetails());
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, e.getCdaErrorMessage(),
+                            e.getSource(), e.getDetails(), e);
                     if (e.getLoggerLevel().isPresent()) {
                         logger.at(e.getLoggerLevel().get()).withCause(e).log(re.toString());
                     }
                     ctx.status(e.getCdaHttpErrorCode()).json(re);
                 })
                 .exception(UnsupportedOperationException.class, (e, ctx) -> {
-                    final CdaError re = CdaError.notImplemented();
+                    final CdaError re = ExceptionTraceSupport.buildError(ctx, "Not Implemented", e);
                     logger.atWarning().withCause(e)
                             .log("%s for request: %s", re, ctx.fullUrl());
                     ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(re);
                 })
                 .exception(BadRequestResponse.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request",
-                        "User Input", new HashMap<>(e.getDetails()));
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, "Bad Request",
+                        "User Input", new HashMap<>(e.getDetails()), e);
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(e.getStatus()).json(re);
                 })
                 .exception(IllegalArgumentException.class, (e, ctx) -> {
-                    CdaError re = new CdaError("Bad Request");
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, "Bad Request", e);
                     logger.atInfo().withCause(e).log(re.toString());
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(DateTimeException.class, (e, ctx) -> {
-                    CdaError re = new CdaError(e.getMessage());
+                    CdaError re = ExceptionTraceSupport.buildError(ctx, e.getMessage(), e);
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(re);
                 })
                 .exception(DataAccessException.class, (e, ctx) -> {
@@ -395,7 +414,7 @@ public class ApiServlet extends HttpServlet {
                     // CdaError does not include the Oracle exception message b/c this block catches
                     // all unhandled DataAccessExceptions and we don't know what is in the message
                     // it is unknown if the message would be safe/appropriate for users to see.
-                    CdaError errResponse = new CdaError("Database Error");
+                    CdaError errResponse = ExceptionTraceSupport.buildError(ctx, "Database Error", e);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                                                         errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
@@ -403,7 +422,7 @@ public class ApiServlet extends HttpServlet {
                     ctx.json(errResponse);
                 })
                 .exception(Exception.class, (e, ctx) -> {
-                    CdaError errResponse = new CdaError("System Error");
+                    CdaError errResponse = ExceptionTraceSupport.buildError(ctx, "System Error", e);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
                             errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
                     ctx.status(500);
@@ -484,6 +503,10 @@ public class ApiServlet extends HttpServlet {
         String recentPath = "/timeseries/recent/";
         get(recentPath, new TimeSeriesRecentController(metrics));
         addCacheControl(recentPath, 5, TimeUnit.MINUTES);
+
+        String versionsPath = "/timeseries/versions/";
+        get(versionsPath, new TimeSeriesVersionsController(metrics));
+        addCacheControl(versionsPath, 5, TimeUnit.MINUTES);
 
         String filteredPath = "/timeseries/filtered";
         get(filteredPath, new TimeSeriesFilteredController(metrics));
@@ -568,6 +591,8 @@ public class ApiServlet extends HttpServlet {
         addCacheControl(measTimeExtents, 5, TimeUnit.MINUTES);
         cdaCrudCache(format("%s{%s}", measurements, LOCATION_ID),
                 new cwms.cda.api.MeasurementController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format("/published/{%s}", LOCATION_ID),
+                new PublishedController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
@@ -636,23 +661,36 @@ public class ApiServlet extends HttpServlet {
         addUserManagementHandlers();
 
         get("/version/", new CdaVersionHandler(metrics), requiredRoles);
-        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics), requiredRoles);
+        get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics));
     }
 
     private void addUserManagementHandlers() {
         RouteRole[] adminRoles = new RouteRole[] { new Role("CWMS User Admins")};
-        RouteRole[] userRoles = new RouteRole[] {new Role("CWMS Users")};
+        RouteRole[] userRoles = new RouteRole[] {new Role(CWMS_USERS_ROLE), new Role(CAC_USER)};
         crud("/users/{user-name}", new UsersController(metrics), adminRoles);
         get("/roles", new GetRolesController(metrics), adminRoles);
-        get("/user/profile", new UserProfileController(metrics), userRoles);
+        String userProfilePath = "/user/profile";
+        get(userProfilePath, new UserProfileController(metrics), userRoles);
+        cdaAccessManager.addCustomAuthorizer(userProfilePath, ApiServlet::hasAnyRole);
         post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
         delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
-        
+
+    }
+
+    private static Boolean hasAnyRole(DataApiPrincipal p, Set<RouteRole> roles) throws MissingRolesException {
+        boolean retVal = roles.stream().anyMatch(p.getRoles()::contains);
+        if(!retVal) {
+            List<String> requiredRoleNames = roles.stream()
+                    .map(Object::toString)
+                    .collect(toList());
+            throw new MissingRolesException(requiredRoleNames, "Missing one of the following roles {" + String.join(",", requiredRoleNames) + "}");
+        }
+        return true;
     }
 
     private void addRatingHandlers(RouteRole[] requiredRoles) {
         /**
-         * The POST handlers for /ratings/rate-* intentionally do not have 
+         * The POST handlers for /ratings/rate-* intentionally do not have
          * require roles. Instead they are rate limited if not authenticated.
          * POST is used as sending a body with GET is not standard and we cannot
          * be sure clients, or future servers, would correctly support that.
@@ -910,7 +948,49 @@ public class ApiServlet extends HttpServlet {
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
-                api.getPaths().forEach((key,path) -> setSecurityRequirements(key,path,secReqs));
+                api.getPaths().forEach((key,path) -> {
+                    setSecurityRequirements(key,path,secReqs);
+                    // yeah, we really need to figure out how to update everything, this is supported as an annotation in
+                    // newer versions.
+                    if (key.startsWith("/rss")) {
+                        path.getGet().getResponses().forEach((p, r) -> {
+                            var retryAfter = new io.swagger.v3.oas.models.headers.Header();
+                            retryAfter.description("Amount of time (in seconds) to wait before making the next request.");
+                            r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
+                        });
+                    }
+            });
+                Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
+                try (ScanResult scanResult = new ClassGraph()
+                        .acceptPackages("cwms.cda.data.dto")
+                        .scan()) {
+                    List<Class<CwmsCsvDTO>> csvDtoClasses = scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
+                            .loadClasses(CwmsCsvDTO.class);
+                    for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
+                        schemaToClass.put(clazz.getSimpleName(), clazz);
+                    }
+                }
+                api.getPaths().values().forEach(pathItem -> {
+                    for (Operation op : pathItem.readOperations()) {
+                        if (op.getResponses() != null) {
+                            for (ApiResponse resp : op.getResponses().values()) {
+                                if (resp.getContent() != null && resp.getContent().containsKey(Formats.CSV)) {
+                                    MediaType csvMedia = resp.getContent().get(Formats.CSV);
+                                    if (csvMedia.getSchema() != null && csvMedia.getSchema().get$ref() != null) {
+                                        String ref = csvMedia.getSchema().get$ref();
+                                        String schemaName = ref.substring(ref.lastIndexOf('/') + 1);
+                                        @SuppressWarnings("unchecked")
+                                        Class<? extends CwmsCsvDTO<?>> dtoClass = (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
+
+                                        if (dtoClass != null) {
+                                            csvMedia.setExample(CsvExampleGenerator.getExample(dtoClass));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
                 return api;
             })
             .defaultDocumentation(doc -> {
@@ -919,10 +999,21 @@ public class ApiServlet extends HttpServlet {
                 doc.json("401", CdaError.class);
                 doc.json("403", CdaError.class);
                 doc.json("404", CdaError.class);
+                doc.json("429", CdaError.class);
+                doc.header(IS_NEW_LRTS,
+                    Boolean.class,
+                    p -> p.description(
+                        "If True, will use use the new 'Local Regular Time Series" +
+                        " naming scheme. For example 1DayLocal. Instead of the original" +
+                        " PsuedoRegular based scheme, for example ~1DayLocal." +
+                        " NOTE: this parameter only applies to the input and output of" +
+                        " Time Series names. It is added to all endpoints and will be ignored" +
+                        " when not required. Default values is false if not set.")
+                );
             })
             .activateAnnotationScanningFor("cwms.cda.api");
+        addEndpointExamples(ops);
         config.registerPlugin(new OpenApiPlugin(ops));
-
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
@@ -975,5 +1066,4 @@ public class ApiServlet extends HttpServlet {
         }
         return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
     }
-
 }

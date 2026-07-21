@@ -24,7 +24,6 @@
 
 package cwms.cda.api.rating;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.AT;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CREATE;
@@ -39,8 +38,6 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RATING_ID;
 import static cwms.cda.api.Controllers.REPLACE_BASE_CURVE;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
@@ -55,13 +52,13 @@ import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.BaseCrudHandler;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import cwms.cda.api.Controllers;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
@@ -78,9 +75,9 @@ import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -91,10 +88,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
-import com.google.common.flogger.FluentLogger;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
-
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.metadata.VerticalDatumException;
 import org.jetbrains.annotations.NotNull;
@@ -171,11 +168,13 @@ public class RatingController extends BaseCrudHandler {
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Rating Set successfully stored to CWMS.");
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         } catch (IOException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet");
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet", ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         } catch (RatingException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
@@ -300,12 +299,12 @@ public class RatingController extends BaseCrudHandler {
                 + "field for this URI are:"
                 + "\n* `tab`"
                 + "\n* `csv`"
-                + "\n* `xml`"
-                + "\n* `json` (default)")},
+                + "\n* `xml` (default)"
+                + "\n* `json`")},
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(type = Formats.JSON),
-                    @OpenApiContent(type = Formats.XML),
+                    @OpenApiContent(type = Formats.JSONV2),
+                    @OpenApiContent(type = Formats.XMLV2),
                     @OpenApiContent(type = Formats.TAB),
                     @OpenApiContent(type = Formats.CSV)
                 }),
@@ -331,6 +330,11 @@ public class RatingController extends BaseCrudHandler {
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            if (!format.isEmpty() && !format.contains("version=2")) {
+                Map<String, String> details = new HashMap<>();
+                details.put("message", String.format("Invalid format. V1 formats no longer supported: %s", format));
+                throw new BadRequestResponse("", details);
+            }
             String header = ctx.header(Header.ACCEPT);
 
             ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);
@@ -350,9 +354,17 @@ public class RatingController extends BaseCrudHandler {
                     end, timezone);
 
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);
             addDeprecatedContentTypeWarning(ctx, contentType);
             updateResultSize(results.length());
+
+            byte[] bytes = results.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException e) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Ratings", e);
+            logger.atInfo().withCause(e).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -423,9 +435,16 @@ public class RatingController extends BaseCrudHandler {
 
             String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, verticalDatum);
             if (body != null) {
-                ctx.result(body);
                 ctx.status(HttpCode.OK);
+                byte[] bytes = body.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
+        } catch (IOException e) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve RatingSet", e);
+            logger.atInfo().withCause(e).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -492,14 +511,14 @@ public class RatingController extends BaseCrudHandler {
                         ctx.status(HttpCode.NOT_FOUND);
                     }
                 } catch (RatingException e) {
-                    CdaError re =
-                            new CdaError("Failed to process request to retrieve RatingSet");
+                    CdaError re = ExceptionTraceSupport.buildError(ctx,
+                             "Failed to process request to retrieve RatingSet", e);
                     logger.atSevere().withCause(e).log("%s", re);
                     ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     ctx.json(re);
                 } catch (IOException e) {
-                    CdaError re =
-                            new CdaError("Failed to process request to retrieve RatingSet");
+                    CdaError re = ExceptionTraceSupport.buildError(ctx,
+                             "Failed to process request to retrieve RatingSet", e);
                     logger.atSevere().withCause(e).log("%s", re);
                     ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
                 }
@@ -580,11 +599,13 @@ public class RatingController extends BaseCrudHandler {
             StatusResponse re = new StatusResponse(RatingDao.extractOfficeFromXml(ratingSet), "Updated RatingSet");
             ctx.status(HttpServletResponse.SC_OK).json(re);
         } catch (IOException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet");
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet", ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         } catch (RatingException ex) {
-            CdaError re = new CdaError("Failed to process request to update RatingSet: " + ex.getLocalizedMessage());
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                     "Failed to process request to update RatingSet: " + ex.getLocalizedMessage(), ex);
             logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }

@@ -8,6 +8,8 @@ export default function SettingsMenu({
   setCacheEnabled,
   sortAscending,
   setSortAscending,
+  includeMissingTimeseries,
+  setIncludeMissingTimeseries,
   active,
 }) {
   return (
@@ -46,6 +48,23 @@ export default function SettingsMenu({
             />
           </div>
         </MenuItem>
+        <MenuItem>
+          <div className="mt-4 flex items-start justify-between gap-4">
+            <div>
+              <div className="text-sm font-semibold text-slate-900">
+                Include missing time series
+              </div>
+              <p className="text-xs text-slate-600">
+                Show catalog matches that have no extents in smart select.
+              </p>
+            </div>
+            <Toggle
+              checked={includeMissingTimeseries}
+              onChange={setIncludeMissingTimeseries}
+              className="ml-0"
+            />
+          </div>
+        </MenuItem>
       </MenuItems>
     </Menu>
   );
@@ -54,7 +73,9 @@ export default function SettingsMenu({
 SettingsMenu.propTypes = {
   active: PropTypes.bool,
   cacheEnabled: PropTypes.bool.isRequired,
+  includeMissingTimeseries: PropTypes.bool.isRequired,
   setCacheEnabled: PropTypes.func.isRequired,
+  setIncludeMissingTimeseries: PropTypes.func.isRequired,
   setSortAscending: PropTypes.func.isRequired,
   sortAscending: PropTypes.bool.isRequired,
 };

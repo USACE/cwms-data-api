@@ -49,7 +49,7 @@ import hec.data.level.ISeasonalValue;
 import hec.data.level.ISeasonalValues;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigInteger;
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -66,7 +66,7 @@ public final class SeasonalLocationLevel extends LocationLevel {
 	@Schema(description = "The start point of provided seasonal values")
 	@JsonFormat(shape = JsonFormat.Shape.STRING)
 
-	private final ZonedDateTime intervalOrigin;
+	private final Instant intervalOrigin;
 
 	private final Integer intervalMonths;
 
@@ -93,7 +93,7 @@ public final class SeasonalLocationLevel extends LocationLevel {
 		return seasonalValues;
 	}
 
-	public ZonedDateTime getIntervalOrigin() {
+	public Instant getIntervalOrigin() {
 		return intervalOrigin;
 	}
 
@@ -110,13 +110,13 @@ public final class SeasonalLocationLevel extends LocationLevel {
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static final class Builder extends LocationLevel.Builder<SeasonalLocationLevel.Builder> {
 		private List<SeasonalValueBean> seasonalValues;
-		private ZonedDateTime intervalOrigin;
+		private Instant intervalOrigin;
 		private Integer intervalMonths;
 		private Integer intervalMinutes;
 
 		@JsonCreator
 		public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
-				@JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate) {
+				@JsonProperty(value = "level-date", required = true) Instant lvlDate) {
 			super(name, lvlDate);
 		}
 
@@ -198,15 +198,14 @@ public final class SeasonalLocationLevel extends LocationLevel {
 			return retval;
 		}
 
-		public SeasonalLocationLevel.Builder withIntervalOrigin(ZonedDateTime intervalOrigin) {
+		public SeasonalLocationLevel.Builder withIntervalOrigin(Instant intervalOrigin) {
 			this.intervalOrigin = intervalOrigin;
 			return this;
 		}
 
-		public SeasonalLocationLevel.Builder withIntervalOrigin(Date intervalOriginDate, ZonedDateTime effectiveDate) {
+		public SeasonalLocationLevel.Builder withIntervalOrigin(Date intervalOriginDate, Instant effectiveDate) {
 			if (intervalOriginDate != null && effectiveDate != null) {
-				return withIntervalOrigin(ZonedDateTime.ofInstant(intervalOriginDate.toInstant(),
-						effectiveDate.getZone()));
+				return withIntervalOrigin(intervalOriginDate.toInstant());
 			} else {
 				this.intervalOrigin = null;
 				return this;
