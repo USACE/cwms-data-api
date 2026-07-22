@@ -142,6 +142,20 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @return A DSLContext for the current request.
      */
     public static DSLContext getDslContext(Context ctx) {
+        return getDslContext(ctx, null);
+    }
+
+    /**
+     * Creates a DSL context whose checked-out connections use the supplied CWMS
+     * session office. Callers should only supply an office when the endpoint's
+     * database behavior requires it; setting it globally changes legacy access
+     * checks for unrelated endpoints.
+     *
+     * @param ctx The current request context.
+     * @param office The session office to prepare, or null to leave it unchanged.
+     * @return A DSLContext for the current request.
+     */
+    public static DSLContext getDslContext(Context ctx, String office) {
         DSLContext retVal;
 
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
@@ -155,8 +169,6 @@ public abstract class JooqDao<T> extends Dao<T> {
                 ? "BEFORE-HANDLER" : ctx.endpointHandlerPath();
         final String action = ctx.method();
         final String clientId = ctx.url().replace(ctx.path(), "") + ctx.contextPath();
-        final String office = resolveRequestOffice(ctx);
-
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
                 connection -> setClientInfo(connection, module, action, clientId),
                 new LrtsSessionPreparer(isNewLRTS),
@@ -168,15 +180,6 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         return retVal;
     }
-
-    private static String resolveRequestOffice(Context ctx) {
-        String office = ctx.queryParam(Controllers.OFFICE);
-        if (office == null) {
-            office = ctx.attribute(ApiServlet.OFFICE_ID);
-        }
-        return office;
-    }
-
 
     protected static Timestamp buildTimestamp(Instant date) {
         return date != null ? Timestamp.from(date) : null;
