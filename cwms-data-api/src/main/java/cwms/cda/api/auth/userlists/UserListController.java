@@ -77,6 +77,9 @@ public final class UserListController implements Handler {
 
             String userListId = ctx.pathParam(USER_LIST_ID);
             DSLContext dsl = getDslContext(ctx);
+            if (!UserListFeature.requireSupported(ctx, dsl)) {
+                return;
+            }
             UserListDao dao = new UserListDao(dsl);
             UserList userList = dao.getUserList(officeId, userListId)
                     .orElseThrow(() -> new NotFoundException("User list not found: "

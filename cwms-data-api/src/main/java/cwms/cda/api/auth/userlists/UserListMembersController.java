@@ -76,6 +76,9 @@ public final class UserListMembersController implements Handler {
 
             String userListId = ctx.pathParam(USER_LIST_ID);
             DSLContext dsl = getDslContext(ctx);
+            if (!UserListFeature.requireSupported(ctx, dsl)) {
+                return;
+            }
             UserListDao dao = new UserListDao(dsl);
             UserListMembers members = dao.getMembers(office, userListId);
 

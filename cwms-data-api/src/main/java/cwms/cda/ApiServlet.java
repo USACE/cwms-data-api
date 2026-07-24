@@ -107,6 +107,7 @@ import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
 import cwms.cda.api.auth.userlists.UserListController;
 import cwms.cda.api.auth.userlists.UserListMembersController;
+import cwms.cda.features.CdaFeatures;
 import cwms.cda.api.auth.users.roles.AddRoleController;
 import cwms.cda.api.auth.users.roles.DeleteRolesController;
 import cwms.cda.api.auth.users.roles.GetRolesController;
@@ -189,6 +190,7 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
+import io.javalin.http.Context;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
@@ -231,6 +233,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
+import org.togglz.core.context.FeatureContext;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -674,15 +677,29 @@ public class ApiServlet extends HttpServlet {
         String userProfilePath = "/user/profile";
         get(userProfilePath, new UserProfileController(metrics), userRoles);
         cdaAccessManager.addCustomAuthorizer(userProfilePath, ApiServlet::hasAnyRole);
-        String userListPath = "/user/list/{user-list-id}";
-        get(userListPath, new UserListController(metrics), userRoles);
-        cdaAccessManager.addCustomAuthorizer(userListPath, ApiServlet::hasAnyRole);
-        String userListMembersPath = "/user/list/{user-list-id}/members";
-        get(userListMembersPath, new UserListMembersController(metrics), userRoles);
-        cdaAccessManager.addCustomAuthorizer(userListMembersPath, ApiServlet::hasAnyRole);
+        addUserListHandlers(userRoles);
         post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
         delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
 
+    }
+
+    private void addUserListHandlers(RouteRole[] userRoles) {
+        String userListPath = "/user/list/{user-list-id}";
+        String userListMembersPath = "/user/list/{user-list-id}/members";
+        if (FeatureContext.getFeatureManager().isActive(CdaFeatures.USER_LISTS)) {
+            get(userListPath, new UserListController(metrics), userRoles);
+            get(userListMembersPath, new UserListMembersController(metrics), userRoles);
+        } else {
+            get(userListPath, this::userListsUnsupported, userRoles);
+            get(userListMembersPath, this::userListsUnsupported, userRoles);
+        }
+        cdaAccessManager.addCustomAuthorizer(userListPath, ApiServlet::hasAnyRole);
+        cdaAccessManager.addCustomAuthorizer(userListMembersPath, ApiServlet::hasAnyRole);
+    }
+
+    private void userListsUnsupported(Context ctx) {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
+                .json(new CdaError("User lists are not enabled for this CDA deployment."));
     }
 
     private static Boolean hasAnyRole(DataApiPrincipal p, Set<RouteRole> roles) throws MissingRolesException {
