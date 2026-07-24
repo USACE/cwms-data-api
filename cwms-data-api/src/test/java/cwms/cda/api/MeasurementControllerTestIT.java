@@ -127,7 +127,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 db.connection(c -> {
                     MeasurementDao measDao = new MeasurementDao(getDslContext(c, OFFICE_ID));
                     try {
-                        measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null);
+                        measDao.deleteMeasurements(OFFICE_ID, measLoc, null, null, null, null, null);
                     } catch (Exception e) {
                         LOGGER.atInfo().log("Failed to delete measurements for: " + measLoc + ". Measurement(s) likely already deleted");
                     }
@@ -150,6 +150,17 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         Measurement measurement = measurements.get(0);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .queryParam(Controllers.OFFICE, user.getOperatingOffice())
+                .header(AUTH_HEADER, user.toHeaderValue())
+       .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+       .delete("measurements/StreamLoc321")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true);
+
         // Create the Measurement
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -170,7 +181,8 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body(IDENTIFIER, isEmptyString());
 
         String locationId = measurement.getLocationId();
-        String number = measurement.getNumber();
+        String number = measurement.getMeasurementId();
+        Instant instant = measurement.getInstant();
 
         // Retrieve the Measurement and assert that it exists
         given()
@@ -201,7 +213,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[0].party", equalTo(measurement.getParty()))
                 .body("[0].wm-comments", equalTo(measurement.getWmComments()))
                 .body("[0].instant", equalTo(measurement.getInstant().toString()))
-                .body("[0].number", equalTo(measurement.getNumber()))
+                .body("[0].number", equalTo(measurement.getMeasurementId()))
                 .body("[0].id.name", equalTo(measurement.getLocationId()))
                 .body("[0].id.office-id", equalTo(measurement.getOfficeId()))
                 .body("[0].streamflow-measurement.gage-height", equalTo(measurement.getStreamflowMeasurement().getGageHeight().floatValue()))
@@ -237,8 +249,8 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .accept(format)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, measurement.getId().getOfficeId())
-                .queryParam(Controllers.MIN_NUMBER, number)
-                .queryParam(Controllers.MAX_NUMBER, number)
+                .queryParam(Controllers.BEGIN, instant.toString())
+                .queryParam(Controllers.END, instant.toString())
         .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -255,10 +267,10 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(format)
-                .queryParam(Controllers.OFFICE, measurement.getId().getOfficeId())
+                .queryParam(Controllers.OFFICE_MASK, measurement.getId().getOfficeId())
                 .queryParam(Controllers.ID_MASK, measurement.getLocationId())
-                .queryParam(Controllers.MIN_NUMBER, number)
-                .queryParam(Controllers.MAX_NUMBER, number)
+                .queryParam(Controllers.BEGIN, instant.toString())
+                .queryParam(Controllers.END, instant.toString())
                 .queryParam(Controllers.UNIT_SYSTEM, UnitSystem.EN.getValue())
         .when()
                 .redirects().follow(true)
@@ -283,6 +295,17 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
         Measurement measurement1 = measurements.get(0);
         Measurement measurement2 = measurements.get(1);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+         given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .queryParam(Controllers.OFFICE, user.getOperatingOffice())
+                .header(AUTH_HEADER, user.toHeaderValue())
+         .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+         .delete("measurements/StreamLoc321")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true);
 
         // Create the Measurements
         given()
@@ -328,7 +351,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[0].party", equalTo(measurement1.getParty()))
                 .body("[0].wm-comments", equalTo(measurement1.getWmComments()))
                 .body("[0].instant", equalTo(measurement1.getInstant().toString()))
-                .body("[0].number", equalTo(measurement1.getNumber()))
+                .body("[0].number", equalTo(measurement1.getMeasurementId()))
                 .body("[0].id.name", equalTo(measurement1.getLocationId()))
                 .body("[0].id.office-id", equalTo(measurement1.getOfficeId()))
                 .body("[0].streamflow-measurement.gage-height", equalTo(measurement1.getStreamflowMeasurement().getGageHeight().floatValue()))
@@ -367,7 +390,7 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .body("[1].party", equalTo(measurement2.getParty()))
                 .body("[1].wm-comments", equalTo(measurement2.getWmComments()))
                 .body("[1].instant", equalTo(measurement2.getInstant().toString()))
-                .body("[1].number", equalTo(measurement2.getNumber()))
+                .body("[1].number", equalTo(measurement2.getMeasurementId()))
                 .body("[1].id.name", equalTo(measurement2.getLocationId()))
                 .body("[1].id.office-id", equalTo(measurement2.getOfficeId()))
                 .body("[1].streamflow-measurement.gage-height", equalTo(measurement2.getStreamflowMeasurement().getGageHeight().floatValue()))
@@ -468,6 +491,93 @@ final class MeasurementControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.JSONV2})
+    @MinimumSchema(260716)
+    void test_measurement_id_filter(String format) throws Exception {
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/measurements_with_meas_id.json");
+        assertNotNull(resource);
+        String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(json);
+        List<Measurement> measurements = Formats.parseContentList(new ContentType(format), json, Measurement.class);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .queryParam(Controllers.OFFICE, user.getOperatingOffice())
+                .header(AUTH_HEADER, user.toHeaderValue())
+       .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+       .delete("measurements/StreamLoc321")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true);
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(format)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .body(Formats.format(Formats.parseHeader(format, Measurement.class), measurements, Measurement.class))
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Filter by measurement ID
+        boolean isV2 = format.equals(Formats.JSONV2);
+        String numberField = isV2 ? "measurement-id" : "number";
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE_MASK, OFFICE_ID)
+                .queryParam(Controllers.ID_MASK, "StreamLoc321")
+                .queryParam(Controllers.MEASUREMENT_ID, "123456")
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("size()", is(1))
+                .body("[0]." + numberField, is("123456"));
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(format)
+                .queryParam(Controllers.OFFICE_MASK, OFFICE_ID)
+                .queryParam(Controllers.ID_MASK, "StreamLoc321")
+                .queryParam(Controllers.MEASUREMENT_ID, "550e8400-e29b-41d4-a716-446655440000")
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/measurements")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("size()", is(1))
+                .body("[0]." + numberField, is("550e8400-e29b-41d4-a716-446655440000"));
+
+       given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .queryParam(Controllers.OFFICE, user.getOperatingOffice())
+                .header(AUTH_HEADER, user.toHeaderValue())
+       .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+       .delete("measurements/StreamLoc321")
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+       .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
     }
 
 }
