@@ -107,6 +107,7 @@ import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
 import cwms.cda.api.auth.userlists.UserListController;
 import cwms.cda.api.auth.userlists.UserListMembersController;
+import cwms.cda.api.auth.userlists.UserListsController;
 import cwms.cda.features.CdaFeatures;
 import cwms.cda.api.auth.users.roles.AddRoleController;
 import cwms.cda.api.auth.users.roles.DeleteRolesController;
@@ -684,15 +685,25 @@ public class ApiServlet extends HttpServlet {
     }
 
     private void addUserListHandlers(RouteRole[] userRoles) {
+        String userListsPath = "/user/list";
         String userListPath = "/user/list/{user-list-id}";
         String userListMembersPath = "/user/list/{user-list-id}/members";
         if (FeatureContext.getFeatureManager().isActive(CdaFeatures.USER_LISTS)) {
+            get(userListsPath, new UserListsController(metrics), userRoles);
+            post(userListsPath, new UserListsController(metrics), userRoles);
             get(userListPath, new UserListController(metrics), userRoles);
+            patch(userListPath, new UserListController(metrics), userRoles);
+            delete(userListPath, new UserListController(metrics), userRoles);
             get(userListMembersPath, new UserListMembersController(metrics), userRoles);
         } else {
+            get(userListsPath, this::userListsUnsupported, userRoles);
+            post(userListsPath, this::userListsUnsupported, userRoles);
             get(userListPath, this::userListsUnsupported, userRoles);
+            patch(userListPath, this::userListsUnsupported, userRoles);
+            delete(userListPath, this::userListsUnsupported, userRoles);
             get(userListMembersPath, this::userListsUnsupported, userRoles);
         }
+        cdaAccessManager.addCustomAuthorizer(userListsPath, ApiServlet::hasAnyRole);
         cdaAccessManager.addCustomAuthorizer(userListPath, ApiServlet::hasAnyRole);
         cdaAccessManager.addCustomAuthorizer(userListMembersPath, ApiServlet::hasAnyRole);
     }
