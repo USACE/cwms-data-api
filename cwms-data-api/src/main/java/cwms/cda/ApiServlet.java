@@ -107,6 +107,7 @@ import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
 import cwms.cda.api.auth.userlists.UserListController;
 import cwms.cda.api.auth.userlists.UserListMembersController;
+import cwms.cda.api.auth.userlists.UserListMemberController;
 import cwms.cda.api.auth.userlists.UserListsController;
 import cwms.cda.features.CdaFeatures;
 import cwms.cda.api.auth.users.roles.AddRoleController;
@@ -688,6 +689,7 @@ public class ApiServlet extends HttpServlet {
         String userListsPath = "/user/list";
         String userListPath = "/user/list/{user-list-id}";
         String userListMembersPath = "/user/list/{user-list-id}/members";
+        String userListMemberPath = "/user/list/{user-list-id}/members/{user-id}";
         if (FeatureContext.getFeatureManager().isActive(CdaFeatures.USER_LISTS)) {
             get(userListsPath, new UserListsController(metrics), userRoles);
             post(userListsPath, new UserListsController(metrics), userRoles);
@@ -695,6 +697,8 @@ public class ApiServlet extends HttpServlet {
             patch(userListPath, new UserListController(metrics), userRoles);
             delete(userListPath, new UserListController(metrics), userRoles);
             get(userListMembersPath, new UserListMembersController(metrics), userRoles);
+            post(userListMembersPath, new UserListMembersController(metrics), userRoles);
+            delete(userListMemberPath, new UserListMemberController(metrics), userRoles);
         } else {
             get(userListsPath, this::userListsUnsupported, userRoles);
             post(userListsPath, this::userListsUnsupported, userRoles);
@@ -702,10 +706,13 @@ public class ApiServlet extends HttpServlet {
             patch(userListPath, this::userListsUnsupported, userRoles);
             delete(userListPath, this::userListsUnsupported, userRoles);
             get(userListMembersPath, this::userListsUnsupported, userRoles);
+            post(userListMembersPath, this::userListsUnsupported, userRoles);
+            delete(userListMemberPath, this::userListsUnsupported, userRoles);
         }
         cdaAccessManager.addCustomAuthorizer(userListsPath, ApiServlet::hasAnyRole);
         cdaAccessManager.addCustomAuthorizer(userListPath, ApiServlet::hasAnyRole);
         cdaAccessManager.addCustomAuthorizer(userListMembersPath, ApiServlet::hasAnyRole);
+        cdaAccessManager.addCustomAuthorizer(userListMemberPath, ApiServlet::hasAnyRole);
     }
 
     private void userListsUnsupported(Context ctx) {

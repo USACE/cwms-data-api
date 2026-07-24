@@ -195,6 +195,49 @@ public final class UserListDao extends Dao<UserListMember> {
         return new UserListMembers(members);
     }
 
+    public UserListMember addMember(String officeId, String userListId, String userId,
+            String addedBy) {
+        if (!userListExists(officeId, userListId)) {
+            throw new NotFoundException("User list not found: " + officeId + "/" + userListId);
+        }
+        Table<?> users = table(name("CWMS_20", "AT_SEC_CWMS_USERS")).as("cu");
+        Field<String> existingUserId = field(name(users.getName(), "USERID"), String.class);
+        boolean userExists = dsl.fetchExists(selectOne().from(users)
+                .where(ignoreCaseEq(existingUserId, userId)));
+        if (!userExists) {
+            throw new NotFoundException("CWMS user not found: " + userId);
+        }
+
+        Table<?> members = table(name("CWMS_20", "AT_USER_LIST_MEMBERS")).as("ulm_write");
+        Field<String> memberListId = field(name(members.getName(), "USER_LIST_ID"), String.class);
+        Field<String> memberUserId = field(name(members.getName(), "USERID"), String.class);
+        Field<String> memberAddedBy = field(name(members.getName(), "ADDED_BY_USERID"), String.class);
+        dsl.insertInto(members)
+                .columns(memberListId, memberUserId, memberAddedBy)
+                .values(userListId.toUpperCase(), userId.toUpperCase(), addedBy.toUpperCase())
+                .execute();
+        return getMembers(officeId, userListId).getMembers().stream()
+                .filter(member -> member.getUserId().equalsIgnoreCase(userId))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Added member was not found"));
+    }
+
+    public void removeMember(String officeId, String userListId, String userId) {
+        if (!userListExists(officeId, userListId)) {
+            throw new NotFoundException("User list not found: " + officeId + "/" + userListId);
+        }
+        Table<?> members = table(name("CWMS_20", "AT_USER_LIST_MEMBERS")).as("ulm_write");
+        Field<String> memberListId = field(name(members.getName(), "USER_LIST_ID"), String.class);
+        Field<String> memberUserId = field(name(members.getName(), "USERID"), String.class);
+        int deleted = dsl.deleteFrom(members)
+                .where(ignoreCaseEq(memberListId, userListId))
+                .and(ignoreCaseEq(memberUserId, userId))
+                .execute();
+        if (deleted == 0) {
+            throw new NotFoundException("User list member not found: " + userId);
+        }
+    }
+
     private boolean userListExists(String officeId, String userListId) {
         Field<Long> listOfficeCode = field(name(atUserLists.getName(), "DB_OFFICE_CODE"), Long.class);
         Field<String> listUserListId = field(name(atUserLists.getName(), "USER_LIST_ID"), String.class);

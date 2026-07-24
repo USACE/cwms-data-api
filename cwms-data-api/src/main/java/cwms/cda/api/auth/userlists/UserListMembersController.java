@@ -1,6 +1,7 @@
 package cwms.cda.api.auth.userlists;
 
 import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
@@ -13,11 +14,13 @@ import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.UserListDao;
 import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.auth.userlists.UserListMembers;
+import cwms.cda.data.dto.auth.userlists.UserListMemberInput;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -64,6 +67,14 @@ public final class UserListMembersController implements Handler {
     )
     @Override
     public void handle(Context ctx) {
+        if ("POST".equals(ctx.method())) {
+            create(ctx);
+        } else {
+            get(ctx);
+        }
+    }
+
+    private void get(Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String office = ctx.queryParam(OFFICE);
             if (office == null || office.isBlank()) {
@@ -88,6 +99,25 @@ public final class UserListMembersController implements Handler {
 
             ctx.result(result);
             ctx.contentType(contentType.toString());
+        }
+    }
+
+    private void create(Context ctx) {
+        try (final Timer.Context ignored = markAndTime(CREATE)) {
+            String office = UserListSupport.requiredOffice(ctx);
+            DSLContext dsl = UserListSupport.requireFeature(ctx);
+            if (dsl == null) {
+                return;
+            }
+            UserListDao dao = new UserListDao(dsl);
+            UserListSupport.requireOfficeAdmin(ctx, dao, office);
+            UserListMemberInput input = ctx.bodyAsClass(UserListMemberInput.class);
+            if (input.getUserId() == null || input.getUserId().isBlank()) {
+                throw new IllegalArgumentException("user-id is required");
+            }
+            ctx.status(HttpCode.CREATED).json(dao.addMember(
+                    office, ctx.pathParam(USER_LIST_ID), input.getUserId(),
+                    UserListSupport.principal(ctx).getName()));
         }
     }
 }
