@@ -19,11 +19,11 @@ public final class UserListMember extends CwmsDTOBase {
     private final String officeId;
 
     @JsonProperty(required = true)
-    @Schema(description = "The identifier of the user list.")
+    @Schema(description = "The office-scoped identifier of the user list.", maxLength = 128)
     private final String userListId;
 
     @JsonProperty(required = true)
-    @Schema(description = "The user identifier for the member.")
+    @Schema(description = "The user identifier for the member.", maxLength = 128)
     private final String userId;
 
     @Schema(description = "The user's display name.")
@@ -32,6 +32,9 @@ public final class UserListMember extends CwmsDTOBase {
     @Schema(description = "The user's email address.")
     private final String email;
 
+    /**
+     * Creates an office-scoped user-list member representation.
+     */
     public UserListMember(String officeId, String userListId, String userId, String fullName,
             String email) {
         this.officeId = officeId;

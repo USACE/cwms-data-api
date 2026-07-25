@@ -1,6 +1,6 @@
 # CDA User Lists
 
-| Status | Proposed |
+| Status | Accepted |
 | :-- | :-- |
 | **ADR #** | 0013 |
 | **Author** | Charles Graham |
@@ -24,6 +24,10 @@ CDA exposes office-scoped user lists backed by the CWMS database objects
 `AT_USER_LISTS`, `AT_USER_LIST_MEMBERS`, and `AV_USER_LIST_MEMBERS`.
 Membership references existing `AT_SEC_CWMS_USERS` rows.
 
+A list is uniquely identified by `(office-id, user-list-id)`. The same
+`user-list-id` may therefore be used independently by multiple offices, and
+membership rows carry the same office/list composite key.
+
 The REST resource is rooted at `/user/list`:
 
 - `GET /user/list?office=...` lists an office's lists.
@@ -34,8 +38,19 @@ The REST resource is rooted at `/user/list`:
 
 Any authenticated principal with the `CWMS Users` role may read list metadata and
 membership for any office. Mutations require `CWMS User Admins` membership for the
-office named by the resource. CDA derives owner and audit user IDs from the
-authenticated principal.
+office named by the resource. This deliberately permits authenticated CDA clients
+to resolve current member names and email addresses across offices; user lists
+must not be used for information that should be hidden from other authenticated
+CWMS users.
+
+CDA sets `owned-by-user-id` to the authenticated user who creates the list. The
+client cannot provide or change that value. Ownership is immutable audit metadata;
+it does not bypass or replace office-admin authorization for later mutations.
+Member `added-by-user-id` audit values are derived the same way.
+
+List IDs are normalized to uppercase and limited to 128 letters, numbers, dots,
+underscores, or hyphens. Descriptions are limited to the database column's 1,024
+characters. Duplicate lists and members return a conflict response.
 
 The `USER_LISTS` Togglz feature controls route exposure. CDA registers the
 documented handlers only when the feature is enabled. Requests are also guarded by
@@ -68,6 +83,8 @@ relational.
 
 - List IDs are stable references while member identity and email values remain
   sourced from CWMS users.
+- List IDs are unique within an office, not globally.
+- The creating user remains visible as immutable audit metadata.
 - Office authorization is enforced by CDA rather than trusted to clients.
 - Deployments must enable the feature only after installing the required schema.
 - Future contact fields can be added to the membership view and DTO without
@@ -75,6 +92,7 @@ relational.
 
 ## Implementation Status
 
-The database schema was introduced through CWMS database PR 160. CDA branch
-`1733-user-lists` implements the resource handlers, schema and feature gating,
-office-aware authorization, and management UI described here.
+The database schema was introduced through CWMS database PR 160. The CDA backend
+branch implements the resource handlers, schema and feature gating, validation,
+office-aware authorization, and creator audit behavior described here. The stacked
+CDA UI branch provides the authenticated management interface.

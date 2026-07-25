@@ -20,13 +20,14 @@ public final class UserList extends CwmsDTOBase {
     private final String officeId;
 
     @JsonProperty(required = true)
-    @Schema(description = "The identifier of the user list.")
+    @Schema(description = "The office-scoped identifier of the user list.", maxLength = 128)
     private final String userListId;
 
-    @Schema(description = "The user list description.")
+    @Schema(description = "The user list description.", maxLength = 1024)
     private final String description;
 
-    @Schema(description = "The user id of the list owner.")
+    @Schema(description = "The immutable user id of the authenticated principal that created "
+            + "the list.")
     private final String ownedByUserId;
 
     @JsonProperty(required = true)
@@ -36,6 +37,9 @@ public final class UserList extends CwmsDTOBase {
     @Schema(description = "The time the user list was last updated.")
     private final Instant updatedAt;
 
+    /**
+     * Creates an office-scoped user-list representation.
+     */
     public UserList(String officeId, String userListId, String description, String ownedByUserId,
             Instant createdAt, Instant updatedAt) {
         this.officeId = officeId;

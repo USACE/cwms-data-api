@@ -15,6 +15,13 @@ public final class UserListFeature {
     private UserListFeature() {
     }
 
+    /**
+     * Verifies that the connected CWMS schema supports user lists.
+     *
+     * @param ctx request context used to return an unsupported response
+     * @param dsl office-scoped database context
+     * @return true when user-list tables are available
+     */
     public static boolean requireSupported(Context ctx, DSLContext dsl) {
         int version = Dao.versionAsInteger(Dao.getVersion(dsl));
         if (version < V2026_07_16.numeric()) {

@@ -8,31 +8,32 @@ import static org.jooq.impl.DSL.upper;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.auth.userlists.UserList;
+import cwms.cda.data.dto.auth.userlists.UserListCandidate;
 import cwms.cda.data.dto.auth.userlists.UserListMember;
 import cwms.cda.data.dto.auth.userlists.UserListMembers;
+import io.javalin.http.ConflictResponse;
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Table;
+import org.jooq.impl.DSL;
 
-public final class UserListDao extends Dao<UserListMember> {
+public final class UserListDao {
 
+    private final DSLContext dsl;
     private final Table<?> avUserListMembers = table(name("CWMS_20", "AV_USER_LIST_MEMBERS")).as("ulm");
     private final Table<?> atUserLists = table(name("CWMS_20", "AT_USER_LISTS")).as("ul");
     private final Table<?> cwmsOffice = table(name("CWMS_20", "CWMS_OFFICE")).as("co");
     private final Table<?> atSecUsers = table(name("CWMS_20", "AT_SEC_USERS")).as("su");
     private final Table<?> atSecUserGroups = table(name("CWMS_20", "AT_SEC_USER_GROUPS")).as("sg");
+    private final Table<?> avCwmsUser = table(name("CWMS_20", "AV_CWMS_USER")).as("acu");
 
     public UserListDao(DSLContext dsl) {
-        super(dsl);
-    }
-
-    @Override
-    public Optional<UserListMember> getByUniqueName(String uniqueName, String office) {
-        return Optional.empty();
+        this.dsl = dsl;
     }
 
     public Optional<UserList> getUserList(String officeId, String userListId) {
@@ -89,21 +90,26 @@ public final class UserListDao extends Dao<UserListMember> {
 
     public UserList createUserList(String officeId, String userListId, String description,
             String owner) {
+        if (userListExists(officeId, userListId)) {
+            throw new ConflictResponse("User list already exists: " + officeId + "/" + userListId);
+        }
+        return dsl.transactionResult(configuration -> {
+            UserListDao transactionDao = new UserListDao(DSL.using(configuration));
+            return transactionDao.insertUserList(officeId, userListId, description, owner);
+        });
+    }
+
+    private UserList insertUserList(String officeId, String userListId, String description,
+            String owner) {
         Field<Long> listOfficeCode = field(name(atUserLists.getName(), "DB_OFFICE_CODE"), Long.class);
         Field<String> listUserListId = field(name(atUserLists.getName(), "USER_LIST_ID"), String.class);
         Field<String> listDescription = field(name(atUserLists.getName(), "USER_LIST_DESC"), String.class);
         Field<String> listOwner = field(name(atUserLists.getName(), "OWNED_BY_USERID"), String.class);
-        Field<Long> officeCode = field(name(cwmsOffice.getName(), "OFFICE_CODE"), Long.class);
-        Field<String> officeName = field(name(cwmsOffice.getName(), "OFFICE_ID"), String.class);
 
-        Long resolvedOfficeCode = dsl.select(officeCode)
-                .from(cwmsOffice)
-                .where(ignoreCaseEq(officeName, officeId))
-                .fetchOptional(officeCode)
-                .orElseThrow(() -> new NotFoundException("Office not found: " + officeId));
+        Long resolvedOfficeCode = resolveOfficeCode(officeId);
         dsl.insertInto(atUserLists)
                 .columns(listOfficeCode, listUserListId, listDescription, listOwner)
-                .values(resolvedOfficeCode, userListId.toUpperCase(), description, owner.toUpperCase())
+                .values(resolvedOfficeCode, normalizeId(userListId), description, normalizeId(owner))
                 .execute();
         return getUserList(officeId, userListId)
                 .orElseThrow(() -> new NotFoundException("Created user list was not found"));
@@ -113,10 +119,7 @@ public final class UserListDao extends Dao<UserListMember> {
         Field<Long> listOfficeCode = field(name(atUserLists.getName(), "DB_OFFICE_CODE"), Long.class);
         Field<String> listUserListId = field(name(atUserLists.getName(), "USER_LIST_ID"), String.class);
         Field<String> listDescription = field(name(atUserLists.getName(), "USER_LIST_DESC"), String.class);
-        Field<Long> officeCode = field(name(cwmsOffice.getName(), "OFFICE_CODE"), Long.class);
-        Field<String> officeName = field(name(cwmsOffice.getName(), "OFFICE_ID"), String.class);
-        Long resolvedOfficeCode = dsl.select(officeCode).from(cwmsOffice)
-                .where(ignoreCaseEq(officeName, officeId)).fetchOne(officeCode);
+        Long resolvedOfficeCode = resolveOfficeCode(officeId);
         int changed = dsl.update(atUserLists)
                 .set(listDescription, description)
                 .where(listOfficeCode.eq(resolvedOfficeCode))
@@ -129,16 +132,24 @@ public final class UserListDao extends Dao<UserListMember> {
     }
 
     public void deleteUserList(String officeId, String userListId) {
-        Field<String> memberListId = field(name("AT_USER_LIST_MEMBERS", "USER_LIST_ID"), String.class);
-        Table<?> members = table(name("CWMS_20", "AT_USER_LIST_MEMBERS"));
-        dsl.deleteFrom(members).where(ignoreCaseEq(memberListId, userListId)).execute();
+        if (!userListExists(officeId, userListId)) {
+            throw new NotFoundException("User list not found: " + officeId + "/" + userListId);
+        }
+        dsl.transaction(configuration -> new UserListDao(DSL.using(configuration))
+                .deleteUserListRows(officeId, userListId));
+    }
 
+    private void deleteUserListRows(String officeId, String userListId) {
+        Table<?> members = table(name("CWMS_20", "AT_USER_LIST_MEMBERS")).as("ulm_delete");
+        Field<Long> memberOfficeCode = field(name(members.getName(), "DB_OFFICE_CODE"), Long.class);
+        Field<String> memberListId = field(name(members.getName(), "USER_LIST_ID"), String.class);
         Field<Long> listOfficeCode = field(name(atUserLists.getName(), "DB_OFFICE_CODE"), Long.class);
         Field<String> listUserListId = field(name(atUserLists.getName(), "USER_LIST_ID"), String.class);
-        Field<Long> officeCode = field(name(cwmsOffice.getName(), "OFFICE_CODE"), Long.class);
-        Field<String> officeName = field(name(cwmsOffice.getName(), "OFFICE_ID"), String.class);
-        Long resolvedOfficeCode = dsl.select(officeCode).from(cwmsOffice)
-                .where(ignoreCaseEq(officeName, officeId)).fetchOne(officeCode);
+        Long resolvedOfficeCode = resolveOfficeCode(officeId);
+        dsl.deleteFrom(members)
+                .where(memberOfficeCode.eq(resolvedOfficeCode))
+                .and(ignoreCaseEq(memberListId, userListId))
+                .execute();
         int deleted = dsl.deleteFrom(atUserLists)
                 .where(listOfficeCode.eq(resolvedOfficeCode))
                 .and(ignoreCaseEq(listUserListId, userListId))
@@ -195,6 +206,30 @@ public final class UserListDao extends Dao<UserListMember> {
         return new UserListMembers(members);
     }
 
+    public List<UserListCandidate> searchCandidates(String search, int pageSize) {
+        Field<String> userId = field(name(avCwmsUser.getName(), "USER_ID"), String.class);
+        Field<String> fullName = field(name(avCwmsUser.getName(), "FULL_NAME"), String.class);
+        Field<String> email = field(name(avCwmsUser.getName(), "EMAIL"), String.class);
+        Field<String> officeId = field(name(avCwmsUser.getName(), "OFFICE_ID"), String.class);
+        String contains = "%" + search.toUpperCase(Locale.ROOT)
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_") + "%";
+        Condition matches = upper(userId).like(contains, '\\')
+                .or(upper(fullName).like(contains, '\\'))
+                .or(upper(email).like(contains, '\\'));
+        return dsl.select(userId, fullName, email, officeId)
+                .from(avCwmsUser)
+                .where(matches)
+                .orderBy(fullName.asc().nullsLast(), userId)
+                .limit(pageSize)
+                .fetch(record -> new UserListCandidate(
+                        record.get(userId),
+                        record.get(fullName),
+                        record.get(email),
+                        record.get(officeId)));
+    }
+
     public UserListMember addMember(String officeId, String userListId, String userId,
             String addedBy) {
         if (!userListExists(officeId, userListId)) {
@@ -209,12 +244,23 @@ public final class UserListDao extends Dao<UserListMember> {
         }
 
         Table<?> members = table(name("CWMS_20", "AT_USER_LIST_MEMBERS")).as("ulm_write");
+        Field<Long> memberOfficeCode = field(name(members.getName(), "DB_OFFICE_CODE"), Long.class);
         Field<String> memberListId = field(name(members.getName(), "USER_LIST_ID"), String.class);
         Field<String> memberUserId = field(name(members.getName(), "USERID"), String.class);
         Field<String> memberAddedBy = field(name(members.getName(), "ADDED_BY_USERID"), String.class);
+        Long resolvedOfficeCode = resolveOfficeCode(officeId);
+        boolean memberExists = dsl.fetchExists(selectOne().from(members)
+                .where(memberOfficeCode.eq(resolvedOfficeCode))
+                .and(ignoreCaseEq(memberListId, userListId))
+                .and(ignoreCaseEq(memberUserId, userId)));
+        if (memberExists) {
+            throw new ConflictResponse("User is already a member of "
+                    + officeId + "/" + userListId + ": " + userId);
+        }
         dsl.insertInto(members)
-                .columns(memberListId, memberUserId, memberAddedBy)
-                .values(userListId.toUpperCase(), userId.toUpperCase(), addedBy.toUpperCase())
+                .columns(memberOfficeCode, memberListId, memberUserId, memberAddedBy)
+                .values(resolvedOfficeCode, normalizeId(userListId), normalizeId(userId),
+                        normalizeId(addedBy))
                 .execute();
         return getMembers(officeId, userListId).getMembers().stream()
                 .filter(member -> member.getUserId().equalsIgnoreCase(userId))
@@ -227,10 +273,13 @@ public final class UserListDao extends Dao<UserListMember> {
             throw new NotFoundException("User list not found: " + officeId + "/" + userListId);
         }
         Table<?> members = table(name("CWMS_20", "AT_USER_LIST_MEMBERS")).as("ulm_write");
+        Field<Long> memberOfficeCode = field(name(members.getName(), "DB_OFFICE_CODE"), Long.class);
         Field<String> memberListId = field(name(members.getName(), "USER_LIST_ID"), String.class);
         Field<String> memberUserId = field(name(members.getName(), "USERID"), String.class);
+        Long resolvedOfficeCode = resolveOfficeCode(officeId);
         int deleted = dsl.deleteFrom(members)
-                .where(ignoreCaseEq(memberListId, userListId))
+                .where(memberOfficeCode.eq(resolvedOfficeCode))
+                .and(ignoreCaseEq(memberListId, userListId))
                 .and(ignoreCaseEq(memberUserId, userId))
                 .execute();
         if (deleted == 0) {
@@ -254,6 +303,20 @@ public final class UserListDao extends Dao<UserListMember> {
     }
 
     private static Condition ignoreCaseEq(Field<String> field, String value) {
-        return upper(field).eq(value.toUpperCase());
+        return upper(field).eq(normalizeId(value));
+    }
+
+    private Long resolveOfficeCode(String officeId) {
+        Field<Long> officeCode = field(name(cwmsOffice.getName(), "OFFICE_CODE"), Long.class);
+        Field<String> officeName = field(name(cwmsOffice.getName(), "OFFICE_ID"), String.class);
+        return dsl.select(officeCode)
+                .from(cwmsOffice)
+                .where(ignoreCaseEq(officeName, officeId))
+                .fetchOptional(officeCode)
+                .orElseThrow(() -> new NotFoundException("Office not found: " + officeId));
+    }
+
+    private static String normalizeId(String value) {
+        return value.toUpperCase(Locale.ROOT);
     }
 }
