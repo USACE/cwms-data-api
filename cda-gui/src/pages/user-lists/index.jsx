@@ -3,7 +3,6 @@ import {
   Badge,
   Button,
   Card,
-  DeleteConfirm,
   Description,
   Dropdown,
   Field,
@@ -26,7 +25,7 @@ import {
 } from "@usace/groundwork";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import PropTypes from "prop-types";
-import { FaListUl, FaPlus, FaUserPlus, FaUsers } from "react-icons/fa";
+import { FaListUl, FaPen, FaPlus, FaSearch, FaUserPlus, FaUsers } from "react-icons/fa";
 
 const apiRoot = import.meta.env.VITE_CDA_API_ROOT.replace(/\/$/, "");
 
@@ -103,6 +102,7 @@ EmptyState.propTypes = {
 export default function UserLists() {
   const auth = useAuth();
   const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [office, setOffice] = useState("");
   const [lists, setLists] = useState([]);
   const [selected, setSelected] = useState("");
@@ -110,12 +110,20 @@ export default function UserLists() {
   const [newList, setNewList] = useState("");
   const [description, setDescription] = useState("");
   const [newMember, setNewMember] = useState("");
+  const [candidateSearch, setCandidateSearch] = useState("");
+  const [candidates, setCandidates] = useState([]);
+  const [candidateLoading, setCandidateLoading] = useState(false);
+  const [listSearch, setListSearch] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [listsLoading, setListsLoading] = useState(false);
   const [membersLoading, setMembersLoading] = useState(false);
   const [working, setWorking] = useState(false);
   const [createOpened, setCreateOpened] = useState(false);
+  const [editOpened, setEditOpened] = useState(false);
+  const [editDescription, setEditDescription] = useState("");
+  const [deleteOpened, setDeleteOpened] = useState(false);
 
   const offices = useMemo(
     () => Object.keys(profile?.roles ?? profile?.["office-roles"] ?? {}).sort(),
@@ -124,6 +132,24 @@ export default function UserLists() {
   const roles = profile?.roles?.[office] ?? profile?.["office-roles"]?.[office] ?? [];
   const canWrite = roles.includes("CWMS User Admins");
   const selectedList = lists.find((item) => item["user-list-id"] === selected);
+  const filteredLists = useMemo(() => {
+    const term = listSearch.trim().toLowerCase();
+    if (!term) return lists;
+    return lists.filter(
+      (item) =>
+        item["user-list-id"]?.toLowerCase().includes(term) ||
+        item.description?.toLowerCase().includes(term),
+    );
+  }, [listSearch, lists]);
+  const filteredMembers = useMemo(() => {
+    const term = memberSearch.trim().toLowerCase();
+    if (!term) return members;
+    return members.filter((member) =>
+      [member["user-id"], member["full-name"], member.email]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(term)),
+    );
+  }, [memberSearch, members]);
 
   const loadLists = useCallback(
     async (targetOffice = office) => {
@@ -181,7 +207,8 @@ export default function UserLists() {
         ).sort()[0];
         setOffice((current) => current || nextOffice || "");
       })
-      .catch((cause) => setError(cause.message));
+      .catch((cause) => setError(cause.message))
+      .finally(() => setProfileLoading(false));
   }, [auth.isAuth, auth.token]);
 
   useEffect(() => {
@@ -194,6 +221,42 @@ export default function UserLists() {
     loadMembers().catch((cause) => setError(cause.message));
   }, [loadMembers]);
 
+  useEffect(() => {
+    const search = candidateSearch.trim();
+    if (!auth.token || !office || search.length < 2) {
+      setCandidates([]);
+      setCandidateLoading(false);
+      return undefined;
+    }
+    const controller = new AbortController();
+    setError("");
+    setCandidates([]);
+    const timeout = window.setTimeout(async () => {
+      setCandidateLoading(true);
+      try {
+        const parameters = new URLSearchParams({
+          office,
+          search,
+          "page-size": "20",
+        });
+        const payload = await request(
+          `/user/list-member-candidates?${parameters}`,
+          auth.token,
+          { signal: controller.signal },
+        );
+        setCandidates(payload?.candidates ?? payload ?? []);
+      } catch (cause) {
+        if (cause.name !== "AbortError") setError(cause.message);
+      } finally {
+        if (!controller.signal.aborted) setCandidateLoading(false);
+      }
+    }, 250);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [auth.token, candidateSearch, office]);
+
   async function mutate(action, success, refresh = {}) {
     setError("");
     setMessage("");
@@ -203,7 +266,7 @@ export default function UserLists() {
       if (refresh.lists !== false) await loadLists();
       if (refresh.members) await loadMembers(refresh.members);
       setMessage(success);
-      return result;
+      return result ?? true;
     } catch (cause) {
       setError(cause.message);
       return null;
@@ -265,14 +328,14 @@ export default function UserLists() {
           </div>
           <H1>User Lists</H1>
           <Text className="mt-2 max-w-3xl">
-            Build reusable, office-owned groups for notifications and other CDA-aware
+            Build reusable, office-owned lists for notifications and other CDA-aware
             applications. Membership stays in CDA so every consumer uses the same list.
           </Text>
         </div>
         {canWrite && (
           <Button type="button" onClick={() => setCreateOpened(true)}>
             <FaPlus aria-hidden="true" />
-            Create user list
+            New list
           </Button>
         )}
       </div>
@@ -307,8 +370,10 @@ export default function UserLists() {
                   </option>
                 ))}
               />
-            ) : (
+            ) : profileLoading ? (
               <Skeleton className="h-10 w-full" />
+            ) : (
+              <Text role="status">No authorized CWMS offices are available.</Text>
             )}
           </Field>
           <div className="rounded-lg bg-blue-50 px-4 py-3">
@@ -333,6 +398,21 @@ export default function UserLists() {
           </div>
 
           <div className="p-3">
+            {lists.length > 0 && (
+              <div className="relative mb-3">
+                <FaSearch
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-3 text-zinc-500"
+                />
+                <Input
+                  aria-label="Filter user lists"
+                  className="pl-9"
+                  placeholder="Filter lists"
+                  value={listSearch}
+                  onChange={(event) => setListSearch(event.target.value)}
+                />
+              </div>
+            )}
             {listsLoading ? (
               <div className="space-y-3 p-2">
                 <Skeleton className="h-20 w-full" />
@@ -344,13 +424,17 @@ export default function UserLists() {
                   ? "Create the first reusable list for this office."
                   : "Ask a CWMS User Administrator to create a list for this office."}
               </EmptyState>
+            ) : filteredLists.length === 0 ? (
+              <EmptyState icon={FaSearch} title="No matching lists">
+                Try a different list ID or description.
+              </EmptyState>
             ) : (
               <div
                 className="space-y-2"
                 role="list"
                 aria-label={`${office} user lists`}
               >
-                {lists.map((item) => {
+                {filteredLists.map((item) => {
                   const listId = item["user-list-id"];
                   const active = listId === selected;
                   return (
@@ -377,9 +461,9 @@ export default function UserLists() {
                       <Text className="mt-1 line-clamp-2">
                         {item.description || "No description provided."}
                       </Text>
-                      {item["owned-by-userid"] && (
+                      {item["owned-by-user-id"] && (
                         <Text className="mt-2 text-xs">
-                          Owner: {item["owned-by-userid"]}
+                          Created by {item["owned-by-user-id"]}
                         </Text>
                       )}
                     </button>
@@ -403,20 +487,27 @@ export default function UserLists() {
               </Text>
             </div>
             {canWrite && selected && (
-              <DeleteConfirm
-                alignConfirm="left"
-                onDelete={() =>
-                  mutate(
-                    () =>
-                      request(
-                        `/user/list/${encodeURIComponent(selected)}?office=${encodeURIComponent(office)}`,
-                        auth.token,
-                        { method: "DELETE" },
-                      ),
-                    `Deleted ${selected}.`,
-                  )
-                }
-              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  color="light"
+                  onClick={() => {
+                    setEditDescription(selectedList?.description ?? "");
+                    setEditOpened(true);
+                  }}
+                >
+                  <FaPen aria-hidden="true" />
+                  Edit details
+                </Button>
+                <Button
+                  type="button"
+                  color="danger"
+                  style="outline"
+                  onClick={() => setDeleteOpened(true)}
+                >
+                  Delete list
+                </Button>
+              </div>
             )}
           </div>
 
@@ -448,33 +539,97 @@ export default function UserLists() {
                       `Added ${userId} to ${selected}.`,
                       { lists: false, members: selected },
                     );
-                    if (added) setNewMember("");
+                    if (added) {
+                      setNewMember("");
+                      setCandidateSearch("");
+                      setCandidates([]);
+                    }
                   }}
                 >
                   <Field>
                     <Label>Add a member</Label>
                     <Description>
-                      Enter an existing CWMS user ID. CDA supplies the display name and
-                      email address.
+                      Search by user ID, name, or email, then choose an existing CWMS
+                      user.
                     </Description>
-                    <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <Input
-                        required
-                        aria-label="CWMS user ID"
-                        placeholder="CWMS user ID"
-                        value={newMember}
-                        onChange={(event) => setNewMember(event.target.value)}
+                    <div className="relative mt-3">
+                      <FaSearch
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-3 top-3 text-zinc-500"
                       />
-                      <Button type="submit" disabled={working}>
+                      <Input
+                        aria-label="Search CWMS users"
+                        className="pl-9"
+                        placeholder="Search users"
+                        value={candidateSearch}
+                        onChange={(event) => {
+                          setCandidateSearch(event.target.value);
+                          setNewMember("");
+                        }}
+                      />
+                    </div>
+                    {candidateLoading && (
+                      <Text className="mt-2" role="status">
+                        Searching…
+                      </Text>
+                    )}
+                    {!candidateLoading && candidateSearch.trim().length >= 2 && (
+                      <div
+                        className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1"
+                        role="listbox"
+                        aria-label="Matching CWMS users"
+                      >
+                        {candidates.length === 0 ? (
+                          <Text className="p-3">No matching users found.</Text>
+                        ) : (
+                          candidates.map((candidate) => {
+                            const candidateId = candidate["user-id"];
+                            const chosen = candidateId === newMember;
+                            return (
+                              <button
+                                key={candidateId}
+                                type="button"
+                                role="option"
+                                aria-selected={chosen}
+                                className={`block w-full rounded-md px-3 py-2 text-left ${
+                                  chosen
+                                    ? "bg-blue-50 ring-1 ring-blue-600"
+                                    : "hover:bg-zinc-50"
+                                }`}
+                                onClick={() => setNewMember(candidateId)}
+                              >
+                                <Strong>{candidate["full-name"] || candidateId}</Strong>
+                                <Text className="text-sm">
+                                  {[candidateId, candidate.email]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </Text>
+                              </button>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                      <Text>
+                        {newMember
+                          ? `Selected: ${newMember}`
+                          : "Select a user from the search results."}
+                      </Text>
+                      <Button
+                        type="submit"
+                        className="whitespace-nowrap"
+                        disabled={working || !newMember}
+                      >
                         <FaUserPlus aria-hidden="true" />
-                        Add member
+                        Add
                       </Button>
                     </div>
                   </Field>
                 </form>
               )}
 
-              <div className="p-5">
+              <div className="min-w-0 p-5">
                 {membersLoading ? (
                   <div className="space-y-3">
                     <Skeleton className="h-12 w-full" />
@@ -487,69 +642,92 @@ export default function UserLists() {
                       : "A list administrator has not added any members yet."}
                   </EmptyState>
                 ) : (
-                  <Table striped dense>
-                    <TableHead>
-                      <TableRow>
-                        <TableHeader>User</TableHeader>
-                        <TableHeader>Email</TableHeader>
-                        {canWrite && (
-                          <TableHeader className="text-right">Action</TableHeader>
-                        )}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {members.map((member) => {
-                        const userId = member["user-id"] ?? member;
-                        return (
-                          <TableRow key={userId}>
-                            <TableCell>
-                              <Strong>{member["full-name"] || userId}</Strong>
-                              {member["full-name"] && (
-                                <Text className="text-xs">{userId}</Text>
+                  <>
+                    <div className="relative mb-4">
+                      <FaSearch
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-3 top-3 text-zinc-500"
+                      />
+                      <Input
+                        aria-label="Filter list members"
+                        className="pl-9"
+                        placeholder="Filter members"
+                        value={memberSearch}
+                        onChange={(event) => setMemberSearch(event.target.value)}
+                      />
+                    </div>
+                    {filteredMembers.length === 0 ? (
+                      <EmptyState icon={FaSearch} title="No matching members">
+                        Try a different name, user ID, or email.
+                      </EmptyState>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table striped dense>
+                          <TableHead>
+                            <TableRow>
+                              <TableHeader>User</TableHeader>
+                              <TableHeader>Email</TableHeader>
+                              {canWrite && (
+                                <TableHeader className="text-right">Action</TableHeader>
                               )}
-                            </TableCell>
-                            <TableCell>
-                              {member.email ? (
-                                <a
-                                  className="text-blue-700 underline hover:text-blue-900"
-                                  href={`mailto:${member.email}`}
-                                >
-                                  {member.email}
-                                </a>
-                              ) : (
-                                <Text>No email in CDA profile</Text>
-                              )}
-                            </TableCell>
-                            {canWrite && (
-                              <TableCell className="text-right">
-                                <Button
-                                  type="button"
-                                  color="danger"
-                                  style="outline"
-                                  size="sm"
-                                  disabled={working}
-                                  onClick={() =>
-                                    mutate(
-                                      () =>
-                                        request(
-                                          `/user/list/${encodeURIComponent(selected)}/members/${encodeURIComponent(userId)}?office=${encodeURIComponent(office)}`,
-                                          auth.token,
-                                          { method: "DELETE" },
-                                        ),
-                                      `Removed ${userId} from ${selected}.`,
-                                      { lists: false, members: selected },
-                                    )
-                                  }
-                                >
-                                  Remove
-                                </Button>
-                              </TableCell>
-                            )}
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {filteredMembers.map((member) => {
+                              const userId = member["user-id"] ?? member;
+                              return (
+                                <TableRow key={userId}>
+                                  <TableCell>
+                                    <Strong>{member["full-name"] || userId}</Strong>
+                                    {member["full-name"] && (
+                                      <Text className="text-xs">{userId}</Text>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {member.email ? (
+                                      <a
+                                        className="text-blue-700 underline hover:text-blue-900"
+                                        href={`mailto:${member.email}`}
+                                      >
+                                        {member.email}
+                                      </a>
+                                    ) : (
+                                      <Text>No email in CDA profile</Text>
+                                    )}
+                                  </TableCell>
+                                  {canWrite && (
+                                    <TableCell className="text-right">
+                                      <Button
+                                        type="button"
+                                        color="danger"
+                                        style="outline"
+                                        size="sm"
+                                        disabled={working}
+                                        onClick={() =>
+                                          mutate(
+                                            () =>
+                                              request(
+                                                `/user/list/${encodeURIComponent(selected)}/members/${encodeURIComponent(userId)}?office=${encodeURIComponent(office)}`,
+                                                auth.token,
+                                                { method: "DELETE" },
+                                              ),
+                                            `Removed ${userId} from ${selected}.`,
+                                            { lists: false, members: selected },
+                                          )
+                                        }
+                                      >
+                                        Remove
+                                      </Button>
+                                    </TableCell>
+                                  )}
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </>
@@ -603,6 +781,92 @@ export default function UserLists() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        opened={editOpened}
+        onClose={() => setEditOpened(false)}
+        dialogTitle="Edit list details"
+        dialogDescription={`Update the description for ${selected}. The list ID and creator do not change.`}
+        size="lg"
+      >
+        <form
+          className="space-y-5"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const updated = await mutate(
+              () =>
+                request(
+                  `/user/list/${encodeURIComponent(selected)}?office=${encodeURIComponent(office)}`,
+                  auth.token,
+                  {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      description: editDescription.trim() || null,
+                    }),
+                  },
+                ),
+              `Updated ${selected}.`,
+            );
+            if (updated) setEditOpened(false);
+          }}
+        >
+          <Field>
+            <Label>Description</Label>
+            <Description>
+              Explain who belongs in the list and how it is used.
+            </Description>
+            <Textarea
+              autoFocus
+              rows={4}
+              maxLength={1024}
+              aria-label="Description"
+              value={editDescription}
+              onChange={(event) => setEditDescription(event.target.value)}
+            />
+          </Field>
+          <div className="flex flex-wrap justify-end gap-3">
+            <Button type="button" color="light" onClick={() => setEditOpened(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={working}>
+              Save changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        opened={deleteOpened}
+        onClose={() => setDeleteOpened(false)}
+        dialogTitle="Delete user list?"
+        dialogDescription={`Delete ${selected} and remove all of its memberships. This cannot be undone.`}
+        size="md"
+      >
+        <div className="flex flex-wrap justify-end gap-3">
+          <Button type="button" color="light" onClick={() => setDeleteOpened(false)}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            color="danger"
+            disabled={working}
+            onClick={async () => {
+              const deleted = await mutate(
+                () =>
+                  request(
+                    `/user/list/${encodeURIComponent(selected)}?office=${encodeURIComponent(office)}`,
+                    auth.token,
+                    { method: "DELETE" },
+                  ),
+                `Deleted ${selected}.`,
+              );
+              if (deleted) setDeleteOpened(false);
+            }}
+          >
+            Delete list
+          </Button>
+        </div>
       </Modal>
     </section>
   );
