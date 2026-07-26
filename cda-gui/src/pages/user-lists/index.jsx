@@ -26,6 +26,7 @@ import {
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 import PropTypes from "prop-types";
 import { FaListUl, FaPen, FaPlus, FaSearch, FaUserPlus, FaUsers } from "react-icons/fa";
+import { HelpTip } from "../../components/HelpTip";
 
 const apiRoot = import.meta.env.VITE_CDA_API_ROOT.replace(/\/$/, "");
 
@@ -326,7 +327,14 @@ export default function UserLists() {
               {canWrite ? "User list administrator" : "Read only"}
             </Badge>
           </div>
-          <H1>User Lists</H1>
+          <div className="flex items-center gap-1">
+            <H1>User Lists</H1>
+            <HelpTip title="List ownership">
+              CDA records the authenticated creator as the list owner for audit history.
+              The owner does not change when the description or membership changes;
+              office User Administrators control edits.
+            </HelpTip>
+          </div>
           <Text className="mt-2 max-w-3xl">
             Build reusable, office-owned lists for notifications and other CDA-aware
             applications. Membership stays in CDA so every consumer uses the same list.
@@ -346,7 +354,14 @@ export default function UserLists() {
       <Card className="mb-6 p-5">
         <div className="grid gap-5 md:grid-cols-[minmax(0,20rem)_1fr] md:items-end">
           <Field>
-            <Label>Office</Label>
+            <div className="flex items-center gap-1">
+              <Label>Office</Label>
+              <HelpTip title="Office-scoped user lists">
+                Each office owns a separate collection of lists. The same list ID may
+                exist in two offices without sharing members. Your office role
+                determines whether you can view or edit a list.
+              </HelpTip>
+            </div>
             <Description>
               User lists are isolated by their owning CWMS office.
             </Description>
@@ -547,7 +562,14 @@ export default function UserLists() {
                   }}
                 >
                   <Field>
-                    <Label>Add a member</Label>
+                    <div className="flex items-center gap-1">
+                      <Label>Add a member</Label>
+                      <HelpTip title="List members">
+                        Members must already have a CDA user profile. CDA stores the
+                        user ID in the list and resolves the member&apos;s current name
+                        and email for consumers such as notifications.
+                      </HelpTip>
+                    </div>
                     <Description>
                       Search by user ID, name, or email, then choose an existing CWMS
                       user.
@@ -744,7 +766,14 @@ export default function UserLists() {
       >
         <form className="space-y-5" onSubmit={createList}>
           <Field>
-            <Label>List ID</Label>
+            <div className="flex items-center gap-1">
+              <Label>List ID</Label>
+              <HelpTip title="List ID rules">
+                The ID is unique within the selected office and cannot be renamed after
+                creation. Use up to 128 uppercase letters, numbers, periods, hyphens, or
+                underscores.
+              </HelpTip>
+            </div>
             <Description>
               Use a short, recognizable name such as ON-CALL-HYDROLOGISTS.
             </Description>
