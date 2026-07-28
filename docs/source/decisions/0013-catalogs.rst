@@ -62,6 +62,127 @@ Key Points
         is received many times. Like `POST`, `QUERY` supports data provided in the request body, reducing the
         need for a lengthy assortment of query parameters.
 
+Differences in Catalog and GetAll data shapes
+=============================================
+
+An important distinction between the two endpoint types is the shape of the data retrieved.
+Below is an example for the Location endpoints:
+
+GetAll:
+
+.. code:: json
+
+    [
+      {
+        "office-id": "string",
+        "name": "string",
+        "latitude": 0,
+        "longitude": 0,
+        "active": true,
+        "public-name": "string",
+        "long-name": "string",
+        "description": "string",
+        "timezone-name": "string",
+        "location-type": "string",
+        "location-kind": "string",
+        "nation": "US",
+        "state-initial": "string",
+        "county-name": "string",
+        "nearest-city": "string",
+        "horizontal-datum": "string",
+        "published-longitude": 0,
+        "published-latitude": 0,
+        "vertical-datum": "string",
+        "elevation": 0,
+        "map-label": "string",
+        "bounding-office-id": "string",
+        "elevation-units": "string",
+        "aliases": [
+          {
+            "name": "string",
+            "value": "string"
+          }
+        ]
+      }
+    ]
+
+Catalog:
+
+.. code:: json
+
+    {
+      "entries": [
+        {
+          "office": "string",
+          "name": "string",
+          "nearest-city": "string",
+          "public-name": "string",
+          "long-name": "string",
+          "description": "string",
+          "kind": "string",
+          "type": "string",
+          "time-zone": "string",
+          "latitude": 0,
+          "longitude": 0,
+          "published-latitude": 0,
+          "published-longitude": 0,
+          "horizontal-datum": "string",
+          "elevation": 0,
+          "unit": "string",
+          "vertical-datum": "string",
+          "nation": "string",
+          "state": "string",
+          "county": "string",
+          "bounding-office": "string",
+          "map-label": "string",
+          "active": true,
+          "aliases": [
+            {
+              "name": "string",
+              "value": "string"
+            }
+          ]
+        },
+        {
+          "office": "string",
+          "name": "string",
+          "units": "string",
+          "interval": "string",
+          "interval-offset": 0,
+          "time-zone": "string",
+          "extents": [
+            {
+              "earliest-time": "2026-07-28T16:49:26.200Z",
+              "latest-time": "2026-07-28T16:49:26.200Z",
+              "version-time": "2026-07-28T16:49:26.200Z",
+              "last-update": "2026-07-28T16:49:26.200Z"
+            }
+          ],
+          "aliases": [
+            {
+              "name": "string",
+              "value": "string"
+            }
+          ],
+          "versioned": true
+        }
+      ],
+      "next-page": "string",
+      "page": "string",
+      "page-size": 0,
+      "total": 0
+    }
+
+Library Support for HTTP QUERY method
+=====================================
+
+Support for the QUERY method has been added to Jakarta EE 12 and Apache Tomcat 12. Currently, CDA is using Java EE 8
+and will require a version bump to make this feature available. This involves a namespace change in the associated
+packages from javax.* to jakarta.*. This transition should be conducted in parallel with a bump in Javalin, which
+also requires the newer namespace in its more recent versions. Note that this version bump may also require Java 17,
+which is not compatible with Solaris-based systems. See references section below for relevant issue links
+and commits into the Tomcat and Jakarta libraries.
+
 Existing catalog endpoints
 ==========================
 
@@ -85,4 +206,8 @@ References
 ==========
 
 - RFC 10008: https://www.rfc-editor.org/info/rfc10008
-
+- QUERY method support:
+    - CDA Issue 1850: https://github.com/USACE/cwms-data-api/issues/1850
+    - Jakarta EE: https://github.com/jakartaee/servlet/issues/1068
+    - Apache Tomcat: https://github.com/apache/tomcat/commit/5e01091299e41bc79509b1c8d17486f85df1d872
+- Javalin update issue (linked to Jakarta version): https://github.com/USACE/cwms-data-api/issues/1004
