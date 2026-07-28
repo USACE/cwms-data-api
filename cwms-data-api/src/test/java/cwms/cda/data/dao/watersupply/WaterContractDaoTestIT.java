@@ -215,6 +215,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             WaterUserContract result = retrievedContract.get(0);
             DTOMatch.assertMatch(contract, result);
             result = retrievedContract.get(1);
+            
             DTOMatch.assertMatch(contract2, result);
         }, CwmsDataApiSetupCallback.getWebUser());
     }
@@ -468,7 +469,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 .withPublicName("Test Public Name")
                 .withLongName("Test Long Name")
                 .withDescription("Test Description")
-                .withNearestCity("Davis")
+                // Older Schemas will use as-is, newer schemas will force it to be this anyways
+                .withNearestCity("Davis, CA") 
                 .withLatitude(38.55)
                 .withLongitude(-121.73)
                 .withPublishedLatitude(38.55)
