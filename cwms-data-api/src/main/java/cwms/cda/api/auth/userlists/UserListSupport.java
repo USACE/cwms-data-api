@@ -1,9 +1,7 @@
 package cwms.cda.api.auth.userlists;
 
-import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
-import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.UserListDao;
 import cwms.cda.data.dto.Office;
@@ -22,16 +20,6 @@ final class UserListSupport {
             Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,127}");
 
     private UserListSupport() {
-    }
-
-    static String requiredOffice(Context ctx) {
-        String office = ctx.queryParam(OFFICE);
-        if (office == null || office.isBlank()) {
-            throw new RequiredQueryParameterException(OFFICE);
-        }
-        return ctx.queryParamAsClass(OFFICE, String.class)
-                .check(Office::validOfficeNotNull, "Invalid office provided")
-                .get();
     }
 
     static String validateOffice(String office) {

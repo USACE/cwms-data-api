@@ -2,6 +2,7 @@ package cwms.cda.api.auth.userlists;
 
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -48,7 +49,7 @@ public final class UserListCandidatesController implements Handler {
     public void handle(Context ctx) {
         try (Timer.Context ignored =
                 Controllers.markAndTime(metrics, getClass().getName(), GET_ALL)) {
-            String search = UserListSupport.validateCandidateSearch(ctx.queryParam(SEARCH));
+            String search = UserListSupport.validateCandidateSearch(requiredParam(ctx, SEARCH));
             int pageSize = ctx.queryParamAsClass(PAGE_SIZE, Integer.class).getOrDefault(20);
             if (pageSize < 1 || pageSize > 50) {
                 throw new IllegalArgumentException("page-size must be between 1 and 50");

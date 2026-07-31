@@ -4,6 +4,7 @@ import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -54,7 +55,7 @@ public final class AddUserListMemberController implements Handler {
     public void handle(Context ctx) {
         try (Timer.Context ignored =
                 Controllers.markAndTime(metrics, getClass().getName(), CREATE)) {
-            String office = UserListSupport.requiredOffice(ctx);
+            String office = requiredParam(ctx, OFFICE);
             DSLContext dsl = UserListSupport.requireFeature(ctx, office);
             if (dsl == null) {
                 return;

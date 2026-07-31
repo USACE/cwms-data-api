@@ -3,6 +3,7 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -39,12 +40,8 @@ public final class UserListsController implements Handler {
     )
     @Override
     public void handle(Context ctx) {
-        getAll(ctx);
-    }
-
-    private void getAll(Context ctx) {
         try (Timer.Context ignored = Controllers.markAndTime(metrics, getClass().getName(), GET_ALL)) {
-            String office = UserListSupport.requiredOffice(ctx);
+            String office = requiredParam(ctx, OFFICE);
             DSLContext dsl = UserListSupport.requireFeature(ctx);
             if (dsl == null) {
                 return;

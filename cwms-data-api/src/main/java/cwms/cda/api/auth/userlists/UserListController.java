@@ -4,15 +4,14 @@ import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.UserListDao;
-import cwms.cda.data.dto.Office;
 import cwms.cda.data.dto.auth.userlists.UserList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -65,20 +64,8 @@ public final class UserListController implements Handler {
     )
     @Override
     public void handle(Context ctx) {
-        get(ctx);
-    }
-
-    private void get(Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String office = ctx.queryParam(OFFICE);
-            if (office == null || office.isBlank()) {
-                throw new RequiredQueryParameterException(OFFICE);
-            }
-
-            final String officeId = ctx.queryParamAsClass(OFFICE, String.class)
-                    .check(Office::validOfficeNotNull, "Invalid office provided")
-                    .get();
-
+            String officeId = requiredParam(ctx, OFFICE);
             String userListId = UserListSupport.validateUserListId(ctx.pathParam(USER_LIST_ID));
             DSLContext dsl = getDslContext(ctx);
             if (!UserListFeature.requireSupported(ctx, dsl)) {
@@ -97,5 +84,4 @@ public final class UserListController implements Handler {
             ctx.contentType(contentType.toString());
         }
     }
-
 }
