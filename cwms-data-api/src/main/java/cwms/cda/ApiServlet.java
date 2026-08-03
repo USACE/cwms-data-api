@@ -184,6 +184,7 @@ import cwms.cda.data.dto.csv.CwmsCsvDTO;
 import cwms.cda.features.CdaFeatures;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.csv.CsvExampleGenerator;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.DataApiPrincipal;
@@ -322,6 +323,7 @@ public class ApiServlet extends HttpServlet {
 
     JavalinServlet javalin = null;
     private Authenticator authenticator = new Authenticator();
+    private OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
     private String APP_CONTEXT;
 
     @Resource(name = "jdbc/CWMS3")
@@ -374,6 +376,7 @@ public class ApiServlet extends HttpServlet {
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
+                .attribute("schemeProcessor", schemeProcessor)
                 .before(authenticator)
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
@@ -976,32 +979,20 @@ public class ApiServlet extends HttpServlet {
 
         String provider = CdaAccessManager.class.getSimpleName();
 
-
-        Components components = new Components();
-        final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        authenticator.getActiveProviders().forEach(identityProvider -> {
-            components.addSecuritySchemes(identityProvider.getName(),identityProvider.getScheme());
-            SecurityRequirement req = new SecurityRequirement();
-            if (!identityProvider.getName().equalsIgnoreCase("guestauth")
-                    && !identityProvider.getName().equalsIgnoreCase("noauth")) {
-                req.addList(identityProvider.getName());
-                secReqs.add(req);
-            }
-        });
-
         List<Server> servers = new ArrayList<>();
         servers.add(new Server().url(APP_CONTEXT));
         OpenApiOptions ops =
             new OpenApiOptions(
-                () -> new OpenAPI().components(components)
+                () -> new OpenAPI()
                                    .servers(servers)
                                    .info(applicationInfo)
                                    .addSecurityItem(new SecurityRequirement().addList(provider))
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
+                schemeProcessor.apply(ctx, api);
                 api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,secReqs);
+                    setSecurityRequirements(key,path,schemeProcessor.getSecurityRequirements());
                     // yeah, we really need to figure out how to update everything, this is supported as an annotation in
                     // newer versions.
                     if (key.startsWith("/rss")) {
@@ -1066,6 +1057,7 @@ public class ApiServlet extends HttpServlet {
             .activateAnnotationScanningFor("cwms.cda.api");
         addEndpointExamples(ops);
         config.registerPlugin(new OpenApiPlugin(ops));
+
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
