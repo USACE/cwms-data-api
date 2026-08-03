@@ -32,15 +32,16 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dto.VerticalDatumInfo;
 
 /**
- *
+ * Handles Vertical Datum Info that may be embedded within another DTO.
  */
 abstract class VerticalDatumInfoMixin {
     @JacksonXmlElementWrapper(useWrapping = false)
     @JacksonXmlProperty(localName = "offset")
     @JsonProperty("offset")
     abstract VerticalDatumInfo.Offset[] getOffsets();
+
     @JsonPOJOBuilder
-    public static abstract class Builder {
+    public abstract static class Builder {
         @JsonSetter("offset")
         @JacksonXmlElementWrapper(useWrapping = false)
         @JacksonXmlProperty(localName = "offset")

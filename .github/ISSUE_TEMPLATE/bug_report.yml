@@ -1,0 +1,79 @@
+name: CDA Bug report
+description: Create a report to help us improve
+title: "[Bug]: "
+labels:
+  - bug
+  - priority:medium
+assignees:
+  - CWMS Developers
+body:
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the bug
+      description: Include the instance of CDA tried, the endpoints, and what you were intending to do.
+      placeholder: A clear and concise description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      placeholder: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Select the priority that best fits this bug.
+      options:
+        - Low
+        - Medium
+        - High
+      default: 1
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs/Incident Identifier
+      description: When you receive an error, if possible add your corresponding Tomcat log output. If you do not have access to this, you can leave this section blank.
+
+  - type: textarea
+    id: curl-commands
+    attributes:
+      label: CURL Commands
+      description: If applicable, add the curl command from the Swagger UI to help reproduce your problem. Redact any internal domains or IP addresses.
+      render: shell
+
+  - type: input
+    id: cda-version
+    attributes:
+      label: CDA Version
+      description: At the top of any instance of CDA you will see a version. Please provide that version.
+      placeholder: "e.g. 2025.08.18"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context about the problem here.

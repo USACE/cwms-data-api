@@ -7,6 +7,8 @@ public class DatabaseHelpers {
     
     public enum SCHEMA_VERSION {
         V2025_07_01(250701, "25.07.01"),
+        V2026_02_17(260217, "26.02.17"),
+        V2026_07_16(260716, "26.07.16"),
         LATEST_DEV(LATEST_SCHEMA, "99.99.99"),
         BYPASS(-1, "Bypass")
         ;
@@ -14,8 +16,7 @@ public class DatabaseHelpers {
         private final int numeric;
         private final String text;
 
-        SCHEMA_VERSION(int numeric, String text)
-        {
+        SCHEMA_VERSION(int numeric, String text) {
             this.numeric = numeric;
             this.text = text;
         }
@@ -28,12 +29,15 @@ public class DatabaseHelpers {
             return this.text;
         }
 
-        public static SCHEMA_VERSION fromNumeric(int value)
-        {
-            for(var tmp: SCHEMA_VERSION.values())
-            {
-                if (tmp.numeric == value)
-                {
+        /**
+         * Return Schema enum constant from provided database version integer.
+         * @param value the integer representation of the database schema version.
+         * @return the appropriate Enum
+         * @throws IllegalArgumentException if the value cannot be mapped.
+         */
+        public static SCHEMA_VERSION fromNumeric(int value) {
+            for (var tmp: SCHEMA_VERSION.values()) {
+                if (tmp.numeric == value) {
                     return tmp;
                 }
             }
