@@ -8,35 +8,21 @@ import cwms.cda.spi.IdentityProvider;
 import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SigningKeyResolverAdapter;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.RSAPublicKeySpec;
-import java.time.ZonedDateTime;
-import java.util.Base64;
-import java.util.Base64.Decoder;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.servlet.http.HttpServletResponse;
 
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
 
@@ -58,37 +44,60 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     private static final boolean CREATE_USERS = Boolean.parseBoolean(System.getProperty(CREATE_USERS_KEY,"true"));
 
-    private JwtParser jwtParser = null;
-    private OpenIDConfig config = null;
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+    private AtomicReference<OpenIDConfig> config = new AtomicReference<>(null);
+
+    private final String wellKnownUrl;
+    private final String issuer;
+    private final String clientId;
+    private final int timeout;
+    private final String idpHint;
 
     public OpenIdConnectIdentitityProvider() {
-        String wellKnownUrl = System.getProperty(WELL_KNOWN_PROPERTY,System.getenv(WELL_KNOWN_PROPERTY));
-        String issuer = System.getProperty(ISSUER_PROPERTY,System.getenv(ISSUER_PROPERTY));
+        wellKnownUrl = System.getProperty(WELL_KNOWN_PROPERTY,System.getenv(WELL_KNOWN_PROPERTY));
+        issuer = System.getProperty(ISSUER_PROPERTY,System.getenv(ISSUER_PROPERTY));
         String timeoutStr = System.getProperty(TIMEOUT_PROPERTY,System.getenv(TIMEOUT_PROPERTY));
-        String clientId = System.getProperty(CLIENT_ID, System.getenv(CLIENT_ID));
-        String idpHint = System.getProperty(IDP_HINT, System.getenv(IDP_HINT));
-        int timeout = 3600; 
+        clientId = System.getProperty(CLIENT_ID, System.getenv(CLIENT_ID));
+        idpHint = System.getProperty(IDP_HINT, System.getenv(IDP_HINT));
         if (timeoutStr != null && !timeoutStr.isEmpty()) {
             timeout = Integer.parseInt(timeoutStr);
+        } else {
+            timeout = 3600;
         }
-        try {
-            if (wellKnownUrl == null || wellKnownUrl.isEmpty()) {
-                throw new IOException("OpenID Connect well-known URL is not set.");
-            }
-            config = new OpenIDConfig(new URL(wellKnownUrl), clientId, idpHint);
-            jwtParser = Jwts.parserBuilder()
-                        .requireIssuer(issuer)
-                        .setSigningKeyResolver(new UrlResolver(config.getJwksUrl(),timeout))
-                        .build();
-        } catch (IOException ex) {
-            // The downstream users of this check if the Provider is valid and respond appropriate.
-            // To test manually have OpenIDConfig throw an IOException so config stays null and 
-            // see the resulting explained failure in the logs.
-            // That said it's possible we should maybe just have the system fail completely.
-            log.atSevere().withCause(ex).log("Unable to initialize realm.");
-        }
+        // try it once, then every 5 minutes until we get it.
+        initializeProvider();
+        executor.scheduleAtFixedRate(this::initializeProvider, 0, 5, TimeUnit.MINUTES);
     }
 
+    private void initializeProvider()
+    {
+        var foundConfig = config.getAndUpdate(c -> {
+            if (c != null)
+            {
+                return c; // already initialized, don't change it.
+            }
+            try {
+                log.atFine().log("Attempting to initalize OIDC provider for %s", wellKnownUrl);
+                if (wellKnownUrl == null || wellKnownUrl.isEmpty()) {
+                    executor.shutdown(); // it won't be found, don't keep looking
+                    throw new IOException("OpenID Connect well-known URL is not set.");
+                }
+                URL wellKnown = new URL(wellKnownUrl);
+                return OpenIDConfig.from(wellKnown, clientId, idpHint, timeout);
+            } catch (IOException ex) {
+                // The downstream users of this check if the Provider is valid and respond appropriate.
+                // To test manually have OpenIDConfig throw an IOException so config stays null and
+                // see the resulting explained failure in the logs.
+                // That said it's possible we should maybe just have the system fail completely.
+                log.atSevere().withCause(ex).log("Unable to initialize realm.");
+            }
+            return c;
+        });
+        if (foundConfig != null) {
+            executor.shutdown(); // we have it, don't need to keep polling
+        }
+    }
 
     @Override
     public Principal authenticate(Context ctx) {
@@ -97,7 +106,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
    private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
         try {
-            Jws<Claims> token = jwtParser.parseClaimsJws(getToken(ctx));
+            Jws<Claims> token = config.get().getJwtParser().parseClaimsJws(getToken(ctx));
             Claims claims = token.getBody();
             final String issuer = claims.getIssuer();
             final String subject = claims.getSubject();
@@ -139,7 +148,8 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     @Override
     public SecurityScheme getScheme() {
-        return config != null ? config.getScheme() : null;
+        var configActual = config.get();
+        return configActual != null ? configActual.getScheme() : null;
     }
 
     @Override
@@ -155,88 +165,4 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
         }
         return header.trim().toLowerCase().startsWith("bearer");
     }
-
-
-    private static class UrlResolver extends SigningKeyResolverAdapter {
-        private final URL jwksUrl;
-        private ZonedDateTime lastCheck;
-        private final Map<String,Key> realmPublicKeys = new HashMap<>();
-        private final int realmPublicKeyTimeoutMinutes;
-        private KeyFactory keyFactory = null;
-
-        public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
-            this.jwksUrl = jwksUrl;
-            this.realmPublicKeyTimeoutMinutes = keyTimeoutMinutes;
-            try {
-                keyFactory = KeyFactory.getInstance("RSA");
-            } catch (NoSuchAlgorithmException ex) {
-                log.atSevere().withCause(ex).log("Unable to initialize key factory.");
-            }
-        }
-
-        /**
-         * TODO: This needs more, some configurations may be more complex (like the
-         * authelia test environment) than others.
-         */
-        private void updateKey() {
-            if (realmPublicKeys.isEmpty() || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
-                log.atInfo().log("Checking for new key at %s",jwksUrl);
-                try {
-                    realmPublicKeys.clear();
-                    updateSigningKey();
-                } catch (IOException ex) {
-                    log.atSevere().withCause(ex).log("Unable to update key. Will continue to use previous key.");
-                } catch (InvalidKeySpecException ex) {
-                    log.atSevere().withCause(ex).log("New Public Key was not valid. Will continue to use previous key.");
-                }
-                lastCheck = ZonedDateTime.now();
-            }
-        }
-
-        private void updateSigningKey() throws IOException, InvalidKeySpecException {
-            HttpURLConnection http = null;
-            try {
-                http = (HttpURLConnection)jwksUrl.openConnection();
-                http.setRequestMethod("GET");
-                http.setInstanceFollowRedirects(true);
-                int status = http.getResponseCode();
-                if (status == 200) {
-                    ObjectMapper mapper = new ObjectMapper();
-                    JsonNode keys = mapper.readTree(http.getInputStream()).get("keys");
-                    for (JsonNode key: keys) {
-                        String kid = key.get("kid").textValue();
-                        Decoder b64 = Base64.getUrlDecoder(); // https://datatracker.ietf.org/doc/id/draft-jones-json-web-key-01.html#RFC4648
-                        String nStr = key.get("n").textValue();
-                        String eStr = key.get("e").textValue();
-                        log.atInfo().log("Loading Key %s with parameters (n,e) -> (%s,%s)",kid,nStr,eStr);
-                        BigInteger n = new BigInteger(1,b64.decode(nStr));
-                        BigInteger e = new BigInteger(1,b64.decode(eStr));
-                        Key pubKey = keyFactory.generatePublic(new RSAPublicKeySpec(n, e));
-                        realmPublicKeys.put(kid,pubKey);
-                    }
-                } else {
-                    log.atSevere().log("Unable to retrieve actual keys. Response code %d",status);
-                }
-            } finally {
-                if (http != null) {
-                    http.disconnect();
-                }
-            }
-        }
-
-        @Override
-        public Key resolveSigningKey(JwsHeader header, Claims claims) {
-            if (!header.getAlgorithm().toLowerCase().startsWith("rs")) {
-                log.atWarning().log("Request with invalid algorithm '%s'",header.getAlgorithm());
-                return null; // we only deal with RSA keys right now.
-            }
-            updateKey();
-            Key key = realmPublicKeys.get(header.getKeyId());
-            if (key == null) {
-                log.atSevere().log("Key not found for id '%s'",header.getKeyId());
-            }
-            return key;
-        }
-    }
-
 }
