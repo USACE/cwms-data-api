@@ -8,7 +8,7 @@ public class DatabaseHelpers {
     public enum SCHEMA_VERSION {
         V2025_07_01(250701, "25.07.01"),
         V2026_02_17(260217, "26.02.17"),
-        V2026_07_16(260216, "26.07.16"),
+        V2026_07_16(260716, "26.07.16"),
         LATEST_DEV(LATEST_SCHEMA, "99.99.99"),
         BYPASS(-1, "Bypass")
         ;

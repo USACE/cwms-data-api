@@ -46,6 +46,7 @@ import cwms.cda.data.dto.watersupply.WaterSupplyPump;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.helpers.DTOMatch;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -68,14 +69,14 @@ class WaterContractDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
     private static final DeleteMethod DELETE_ACTION = DeleteMethod.DELETE_ALL;
     private static final Location testLocation = buildTestLocation("Test Location Name",
-            "Test Location Type");
-    private static final Project testProject = buildTestProject();
+            "Test Location Type", CwmsDataApiSetupCallback.getSchemaVersion());
+    private static final Project testProject = buildTestProject(CwmsDataApiSetupCallback.getSchemaVersion());
     private static final WaterUser testUser = buildTestWaterUser("Test User");
     private final List<WaterUser> waterUserList = new ArrayList<>();
     private final List<WaterUserContract> waterUserContractList = new ArrayList<>();
-    private static final Location pumpInLoc = buildTestLocation("Pump 1", "PUMP");
-    private static final Location pumpOutLoc = buildTestLocation("Pump 2", "PUMP");
-    private static final Location pumpOutBelowLoc = buildTestLocation("Pump 3", "PUMP");
+    private static final Location pumpInLoc = buildTestLocation("Pump 1", "PUMP", CwmsDataApiSetupCallback.getSchemaVersion());
+    private static final Location pumpOutLoc = buildTestLocation("Pump 2", "PUMP", CwmsDataApiSetupCallback.getSchemaVersion());
+    private static final Location pumpOutBelowLoc = buildTestLocation("Pump 3", "PUMP", CwmsDataApiSetupCallback.getSchemaVersion());
 
     @BeforeAll
     static void setup() throws Exception {
@@ -89,7 +90,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 projectDao.create(testProject, true);
                 dao.storeLocation(testLocation, false);
                 lookupTypeDao.storeLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE",
-                        buildTestWaterContract("Test", false).getContractType());
+                        buildTestWaterContract("Test", false, CwmsDataApiSetupCallback.getSchemaVersion()).getContractType());
             } catch (IOException e) {
                 throw new RuntimeException("Failed to store location or project", e);
             }
@@ -107,7 +108,9 @@ class WaterContractDaoTestIT extends DataApiTestIT {
             projectDao.delete(OFFICE_ID, testProject.getLocation().getName(), DeleteRule.DELETE_ALL);
             locationDao.deleteLocation(testLocation.getName(), testLocation.getOfficeId(), false);
             lookupTypeDao.deleteLookupType("AT_WS_CONTRACT_TYPE", "WS_CONTRACT_TYPE", OFFICE_ID,
-                    buildTestWaterContract("Test", false).getContractType().getDisplayValue());
+                                           buildTestWaterContract("Test", false,
+                                                                  CwmsDataApiSetupCallback.getSchemaVersion())
+                                           .getContractType().getDisplayValue());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
@@ -197,8 +200,10 @@ class WaterContractDaoTestIT extends DataApiTestIT {
 
     @Test
     void testStoreAndRetrieveWaterContractList() throws Exception {
-        WaterUserContract contract = buildTestWaterContract("Test retrieve", false);
-        WaterUserContract contract2 = buildTestWaterContract("Test retrieve 2", false);
+        WaterUserContract contract = buildTestWaterContract("Test retrieve", false,
+                                                            CwmsDataApiSetupCallback.getSchemaVersion());
+        WaterUserContract contract2 = buildTestWaterContract("Test retrieve 2", false,
+                                                             CwmsDataApiSetupCallback.getSchemaVersion());
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -222,7 +227,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
 
     @Test
     void testStoreAndRetrieveWaterContract() throws Exception {
-        WaterUserContract contract = buildTestWaterContract("Test retrieve 1", false);
+        WaterUserContract contract = buildTestWaterContract("Test retrieve 1", false,
+                                                            CwmsDataApiSetupCallback.getSchemaVersion());
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -243,7 +249,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
             WaterContractDao dao = new WaterContractDao(ctx);
-            WaterUserContract contract = buildTestWaterContract("Test retrieve", false);
+            WaterUserContract contract = buildTestWaterContract("Test retrieve", false,
+                                                                CwmsDataApiSetupCallback.getSchemaVersion());
             dao.storeWaterUser(contract.getWaterUser(), false);
             dao.storeWaterContract(contract, false, true);
             CwmsId projectId = new CwmsId.Builder().withOfficeId(OFFICE_ID)
@@ -295,8 +302,10 @@ class WaterContractDaoTestIT extends DataApiTestIT {
 
     @Test
     void testRenameWaterContract() throws Exception {
-        WaterUserContract oldContract = buildTestWaterContract("Test contract", true);
-        WaterUserContract renamedContract = buildTestWaterContract("Test contract 2", true);
+        WaterUserContract oldContract = buildTestWaterContract("Test contract", true,
+                                                               CwmsDataApiSetupCallback.getSchemaVersion());
+        WaterUserContract renamedContract = buildTestWaterContract("Test contract 2", true,
+                                                                   CwmsDataApiSetupCallback.getSchemaVersion());
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -341,7 +350,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
 
     @Test
     void testDeleteWaterContract() throws Exception {
-        WaterUserContract contract = buildTestWaterContract("Test contract", false);
+        WaterUserContract contract = buildTestWaterContract("Test contract", false, CwmsDataApiSetupCallback.getSchemaVersion());
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -360,7 +369,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
 
     @Test
     void testRemovePumpFromContract() throws Exception {
-        WaterUserContract contract = buildTestWaterContract("Test contract", false);
+        WaterUserContract contract = buildTestWaterContract("Test contract", false, CwmsDataApiSetupCallback.getSchemaVersion());
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
@@ -394,7 +403,7 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 .withWaterRight("Test Water Right").build();
     }
 
-    private static WaterUserContract buildTestWaterContract(String contractName, boolean renameTest) {
+    private static WaterUserContract buildTestWaterContract(String contractName, boolean renameTest, int schemaVersion) {
         if (!renameTest){
             return new WaterUserContract.Builder()
                     .withContractType(new LookupType.Builder()
@@ -418,13 +427,13 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                     .withWaterUser(testUser)
                     .withPumpInLocation(new WaterSupplyPump.Builder()
                             .withPumpLocation(buildTestLocation("Pump 1 " + contractName,
-                            "PUMP")).withPumpType(PumpType.IN).build())
+                            "PUMP", schemaVersion)).withPumpType(PumpType.IN).build())
                     .withPumpOutLocation(new WaterSupplyPump.Builder()
                             .withPumpLocation(buildTestLocation("Pump 2 " + contractName,
-                            "PUMP")).withPumpType(PumpType.OUT).build())
+                            "PUMP", schemaVersion)).withPumpType(PumpType.OUT).build())
                     .withPumpOutBelowLocation(new WaterSupplyPump.Builder()
                             .withPumpLocation(buildTestLocation("Pump 3 " + contractName,
-                            "PUMP")).withPumpType(PumpType.BELOW).build())
+                            "PUMP", schemaVersion)).withPumpType(PumpType.BELOW).build())
                     .build();
         } else {
             return new WaterUserContract.Builder()
@@ -454,8 +463,8 @@ class WaterContractDaoTestIT extends DataApiTestIT {
         }
     }
 
-    private static Location buildTestLocation(String locationName, String locationType) {
-        return new Location.Builder(OFFICE_ID, locationName)
+    private static Location buildTestLocation(String locationName, String locationType, int schemaVersion) {
+        var ret = new Location.Builder(OFFICE_ID, locationName)
                 .withBoundingOfficeId(OFFICE_ID)
                 .withMapLabel("Test Map Label")
                 .withElevation(150.6)
@@ -468,22 +477,25 @@ class WaterContractDaoTestIT extends DataApiTestIT {
                 .withHorizontalDatum("WGS84")
                 .withPublicName("Test Public Name")
                 .withLongName("Test Long Name")
-                .withDescription("Test Description")
-                // Older Schemas will use as-is, newer schemas will force it to be this anyways
-                .withNearestCity("Davis, CA") 
-                .withLatitude(38.55)
+                .withDescription("Test Description");
+        if (schemaVersion >= SCHEMA_VERSION.V2026_07_16.numeric()) {
+                ret.withNearestCity("Davis, CA");
+        } else {
+                ret.withNearestCity("Davis");
+        }
+        ret.withLatitude(38.55)
                 .withLongitude(-121.73)
                 .withPublishedLatitude(38.55)
                 .withPublishedLongitude(-121.73)
                 .withActive(true)
                 .withLocationType(locationType)
-                .withLocationKind(locationType)
-                .build();
+                .withLocationKind(locationType);
+        return ret.build();
     }
 
-    private static Project buildTestProject() {
+    private static Project buildTestProject(int schemaVersion) {
         return new Project.Builder().withLocation(buildTestLocation(testLocation.getName(),
-                        testLocation.getLocationType()))
+                        testLocation.getLocationType(), schemaVersion))
                 .withFederalCost(new BigDecimal("15980654.55"))
             .build();
     }
