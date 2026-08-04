@@ -94,17 +94,9 @@ class FormatsTest {
         Map<String, String> parameters = contentType.getParameters();
         assertTrue(parameters == null || parameters.isEmpty());
 
-
-        contentType = Formats.parseHeaderAndQueryParm("application/xml;version=2", null, Catalog.class);
-
-        assertNotNull(contentType);
-        assertEquals("application/xml", contentType.getType());
-        parameters = contentType.getParameters();
-        assertNotNull(parameters);
-        assertFalse(parameters.isEmpty());
-        assertTrue(parameters.containsKey("version"));
-        assertEquals("2", parameters.get("version"));
-
+        /** xml;version=2 is not a supported format of Catalog */
+        assertThrows(UnsupportedFormatException.class, 
+                     () -> Formats.parseHeaderAndQueryParm("application/xml;version=2", null, Catalog.class));
     }
 
     @Test
