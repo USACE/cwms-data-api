@@ -12,6 +12,7 @@ import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.Office;
+import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.data.dto.project.LockRevokerRights;
@@ -114,6 +115,10 @@ class FormatsTest {
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
 
+        contentType = Formats.parseHeader("application/json;version=1", Catalog.class);
+        assertNotNull(contentType);
+        assertEquals("application/json", contentType.getType());
+
         contentType = Formats.parseHeader("application/json;version=2", Catalog.class);
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
@@ -131,9 +136,10 @@ class FormatsTest {
         assertThrows(FormattingException.class, () -> Formats.parseHeader("abc", Catalog.class));
         assertThrows(FormattingException.class, () -> Formats.parseHeader("abc,def", Catalog.class));
 
+        contentType = Formats.parseHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", RecentValue.class);
+        assertEquals("application/json", contentType.getType());
     }
 
-    
     @ParameterizedTest
     @EnumSource(ParseQueryOrParamTest.class)
     void test_header_or_query_parm(ParseQueryOrParamTest test) {
