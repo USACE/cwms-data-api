@@ -115,6 +115,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     public static int getSchemaVersion() {
+        if (cwmsDb == null) {
+            // Class-level execution conditions run before the database container starts.
+            return VERSION_INT;
+        }
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         try {
             return db.connection((c) -> {
