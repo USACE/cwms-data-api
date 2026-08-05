@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.json.adapters.TimeSeriesRecordSerializer;
@@ -35,6 +36,7 @@ import java.util.List;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.CSV, formatter = OutputFormatter.DUMMY.class)
 public class TimeSeries extends CwmsDTOPaginated {
     public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
