@@ -9,6 +9,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.USERNAME_LIKE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -19,6 +20,7 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.UserDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.auth.users.User;
@@ -154,12 +156,15 @@ public class UsersController implements CrudHandler {
             @OpenApiParam(name = "user-name", required = true,
                 description = "Specific user to retrieve")
         },
-        responses = @OpenApiResponse(
+        responses = {
+            @OpenApiResponse(
                     content = {
                         @OpenApiContent(from = User.class, type = Formats.JSON)
                     },
                     status = STATUS_200
-        ),
+            ),
+            @OpenApiResponse(status = STATUS_404, description = "User not found.")
+        },
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
@@ -171,7 +176,8 @@ public class UsersController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             UserDao dao = new UserDao(dsl);
-            User user = dao.getByUniqueName(userName, null).orElse(null);
+            User user = dao.getByUniqueName(userName, null)
+                    .orElseThrow(() -> new NotFoundException("User not found: " + userName));
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, User.class);
             String result = Formats.format(contentType, user);
