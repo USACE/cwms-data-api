@@ -2532,10 +2532,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             tsDao.create(ts);
             for (int i = 1; i <= 100; i++) {
                 if (i % 3 == 0) {
-                    LocationLevel level = new SeasonalLocationLevel.Builder(levelId, time.plusHours(i * 1L))
+                    LocationLevel level = new SeasonalLocationLevel.Builder(levelId, time.plusHours(i * 1L).toInstant())
                         .withOfficeId(OFFICE)
                         .withLevelUnitsId("m")
-                        .withIntervalOrigin(time)
+                        .withIntervalOrigin(time.toInstant())
                         .withIntervalMinutes(60 * 12)
                         .withSeasonalValues(buildSeasonalValues(i))
                         .withInterpolateString("F")
@@ -2543,7 +2543,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     levelList.add(level);
                     dao.storeLocationLevel(level);
                 } else if (i % 3 == 1) {
-                    LocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time.plusHours(i * 1L), tsId)
+                    LocationLevel level = new TimeSeriesLocationLevel.Builder(levelId, time.plusHours(i * 1L).toInstant(), tsId)
                         .withOfficeId(OFFICE)
                         .withLevelUnitsId("m")
                         .withInterpolateString("F")
@@ -2551,7 +2551,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                     levelList.add(level);
                     dao.storeLocationLevel(level);
                 } else {
-                    LocationLevel level = new ConstantLocationLevel.Builder(levelId, time.plusHours(i * 1L))
+                    LocationLevel level = new ConstantLocationLevel.Builder(levelId, time.plusHours(i * 1L).toInstant())
                         .withOfficeId(OFFICE)
                         .withLevelUnitsId("m")
                         .withConstantValue(10.3 * i)
@@ -2566,12 +2566,12 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             ratingConstituents.add(constituent);
             VirtualLocationLevel.LocationLevelConstituent levelConstituent = new VirtualLocationLevel.LocationLevelConstituent.Builder("L1", "LOCATION_LEVEL", levelId, "Stor", 2.0).build();
             ratingConstituents.add(levelConstituent);
-            LocationLevel level = new VirtualLocationLevel.Builder(virtualLevelId, time)
+            LocationLevel level = new VirtualLocationLevel.Builder(virtualLevelId, time.toInstant())
                 .withOfficeId(OFFICE)
                 .withLevelUnitsId("m")
                 .withConstituents(ratingConstituents)
                 .withConstituentConnections("L1=R1I1")
-                .withExpirationDate(time.plusWeeks(12))
+                .withExpirationDate(time.plusWeeks(12).toInstant())
                 .withInterpolateString("F")
                 .build();
             levelList.add(level);
