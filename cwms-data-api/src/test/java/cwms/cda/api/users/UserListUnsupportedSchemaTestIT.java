@@ -19,6 +19,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
+// TODO: Replace the assumption below with @MaximumSchema(260715) when that fixture exists.
 public final class UserListUnsupportedSchemaTestIT extends DataApiTestIT {
 
     @ParameterizedTest

@@ -1,14 +1,13 @@
 package cwms.cda.api.users;
 
-import static cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION.V2026_07_16;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import cwms.cda.api.DataApiTestIT;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.KeyCloakExtension;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
@@ -29,6 +28,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
+@MinimumSchema(260716)
 public final class UserListControllerTestIT extends DataApiTestIT {
     private static final String OFFICE = "SPK";
     private static final String OTHER_OFFICE = "SWT";
@@ -39,9 +39,6 @@ public final class UserListControllerTestIT extends DataApiTestIT {
 
     @BeforeAll
     static void ensureUserListSchema() throws SQLException {
-        if (!schemaSupportsUserLists()) {
-            return;
-        }
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection(c -> {
             try {
@@ -111,18 +108,12 @@ public final class UserListControllerTestIT extends DataApiTestIT {
 
     @BeforeEach
     void createUserList() throws SQLException {
-        if (!schemaSupportsUserLists()) {
-            return;
-        }
         cleanUserLists();
         insertUserList(OFFICE, USER_LIST_ID, OWNER);
     }
 
     @AfterEach
     void deleteUserLists() throws SQLException {
-        if (!schemaSupportsUserLists()) {
-            return;
-        }
         cleanUserLists();
     }
 
@@ -131,7 +122,6 @@ public final class UserListControllerTestIT extends DataApiTestIT {
     @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
     void test_full_user_list_crud(String authType, TestAccounts.KeyUser user,
             RequestSpecification authSpec) {
-        assumeSupportedSchema();
         given().spec(authSpec).queryParam("office", OFFICE)
         .when().get("/user/list/{user-list-id}", USER_LIST_ID)
         .then().statusCode(HttpCode.OK.getStatus())
@@ -169,7 +159,6 @@ public final class UserListControllerTestIT extends DataApiTestIT {
     @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
     void test_membership_crud(String authType, TestAccounts.KeyUser user,
             RequestSpecification authSpec) {
-        assumeSupportedSchema();
         given().spec(authSpec).queryParam("search", "l2hec")
         .when().get("/user/list-member-candidates")
         .then().statusCode(HttpCode.OK.getStatus())
@@ -197,7 +186,6 @@ public final class UserListControllerTestIT extends DataApiTestIT {
     @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
     void test_duplicate_and_validation_errors(String authType, TestAccounts.KeyUser user,
             RequestSpecification authSpec) {
-        assumeSupportedSchema();
         given().spec(authSpec).contentType(ContentType.JSON)
                 .body("{\"office-id\":\"SPK\",\"user-list-id\":\""
                         + USER_LIST_ID + "\"}")
@@ -215,7 +203,6 @@ public final class UserListControllerTestIT extends DataApiTestIT {
     @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
     void test_non_admin_cannot_mutate(String authType, TestAccounts.KeyUser user,
             RequestSpecification authSpec) {
-        assumeSupportedSchema();
         given().spec(authSpec).contentType(ContentType.JSON)
                 .body("{\"office-id\":\"SPK\",\"user-list-id\":\""
                         + SECONDARY_LIST_ID + "\"}")
@@ -228,7 +215,6 @@ public final class UserListControllerTestIT extends DataApiTestIT {
     @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
     void test_same_list_id_is_available_in_multiple_offices(String authType,
             TestAccounts.KeyUser user, RequestSpecification authSpec) throws SQLException {
-        assumeSupportedSchema();
         insertUserList(OTHER_OFFICE, USER_LIST_ID, "M5HECTEST");
 
         given().spec(authSpec).queryParam("office", OTHER_OFFICE)
@@ -268,14 +254,6 @@ public final class UserListControllerTestIT extends DataApiTestIT {
                 throw new RuntimeException(ex);
             }
         }, "cwms_20");
-    }
-
-    private static boolean schemaSupportsUserLists() {
-        return getSchemaVersion() >= V2026_07_16.numeric();
-    }
-
-    private static void assumeSupportedSchema() {
-        assumeTrue(schemaSupportsUserLists());
     }
 
     private static void execute(java.sql.Connection connection, String sql) throws SQLException {
