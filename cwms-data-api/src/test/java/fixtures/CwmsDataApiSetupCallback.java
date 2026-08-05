@@ -183,10 +183,11 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             // actually assign the new config to the global configuration. just running this here without
             // the assignment apparently does nothing.
             RestAssured.config = RestAssured.config()
-                        // we only use doubles
-                       .jsonConfig(
-                            JsonConfig.jsonConfig()
-                                      .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))
+                        // we only use doubles (NOTE: this is commend out because this config was
+                        // never originally active and will be addressed in a followup)
+                    //    .jsonConfig(
+                    //         JsonConfig.jsonConfig()
+                    //                   .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))
                         // our content type processing is a bit more picky now.
                         // I also don't recal seeing any default COntent-Type or Accept header
                         // defaults from browsers that include this much.
