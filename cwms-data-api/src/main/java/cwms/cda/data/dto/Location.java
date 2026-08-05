@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.GEOJSON, formatter = JsonV2.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
     private final String name;
