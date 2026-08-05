@@ -7,10 +7,12 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.ApiServlet;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -32,6 +34,7 @@ import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -197,7 +200,13 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     protected DSLContext getDslContext(Context ctx) {
-        return JooqDao.getDslContext(ctx);
+        String office = null;
+        if (ctx.handlerType() == HandlerType.GET
+                && ctx.attribute(AuthDao.DATA_API_PRINCIPAL) != null) {
+            office = ctx.queryParamAsClass(OFFICE, String.class)
+                    .getOrDefault(ctx.attribute(ApiServlet.OFFICE_ID));
+        }
+        return JooqDao.getDslContext(ctx, office);
     }
 
     @NotNull
