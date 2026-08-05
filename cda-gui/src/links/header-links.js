@@ -39,6 +39,11 @@ export default [
     ],
   },
   {
+    id: "user-lists",
+    text: "User Lists",
+    href: "/user-lists",
+  },
+  {
     id: "help",
     text: "Help",
     href: "#",

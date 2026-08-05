@@ -29,3 +29,4 @@ Some decisions may also be a proposal and marked appropriately.
     Vertical Datum Policy <./0010-vertical-datum.rst>
     JMS Queue Message Structure <./0011-queue-messages.rst>
     Vertical Datum Storage <./0012-vertical-datum-storage.rst>
+    CDA User Lists <./0013-cda-user-lists.md>

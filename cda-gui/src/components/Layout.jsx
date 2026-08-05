@@ -5,6 +5,7 @@ import footerLinks from "../links/footer-links";
 import externalLinks from "../links/external-links";
 import Breadcrumbs from "./Breadcrumbs";
 import { FaGithub } from "react-icons/fa";
+import AuthButton from "./AuthButton";
 
 export default function Layout() {
   return (
@@ -15,16 +16,19 @@ export default function Layout() {
       subtitle="CWMS Restful API for Data Retrieval"
       aboutText="Deliver vital engineering solutions, in collaboration with our partners, to secure our Nation, energize our economy, and reduce disaster risk. The official public website of the U.S. Army Corps of Engineers Hydrologic Engineering Center (HEC)."
       navRight={
-        <Button
-          missiontext="Corps Water Management System API"
-          style="plain"
-          color="white"
-          size="lg"
-          href="https://github.com/USACE/cwms-data-api"
-          title="View on GitHub"
-        >
-          GitHub <FaGithub />
-        </Button>
+        <div className="flex items-center gap-2">
+          <AuthButton />
+          <Button
+            missiontext="Corps Water Management System API"
+            style="plain"
+            color="white"
+            size="lg"
+            href="https://github.com/USACE/cwms-data-api"
+            title="View on GitHub"
+          >
+            GitHub <FaGithub />
+          </Button>
+        </div>
       }
       usaceLinks={footerLinks}
       externalLinks={externalLinks}

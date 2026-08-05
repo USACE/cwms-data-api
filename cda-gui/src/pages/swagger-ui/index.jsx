@@ -40,18 +40,6 @@ function isLocalOrigin(url) {
   return isLoopbackHost(new URL(url).hostname);
 }
 
-async function isCwmsLoginAvailable() {
-  try {
-    const response = await fetch(`${window.location.origin}/CWMSLogin`, {
-      cache: "no-store",
-      redirect: "manual",
-    });
-    return response.type === "opaqueredirect" || response.status < 400;
-  } catch {
-    return false;
-  }
-}
-
 function getKeycloakConfig(spec) {
   const scheme = getOpenIdConnectScheme(spec);
   if (!scheme?.openIdConnectUrl) {
@@ -178,18 +166,22 @@ export default function SwaggerUI() {
       }
       normalizeOpenIdConnectUrls(spec);
       const keycloakConfig = getKeycloakConfig(spec);
-      const hasCwmsLogin = getCwmsLoginScheme(spec) && (await isCwmsLoginAvailable());
-      const nextCustomAuthType = hasCwmsLogin
-        ? "cwms"
-        : keycloakConfig
-          ? "openid"
+      const hasCwmsLogin = Boolean(getCwmsLoginScheme(spec));
+      // Some non-T7 deployments advertise CwmsAAACacAuth even though their
+      // /CWMSLogin route is only a generic landing page. Prefer a usable
+      // OpenID configuration when both schemes are present; T7 deployments
+      // that advertise only CWMS AAA still use the shared CWMS session flow.
+      const nextCustomAuthType = keycloakConfig
+        ? "openid"
+        : hasCwmsLogin
+          ? "cwms"
           : null;
 
       if (customAuthType !== nextCustomAuthType) {
         setCustomAuthType(nextCustomAuthType);
       }
 
-      if (hasCwmsLogin) {
+      if (nextCustomAuthType === "cwms") {
         setAuthUiMode("cwms-login");
       } else if (nextCustomAuthType === "openid" && keycloakConfig) {
         const keycloakConfigSignature = JSON.stringify(keycloakConfig);

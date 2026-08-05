@@ -231,6 +231,7 @@ public final class Controllers {
     public static final String PROJECT_LIKE = "project-like";
 
     public static final String USERNAME_LIKE = "username-like";
+    public static final String USER_LIST_ID = "user-list-id";
     public static final String APPLICATION_ID = "application-id";
     public static final String REVOKE_EXISTING = "revoke-existing";
     public static final String REVOKE_TIMEOUT = "revoke-timeout";
