@@ -98,7 +98,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes effect. "
-        + "Must be limited to minute accuracy.")
+        + "Must be limited to minute precision.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
 
     private final Instant levelDate;
