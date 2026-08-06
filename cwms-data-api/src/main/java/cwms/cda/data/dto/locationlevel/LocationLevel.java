@@ -27,15 +27,6 @@
 package cwms.cda.data.dto.locationlevel;
 
 import cwms.cda.data.dto.catalog.LocationAlias;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -49,6 +40,7 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOValidator;
+import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -56,6 +48,15 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 @JsonRootName("LocationLevel")
 @JsonDeserialize(builder = LocationLevel.Builder.class)
@@ -98,7 +99,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
     private final String levelUnitsId;
     @Schema(description = "The date/time at which this location level configuration takes effect. "
-        + "Must be limited to minute accuracy.")
+        + "Must be limited to minute precision.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
 
     private final Instant levelDate;
@@ -506,6 +507,10 @@ public abstract class LocationLevel extends CwmsDTO {
     }
 
     public static ZonedDateTime truncateDate(ZonedDateTime date) {
+        return date.truncatedTo(ChronoUnit.MINUTES);
+    }
+
+    public static Instant truncateDate(Instant date) {
         return date.truncatedTo(ChronoUnit.MINUTES);
     }
 }

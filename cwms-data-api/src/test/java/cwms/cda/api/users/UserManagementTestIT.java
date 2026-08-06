@@ -35,6 +35,7 @@ import io.restassured.specification.RequestSpecification;
 public class UserManagementTestIT extends DataApiTestIT {
 
     private static final String LOCATION = "SOME_LOCATION";
+    private static final String MISSING_USER = "DOES_NOT_EXIST";
     private static final String SWT = "SWT";
     private static final String SPK = "SPK";
 
@@ -143,6 +144,23 @@ public class UserManagementTestIT extends DataApiTestIT {
             .statusCode(is(HttpCode.OK.getStatus()))
             .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
             .body("roles.SPK",not(hasItem("CCP Mgr")))
+        ;
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_get_missing_user_not_found(String authType, TestAccounts.KeyUser theUser,
+            RequestSpecification authSpec) {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .spec(authSpec)
+        .when()
+            .get("/users/{user-name}", MISSING_USER)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .statusCode(is(HttpCode.NOT_FOUND.getStatus()))
+            .body("message", equalTo("User not found: " + MISSING_USER))
         ;
     }
 
