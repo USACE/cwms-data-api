@@ -144,7 +144,7 @@ final class RssHandlerIT extends DataApiTestIT {
             String waitStr = nextPage.header("Retry-After");
             int wait = waitStr != null && !waitStr.isEmpty() ? Integer.parseInt(waitStr) : 10;
             try {
-                Thread.sleep(wait*1000);
+                Thread.sleep(wait*1000 + 500 /* extra half second just to avoid the best being brittle */);
             } catch (InterruptedException ex) {
                 LOGGER.atFine().withCause(ex).log("Next query wait was interrupted.");
             }
