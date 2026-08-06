@@ -207,7 +207,6 @@ import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
 import io.opentelemetry.api.trace.Span;
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -290,7 +289,8 @@ import org.togglz.core.context.FeatureContext;
     "/users/*",
     "/roles/*",
     "/version/*",
-    "/rss/*"
+    "/rss/*",
+    "/v2/*"
 })
 public class ApiServlet extends HttpServlet {
 
@@ -305,6 +305,7 @@ public class ApiServlet extends HttpServlet {
     public static final String RAW_DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
     public static final String IS_NEW_LRTS = "X-CWMS-LRTS-Formatting";
+    public static final String FORECAST_SPEC_PATH = "/forecast-spec/{%s}";
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
@@ -618,8 +619,9 @@ public class ApiServlet extends HttpServlet {
                 new SpecifiedLevelController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(format("/forecast-instance/{%s}", Controllers.NAME),
                 new ForecastInstanceController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache(format("/forecast-spec/{%s}", Controllers.NAME),
-                new ForecastSpecController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(format(FORECAST_SPEC_PATH, Controllers.NAME),
+                new ForecastSpecController(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        ApiServletV2RouteConfiguration.configureRoutes(metrics, requiredRoles);
         String forecastFilePath = format("/forecast-instance/{%s}/file-data", NAME);
         get(forecastFilePath, new ForecastFileController(metrics));
         addCacheControl(forecastFilePath, 1, TimeUnit.DAYS);

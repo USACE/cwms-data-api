@@ -1,11 +1,7 @@
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.DESIGNATOR;
 import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.NAME;
@@ -16,21 +12,13 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_400;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
-import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.AbstractForecastSpecDao;
 import cwms.cda.data.dao.ForecastSpecDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpec;
-import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -38,23 +26,24 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
-import java.util.List;
-import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public final class ForecastSpecController extends BaseCrudHandler {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
-    public static final String TAG = "Forecast";
+public final class ForecastSpecController extends AbstractForecastSpecController<ForecastSpec> {
 
     public ForecastSpecController(MetricRegistry metrics) {
         super(metrics);
     }
 
-    protected DSLContext getDslContext(Context ctx) {
-        return JooqDao.getDslContext(ctx);
+    @Override
+    protected AbstractForecastSpecDao<ForecastSpec> newDao(DSLContext dsl) {
+        return new ForecastSpecDao(dsl);
+    }
+
+    @Override
+    protected Class<ForecastSpec> getDtoClass() {
+        return ForecastSpec.class;
     }
 
     @OpenApi(
@@ -70,15 +59,7 @@ public final class ForecastSpecController extends BaseCrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
-            ForecastSpecDao dao = new ForecastSpecDao(dsl);
-            ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
-
-            dao.create(forecastSpec);
-
-            ctx.status(HttpServletResponse.SC_CREATED);
-        }
+        super.create(ctx);
     }
 
     @OpenApi(
@@ -105,33 +86,7 @@ public final class ForecastSpecController extends BaseCrudHandler {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
-        String office = requiredParam(ctx, OFFICE);
-        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
-
-        JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
-                .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
-        DeleteRule deleteRule;
-        switch (deleteMethod) {
-            case DELETE_ALL:
-                deleteRule = DeleteRule.DELETE_ALL;
-                break;
-            case DELETE_DATA:
-                deleteRule = DeleteRule.DELETE_DATA;
-                break;
-            case DELETE_KEY:
-                deleteRule = DeleteRule.DELETE_KEY;
-                break;
-            default:
-                throw new IllegalArgumentException("Delete Method provided does not match accepted rule constants: "
-                        + deleteMethod);
-        }
-        try (final Timer.Context ignored = markAndTime(DELETE)) {
-            DSLContext dsl = getDslContext(ctx);
-            ForecastSpecDao dao = new ForecastSpecDao(dsl);
-
-            dao.delete(office, name, designator, deleteRule);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT);
-        }
+        super.delete(ctx, name);
     }
 
     @OpenApi(
@@ -166,38 +121,7 @@ public final class ForecastSpecController extends BaseCrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context ignored = markAndTime(GET_ALL)) {
-            String office = ctx.queryParam(OFFICE);
-            String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
-            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
-            String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
-            String entityLike = ctx.queryParamAsClass(SOURCE_ENTITY_LIKE, String.class).allowNullable().get();
-
-            DSLContext dsl = getDslContext(ctx);
-            ForecastSpecDao dao = new ForecastSpecDao(dsl);
-
-            List<ForecastSpec> specs = dao.getForecastSpecs(office, names, designator,
-                    sourceEntity, entityLike);
-
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
-            String result = Formats.format(contentType, specs, ForecastSpec.class);
-
-            updateResultSize(result.length());
-
-            ctx.status(HttpServletResponse.SC_OK);
-
-            ctx.contentType(contentType.toString());
-
-            byte[] bytes = result.getBytes();
-            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
-        } catch (IOException ex) {
-            CdaError error = ExceptionTraceSupport.buildError(ctx,
-                "Failed to process request to retrieve forecast specs", ex);
-            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve forecast specs");
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
-        }
+        super.getAll(ctx);
     }
 
     @OpenApi(
@@ -229,33 +153,7 @@ public final class ForecastSpecController extends BaseCrudHandler {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String office = requiredParam(ctx, OFFICE);
-            String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
-
-            DSLContext dsl = getDslContext(ctx);
-            ForecastSpecDao dao = new ForecastSpecDao(dsl);
-
-            ForecastSpec spec = dao.getForecastSpec(office, name, designator);
-
-            String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
-            String result = Formats.format(contentType, spec);
-
-            updateResultSize(result.length());
-
-            ctx.status(HttpServletResponse.SC_OK);
-            ctx.contentType(contentType.toString());
-
-            byte[] bytes = result.getBytes();
-            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
-        } catch (IOException ex) {
-            CdaError error = ExceptionTraceSupport.buildError(ctx,
-                "Failed to process request to retrieve forecast spec", ex);
-            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve forecast spec");
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
-        }
+        super.getOne(ctx, name);
     }
 
     @OpenApi(
@@ -277,20 +175,6 @@ public final class ForecastSpecController extends BaseCrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
-        logUnusedPathParameter(ctx, NAME, "Body contains information");
-        try (final Timer.Context ignored = markAndTime(UPDATE)) {
-            ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
-            DSLContext dsl = getDslContext(ctx);
-            ForecastSpecDao dao = new ForecastSpecDao(dsl);
-            dao.update(forecastSpec);
-            ctx.status(HttpServletResponse.SC_OK);
-        }
+        super.update(ctx, name);
     }
-
-    private ForecastSpec deserializeForecastSpec(Context ctx) {
-        String formatHeader = ctx.req.getContentType();
-        ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
-        return Formats.parseContent(contentType, ctx.body(), ForecastSpec.class);
-    }
-
 }

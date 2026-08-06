@@ -12,7 +12,6 @@ import usace.cwms.db.jooq.codegen.tables.AV_FCST_SPEC;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_TIME_SERIES;
 
 import org.jooq.DSLContext;
-import org.jooq.Condition;
 import org.jooq.Record2;
 import org.jooq.Record7;
 import org.jooq.SelectOnConditionStep;
@@ -26,13 +25,27 @@ import java.util.List;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
-public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
+/**
+ * V1 forecast spec DAO: a forecast spec has a single {@code location-id}. See
+ * {@link ForecastSpecDaoV2} for the V2 shape ({@code List<ForecastLocation>}), and
+ * {@link AbstractForecastSpecDao} for the logic (delete, and the office/spec-id/
+ * designator/source-entity filters) shared between the two.
+ */
+public final class ForecastSpecDao extends AbstractForecastSpecDao<ForecastSpec> {
 
     public ForecastSpecDao(DSLContext dsl) {
         super(dsl);
     }
 
 
+    @Override
+    protected ViewWrapper getViewWrapper() {
+        AV_FCST_SPEC view = AV_FCST_SPEC.AV_FCST_SPEC;
+        return new ViewWrapper(view.OFFICE_ID, view.FCST_SPEC_ID, view.FCST_DESIGNATOR, view.ENTITY_ID,
+                view.FCST_SPEC_CODE);
+    }
+
+    @Override
     public void create(ForecastSpec forecastSpec) {
 
        connection(dsl, conn -> {
@@ -49,41 +62,15 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
        });
     }
 
-    public void delete(String office, String specId, String designator, DeleteRule deleteRule) {
-       connection(dsl, conn -> {
-           setOffice(conn, office);
-           CWMS_FCST_PACKAGE.call_DELETE_FCST_SPEC(DSL.using(conn).configuration(), specId, designator,
-                   deleteRule.getRule(), office);
-       });
-    }
-
+    @Override
     public List<ForecastSpec> getForecastSpecs(String office, String specIdRegex,
             String designator, String sourceEntityRegex, String entityLike) {
-       AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
+        ViewWrapper wrapper = getViewWrapper();
         SelectConditionStep<Record7<String, String, String, String, String, String, String>> query =
             forecastSpecQuery(dsl)
-                .where(JooqDao.caseInsensitiveLikeRegex(spec.OFFICE_ID, office))
-                .and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_SPEC_ID, specIdRegex))
-                .and(buildEntityCondition(spec, sourceEntityRegex, entityLike));
-        //Designator is a nullable column in the database.
-        if(designator == null) {
-            query = query.and(spec.FCST_DESIGNATOR.isNull());
-        } else {
-            query = query.and(JooqDao.caseInsensitiveLikeRegex(spec.FCST_DESIGNATOR, designator));
-        }
+                .where(buildSpecListCondition(wrapper, office, specIdRegex, designator, sourceEntityRegex, entityLike));
         return query.fetch()
                .map(ForecastSpecDao::map);
-    }
-
-    private Condition buildEntityCondition(AV_FCST_SPEC spec,
-                                                  String sourceEntityRegex,
-                                                  String entityLike) {
-        // If entityLike is provided, use case-insensitive LIKE
-        if (entityLike != null) {
-            return spec.ENTITY_ID.likeIgnoreCase(entityLike);
-        }
-        // Fallback to regex behavior
-        return JooqDao.caseInsensitiveLikeRegex(spec.ENTITY_ID, sourceEntityRegex);
     }
 
     private static SelectOnConditionStep<Record7<String, String, String, String,
@@ -124,17 +111,12 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
                 .build();
     }
 
+    @Override
     public ForecastSpec getForecastSpec(@NotNull String office, String name, String designator) {
-        AV_FCST_SPEC spec = AV_FCST_SPEC.AV_FCST_SPEC;
+        ViewWrapper wrapper = getViewWrapper();
         SelectConditionStep<Record7<String, String, String, String, String, String, String>> query =
             forecastSpecQuery(dsl)
-                .where(spec.OFFICE_ID.eq(office.toUpperCase()))
-                .and(spec.FCST_SPEC_ID.eq(name));
-        if(designator != null) {
-            query = query.and(spec.FCST_DESIGNATOR.eq(designator));
-        } else {
-            query = query.and(spec.FCST_DESIGNATOR.isNull());
-        }
+                .where(buildSpecKeyCondition(wrapper, office, name, designator));
         Record7<String, String, String, String, String, String, String> fetch = query.fetchOne();
         if (fetch == null) {
             throw new NotFoundException(
@@ -144,6 +126,7 @@ public final class ForecastSpecDao extends JooqDao<ForecastSpec> {
         return map(fetch);
     }
 
+    @Override
     public void update(ForecastSpec forecastSpec) {
         //Will throw NotFoundException is spec does not exist
         getForecastSpec(forecastSpec.getOfficeId(), forecastSpec.getSpecId(), forecastSpec.getDesignator());
