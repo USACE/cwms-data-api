@@ -91,9 +91,9 @@ import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesFilteredController;
 import cwms.cda.api.TimeSeriesGroupController;
-import cwms.cda.api.TimeSeriesVersionsController;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
+import cwms.cda.api.TimeSeriesVersionsController;
 import cwms.cda.api.TimeZoneController;
 import cwms.cda.api.TurbineChangesDeleteController;
 import cwms.cda.api.TurbineChangesGetController;
@@ -198,10 +198,10 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
-import io.javalin.http.Context;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
+import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
@@ -241,10 +241,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
-import org.togglz.core.context.FeatureContext;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
+import org.togglz.core.context.FeatureContext;
 
 
 /**
@@ -323,8 +323,7 @@ public class ApiServlet extends HttpServlet {
 
     JavalinServlet javalin = null;
     private Authenticator authenticator = new Authenticator();
-    private OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
-    private String APP_CONTEXT;
+    private String appContext;
 
     @Resource(name = "jdbc/CWMS3")
     DataSource cwms;
@@ -365,15 +364,15 @@ public class ApiServlet extends HttpServlet {
         om.registerModule(new JavaTimeModule());
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
-        APP_CONTEXT = this.getServletContext().getContextPath();
+        appContext = this.getServletContext().getContextPath();
         cdaAccessManager = new CdaAccessManager();
         javalin = Javalin.createStandalone(config -> {
-                    config.defaultContentType = "application/json";
-                    getOpenApiOptions(config);
-                    config.autogenerateEtags = true;
-                    config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
-                    config.accessManager(cdaAccessManager);
-                })
+            config.defaultContentType = "application/json";
+            getOpenApiOptions(config);
+            config.autogenerateEtags = true;
+            config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
+            config.accessManager(cdaAccessManager);
+        })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
                 .attribute("schemeProcessor", schemeProcessor)
@@ -457,8 +456,8 @@ public class ApiServlet extends HttpServlet {
     }
 
     private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
-        String relativeWARPath = "/META-INF/MANIFEST.MF";
-        String absoluteDiskPath = servletConfig.getServletContext().getRealPath(relativeWARPath);
+        String relativeWarPath = "/META-INF/MANIFEST.MF";
+        String absoluteDiskPath = servletConfig.getServletContext().getRealPath(relativeWarPath);
         Path path = Paths.get(absoluteDiskPath);
 
         try (InputStream inputStream = Files.newInputStream(path)) {
@@ -650,16 +649,17 @@ public class ApiServlet extends HttpServlet {
 
         String outletPath = format("/projects/outlets/{%s}", NAME);
         String gateChangePath = format("/projects/{%s}/{%s}/gate-changes", OFFICE,
-                                      Controllers.PROJECT_ID);
+                                    Controllers.PROJECT_ID);
         String gateChangeCreatePath = "/projects/gate-changes";
-        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", OFFICE,
-                                          Controllers.PROJECT_ID, NAME);
-        String virtualOutletCreatePath = "/projects/virtual-outlets";
+
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
         post(gateChangeCreatePath, new GateChangeCreateController(metrics), requiredRoles);
         get(gateChangePath, new GateChangeGetAllController(metrics));
         delete(gateChangePath, new GateChangeDeleteController(metrics), requiredRoles);
+        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", OFFICE,
+                                        Controllers.PROJECT_ID, NAME);
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        String virtualOutletCreatePath = "/projects/virtual-outlets";
         post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics), requiredRoles);
 
         get("/projects/locations/", new ProjectChildLocationHandler(metrics));
@@ -729,27 +729,30 @@ public class ApiServlet extends HttpServlet {
 
     private void userListsUnsupported(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
-                .json(new CdaError("User lists are not enabled for this CDA deployment."));
+            .json(new CdaError("User lists are not enabled for this CDA deployment."));
     }
 
     private static Boolean hasAnyRole(DataApiPrincipal p, Set<RouteRole> roles) throws MissingRolesException {
         boolean retVal = roles.stream().anyMatch(p.getRoles()::contains);
-        if(!retVal) {
+        if (!retVal) {
             List<String> requiredRoleNames = roles.stream()
                     .map(Object::toString)
                     .collect(toList());
-            throw new MissingRolesException(requiredRoleNames, "Missing one of the following roles {" + String.join(",", requiredRoleNames) + "}");
+            throw new MissingRolesException(requiredRoleNames, 
+                "Missing one of the following roles {" + String.join(",", requiredRoleNames) + "}");
         }
         return true;
     }
 
+    /**
+     * The POST handlers for /ratings/rate-* intentionally do not have
+     * require roles. Instead they are rate limited if not authenticated.
+     * POST is used as sending a body with GET is not standard and we cannot
+     * be sure clients, or future servers, would correctly support that.
+     * @param requiredRoles roles required for actions requiring authorization.
+     */
     private void addRatingHandlers(RouteRole[] requiredRoles) {
-        /**
-         * The POST handlers for /ratings/rate-* intentionally do not have
-         * require roles. Instead they are rate limited if not authenticated.
-         * POST is used as sending a body with GET is not standard and we cannot
-         * be sure clients, or future servers, would correctly support that.
-         */
+        
         String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
         post(rateValues, new RateValuesController(metrics));
         String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);
@@ -980,7 +983,7 @@ public class ApiServlet extends HttpServlet {
         String provider = CdaAccessManager.class.getSimpleName();
 
         List<Server> servers = new ArrayList<>();
-        servers.add(new Server().url(APP_CONTEXT));
+        servers.add(new Server().url(appContext));
         OpenApiOptions ops =
             new OpenApiOptions(
                 () -> new OpenAPI()
@@ -992,23 +995,25 @@ public class ApiServlet extends HttpServlet {
             .responseModifier((ctx,api) -> {
                 schemeProcessor.apply(ctx, api);
                 api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,schemeProcessor.getSecurityRequirements());
-                    // yeah, we really need to figure out how to update everything, this is supported as an annotation in
-                    // newer versions.
+                    setSecurityRequirements(key,path,secReqs);
+                    // yeah, we really need to figure out how to update everything, 
+                    // this is supported as an annotation in newer versions.
                     if (key.startsWith("/rss")) {
                         path.getGet().getResponses().forEach((p, r) -> {
                             var retryAfter = new io.swagger.v3.oas.models.headers.Header();
-                            retryAfter.description("Amount of time (in seconds) to wait before making the next request.");
+                            retryAfter.description(
+                                "Amount of time (in seconds) to wait before making the next request.");
                             r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
                         });
                     }
-            });
+                });
                 Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
                 try (ScanResult scanResult = new ClassGraph()
                         .acceptPackages("cwms.cda.data.dto")
                         .scan()) {
-                    List<Class<CwmsCsvDTO>> csvDtoClasses = scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
-                            .loadClasses(CwmsCsvDTO.class);
+                    List<Class<CwmsCsvDTO>> csvDtoClasses = 
+                        scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
+                                .loadClasses(CwmsCsvDTO.class);
                     for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
                         schemaToClass.put(clazz.getSimpleName(), clazz);
                     }
@@ -1023,7 +1028,8 @@ public class ApiServlet extends HttpServlet {
                                         String ref = csvMedia.getSchema().get$ref();
                                         String schemaName = ref.substring(ref.lastIndexOf('/') + 1);
                                         @SuppressWarnings("unchecked")
-                                        Class<? extends CwmsCsvDTO<?>> dtoClass = (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
+                                        Class<? extends CwmsCsvDTO<?>> dtoClass =
+                                            (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
 
                                         if (dtoClass != null) {
                                             csvMedia.setExample(CsvExampleGenerator.getExample(dtoClass));
@@ -1046,12 +1052,12 @@ public class ApiServlet extends HttpServlet {
                 doc.header(IS_NEW_LRTS,
                     Boolean.class,
                     p -> p.description(
-                        "If True, will use use the new 'Local Regular Time Series" +
-                        " naming scheme. For example 1DayLocal. Instead of the original" +
-                        " PsuedoRegular based scheme, for example ~1DayLocal." +
-                        " NOTE: this parameter only applies to the input and output of" +
-                        " Time Series names. It is added to all endpoints and will be ignored" +
-                        " when not required. Default values is false if not set.")
+                        "If True, will use use the new 'Local Regular Time Series" 
+                        + " naming scheme. For example 1DayLocal. Instead of the original"
+                        + " PsuedoRegular based scheme, for example ~1DayLocal."
+                        + " NOTE: this parameter only applies to the input and output of"
+                        + " Time Series names. It is added to all endpoints and will be ignored" 
+                        + " when not required. Default values is false if not set.")
                 );
             })
             .activateAnnotationScanningFor("cwms.cda.api");
@@ -1103,6 +1109,11 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Retrieve the specific office name.
+     * @param contextPath applicatio context path
+     * @return default office id for this instance.
+     */
     public static String officeFromContext(String contextPath) {
         String office = contextPath.split("-")[0].replaceFirst("/","");
         if (office.isEmpty() || office.equalsIgnoreCase("cwms")) {

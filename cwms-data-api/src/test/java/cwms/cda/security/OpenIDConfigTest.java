@@ -33,7 +33,7 @@ class OpenIDConfigTest {
 
     @Test
     void buildSchemeUsesWellKnownDiscoveryUrlWithoutHttpAuthScheme() {
-        SecurityScheme scheme = OpenIDConfig.buildScheme(
+        SecurityScheme scheme = OpenIdConfig.buildScheme(
             "https://identityc.sec.usace.army.mil/auth/realms/cwbi/.well-known/openid-configuration",
             "cwms",
             "federation-eams, login.gov"

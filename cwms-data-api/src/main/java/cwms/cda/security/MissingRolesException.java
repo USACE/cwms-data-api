@@ -11,6 +11,11 @@ public class MissingRolesException extends CwmsAuthException {
         this(missingRoles, buildMessage(missingRoles));
     }
 
+    /**
+     * Create a new Exception given a message and list of missing roles.
+     * @param missingRoles which roles are missing
+     * @param message additional message regarding roles
+     */
     public MissingRolesException(List<String> missingRoles, String message) {
         super(message, HttpServletResponse.SC_FORBIDDEN, message);
         this.missingRoles = missingRoles;

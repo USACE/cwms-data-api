@@ -1,5 +1,11 @@
 package cwms.cda.security;
 
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
@@ -16,46 +22,29 @@ import java.util.Base64.Decoder;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.flogger.FluentLogger;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwsHeader;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SigningKeyResolverAdapter;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.Type;
-
-public class OpenIDConfig {
+public class OpenIdConfig {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
     private URL wellKnown;
-
-    private String issuer;
-    private String client_id;
-    private String idp_hint; // keycloak specific kc_idp_hint to direct federation
-    private JwtParser jwtParser;
+    
+    private String clientId;
+    private String idpHint; // keycloak specific kc_idp_hint to direct federation
+    
     private URL jwksUrl;
-
-
-    private OpenIDConfig(URL wellKnown, String client_id, String idp_hint, JwtParser jwtParser) throws IOException {
+    
+    /**
+     * Create new Open ID Connect (OIDC) Config instance given the parameters.
+     * @param wellKnown well-known JSON describing the OpenID Connect provider's support
+     * @param clientId known Client ID
+     * @param idpHint comma separated list of known federated provides for this OIDC target.
+     * @throws IOException any issue retrieving the the wellKnown config data.
+     */
+    public OpenIdConfig(URL wellKnown, String clientId, String idpHint) throws IOException {
         this.wellKnown = wellKnown;
-        this.idp_hint = idp_hint;
-        this.client_id = client_id;
-        this.jwtParser = jwtParser;
-    }
-
-    public URL getJwksUrl() {
-        return jwksUrl;
-    }
-
-    public static OpenIDConfig from(URL wellKnown, String clientId, String idpHint, int timeout) throws IOException
-    {
+        this.idpHint = idpHint;
+        this.clientId = clientId;
         HttpURLConnection http = null;
-        try
-        {
+        try {
             http = (HttpURLConnection)wellKnown.openConnection();
             http.setRequestMethod("GET");
             http.setInstanceFollowRedirects(true);
@@ -63,14 +52,7 @@ public class OpenIDConfig {
             if (status == 200) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode node = mapper.readTree(http.getInputStream());
-                URL jwksUrl = new URL(node.get("jwks_uri").asText());
-                String issuer = node.get("issuer").asText();
-
-                JwtParser jwtParser = Jwts.parserBuilder()
-                        .requireIssuer(issuer)
-                        .setSigningKeyResolver(new UrlResolver(jwksUrl, timeout))
-                        .build();
-                return new OpenIDConfig(wellKnown, clientId, idpHint, jwtParser);
+                jwksUrl = new URL(node.get("jwks_uri").asText());
             } else {
                 log.atSevere().log("Unable to retrieve data from realm. Response code %d", status);
             }
@@ -88,10 +70,9 @@ public class OpenIDConfig {
     }
 
     static SecurityScheme buildScheme(String wellKnownUrl, String clientId, String idpHint) {
-        SecurityScheme scheme =  new SecurityScheme().type(Type.OPENIDCONNECT)
+        SecurityScheme scheme = new SecurityScheme().type(Type.OPENIDCONNECT)
                                                     .openIdConnectUrl(wellKnownUrl);
-        if (idpHint != null)
-        {
+        if (idpHint != null) {
             Map<String, Object> hint = new HashMap<>();
             hint.put("query-parameter", "kc_idp_hint");
             ArrayList<String> values = new ArrayList<>();
@@ -107,9 +88,7 @@ public class OpenIDConfig {
     }
 
     public SecurityScheme getScheme() {
-
-        SecurityScheme scheme = buildScheme(wellKnown.toString(), client_id, idp_hint);
-        return scheme;
+        return buildScheme(wellKnown.toString(), clientId, idpHint);
     }
 
 
