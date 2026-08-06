@@ -60,7 +60,8 @@ Key Points
         running into URL length restrictions or requiring `POST` usage. Unlike `POST`, the `QUERY` method is
         idempotent and cacheable, resulting in consistent behavior when a request is received once and when it
         is received many times. Like `POST`, `QUERY` supports data provided in the request body, reducing the
-        need for a lengthy assortment of query parameters.
+        need for a lengthy assortment of query parameters. See https://github.com/USACE/cwms-data-api/issues/1850 for
+        details on the integration of this method into CDA.
 
 Differences in Catalog and GetAll data shapes
 =============================================
@@ -68,7 +69,7 @@ Differences in Catalog and GetAll data shapes
 An important distinction between the two endpoint types is the shape of the data retrieved.
 Below is an example for the Location endpoints:
 
-GetAll:
+Get All (GET):
 
 .. code:: json
 
@@ -106,7 +107,7 @@ GetAll:
       }
     ]
 
-Catalog:
+Catalog (QUERY):
 
 .. code:: json
 
@@ -141,7 +142,20 @@ Catalog:
               "name": "string",
               "value": "string"
             }
-          ]
+          ],
+          "sub-locations": [
+            {
+                "name": "string",
+                "office": "string",
+                "active": true
+            }
+          ],
+          "associations": {
+            "num-assoc-time-series": 0,
+            "num-assoc-levels": 0,
+            "num-assoc-ratings": 0
+          },
+          "is-sub-location": false
         },
         {
           "office": "string",
@@ -164,13 +178,25 @@ Catalog:
               "value": "string"
             }
           ],
+          "sub-locations": [
+            {
+                "name": "string"
+            }
+          ],
+          "associations": {
+            "num-assoc-time-series": 0,
+            "num-assoc-levels": 0,
+            "num-assoc-ratings": 0
+          },
+          "is-sub-location": false,
           "versioned": true
         }
       ],
       "next-page": "string",
       "page": "string",
       "page-size": 0,
-      "total": 0
+      "total": 0,
+      "total-assoc-sub-locations": 0
     }
 
 Library Support for HTTP QUERY method
