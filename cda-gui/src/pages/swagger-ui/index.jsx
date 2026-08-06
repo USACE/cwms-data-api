@@ -32,6 +32,45 @@ function getCwmsLoginScheme(spec) {
   return spec.components?.securitySchemes?.CwmsAAACacAuth;
 }
 
+function removeGroundworkManagedSecuritySchemes(spec) {
+  const securitySchemes = spec.components?.securitySchemes ?? {};
+  const managedSchemeNames = new Set(
+    Object.entries(securitySchemes)
+      .filter(
+        ([name, scheme]) =>
+          name === "CwmsAAACacAuth" || scheme.type === "openIdConnect",
+      )
+      .map(([name]) => name),
+  );
+
+  for (const schemeName of managedSchemeNames) {
+    delete securitySchemes[schemeName];
+  }
+
+  const removeManagedRequirements = (security) => {
+    if (!Array.isArray(security)) return security;
+
+    return security
+      .map((requirement) =>
+        Object.fromEntries(
+          Object.entries(requirement).filter(
+            ([schemeName]) => !managedSchemeNames.has(schemeName),
+          ),
+        ),
+      )
+      .filter((requirement) => Object.keys(requirement).length > 0);
+  };
+
+  spec.security = removeManagedRequirements(spec.security);
+  for (const pathItem of Object.values(spec.paths ?? {})) {
+    for (const operation of Object.values(pathItem)) {
+      if (operation && typeof operation === "object" && "security" in operation) {
+        operation.security = removeManagedRequirements(operation.security);
+      }
+    }
+  }
+}
+
 function isLoopbackHost(hostname) {
   return ["localhost", "127.0.0.1", "::1"].includes(hostname);
 }
@@ -176,6 +215,7 @@ export default function SwaggerUI() {
         : hasCwmsLogin
           ? "cwms"
           : null;
+      let groundworkControlsAuth = hasCwmsLogin;
 
       if (customAuthType !== nextCustomAuthType) {
         setCustomAuthType(nextCustomAuthType);
@@ -207,6 +247,7 @@ export default function SwaggerUI() {
                 : "external-openid",
             );
             setIsOpenIdAuthReady(true);
+            groundworkControlsAuth = true;
           } catch (error) {
             openIdAuthMethodRef.current = null;
             openIdAuthConfigSignatureRef.current = null;
@@ -230,13 +271,17 @@ export default function SwaggerUI() {
         return;
       }
 
-      const ui = SwaggerUIBundle({
+      if (groundworkControlsAuth) {
+        removeGroundworkManagedSecuritySchemes(spec);
+      }
+
+      SwaggerUIBundle({
         spec,
         dom_id: "#swagger-ui",
         deepLinking: false,
         presets: [SwaggerUIBundle.presets.apis],
         plugins: [SwaggerUIBundle.plugins.DownloadUrl],
-        requestInterceptor: (req) => {
+        requestInterceptor: async (req) => {
           const requestUrl = new URL(req.url, window.location.origin);
           if (requestUrl.hostname === "auth") {
             requestUrl.protocol = window.location.protocol;
@@ -253,8 +298,25 @@ export default function SwaggerUI() {
             req.url = requestUrl.toString();
             req.headers = req.headers ?? {};
 
-            if (authMethod?.token) {
-              req.headers.Authorization = `Bearer ${authMethod.token}`;
+            try {
+              let token;
+              if (authMethod?.getValidToken) {
+                token = await authMethod.getValidToken(60);
+              } else if (authMethod?.token && authMethod.refresh) {
+                await authMethod.refresh();
+                token = authMethod.token;
+              } else {
+                token = authMethod?.token;
+              }
+              if (token) {
+                req.headers.Authorization = `Bearer ${token}`;
+              }
+            } catch (error) {
+              setAuthStatus("anonymous");
+              setAuthError(
+                "Your authentication session expired. Sign in before retrying this request.",
+              );
+              throw error;
             }
 
             req.cache = "no-store";
@@ -262,30 +324,6 @@ export default function SwaggerUI() {
             req.headers.Pragma = "no-cache";
           }
           return req;
-        },
-        onComplete: () => {
-          for (const schemeName in spec.components?.securitySchemes ?? {}) {
-            const scheme = spec.components.securitySchemes[schemeName];
-            if (scheme.type === "openIdConnect") {
-              if (isExternalOpenIdOnLocalhost(keycloakConfig)) {
-                break;
-              }
-
-              let additionalParams = null;
-              let hints = scheme["x-kc_idp_hint"];
-              if (hints) {
-                additionalParams = {
-                  kc_idp_hint: hints.values[0],
-                };
-              }
-              ui.initOAuth({
-                clientId: scheme["x-oidc-client-id"],
-                usePkceWithAuthorizationCodeGrant: true,
-                additionalQueryStringParams: additionalParams,
-              });
-              break;
-            }
-          }
         },
       });
     }
@@ -423,14 +461,14 @@ export default function SwaggerUI() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            {authMethod && (
+            {authMethod && !isAuthenticated && (
               <button
                 className="h-9 rounded border border-blue-700 bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-55"
                 disabled={isCheckingAuth}
                 onClick={startLogin}
                 type="button"
               >
-                {isAuthenticated ? "Reauthenticate" : "Sign in"}
+                Sign in
               </button>
             )}
             {isAuthenticated && (
