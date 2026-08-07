@@ -13,13 +13,17 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
 import java.time.ZoneId;
 
 @JsonRootName("time-zone")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class TimeZoneId extends CwmsDTOBase {
     @JsonProperty(required = true)
