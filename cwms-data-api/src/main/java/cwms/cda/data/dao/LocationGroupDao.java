@@ -25,6 +25,8 @@
 package cwms.cda.data.dao;
 
 import static java.util.stream.Collectors.toList;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.noCondition;
 
 import cwms.cda.data.dto.AssignedLocation;
@@ -50,8 +52,10 @@ import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
+import org.jooq.Record1;
 import org.jooq.Record10;
 import org.jooq.RecordMapper;
+import org.jooq.Result;
 import org.jooq.SelectJoinStep;
 import org.jooq.SelectSeekStep1;
 import org.jooq.SelectSeekStep2;
@@ -512,6 +516,14 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 attribute, a.getAliasId(), a.getRefLocationId());
     }
 
+    @Deprecated
+    @NotNull
+    private static usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_TYPE3 convertToLegacyLocAliasType(AssignedLocation a) {
+        BigDecimal attribute = toBigDecimal(a.getAttribute());
+        return new usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_TYPE3(a.getLocationId(),
+            attribute, a.getAliasId(), a.getRefLocationId());
+    }
+
     /**
      * Update a location group.
      * @param oldGroupId The old group id.
@@ -573,30 +585,58 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      */
     public List<CwmsId> assignLocs(Configuration config, LocationGroup group, String office, boolean ignoreMissing) {
         List<CwmsId> nonExistentLocs = new ArrayList<>();
+        String errorMessage = "Invalid assigned location. Required fields are null.";
         List<AssignedLocation> assignedLocations = group.getAssignedLocations();
         if (assignedLocations != null) {
-            List<LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
-                .map(
-                    item -> {
-                        if (item.getLocationId() == null || item.getOfficeId() == null) {
-                            throw new IllegalArgumentException("Invalid assigned location. Required fields are null.");
-                        } else {
-                            return item;
-                        }
-                    })
+            LocationCategory cat = group.getLocationCategory();
+            if (supportsMissing(config)) {
+                List<LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
+                    .map(
+                        item -> {
+                            if (item.getLocationId() == null || item.getOfficeId() == null) {
+                                throw new IllegalArgumentException(errorMessage);
+                            } else {
+                                return item;
+                            }
+                        })
                     .map(LocationGroupDao::convertToLocAliasType)
                     .collect(toList());
-            LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
-            LocationCategory cat = group.getLocationCategory();
-            LOC_ALIAS_ARRAY3 missingLocs = usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE
-                .call_ASSIGN_LOC_GROUPS_SUPPORTS_MISSING(config, cat.getId(), group.getId(),
-                    assignedLocs, office, formatBool(ignoreMissing));
-            if (!missingLocs.isEmpty()) {
-                for (LOC_ALIAS_TYPE3 loc : missingLocs) {
-                    nonExistentLocs.add(CwmsId.buildCwmsId(office, loc.getLOCATION_ID()));
+                LOC_ALIAS_ARRAY3 assignedLocs = new LOC_ALIAS_ARRAY3(collect);
+                LOC_ALIAS_ARRAY3 missingLocs = usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE
+                    .call_ASSIGN_LOC_GROUPS_SUPPORTS_MISSING(config, cat.getId(), group.getId(),
+                        assignedLocs, office, formatBool(ignoreMissing));
+                if (!missingLocs.isEmpty()) {
+                    for (LOC_ALIAS_TYPE3 loc : missingLocs) {
+                        nonExistentLocs.add(CwmsId.buildCwmsId(office, loc.getLOCATION_ID()));
+                    }
                 }
+            } else {
+                List<usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_TYPE3> collect = assignedLocations.stream()
+                    .map(
+                        item -> {
+                            if (item.getLocationId() == null || item.getOfficeId() == null) {
+                                throw new IllegalArgumentException(errorMessage);
+                            } else {
+                                return item;
+                            }
+                        })
+                    .map(LocationGroupDao::convertToLegacyLocAliasType)
+                    .collect(toList());
+                usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_ARRAY3 assignedLocs
+                    = new usace.cwms.db.jooq.codegen.udt.records.LOC_ALIAS_ARRAY3(collect);
+                CWMS_LOC_PACKAGE.call_ASSIGN_LOC_GROUPS3(config, cat.getId(), group.getId(), assignedLocs, office);
             }
         }
         return nonExistentLocs;
+    }
+
+    private boolean supportsMissing(Configuration config) {
+        Result<Record1<Integer>> support = config.dsl()
+            .select(count(asterisk()))
+            .from("all_procedures")
+            .where("procedure_name = 'ASSIGN_LOC_GROUPS_SUPPORTS_MISSING'")
+            .fetch();
+        int supportCount = support.get(0).value1();
+        return supportCount > 0;
     }
 }

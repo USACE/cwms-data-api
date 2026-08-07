@@ -26,6 +26,8 @@ package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
 import static java.util.stream.Collectors.toList;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.timeseriesgroup.DELETE_TS_GROUP_CASCADE;
@@ -42,10 +44,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.Record1;
 import org.jooq.Record5;
 import org.jooq.Record8;
 import org.jooq.Record9;
 import org.jooq.RecordMapper;
+import org.jooq.Result;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStep4;
 import org.jooq.conf.ParamType;
@@ -487,20 +491,43 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
         } else {
             if (assignedTimeSeries != null) {
-                List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
+                if (supportsMissing(configuration)) {
+                    List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
                         .map(TimeSeriesGroupDao::convertToTsAliasType)
                         .collect(toList());
-                TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
-                TS_ALIAS_TAB_T missingTs = usace.cwms.db.jooq.codegen_latest.packages.CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS_SUPPORT_MISSING(configuration,
-                    group.getTimeSeriesCategory().getId(), group.getId(), assignedLocs, office, formatBool(ignoreMissing));
-                if (!missingTs.isEmpty()) {
-                    for (TS_ALIAS_T missing : missingTs) {
-                        missingTimeSeries.add(CwmsId.buildCwmsId(office, missing.getTS_ID()));
+                    TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
+                    TS_ALIAS_TAB_T missingTs =
+                        usace.cwms.db.jooq.codegen_latest.packages.CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS_SUPPORT_MISSING(
+                            configuration,
+                            group.getTimeSeriesCategory().getId(), group.getId(), assignedLocs, office,
+                            formatBool(ignoreMissing));
+                    if (!missingTs.isEmpty()) {
+                        for (TS_ALIAS_T missing : missingTs) {
+                            missingTimeSeries.add(CwmsId.buildCwmsId(office, missing.getTS_ID()));
+                        }
                     }
+                } else {
+                    List<usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T> collect = assignedTimeSeries.stream()
+                        .map(TimeSeriesGroupDao::convertToLegacyTsAliasType)
+                        .collect(toList());
+                    usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T assignedLocs
+                        = new usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T(collect);
+                    CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
+                        group.getId(), assignedLocs, office);
                 }
             }
         }
         return missingTimeSeries;
+    }
+
+    private boolean supportsMissing(Configuration config) {
+        Result<Record1<Integer>> support = config.dsl()
+            .select(count(asterisk()))
+            .from("all_procedures")
+            .where("procedure_name = 'ASSIGN_TS_GROUPS_SUPPORT_MISSING'")
+            .fetch();
+        int supportCount = support.get(0).value1();
+        return supportCount > 0;
     }
 
     public List<CwmsId> assignTs(TimeSeriesGroup group, String office, boolean ignoreMissing) {
@@ -514,6 +541,13 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {
         BigDecimal attribute = toBigDecimal(assignedTimeSeries.getAttribute());
         return new TS_ALIAS_T(assignedTimeSeries.getTimeseriesId(), attribute,
+            assignedTimeSeries.getAliasId(), assignedTimeSeries.getRefTsId());
+    }
+
+    @Deprecated
+    private static usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T convertToLegacyTsAliasType(AssignedTimeSeries assignedTimeSeries) {
+        BigDecimal attribute = toBigDecimal(assignedTimeSeries.getAttribute());
+        return new usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T(assignedTimeSeries.getTimeseriesId(), attribute,
             assignedTimeSeries.getAliasId(), assignedTimeSeries.getRefTsId());
     }
 
