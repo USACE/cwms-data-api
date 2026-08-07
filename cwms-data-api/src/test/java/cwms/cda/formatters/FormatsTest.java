@@ -12,6 +12,7 @@ import cwms.cda.data.dto.County;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.data.dto.Office;
+import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.data.dto.project.LockRevokerRights;
@@ -93,17 +94,9 @@ class FormatsTest {
         Map<String, String> parameters = contentType.getParameters();
         assertTrue(parameters == null || parameters.isEmpty());
 
-
-        contentType = Formats.parseHeaderAndQueryParm("application/xml;version=2", null, Catalog.class);
-
-        assertNotNull(contentType);
-        assertEquals("application/xml", contentType.getType());
-        parameters = contentType.getParameters();
-        assertNotNull(parameters);
-        assertFalse(parameters.isEmpty());
-        assertTrue(parameters.containsKey("version"));
-        assertEquals("2", parameters.get("version"));
-
+        /** xml;version=2 is not a supported format of Catalog */
+        assertThrows(UnsupportedFormatException.class, 
+                     () -> Formats.parseHeaderAndQueryParm("application/xml;version=2", null, Catalog.class));
     }
 
     @Test
@@ -111,6 +104,10 @@ class FormatsTest {
         ContentType contentType;
 
         contentType = Formats.parseHeader("application/json", Catalog.class);
+        assertNotNull(contentType);
+        assertEquals("application/json", contentType.getType());
+
+        contentType = Formats.parseHeader("application/json;version=1", Catalog.class);
         assertNotNull(contentType);
         assertEquals("application/json", contentType.getType());
 
@@ -131,9 +128,10 @@ class FormatsTest {
         assertThrows(FormattingException.class, () -> Formats.parseHeader("abc", Catalog.class));
         assertThrows(FormattingException.class, () -> Formats.parseHeader("abc,def", Catalog.class));
 
+        contentType = Formats.parseHeader("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", RecentValue.class);
+        assertEquals("application/json", contentType.getType());
     }
 
-    
     @ParameterizedTest
     @EnumSource(ParseQueryOrParamTest.class)
     void test_header_or_query_parm(ParseQueryOrParamTest test) {

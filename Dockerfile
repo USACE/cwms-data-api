@@ -71,6 +71,7 @@ ENV CDA_POOL_MAX_ACTIVE="30"
 ENV CDA_POOL_MAX_IDLE="10"
 ENV CDA_POOL_MIN_IDLE="5"
 ENV cwms.dataapi.access.providers="KeyAccessManager,OpenID"
+ENV cwms.dataapi.access.providers.surpress=CwmsAAACacAuth
 ENV cwms.dataapi.access.openid.wellKnownUrl="https://<prefix>/.well-known/openid-configuration"
 ENV cwms.dataapi.access.openid.issuer="<issuer>"
 ENV cwms.dataapi.access.openid.timeout="604800"

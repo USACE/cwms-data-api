@@ -27,4 +27,25 @@ public interface OutputFormatter {
         throw new UnsupportedOperationException(String.format(UNSUPPORTED_MESSAGE, getContentType()));
     }
 
+    /**
+     * Used where more advanced handling is required.
+     * DUMMY
+     */
+    public class DUMMY implements OutputFormatter {
+
+        @Override
+        public String getContentType() {
+            throw new UnsupportedOperationException("Unimplemented method 'getContentType'");
+        }
+
+        @Override
+        public String format(CwmsDTOBase dto) {
+            throw new UnsupportedOperationException("Unimplemented method 'format'");
+        }
+
+        @Override
+        public String format(List<? extends CwmsDTOBase> dtoList) {
+            throw new UnsupportedOperationException("Unimplemented method 'format'");
+        }
+    }
 }
