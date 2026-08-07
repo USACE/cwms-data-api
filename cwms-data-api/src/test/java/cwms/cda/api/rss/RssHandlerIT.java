@@ -29,6 +29,7 @@ package cwms.cda.api.rss;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -135,23 +136,25 @@ final class RssHandlerIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
+                .statusCode(either(is(HttpServletResponse.SC_OK)).or(is(429)))
                 .extract();
-
-            XmlPath nextXml = rssXml(nextPage.asString());
-
-            // Still a valid RSS document with items
-            assertNotNull(nextXml.getString("rss.channel.title"));
-            assertNotNull(nextXml.getList("rss.channel.item"));
-
-            pagesVisited++;
-            nextHref = nextLinkHref(nextXml);
+            if (nextPage.statusCode() == HttpServletResponse.SC_OK) {
+                XmlPath nextXml = rssXml(nextPage.asString());
+                // Still a valid RSS document with items
+                assertNotNull(nextXml.getString("rss.channel.title"));
+                assertNotNull(nextXml.getList("rss.channel.item"));
+                
+                pagesVisited++;
+                nextHref = nextLinkHref(nextXml);
+            }
             String waitStr = nextPage.header("Retry-After");
-            int wait = waitStr != null && !waitStr.isEmpty() ? Integer.parseInt(waitStr) : 10;
-            try {
-                TimeUnit.SECONDS.sleep(wait); // NOSONAR - have to wait, 429 response
-            } catch (InterruptedException ex) {
-                LOGGER.atFine().withCause(ex).log("Next query wait was interrupted.");
+            if (waitStr != null) {
+                int wait = waitStr != null && !waitStr.isEmpty() ? Integer.parseInt(waitStr) : 10;
+                try {
+                    TimeUnit.SECONDS.sleep(wait); // NOSONAR - have to wait, 429 response
+                } catch (InterruptedException ex) {
+                    LOGGER.atFine().withCause(ex).log("Next query wait was interrupted.");
+                }
             }
         }
 
