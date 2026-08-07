@@ -322,7 +322,8 @@ public class ApiServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     JavalinServlet javalin = null;
-    private Authenticator authenticator = new Authenticator();
+    private final Authenticator authenticator = new Authenticator();
+    private final OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
     private String appContext;
 
     @Resource(name = "jdbc/CWMS3")
@@ -995,7 +996,7 @@ public class ApiServlet extends HttpServlet {
             .responseModifier((ctx,api) -> {
                 schemeProcessor.apply(ctx, api);
                 api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,secReqs);
+                    setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
                     // yeah, we really need to figure out how to update everything, 
                     // this is supported as an annotation in newer versions.
                     if (key.startsWith("/rss")) {

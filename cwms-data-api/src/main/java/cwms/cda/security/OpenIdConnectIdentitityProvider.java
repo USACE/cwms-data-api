@@ -1,7 +1,5 @@
 package cwms.cda.security;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.ApiServlet;
@@ -12,12 +10,15 @@ import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.JwtParser;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.io.IOException;
 import java.net.URL;
 import java.security.Principal;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletResponse;
 
 @AutoService(IdentityProvider.class)
@@ -38,8 +39,15 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     private static final boolean CREATE_USERS = Boolean.parseBoolean(System.getProperty(CREATE_USERS_KEY,"true"));
 
-    private JwtParser jwtParser = null;
-    private OpenIdConfig config = null;
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+
+    private final AtomicReference<OpenIdConfig> config = new AtomicReference<>(null);
+
+    private final String wellKnownUrl;
+    private final String issuer;
+    private final String clientId;
+    private final int timeout;
+    private final String idpHint;
 
     /**
      * Create a new instance of OpenIDConnectProvider
@@ -69,17 +77,15 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
         }
     }
 
-    private void initializeProvider()
-    {
+    private void initializeProvider() {
         var foundConfig = config.getAndUpdate(c -> {
-            if (c != null)
-            {
+            if (c != null) {
                 return c; // already initialized, don't change it.
             }
             try {
                 log.atFine().log("Attempting to initalize OIDC provider for %s", wellKnownUrl);
                 URL wellKnown = new URL(wellKnownUrl);
-                return OpenIDConfig.from(wellKnown, clientId, idpHint, timeout);
+                return OpenIdConfig.from(wellKnown, clientId, idpHint, timeout);
             } catch (IOException ex) {
                 // The downstream users of this check if the Provider is valid and respond appropriate.
                 // To test manually have OpenIDConfig throw an IOException so config stays null and
@@ -166,96 +172,4 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
         }
         return header.trim().toLowerCase().startsWith("bearer");
     }
-
-
-    private static class UrlResolver extends SigningKeyResolverAdapter {
-        private final URL jwksUrl;
-        private ZonedDateTime lastCheck;
-        private final Map<String,Key> realmPublicKeys = new HashMap<>();
-        private final int realmPublicKeyTimeoutMinutes;
-        private KeyFactory keyFactory = null;
-
-        public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
-            this.jwksUrl = jwksUrl;
-            this.realmPublicKeyTimeoutMinutes = keyTimeoutMinutes;
-            try {
-                keyFactory = KeyFactory.getInstance("RSA");
-            } catch (NoSuchAlgorithmException ex) {
-                log.atSevere().withCause(ex).log("Unable to initialize key factory.");
-            }
-        }
-
-        /**
-         * TODO: This needs more, some configurations may be more complex (like the
-         * authelia test environment) than others.
-         */
-        @SuppressWarnings("checkstyle:indentation")
-        private void updateKey() {
-            if (realmPublicKeys.isEmpty() 
-                || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
-                log.atInfo().log("Checking for new key at %s",jwksUrl);
-                try {
-                    realmPublicKeys.clear();
-                    updateSigningKey();
-                } catch (IOException ex) {
-                    log.atSevere()
-                       .withCause(ex)
-                       .log("Unable to update key. Will continue to use previous key.");
-                } catch (InvalidKeySpecException ex) {
-                    
-                    log.atSevere()
-                       .withCause(ex)
-                       .log("New Public Key was not valid. Will continue to use previous key.");
-                }
-                lastCheck = ZonedDateTime.now();
-            }
-        }
-
-        @SuppressWarnings("checkstyle:localvariablename") // names are traditional math constants.
-        private void updateSigningKey() throws IOException, InvalidKeySpecException {
-            HttpURLConnection http = null;
-            try {
-                http = (HttpURLConnection)jwksUrl.openConnection();
-                http.setRequestMethod("GET");
-                http.setInstanceFollowRedirects(true);
-                int status = http.getResponseCode();
-                if (status == 200) {
-                    ObjectMapper mapper = new ObjectMapper();
-                    JsonNode keys = mapper.readTree(http.getInputStream()).get("keys");
-                    for (JsonNode key: keys) {
-                        String kid = key.get("kid").textValue();
-                        Decoder b64 = Base64.getUrlDecoder(); // https://datatracker.ietf.org/doc/id/draft-jones-json-web-key-01.html#RFC4648
-                        String nStr = key.get("n").textValue();
-                        String eStr = key.get("e").textValue();
-                        log.atInfo().log("Loading Key %s with parameters (n,e) -> (%s,%s)",kid,nStr,eStr);
-                        BigInteger n = new BigInteger(1,b64.decode(nStr));
-                        BigInteger e = new BigInteger(1,b64.decode(eStr));
-                        Key pubKey = keyFactory.generatePublic(new RSAPublicKeySpec(n, e));
-                        realmPublicKeys.put(kid,pubKey);
-                    }
-                } else {
-                    log.atSevere().log("Unable to retrieve actual keys. Response code %d",status);
-                }
-            } finally {
-                if (http != null) {
-                    http.disconnect();
-                }
-            }
-        }
-
-        @Override
-        public Key resolveSigningKey(@SuppressWarnings("rawtypes") JwsHeader header, Claims claims) {
-            if (!header.getAlgorithm().toLowerCase().startsWith("rs")) {
-                log.atWarning().log("Request with invalid algorithm '%s'",header.getAlgorithm());
-                return null; // we only deal with RSA keys right now.
-            }
-            updateKey();
-            Key key = realmPublicKeys.get(header.getKeyId());
-            if (key == null) {
-                log.atSevere().log("Key not found for id '%s'",header.getKeyId());
-            }
-            return key;
-        }
-    }
-
 }
