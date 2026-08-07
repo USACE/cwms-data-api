@@ -32,6 +32,7 @@ import cwms.cda.security.OpenIdConnectIdentitityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
+import io.restassured.config.EncoderConfig;
 import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
@@ -179,11 +180,24 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = System.getProperty("warContext");
-            // we only use doubles
-            RestAssured.config()
-                       .jsonConfig(
-                            JsonConfig.jsonConfig()
-                                      .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
+            // actually assign the new config to the global configuration. just running this here without
+            // the assignment apparently does nothing.
+            RestAssured.config = RestAssured.config()
+                        // we only use doubles (NOTE: this is commend out because this config was
+                        // never originally active and will be addressed in a followup)
+                    //    .jsonConfig(
+                    //         JsonConfig.jsonConfig()
+                    //                   .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))
+                        // our content type processing is a bit more picky now.
+                        // I also don't recal seeing any default COntent-Type or Accept header
+                        // defaults from browsers that include this much.
+                        // if we start seeing it we need to add explicity @FormattableWith annotations
+                        // per character as that is a distinct content-type.
+                       .encoderConfig(
+                            EncoderConfig.encoderConfig()
+                                         .appendDefaultContentCharsetToContentTypeIfUndefined(
+                                            false
+                                         ));
             healthCheck();
         }
     }
