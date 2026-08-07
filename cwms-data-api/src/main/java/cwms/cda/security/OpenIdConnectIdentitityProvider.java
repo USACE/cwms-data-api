@@ -46,7 +46,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    private AtomicReference<OpenIDConfig> config = new AtomicReference<>(null);
+    private final AtomicReference<OpenIDConfig> config = new AtomicReference<>(null);
 
     private final String wellKnownUrl;
     private final String issuer;
@@ -65,9 +65,16 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
         } else {
             timeout = 3600;
         }
+        if (wellKnownUrl == null || wellKnownUrl.isEmpty()) {
+            log.atInfo().log("OpenID Connect well-known URL is not set; provider will remain disabled.");
+            executor.shutdown();
+            return;
+        }
         // try it once, then every 5 minutes until we get it.
         initializeProvider();
-        executor.scheduleAtFixedRate(this::initializeProvider, 0, 5, TimeUnit.MINUTES);
+        if (config.get() == null) {
+            executor.scheduleAtFixedRate(this::initializeProvider, 5, 5, TimeUnit.MINUTES);
+        }
     }
 
     private void initializeProvider()
@@ -79,10 +86,6 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             }
             try {
                 log.atFine().log("Attempting to initalize OIDC provider for %s", wellKnownUrl);
-                if (wellKnownUrl == null || wellKnownUrl.isEmpty()) {
-                    executor.shutdown(); // it won't be found, don't keep looking
-                    throw new IOException("OpenID Connect well-known URL is not set.");
-                }
                 URL wellKnown = new URL(wellKnownUrl);
                 return OpenIDConfig.from(wellKnown, clientId, idpHint, timeout);
             } catch (IOException ex) {
@@ -94,7 +97,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             }
             return c;
         });
-        if (foundConfig != null) {
+        if (foundConfig != null || config.get() != null) {
             executor.shutdown(); // we have it, don't need to keep polling
         }
     }
@@ -159,6 +162,9 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     @Override
     public boolean canAuth(Context ctx) {
+        if (config.get() == null) {
+            return false;
+        }
         String header = ctx.header(AUTHORIZATION);
         if (header == null) {
             return false;

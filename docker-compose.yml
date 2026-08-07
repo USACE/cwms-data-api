@@ -79,6 +79,7 @@ services:
       - ./compose_files/api_entry.sh:/api_entry.sh:ro
       - ./compose_files/proxy_auth.sh:/proxy_auth.sh:ro
     environment:
+      - APP_PORT=${APP_PORT:-8081}
       - JAVA_OPTS=-Dproperties.file=/conf/features.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
