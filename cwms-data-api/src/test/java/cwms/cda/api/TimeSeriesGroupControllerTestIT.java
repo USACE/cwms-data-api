@@ -69,6 +69,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import io.javalin.http.HttpCode;
 import io.restassured.filter.log.LogDetail;
@@ -410,6 +411,7 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
+    @MinimumSchema(260716)
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_ignore_missing(String format) throws Exception {

@@ -34,6 +34,7 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import io.javalin.http.HttpCode;
 import io.restassured.filter.log.LogDetail;
@@ -1833,6 +1834,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .body("id", is(group.getId()));
     }
 
+    @MinimumSchema(260716)
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_ignore_missing(String format) throws Exception {
