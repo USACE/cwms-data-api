@@ -116,26 +116,12 @@ Catalog (QUERY):
         {
           "office": "string",
           "name": "string",
-          "nearest-city": "string",
           "public-name": "string",
           "long-name": "string",
           "description": "string",
           "kind": "string",
           "type": "string",
-          "time-zone": "string",
-          "latitude": 0,
-          "longitude": 0,
-          "published-latitude": 0,
-          "published-longitude": 0,
-          "horizontal-datum": "string",
-          "elevation": 0,
-          "unit": "string",
-          "vertical-datum": "string",
-          "nation": "string",
-          "state": "string",
-          "county": "string",
           "bounding-office": "string",
-          "map-label": "string",
           "active": true,
           "aliases": [
             {
@@ -145,9 +131,9 @@ Catalog (QUERY):
           ],
           "sub-locations": [
             {
-                "name": "string",
-                "office": "string",
-                "active": true
+              "name": "string",
+              "office": "string",
+              "active": true
             }
           ],
           "associations": {
@@ -156,40 +142,6 @@ Catalog (QUERY):
             "num-assoc-ratings": 0
           },
           "is-sub-location": false
-        },
-        {
-          "office": "string",
-          "name": "string",
-          "units": "string",
-          "interval": "string",
-          "interval-offset": 0,
-          "time-zone": "string",
-          "extents": [
-            {
-              "earliest-time": "2026-07-28T16:49:26.200Z",
-              "latest-time": "2026-07-28T16:49:26.200Z",
-              "version-time": "2026-07-28T16:49:26.200Z",
-              "last-update": "2026-07-28T16:49:26.200Z"
-            }
-          ],
-          "aliases": [
-            {
-              "name": "string",
-              "value": "string"
-            }
-          ],
-          "sub-locations": [
-            {
-                "name": "string"
-            }
-          ],
-          "associations": {
-            "num-assoc-time-series": 0,
-            "num-assoc-levels": 0,
-            "num-assoc-ratings": 0
-          },
-          "is-sub-location": false,
-          "versioned": true
         }
       ],
       "next-page": "string",
