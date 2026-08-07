@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.ServiceLoader;
 
 public class CdaIdentityProviders {
-    
+
     private static final ServiceLoader<IdentityProvider> loader = ServiceLoader.load(IdentityProvider.class);
 
 
