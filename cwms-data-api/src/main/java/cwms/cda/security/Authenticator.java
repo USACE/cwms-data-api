@@ -3,7 +3,6 @@ package cwms.cda.security;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import com.google.common.flogger.FluentLogger;
@@ -19,22 +18,15 @@ public final class Authenticator implements Handler {
 
     public Authenticator() {
         var surpressed = System.getenv("cwms.dataapi.access.providers.surpress");
-        final List<String> supressedList = surpressed == null
-                ? Collections.emptyList() : List.of(surpressed.split(","));
+        final var supressedList = surpressed == null ? List.of() : List.of(surpressed.split(","));
 
-        loadProviders(CdaIdentityProviders.providers(), supressedList);
-    }
-
-    Authenticator(Iterator<IdentityProvider> availableProviders, List<String> suppressedProviders) {
-        loadProviders(availableProviders, suppressedProviders);
-    }
-
-    private void loadProviders(Iterator<IdentityProvider> availableProviders, List<String> suppressedProviders) {
-        availableProviders.forEachRemaining(provider -> {
-            if (!suppressedProviders.contains(provider.getName())) {
+        CdaIdentityProviders.providers().forEachRemaining(provider -> {
+            if (!supressedList.contains(provider.getName()) && provider.getScheme() != null) {
                 providers.add(provider);
             } else {
-                logger.atInfo().log("Suppressing configured Identity Provider %s.", provider.getName());
+                logger.atSevere()
+                      .log("Unable to add Identity Provider %s. See earlier logs for specific error message.",
+                           provider.getName());
             }
         });
     }
@@ -51,12 +43,6 @@ public final class Authenticator implements Handler {
     }
 
     public List<IdentityProvider> getActiveProviders() {
-        ArrayList<IdentityProvider> activeProviders = new ArrayList<>();
-        for (IdentityProvider provider: providers) {
-            if (provider.getScheme() != null) {
-                activeProviders.add(provider);
-            }
-        }
-        return Collections.unmodifiableList(activeProviders);
+        return Collections.unmodifiableList(providers);
     }
 }
