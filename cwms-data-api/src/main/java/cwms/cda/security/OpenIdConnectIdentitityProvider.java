@@ -73,6 +73,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
         // try it once, then every 5 minutes until we get it.
         initializeProvider();
         if (config.get() == null) {
+            log.atWarning().log("Could not initially configure OpenID Connect Configuration, will poll every 5 minutes");
             executor.scheduleAtFixedRate(this::initializeProvider, 5, 5, TimeUnit.MINUTES);
         }
     }
@@ -97,7 +98,9 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             }
             return c;
         });
-        if (foundConfig != null || config.get() != null) {
+        if (foundConfig != null) { // If somehow the config was suddenly set just as we get to this line
+                                   // the logic in config.getAndUpdate will take care of the situtation.
+            log.atInfo().log("OpenID Config processed, shutting down polling thread.");
             executor.shutdown(); // we have it, don't need to keep polling
         }
     }
