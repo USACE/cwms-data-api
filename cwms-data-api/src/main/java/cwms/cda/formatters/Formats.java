@@ -412,14 +412,6 @@ public class Formats {
             if (aliasType != null) {
                 logger.atFinest().log("%s converted to %s", ct, aliasType);
                 contentTypes.add(aliasType);
-            } else {
-                //If the DTO parameter is null, alias map is empty. Compare against well-known types
-                //Only use the ContentType classes initialized in contentTypeList rather than
-                //the client headers itself
-                ContentType type = new ContentType(ct);
-                if (contentTypeList.contains(type)) {
-                    contentTypes.add(type);
-                }
             }
         }
         logger.atFinest().log("have %d", contentTypes.size());

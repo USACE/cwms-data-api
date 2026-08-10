@@ -1,0 +1,19 @@
+{
+  "office-id": "SPK",
+  "id": "LocMissGrp",
+  "location-category": {
+    "office-id": "SPK",
+    "id": "LocMissCat",
+    "description": "IntegrTesting"
+  },
+  "description": "test group description",
+  "loc-group-attribute": 0,
+  "assigned-locations": [
+    {
+      "location-id": "notReal-loc",
+      "office-id": "SPK",
+      "ref-location-id": "notReal",
+      "attribute": 0
+    }
+  ]
+}
