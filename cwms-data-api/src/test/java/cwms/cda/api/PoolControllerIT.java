@@ -322,9 +322,6 @@ final class PoolControllerIT extends DataApiTestIT {
               .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
               .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
-              .body(OFFICE_ID, equalTo(POOL.getPoolName().getOfficeId()))
-              .body(MESSAGE, equalTo("Pool successfully deleted from CWMS"))
-              .body(IDENTIFIER, equalTo(POOL.getPoolName().getPoolName()))
         ;
     }
 
