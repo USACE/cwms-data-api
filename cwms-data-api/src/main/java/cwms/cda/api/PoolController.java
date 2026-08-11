@@ -311,9 +311,8 @@ public final class PoolController implements CrudHandler {
           queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
                       + "the pool to be deleted."),
-                @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
-                      "Defaults to \"DELETE_KEY\"",
-                      type = JooqDao.DeleteMethod.class)
+                @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the owning project of "
+                      + "the pool to be deleted.")
           },
           description = "Delete CWMS Pool",
           method = HttpMethod.DELETE,
