@@ -2,21 +2,22 @@ package cwms.cda.data.dao;
 
 import static java.util.stream.Collectors.toList;
 
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.Pool;
 import cwms.cda.data.dto.PoolNameType;
 import cwms.cda.data.dto.Pools;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
+import org.jooq.exception.DataAccessException;
 import org.jooq.exception.TooManyRowsException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_POOL_PACKAGE;
@@ -217,4 +218,52 @@ public class PoolDao extends JooqDao<Pool> {
 		return builder.build();
 	}
 
+    public void deletePool(String office, String projectId, String poolId) {
+		connection(dsl, c -> CWMS_POOL_PACKAGE.call_DELETE_POOL(
+			getDslContext(c, office).configuration(),
+			projectId, poolId, office)
+		);
+    }
+
+	public void createPool(Pool pool, boolean failIfExists, boolean createPoolName) {
+		String projectId = pool.getProjectId();
+		String office = pool.getPoolName().getOfficeId();
+		String poolId = pool.getPoolName().getPoolName();
+		String bottomLevelId = pool.getBottomLevelId();
+		String topLevelId = pool.getTopLevelId();
+		Number attribute = pool.getAttribute();
+		String description = pool.getDescription();
+		String clobText = pool.getClobText();
+		connection(dsl, c -> CWMS_POOL_PACKAGE.call_STORE_POOL2(
+			getDslContext(c, office).configuration(),
+			projectId,
+			poolId,
+			bottomLevelId,
+			topLevelId,
+			attribute,
+			description,
+			clobText,
+			formatBool(failIfExists),
+			formatBool(createPoolName),
+			office)
+		);
+	}
+
+    public void renamePool(String office, String poolId, String newName) {
+		try {
+			connection(dsl, c -> CWMS_POOL_PACKAGE.call_RENAME_POOL(
+				getDslContext(c, office).configuration(),
+				poolId,
+				newName,
+				office)
+			);
+		} catch (DataAccessException e) {
+			//Typo being address in: https://github.com/HydrologicEngineeringCenter/cwms-database/pull/215
+			if(e.getMessage().contains("ITEM DOES NOT EXIST")) {
+				throw new NotFoundException(e);
+			} else {
+				throw e;
+			}
+		}
+	}
 }
