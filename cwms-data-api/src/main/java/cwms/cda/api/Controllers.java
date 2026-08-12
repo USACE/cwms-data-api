@@ -87,6 +87,7 @@ public final class Controllers {
     public static final String BLOB_ID = "blob-id";
     public static final String INCLUDE_VALUES = "include-values";
     public static final String FAIL_IF_EXISTS = "fail-if-exists";
+    public static final String CREATE_POOL_NAME = "create-pool-name";
     public static final String IGNORE_NULLS = "ignore-nulls";
     public static final String EFFECTIVE_DATE = "effective-date";
     public static final String DATE = "date";
