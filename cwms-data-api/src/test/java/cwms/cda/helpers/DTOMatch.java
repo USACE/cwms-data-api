@@ -523,7 +523,7 @@ public final class DTOMatch {
                 () -> assertEquals(first.getParty(), second.getParty(), "Party does not match"),
                 () -> assertEquals(first.getWmComments(), second.getWmComments(), "WM Comments do not match"),
                 () -> assertEquals(first.getInstant(), second.getInstant(), "Instant does not match"),
-                () -> assertEquals(first.getNumber(), second.getNumber(), "Number does not match"),
+                () -> assertEquals(first.getMeasurementId(), second.getMeasurementId(), "Number does not match"),
                 () -> assertMatch(first.getStreamflowMeasurement(), second.getStreamflowMeasurement()),
                 () -> assertMatch(first.getSupplementalStreamflowMeasurement(), second.getSupplementalStreamflowMeasurement()),
                 () -> assertMatch(first.getUsgsMeasurement(), second.getUsgsMeasurement())

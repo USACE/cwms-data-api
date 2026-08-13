@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        "^/(auth|CWMSLogin|cwms-data/(?!swagger-ui(?:/|$)|assets/|src/|node_modules/|@).*)":
+        "^/(auth|CWMSLogin|cwms-data/(?!$|swagger-ui(?:/|$)|data-query(?:/|$)|regexp(?:/|$)|filter-expressions(?:/|$)|timestamps(?:/|$)|user-lists(?:/|$)|legacy-format(?:/|$)|location-search(?:/|$)|assets/|src/|node_modules/|@).*)":
           {
             target: cdaApiRoot,
             changeOrigin: true,

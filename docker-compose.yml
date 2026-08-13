@@ -48,8 +48,11 @@ services:
 
   data-api:
     depends_on:
-      auth:
-        condition: service_healthy
+      # to test the OpenIdConnectIdentityProvider setup, we initionally
+      # reverse the dependency order to force the situtation of
+      # there not being an OpenId Connect Provider instances ready set and service startup.
+      #auth:
+      #  condition: service_healthy
       db:
         condition: service_healthy
       db_webuser_permissions:
@@ -65,13 +68,18 @@ services:
       target: api
       context: .
       dockerfile: Dockerfile
+    entrypoint: ["/api_entry.sh"]
+    command: ["/usr/local/tomcat/bin/catalina.sh", "run"]
     #command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
       - ./compose_files/togglz/features.properties:/conf/features.properties:ro
       - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
+      - ./compose_files/api_entry.sh:/api_entry.sh:ro
+      - ./compose_files/proxy_auth.sh:/proxy_auth.sh:ro
     environment:
+      - APP_PORT=${APP_PORT:-8081}
       - JAVA_OPTS=-Dproperties.file=/conf/features.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
       - CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
@@ -82,14 +90,12 @@ services:
       - CDA_POOL_MAX_IDLE=5
       - CDA_POOL_MIN_IDLE=2
       - cwms.dataapi.access.provider=MultipleAccessManager
-      - cwms.dataapi.access.providers=KeyAccessManager,OpenID
+      - cwms.dataapi.access.providers.surpress=CwmsAAACacAuth
       - cwms.dataapi.access.openid.create_users=true
-      - cwms.dataapi.access.openid.wellKnownUrl=http://auth:${APP_PORT:-8081}/auth/realms/cwms/.well-known/openid-configuration
-      - cwms.dataapi.access.openid.altAuthUrl=http://localhost:${APP_PORT:-8081}
-      - cwms.dataapi.access.openid.useAltWellKnown=true
+      - cwms.dataapi.access.openid.wellKnownUrl=http://localhost:${APP_PORT:-8081}/auth/realms/cwms/.well-known/openid-configuration
       - cwms.dataapi.access.openid.issuer=http://localhost:${APP_PORT:-8081}/auth/realms/cwms
       - cwms.dataapi.access.openid.clientId=cwms
-      # values are not actually used in the local keycloak, however it does fail and leaves them in place for various testing.
+      # values are not actually used in the local keycloak, however it doesn't fail and leaves them in place for various testing.
       - cwms.dataapi.access.openid.idpHint=federation-eams,login.gov
       - blob.store.endpoint=http://minio:9000
       - blob.store.region=docker
@@ -142,12 +148,14 @@ services:
     depends_on:
       traefik:
         condition: service_healthy
-    
+      data-api:
+        condition: service_healthy
+
 
 
   # Proxy for HTTPS for OpenID
   traefik:
-    image: "traefik:v3.6.2"
+    image: "traefik:v3.7.10"
     ports:
       - "${APP_PORT:-8081}:80"
     expose:

@@ -103,6 +103,15 @@ import cwms.cda.api.UnitsController;
 import cwms.cda.api.UpstreamLocationsGetController;
 import cwms.cda.api.VerticalDatumController;
 import cwms.cda.api.auth.ApiKeyController;
+import cwms.cda.api.auth.userlists.AddUserListMemberController;
+import cwms.cda.api.auth.userlists.CreateUserListController;
+import cwms.cda.api.auth.userlists.DeleteUserListController;
+import cwms.cda.api.auth.userlists.UpdateUserListController;
+import cwms.cda.api.auth.userlists.UserListCandidatesController;
+import cwms.cda.api.auth.userlists.UserListController;
+import cwms.cda.api.auth.userlists.UserListMemberController;
+import cwms.cda.api.auth.userlists.UserListMembersController;
+import cwms.cda.api.auth.userlists.UserListsController;
 import cwms.cda.api.auth.users.UserProfileController;
 import cwms.cda.api.auth.users.UsersController;
 import cwms.cda.api.auth.users.roles.AddRoleController;
@@ -172,8 +181,10 @@ import cwms.cda.api.watersupply.WaterUserUpdateController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.rss.QueueManager;
 import cwms.cda.data.dto.csv.CwmsCsvDTO;
+import cwms.cda.features.CdaFeatures;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.csv.CsvExampleGenerator;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.DataApiPrincipal;
@@ -187,6 +198,7 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.apibuilder.CrudHandlerKt;
 import io.javalin.core.JavalinConfig;
 import io.javalin.core.security.RouteRole;
+import io.javalin.http.Context;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.BadRequestResponse;
@@ -229,6 +241,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
 import org.jetbrains.annotations.NotNull;
+import org.togglz.core.context.FeatureContext;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -310,6 +323,7 @@ public class ApiServlet extends HttpServlet {
 
     JavalinServlet javalin = null;
     private Authenticator authenticator = new Authenticator();
+    private OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
     private String APP_CONTEXT;
 
     @Resource(name = "jdbc/CWMS3")
@@ -362,6 +376,7 @@ public class ApiServlet extends HttpServlet {
                 })
                 .attribute("PolicyFactory", sanitizer)
                 .attribute("ObjectMapper", om)
+                .attribute("schemeProcessor", schemeProcessor)
                 .before(authenticator)
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
@@ -673,9 +688,49 @@ public class ApiServlet extends HttpServlet {
         String userProfilePath = "/user/profile";
         get(userProfilePath, new UserProfileController(metrics), userRoles);
         cdaAccessManager.addCustomAuthorizer(userProfilePath, ApiServlet::hasAnyRole);
+        addUserListHandlers(userRoles);
         post("/user/{user-name}/roles/{office-id}", new AddRoleController(metrics), adminRoles);
         delete("/user/{user-name}/roles/{office-id}", new DeleteRolesController(metrics), adminRoles);
 
+    }
+
+    private void addUserListHandlers(RouteRole[] userRoles) {
+        String userListCandidatesPath = "/user/list-member-candidates";
+        String userListsPath = "/user/list";
+        String userListPath = "/user/list/{user-list-id}";
+        String userListMembersPath = "/user/list/{user-list-id}/members";
+        String userListMemberPath = "/user/list/{user-list-id}/members/{user-id}";
+        if (FeatureContext.getFeatureManager().isActive(CdaFeatures.USER_LISTS)) {
+            get(userListCandidatesPath, new UserListCandidatesController(metrics), userRoles);
+            get(userListsPath, new UserListsController(metrics), userRoles);
+            post(userListsPath, new CreateUserListController(metrics), userRoles);
+            get(userListPath, new UserListController(metrics), userRoles);
+            patch(userListPath, new UpdateUserListController(metrics), userRoles);
+            delete(userListPath, new DeleteUserListController(metrics), userRoles);
+            get(userListMembersPath, new UserListMembersController(metrics), userRoles);
+            post(userListMembersPath, new AddUserListMemberController(metrics), userRoles);
+            delete(userListMemberPath, new UserListMemberController(metrics), userRoles);
+        } else {
+            get(userListCandidatesPath, this::userListsUnsupported, userRoles);
+            get(userListsPath, this::userListsUnsupported, userRoles);
+            post(userListsPath, this::userListsUnsupported, userRoles);
+            get(userListPath, this::userListsUnsupported, userRoles);
+            patch(userListPath, this::userListsUnsupported, userRoles);
+            delete(userListPath, this::userListsUnsupported, userRoles);
+            get(userListMembersPath, this::userListsUnsupported, userRoles);
+            post(userListMembersPath, this::userListsUnsupported, userRoles);
+            delete(userListMemberPath, this::userListsUnsupported, userRoles);
+        }
+        cdaAccessManager.addCustomAuthorizer(userListCandidatesPath, ApiServlet::hasAnyRole);
+        cdaAccessManager.addCustomAuthorizer(userListsPath, ApiServlet::hasAnyRole);
+        cdaAccessManager.addCustomAuthorizer(userListPath, ApiServlet::hasAnyRole);
+        cdaAccessManager.addCustomAuthorizer(userListMembersPath, ApiServlet::hasAnyRole);
+        cdaAccessManager.addCustomAuthorizer(userListMemberPath, ApiServlet::hasAnyRole);
+    }
+
+    private void userListsUnsupported(Context ctx) {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED)
+                .json(new CdaError("User lists are not enabled for this CDA deployment."));
     }
 
     private static Boolean hasAnyRole(DataApiPrincipal p, Set<RouteRole> roles) throws MissingRolesException {
@@ -925,32 +980,20 @@ public class ApiServlet extends HttpServlet {
 
         String provider = CdaAccessManager.class.getSimpleName();
 
-
-        Components components = new Components();
-        final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
-        authenticator.getActiveProviders().forEach(identityProvider -> {
-            components.addSecuritySchemes(identityProvider.getName(),identityProvider.getScheme());
-            SecurityRequirement req = new SecurityRequirement();
-            if (!identityProvider.getName().equalsIgnoreCase("guestauth")
-                    && !identityProvider.getName().equalsIgnoreCase("noauth")) {
-                req.addList(identityProvider.getName());
-                secReqs.add(req);
-            }
-        });
-
         List<Server> servers = new ArrayList<>();
         servers.add(new Server().url(APP_CONTEXT));
         OpenApiOptions ops =
             new OpenApiOptions(
-                () -> new OpenAPI().components(components)
+                () -> new OpenAPI()
                                    .servers(servers)
                                    .info(applicationInfo)
                                    .addSecurityItem(new SecurityRequirement().addList(provider))
         );
         ops.path("/swagger-docs")
             .responseModifier((ctx,api) -> {
+                schemeProcessor.apply(ctx, api);
                 api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path,secReqs);
+                    setSecurityRequirements(key,path,schemeProcessor.getSecurityRequirements());
                     // yeah, we really need to figure out how to update everything, this is supported as an annotation in
                     // newer versions.
                     if (key.startsWith("/rss")) {
@@ -1015,6 +1058,7 @@ public class ApiServlet extends HttpServlet {
             .activateAnnotationScanningFor("cwms.cda.api");
         addEndpointExamples(ops);
         config.registerPlugin(new OpenApiPlugin(ops));
+
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
