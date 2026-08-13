@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.OVERWRITE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UNIT_SYSTEM;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.api.LocationController.LOCATIONS_TAG;
@@ -44,6 +45,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -73,6 +75,7 @@ public final class VerticalDatumController implements CrudHandler {
     // NOTE: manually expanded due to limits of OpenApi Annotations.
     private static final String VDI_PATH = "/location/{location-id}/vertical-datum";
     private static final String VDI_ALL_PATH = "/location/vertical-datum";
+    private static final String ERROR_MESSAGE = "Failed to process request to retrieve Vertical Datum Info";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -90,8 +93,8 @@ public final class VerticalDatumController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = LOCATION_MASK, description = "Filters on the location ID."),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office."),
-            @OpenApiParam(name = UNIT,
-                description = "Specifies the unit of measure for elevation/offsets (e.g., m or ft). Default is m.")
+            @OpenApiParam(name = UNIT_SYSTEM,
+                description = "Specifies the unit system of measure for elevation/offsets (SI or EN). Default is EN.")
         },
         responses = {
             @OpenApiResponse(status = Controllers.STATUS_200,
@@ -107,12 +110,12 @@ public final class VerticalDatumController implements CrudHandler {
     @Override
     public void getAll(@NotNull Context ctx) {
         String office = requiredParam(ctx, OFFICE);
-        String units = ctx.queryParamAsClass(UNIT, String.class).getOrDefault("m");
+        String unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, String.class).getOrDefault(UnitSystem.SI.getValue());
         String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault(null);
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             VerticalDatumDao dao = new VerticalDatumDao(dsl);
-            List<VerticalDatumInfo> info = dao.retrieveVerticalDatumInfoList(office, locationMask, units);
+            List<VerticalDatumInfo> info = dao.retrieveVerticalDatumInfoList(office, locationMask, unitSystem);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
             ctx.contentType(contentType.toString());
@@ -125,8 +128,8 @@ public final class VerticalDatumController implements CrudHandler {
             ctx.res.getOutputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
-                "Failed to process request to retrieve Vertical Datum Info", ex);
-            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Vertical Datum Info");
+                ERROR_MESSAGE, ex);
+            logger.atSevere().withCause(ex).log(ERROR_MESSAGE);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
@@ -170,8 +173,8 @@ public final class VerticalDatumController implements CrudHandler {
             ctx.res.getOutputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
-                "Failed to process request to retrieve Vertical Datum Info", ex);
-            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Vertical Datum Info");
+                ERROR_MESSAGE, ex);
+            logger.atSevere().withCause(ex).log(ERROR_MESSAGE);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }

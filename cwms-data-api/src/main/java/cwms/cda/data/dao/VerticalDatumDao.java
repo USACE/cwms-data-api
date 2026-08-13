@@ -29,13 +29,11 @@ import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.xml.XMLv1;
 import java.util.ArrayList;
 import java.util.List;
-import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
-import org.jooq.Result;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
+import usace.cwms.db.jooq.codegen_latest.udt.records.CLOB_TAB_T;
 
 /**
  * DAO responsible for CRUD operations on Vertical Datum Info for a Location.
@@ -57,37 +55,14 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
     }
 
     public List<VerticalDatumInfo> retrieveVerticalDatumInfoList(String officeId, String locMask, String units) {
-        AV_VERT_DATUM_OFFSET view = AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET;
         List<VerticalDatumInfo> resultList = new ArrayList<>();
         return connectionResult(dsl, conn -> {
             DSLContext ctx = getDslContext(conn, officeId);
-            Condition whereCondition = view.OFFICE_ID.eq(officeId);
-
-            if (locMask != null && !locMask.isEmpty()) {
-                whereCondition = whereCondition.and(view.LOCATION_ID.like(locMask));
-            }
-            Result<Record1<usace.cwms.db.jooq.codegen.tables.records.AV_VERT_DATUM_OFFSET>> result =
-                ctx.select(view).from(view)
-                    .where(whereCondition)
-                    .fetch();
-            for (Record1<usace.cwms.db.jooq.codegen.tables.records.AV_VERT_DATUM_OFFSET> rec : result) {
-                usace.cwms.db.jooq.codegen.tables.records.AV_VERT_DATUM_OFFSET tab = rec.value1();
-                String desc = tab.getDESCRIPTION();
-                VerticalDatumInfo vdi = new VerticalDatumInfo.Builder()
-                    .withOffice(tab.getOFFICE_ID())
-                    .withLocation(tab.getLOCATION_ID())
-                    .withNativeDatum(tab.getVERTICAL_DATUM_ID_1())
-                    .withLocalDatumName(tab.getVERTICAL_DATUM_ID_2())
-                    .withOffset(desc.contains("ESTIMATE"), tab.getVERTICAL_DATUM_ID_2(), tab.getOFFSET())
-                    .build();
-                if (!units.equalsIgnoreCase("m")) {
-                    vdi = new VerticalDatumInfo.Builder()
-                        .from(vdi)
-                        .withUnit(units)
-                        .withElevation(CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(ctx.configuration(), vdi.getElevation(),
-                            "m", units))
-                        .build();
-                }
+            String mask = locMask == null ? "%" : locMask;
+            CLOB_TAB_T datumInfo = usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE
+                .call_GET_VERTICAL_DATUM_INFO_LIST(ctx.configuration(), officeId, mask, units);
+            for (String info : datumInfo) {
+                VerticalDatumInfo vdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(info);
                 resultList.add(vdi);
             }
             return resultList;

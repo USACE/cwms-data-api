@@ -35,9 +35,9 @@ import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
-import java.util.List;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
-
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +45,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import java.util.stream.Stream;
 
 @Tag("integration")
 final class VerticalDatumControllerTestIT extends DataApiTestIT {
@@ -286,27 +285,22 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
         // GET
-        String getBody =
-            given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(contentType.toString())
-                .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(Controllers.UNIT, "m")
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/location/vertical-datum")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-            .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
-                .extract()
-                .asString();
-
-        List<VerticalDatumInfo> got = Formats.parseContentList(contentType, getBody, VerticalDatumInfo.class);
-        assertEquals(1, got.size());
-        assertEquals(100.0, got.get(0).getElevation(), 0.001);
-        assertEquals("NGVD-29", got.get(0).getNativeDatum());
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.UNIT, "m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", Matchers.equalTo(1))
+            .body("[0].elevation", Matchers.closeTo(100, 0.001))
+            .body("native-datum", Matchers.equalTo("NGVD-29"));
 
         // DELETE
         given()
