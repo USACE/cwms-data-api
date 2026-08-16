@@ -326,6 +326,7 @@ task integrationTests(type: Test) {
     jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
+    jvmArgs += "-Dproperties.file=$projectDir/src/test/resources/features-integration.properties"
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
     //jvmArgs += "-Dflogger.backend_factory=com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance"
 }

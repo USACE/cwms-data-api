@@ -17,11 +17,16 @@ public final class Authenticator implements Handler {
     private final ArrayList<IdentityProvider> providers = new ArrayList<>();
 
     public Authenticator() {
+        var surpressed = System.getenv("cwms.dataapi.access.providers.surpress");
+        final var supressedList = surpressed == null ? List.of() : List.of(surpressed.split(","));
+
         CdaIdentityProviders.providers().forEachRemaining(provider -> {
-            if (provider.getScheme() != null) {
+            if (!supressedList.contains(provider.getName()) && provider.getScheme() != null) {
                 providers.add(provider);
             } else {
-                logger.atSevere().log("Unable to add Identity Provider %s. See earlier logs for specific error message.", provider.getName());
+                logger.atSevere()
+                      .log("Unable to add Identity Provider %s. See earlier logs for specific error message.",
+                           provider.getName());
             }
         });
     }
@@ -36,7 +41,7 @@ public final class Authenticator implements Handler {
             }
         }
     }
- 
+
     public List<IdentityProvider> getActiveProviders() {
         return Collections.unmodifiableList(providers);
     }

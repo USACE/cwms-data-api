@@ -37,6 +37,7 @@ import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.MAX_FLOW;
 import static cwms.cda.api.Controllers.MAX_HEIGHT;
 import static cwms.cda.api.Controllers.MAX_NUMBER;
+import static cwms.cda.api.Controllers.MEASUREMENT_ID;
 import static cwms.cda.api.Controllers.MIN_FLOW;
 import static cwms.cda.api.Controllers.MIN_HEIGHT;
 import static cwms.cda.api.Controllers.MIN_NUMBER;
@@ -48,6 +49,7 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
+import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsDouble;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -63,6 +65,7 @@ import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.MeasurementDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.measurement.Measurement;
+import cwms.cda.data.dto.measurement.MeasurementLegacy;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -103,8 +106,9 @@ public final class MeasurementController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description = "Office id mask for filtering measurements. Use null to retrieve measurements for all offices."),
                     @OpenApiParam(name = ID_MASK, description = "Location id mask for filtering measurements. Use null to retrieve measurements for all locations."),
-                    @OpenApiParam(name = MIN_NUMBER, description = "Minimum measurement number-id for filtering measurements."),
-                    @OpenApiParam(name = MAX_NUMBER, description = "Maximum measurement number-id for filtering measurements."),
+                    @OpenApiParam(name = MEASUREMENT_ID, description = "Measurement ID filter. Supports UUIDs (and optionally integer IDs). This filter has precedence over min-number and max-number filters."),
+                    @OpenApiParam(name = MIN_NUMBER, type = Integer.class, description = "Minimum measurement number-id for filtering measurements. Only applies to integer measurement IDs."),
+                    @OpenApiParam(name = MAX_NUMBER, type = Integer.class, description = "Maximum measurement number-id for filtering measurements. Only applies to integer measurement IDs."),
                     @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. " +
                             TIME_FORMAT_DESC + " A null value is treated as an unbounded start."),
                     @OpenApiParam(name = END, description = "The end of the time window to delete." +
@@ -128,8 +132,9 @@ public final class MeasurementController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = "200", content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Measurement.class),
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = Measurement.class)
+                            @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Measurement.class),
+                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = MeasurementLegacy.class),
+                            @OpenApiContent(isArray = true, type = Formats.JSON, from = MeasurementLegacy.class)
                     })
             },
             description = "Returns matching measurement data.",
@@ -144,6 +149,7 @@ public final class MeasurementController implements CrudHandler {
         Instant maxDate = queryParamAsInstant(ctx, END);
         String minNum = ctx.queryParam(MIN_NUMBER);
         String maxNum = ctx.queryParam(MAX_NUMBER);
+        String measurementId = ctx.queryParam(MEASUREMENT_ID);
         Number minHeight = queryParamAsDouble(ctx, MIN_HEIGHT);
         Number maxHeight = queryParamAsDouble(ctx, MAX_HEIGHT);
         Number minFlow = queryParamAsDouble(ctx, MIN_FLOW);
@@ -154,7 +160,7 @@ public final class MeasurementController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
             List<Measurement> measurements = dao.retrieveMeasurements(officeId, locationId, minDate, maxDate, unitSystem,
-                    minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agency, quality);
+                    minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agency, quality, measurementId);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Measurement.class);
             ctx.contentType(contentType.toString());
@@ -182,8 +188,9 @@ public final class MeasurementController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSONV1),
-                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSON)
+                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSONV2),
+                            @OpenApiContent(isArray = true, from = MeasurementLegacy.class, type = Formats.JSONV1),
+                            @OpenApiContent(isArray = true, from = MeasurementLegacy.class, type = Formats.JSON)
                     },
                     required = true),
             queryParams = {
@@ -234,8 +241,8 @@ public final class MeasurementController implements CrudHandler {
                             + "to be used if the format of the " + BEGIN + "and " + END
                             + " parameters do not include offset or time zone information. "
                             + "Defaults to UTC."),
-                    @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number-id of the measurement to delete."),
-                    @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number-id of the measurement to delete."),
+                    @OpenApiParam(name = MIN_NUMBER, type = Integer.class, description = "Specifies the min number-id of the measurement to delete. Only applies to integer measurement IDs."),
+                    @OpenApiParam(name = MAX_NUMBER, type = Integer.class, description = "Specifies the max number-id of the measurement to delete. Only applies to integer measurement IDs."),
             },
             description = "Delete an existing measurement.",
             method = HttpMethod.DELETE,
@@ -255,7 +262,7 @@ public final class MeasurementController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
-            dao.deleteMeasurements(officeId, locationId, minDate, maxDate,minNum, maxNum);
+            dao.deleteMeasurements(officeId, locationId, minDate, maxDate, minNum, maxNum, null);
             StatusResponse re = new StatusResponse(officeId, "Measurement successfully deleted for specified location-id.", locationId);
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }

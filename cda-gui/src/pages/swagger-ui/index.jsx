@@ -8,75 +8,14 @@ import {
 } from "@usace-watermanagement/groundwork-water";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getBasePath } from "../../utils/base";
-
-function normalizeOpenIdConnectUrls(spec) {
-  const schemes = spec.components?.securitySchemes ?? {};
-  for (const scheme of Object.values(schemes)) {
-    if (scheme.type === "openIdConnect" && scheme.openIdConnectUrl) {
-      const openIdConnectUrl = new URL(scheme.openIdConnectUrl, window.location.origin);
-      if (openIdConnectUrl.hostname === "auth") {
-        openIdConnectUrl.protocol = window.location.protocol;
-        openIdConnectUrl.host = window.location.host;
-        scheme.openIdConnectUrl = openIdConnectUrl.toString();
-      }
-    }
-  }
-}
-
-function getOpenIdConnectScheme(spec) {
-  const schemes = spec.components?.securitySchemes ?? {};
-  return Object.values(schemes).find((scheme) => scheme.type === "openIdConnect");
-}
+import {
+  getKeycloakConfig,
+  isLoopbackHost,
+  normalizeOpenIdConnectUrls,
+} from "../../utils/auth-config";
 
 function getCwmsLoginScheme(spec) {
   return spec.components?.securitySchemes?.CwmsAAACacAuth;
-}
-
-function isLoopbackHost(hostname) {
-  return ["localhost", "127.0.0.1", "::1"].includes(hostname);
-}
-
-function isLocalOrigin(url) {
-  return isLoopbackHost(new URL(url).hostname);
-}
-
-async function isCwmsLoginAvailable() {
-  try {
-    const response = await fetch(`${window.location.origin}/CWMSLogin`, {
-      cache: "no-store",
-      redirect: "manual",
-    });
-    return response.type === "opaqueredirect" || response.status < 400;
-  } catch {
-    return false;
-  }
-}
-
-function getKeycloakConfig(spec) {
-  const scheme = getOpenIdConnectScheme(spec);
-  if (!scheme?.openIdConnectUrl) {
-    return null;
-  }
-
-  const openIdConnectUrl = new URL(scheme.openIdConnectUrl);
-  const realmMatch = openIdConnectUrl.pathname.match(/^(.*)\/realms\/([^/]+)\//);
-  if (!realmMatch) {
-    return null;
-  }
-
-  const providerHint = scheme["x-kc_idp_hint"]?.values?.[0];
-  const useLocalDevCredentials = isLocalOrigin(openIdConnectUrl);
-  return {
-    host: `${openIdConnectUrl.origin}${realmMatch[1]}`,
-    realm: realmMatch[2],
-    client: scheme["x-oidc-client-id"],
-    flow: useLocalDevCredentials ? "direct-grant" : "authorization-code-pkce",
-    username: useLocalDevCredentials ? "m5hectest" : undefined,
-    password: useLocalDevCredentials ? "m5hectest" : undefined,
-    redirectUri: window.location.href.split("?")[0],
-    postLogoutRedirectUri: window.location.href.split("?")[0],
-    providerHint: useLocalDevCredentials ? undefined : providerHint,
-  };
 }
 
 function isExternalOpenIdOnLocalhost(keycloakConfig) {
@@ -176,20 +115,24 @@ export default function SwaggerUI() {
         }
         return;
       }
-      normalizeOpenIdConnectUrls(spec);
-      const keycloakConfig = getKeycloakConfig(spec);
-      const hasCwmsLogin = getCwmsLoginScheme(spec) && (await isCwmsLoginAvailable());
-      const nextCustomAuthType = hasCwmsLogin
-        ? "cwms"
-        : keycloakConfig
-          ? "openid"
+      normalizeOpenIdConnectUrls(spec, window.location.origin);
+      const keycloakConfig = getKeycloakConfig(spec, window.location.href);
+      const hasCwmsLogin = Boolean(getCwmsLoginScheme(spec));
+      // Some non-T7 deployments advertise CwmsAAACacAuth even though their
+      // /CWMSLogin route is only a generic landing page. Prefer a usable
+      // OpenID configuration when both schemes are present; T7 deployments
+      // that advertise only CWMS AAA still use the shared CWMS session flow.
+      const nextCustomAuthType = keycloakConfig
+        ? "openid"
+        : hasCwmsLogin
+          ? "cwms"
           : null;
 
       if (customAuthType !== nextCustomAuthType) {
         setCustomAuthType(nextCustomAuthType);
       }
 
-      if (hasCwmsLogin) {
+      if (nextCustomAuthType === "cwms") {
         setAuthUiMode("cwms-login");
       } else if (nextCustomAuthType === "openid" && keycloakConfig) {
         const keycloakConfigSignature = JSON.stringify(keycloakConfig);

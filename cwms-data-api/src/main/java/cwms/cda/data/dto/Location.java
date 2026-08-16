@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
@@ -33,6 +34,7 @@ import java.util.function.Consumer;
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.GEOJSON, formatter = OutputFormatter.DUMMY.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
     private final String name;
