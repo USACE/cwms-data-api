@@ -16,7 +16,7 @@ Opinion 1
 
 Summary: Use the ``jakarta.jms.MapMessage`` structure described below for forecast-related events.
 
-All messages will be published to the ``XXX_REALTIME_OPS`` topic.
+All messages will be published to the ``XXX_REALTIME_OPS`` topic, where ``XXX`` represents the appropriate office identifier.
 
 Author: Mike Perryman
 
