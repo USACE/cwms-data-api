@@ -30,3 +30,5 @@ Some decisions may also be a proposal and marked appropriately.
     JMS Queue Message Structure <./0011-queue-messages.rst>
     Vertical Datum Storage <./0012-vertical-datum-storage.rst>
     CDA User Lists <./0013-cda-user-lists.md>
+    JMS Pub/Sub Message Formats - Forecasts <./0014-queue-messages-forecast.rst>
+    JMS Pub/Sub Message Formats - Ratings <./0015-queue-messages-rating.rst>
