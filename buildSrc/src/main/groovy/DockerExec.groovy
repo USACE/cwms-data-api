@@ -1,5 +1,6 @@
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.Internal
 
 import javax.inject.Inject
 
@@ -16,7 +17,8 @@ abstract class DockerExec extends Exec {
         onlyIf { isDockerAvailable() }
     }
 
-    private boolean isDockerAvailable() {
+    @Internal
+    boolean isDockerAvailable() {
         def version = providers.of(DockerVersionValueSource) {}.get()
 
         if (!version) {
