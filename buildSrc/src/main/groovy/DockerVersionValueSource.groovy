@@ -1,6 +1,10 @@
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 import org.gradle.process.ExecOperations
+import org.gradle.process.ExecSpec
+import org.gradle.process.internal.ExecException
 
 import javax.inject.Inject
 
@@ -13,24 +17,34 @@ import javax.inject.Inject
  */
 abstract class DockerVersionValueSource implements ValueSource<String, ValueSourceParameters.None> {
 
+    private static final Logger LOGGER = Logging.getLogger(DockerVersionValueSource)
+
     @Inject
     abstract ExecOperations getExecOperations()
 
     @Override
     String obtain() {
+        def stdout = new ByteArrayOutputStream()
+        def stderr = new ByteArrayOutputStream()
+
         try {
-            def stdout = new ByteArrayOutputStream()
-
-            execOperations.exec {
-                commandLine 'docker', 'info', '--format', '{{.ServerVersion}}'
-                standardOutput = stdout
-                errorOutput = new ByteArrayOutputStream()
-                ignoreExitValue = true
+            execOperations.exec { ExecSpec spec ->
+                spec.commandLine 'docker', 'info', '--format', '{{.ServerVersion}}'
+                spec.standardOutput = stdout
+                spec.errorOutput = stderr
+                spec.ignoreExitValue = true
             }
-
-            return stdout.toString().trim()
-        } catch (ignored) {
+        } catch (ExecException e) {
             return ''
         }
+
+        def version = stdout.toString().trim()
+
+        if (!version) {
+            def error = stderr.toString().trim()
+            LOGGER.info("'docker info' produced no version output.{}", error ? " stderr: ${error}" : '')
+        }
+
+        return version
     }
 }

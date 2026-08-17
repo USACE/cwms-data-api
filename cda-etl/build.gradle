@@ -22,10 +22,7 @@ plugins {
     id 'base'
 }
 
-final def imageName = providers.gradleProperty('etlImageName').orElse('cwms-data-api/etl')
-final def dockerPull = providers.gradleProperty('dockerPull')
-        .map { it.toBoolean() }
-        .orElse(false)
+final def imageName = 'cwms-data-api/etl'
 final def etlEnvFile = providers.gradleProperty('etlEnvFile').orElse('etl.env')
 
 tasks.register('dockerBuild', DockerExec) {
@@ -33,15 +30,7 @@ tasks.register('dockerBuild', DockerExec) {
     description = 'Builds the CDA ETL Docker image.'
 
     doFirst {
-        def args = ['docker', 'build']
-
-        if (dockerPull.get()) {
-            args += '--pull'
-        }
-
-        args += ['-t', imageName.get(), '.']
-
-        commandLine args
+        commandLine 'docker', 'build', '--pull', '-t', imageName, '.'
     }
 
     inputs.file('Dockerfile')
@@ -62,7 +51,7 @@ tasks.register('runEtl', DockerExec) {
             throw new GradleException("ETL environment file not found: ${envFile.absolutePath}")
         }
 
-        commandLine 'docker', 'run', '--rm', '--env-file', envFile.absolutePath, imageName.get()
+        commandLine 'docker', 'run', '--rm', '--env-file', envFile.absolutePath, imageName
     }
 }
 
@@ -81,7 +70,7 @@ tasks.register('runEtlUnitTests', DockerExec) {
 
         def testsDir = file('tests')
         args += ['-v', "${testsDir.absolutePath}:/app/tests"]
-        args += [imageName.get(), 'python', '-m', 'pytest']
+        args += [imageName, 'python', '-m', 'pytest']
 
         commandLine args
     }

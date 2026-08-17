@@ -128,17 +128,6 @@ The Gradle build file provides Docker-based convenience tasks.
 ./gradlew dockerBuild
 ```
 
-Optional Gradle properties:
-
-- `-PetlImageName=<image-name>`: Override the Docker image name. Default: `cwms-data-api/etl`
-- `-PdockerPull=true`: Add `--pull` to the Docker build
-
-Example:
-
-```bash
-./gradlew dockerBuild -PetlImageName=cwms-data-api/etl:dev -PdockerPull=true
-```
-
 ### Run the ETL container
 
 ```bash
