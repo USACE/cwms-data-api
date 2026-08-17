@@ -224,10 +224,10 @@ services:
       context: ./cda-etl
       dockerfile: Dockerfile
     volumes:
-      - ./cda-etl/data/regi/regi.yml:/app/regi.yml
-      - ./cda-etl/data/regi:/data/regi
+      - ./cda-etl/data/sample-data/sample-app.yml:/app/sample-app.yml
+      - ./cda-etl/data/sample-data:/data/sample-data
     environment:
-      - REGI_CONFIG_PATH=/app/regi.yml
+      - ETL_CONFIG_PATH=/app/sample-app.yml
       - SOURCE_CDA_URL=${SOURCE_CDA_URL:-}
       - SOURCE_CDA_API_KEY=${SOURCE_CDA_API_KEY:-}
       - DEST_CDA_URL=${DEST_CDA_URL:-http://data-api:7000/cwms-data/}
