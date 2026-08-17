@@ -39,6 +39,7 @@ import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
 import java.util.List;
+import java.util.Objects;
 
 @JsonRootName("vertical-data")
 @JacksonXmlRootElement(localName = "vertical-data")
@@ -50,14 +51,28 @@ public final class VerticalDatumInfoList extends CwmsDTOBase {
     @JacksonXmlElementWrapper(useWrapping = false)
     @JacksonXmlProperty(localName = "vertical-datum-info")
     @JsonProperty("vertical-datum-info")
-    private final List<VerticalDatumInfo> verticalDatumInfoList;
+    private final List<VerticalDatumInfo> datumList;
 
     @JsonCreator
     public VerticalDatumInfoList(@JsonProperty("vertical-datum-info") List<VerticalDatumInfo> verticalDatumInfoList) {
-        this.verticalDatumInfoList = verticalDatumInfoList;
+        this.datumList = verticalDatumInfoList;
     }
 
-    public List<VerticalDatumInfo> getVerticalDatumInfoList() {
-        return verticalDatumInfoList;
+    public List<VerticalDatumInfo> getDatumList() {
+        return datumList;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        VerticalDatumInfoList that = (VerticalDatumInfoList) o;
+        return Objects.equals(datumList, that.datumList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(datumList);
     }
 }

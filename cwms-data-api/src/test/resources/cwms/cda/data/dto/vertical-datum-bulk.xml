@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <vertical-data>
     <vertical-datum-info office="SPK" unit="m">
-        <location>VDI_LOC_TEST2</location>
+        <location>VDI_LOC_TEST</location>
         <native-datum>NGVD-29</native-datum>
-        <elevation>200.0</elevation>
+        <elevation>100.0</elevation>
         <offset estimate="true">
             <to-datum>NAVD-88</to-datum>
             <value>-0.5</value>
         </offset>
     </vertical-datum-info>
     <vertical-datum-info office="SPK" unit="m">
-        <location>VDI_LOC_TEST</location>
+        <location>VDI_LOC_TEST2</location>
         <native-datum>NGVD-29</native-datum>
-        <elevation>100.0</elevation>
+        <elevation>200.0</elevation>
         <offset estimate="true">
             <to-datum>NAVD-88</to-datum>
             <value>-0.5</value>

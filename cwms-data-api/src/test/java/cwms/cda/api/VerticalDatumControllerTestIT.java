@@ -39,7 +39,6 @@ import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -334,8 +333,8 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
 
         VerticalDatumInfoList list = Formats.parseContent(contentType, vdiList, VerticalDatumInfoList.class);
 
-        assertEquals(2, list.getVerticalDatumInfoList().size());
-        for (VerticalDatumInfo vdiInfo : list.getVerticalDatumInfoList()) {
+        assertEquals(2, list.getDatumList().size());
+        for (VerticalDatumInfo vdiInfo : list.getDatumList()) {
             assertTrue(vdiInfo.equals(vdi) || vdiInfo.equals(vdi2));
         }
 
