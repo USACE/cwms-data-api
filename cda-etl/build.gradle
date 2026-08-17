@@ -26,50 +26,11 @@ final def imageName = providers.gradleProperty('etlImageName').orElse('cwms-data
 final def dockerPull = providers.gradleProperty('dockerPull')
         .map { it.toBoolean() }
         .orElse(false)
+final def etlEnvFile = providers.gradleProperty('etlEnvFile').orElse('etl.env')
 
-def dockerVersion
-
-def getDockerVersion = {
-    if (dockerVersion != null) {
-        return dockerVersion
-    }
-
-    try {
-        def stdout = new ByteArrayOutputStream()
-        def stderr = new ByteArrayOutputStream()
-
-        exec {
-            commandLine 'docker', 'info', '--format', '{{.ServerVersion}}'
-            standardOutput = stdout
-            errorOutput = stderr
-        }
-
-        dockerVersion = stdout.toString().trim()
-    } catch (ignored) {
-        dockerVersion = ''
-    }
-
-    return dockerVersion
-}
-
-def isDockerAvailable = { taskName ->
-    def version = getDockerVersion()
-    if (!version) {
-        logger.lifecycle("Skipping ${taskName} because Docker is not installed or the Docker daemon is unavailable.")
-        return false
-    }
-
-    logger.info("Docker is available: ${version}")
-    return true
-}
-
-tasks.register('dockerBuild', Exec) {
+tasks.register('dockerBuild', DockerExec) {
     group = 'docker'
     description = 'Builds the CDA ETL Docker image.'
-
-    onlyIf {
-        isDockerAvailable(name)
-    }
 
     doFirst {
         def args = ['docker', 'build']
@@ -88,15 +49,28 @@ tasks.register('dockerBuild', Exec) {
     inputs.dir('src')
 }
 
-tasks.register('runEtlUnitTests', Exec) {
+tasks.register('runEtl', DockerExec) {
+    dependsOn 'dockerBuild'
+
+    group = 'application'
+    description = 'Runs the CDA ETL Docker container using the configured environment file.'
+
+    doFirst {
+        def envFile = file(etlEnvFile.get())
+
+        if (!envFile.exists()) {
+            throw new GradleException("ETL environment file not found: ${envFile.absolutePath}")
+        }
+
+        commandLine 'docker', 'run', '--rm', '--env-file', envFile.absolutePath, imageName.get()
+    }
+}
+
+tasks.register('runEtlUnitTests', DockerExec) {
     dependsOn 'dockerBuild'
 
     group = 'verification'
     description = 'Runs ETL unit tests in Docker with local source and tests mounted for faster iteration.'
-
-    onlyIf {
-        isDockerAvailable(name)
-    }
 
     doFirst {
         def args = [

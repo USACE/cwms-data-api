@@ -44,10 +44,10 @@ offices:
       - id: EUFA
         enabled: true
         locations:
-          - id: SWT.EUFA-Dam
+          - id: EUFA-Dam
             enabled: true
         timeseries:
-          - id: SWT.EUFA.Elev.Inst.1Hour.0.Ccp-Rev
+          - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
             enabled: true
 ```
 

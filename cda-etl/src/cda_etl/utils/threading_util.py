@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 
 _EXECUTOR: ThreadPoolExecutor
 
+
+class TaskExecutionError(Exception):
+    """Raised when one or more tasks submitted to execute_tasks fail."""
+
 def init_executor(max_workers):
     global _EXECUTOR
     _EXECUTOR = ThreadPoolExecutor(max_workers=max_workers)
@@ -53,19 +57,30 @@ def _friendly_exception_message(item, exc):
 def execute_tasks(task_func, items):
     """
     Executes a task function for each item in a list using the provided executor.
-    Returns a dictionary mapping futures to items.
+    Waits for every future to finish, logging each failure as it completes. Once
+    all futures are done, raises TaskExecutionError if any task failed so that
+    callers (and ultimately the process exit code) reflect a partial/failed run.
     """
     futures_to_items = {
         _EXECUTOR.submit(task_func, item): item
         for item in items
     }
 
+    failures = []
     for future in as_completed(futures_to_items):
         item = futures_to_items[future]
-        if future.exception():
-            logger.warning(_friendly_exception_message(item, future.exception()))
-        elif future.result():
+        exc = future.exception()
+        if exc is not None:
+            logger.warning(_friendly_exception_message(item, exc))
+            failures.append((item, exc))
+        else:
             logger.debug(f"No error on execution for {item}")
 
+    if failures:
+        summary = "; ".join(_friendly_exception_message(item, exc) for item, exc in failures)
+        raise TaskExecutionError(
+            f"{len(failures)} of {len(futures_to_items)} task(s) failed: {summary}"
+        )
 
-__all__ = ["execute_tasks", "init_executor"]
+
+__all__ = ["execute_tasks", "init_executor", "TaskExecutionError"]
