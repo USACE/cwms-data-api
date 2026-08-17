@@ -21,7 +21,8 @@ public final class Authenticator implements Handler {
         final var supressedList = surpressed == null ? List.of() : List.of(surpressed.split(","));
 
         CdaIdentityProviders.providers().forEachRemaining(provider -> {
-            if (!supressedList.contains(provider.getName()) && provider.getScheme() != null) {
+            // only exclude if supressed, inactive providers will return a null scheme.
+            if (!supressedList.contains(provider.getName())) {
                 providers.add(provider);
             } else {
                 logger.atSevere()
