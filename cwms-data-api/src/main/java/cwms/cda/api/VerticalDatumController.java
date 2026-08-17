@@ -44,6 +44,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
@@ -52,6 +53,7 @@ import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.VerticalDatumDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.VerticalDatumInfoList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -98,10 +100,10 @@ public final class VerticalDatumController implements CrudHandler {
         },
         responses = {
             @OpenApiResponse(status = Controllers.STATUS_200,
-                content = {@OpenApiContent(type = Formats.JSONV1, from = VerticalDatumInfo.class),
-                    @OpenApiContent(type = Formats.JSON, from = VerticalDatumInfo.class),
-                    @OpenApiContent(type = Formats.XMLV1, from = VerticalDatumInfo.class),
-                    @OpenApiContent(type = Formats.XML, from = VerticalDatumInfo.class)})
+                content = {@OpenApiContent(type = Formats.JSONV1, from = VerticalDatumInfoList.class),
+                    @OpenApiContent(type = Formats.JSON, from = VerticalDatumInfoList.class),
+                    @OpenApiContent(type = Formats.XMLV1, from = VerticalDatumInfoList.class),
+                    @OpenApiContent(type = Formats.XML, from = VerticalDatumInfoList.class)})
         },
         description = "Returns Vertical Datum Info for all locations.",
         path = VDI_ALL_PATH,
@@ -115,11 +117,11 @@ public final class VerticalDatumController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             VerticalDatumDao dao = new VerticalDatumDao(dsl);
-            List<VerticalDatumInfo> info = dao.retrieveVerticalDatumInfoList(office, locationMask, unitSystem);
+            VerticalDatumInfoList vdiList = dao.retrieveVerticalDatumInfoList(office, locationMask, unitSystem);
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfoList.class);
             ctx.contentType(contentType.toString());
-            String serialized = Formats.format(contentType, info, VerticalDatumInfo.class);
+            String serialized = Formats.format(contentType, vdiList);
             requestResultSize.update(serialized.length());
             ctx.status(HttpServletResponse.SC_OK);
 

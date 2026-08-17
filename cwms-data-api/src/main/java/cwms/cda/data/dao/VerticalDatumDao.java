@@ -26,7 +26,9 @@ package cwms.cda.data.dao;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.VerticalDatumInfoList;
 import cwms.cda.formatters.xml.XMLv1;
+import java.sql.Clob;
 import java.util.ArrayList;
 import java.util.List;
 import org.jooq.DSLContext;
@@ -54,19 +56,20 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
         });
     }
 
-    public List<VerticalDatumInfo> retrieveVerticalDatumInfoList(String officeId, String locMask, String units) {
+    public VerticalDatumInfoList retrieveVerticalDatumInfoList(String officeId, String locMask, String units) {
         List<VerticalDatumInfo> resultList = new ArrayList<>();
-        return connectionResult(dsl, conn -> {
+        connection(dsl, conn -> {
             DSLContext ctx = getDslContext(conn, officeId);
             String mask = locMask == null ? "%" : locMask;
             CLOB_TAB_T datumInfo = usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE
                 .call_GET_VERTICAL_DATUM_INFO_LIST(ctx.configuration(), officeId, mask, units);
-            for (String info : datumInfo) {
-                VerticalDatumInfo vdi = TimeSeriesDaoImpl.parseVerticalDatumInfo(info);
+            for (Object info : datumInfo) {
+                Clob clob = (Clob) info;
+                VerticalDatumInfo vdi = new XMLv1().parseContent(clob.getAsciiStream(), VerticalDatumInfo.class);
                 resultList.add(vdi);
             }
-            return resultList;
         });
+        return new VerticalDatumInfoList(resultList);
     }
 
     public void createVerticalDatumInfo(String officeId, String locationId, VerticalDatumInfo vdi) {

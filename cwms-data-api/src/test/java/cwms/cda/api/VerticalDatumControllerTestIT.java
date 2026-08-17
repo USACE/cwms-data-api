@@ -28,8 +28,10 @@ import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.VerticalDatumInfoList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
@@ -52,10 +54,12 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
 
     private static final String TEST_LOCATION = "VDI_LOC_TEST";
+    private static final String TEST_LOCATION2 = "VDI_LOC_TEST2";
 
     @BeforeAll
     static void setup() throws Exception {
         createLocation(TEST_LOCATION, true, OFFICE_ID);
+        createLocation(TEST_LOCATION2, true, OFFICE_ID);
     }
 
 
@@ -284,8 +288,36 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
 
-        // GET
+        VerticalDatumInfo vdi2 = new VerticalDatumInfo.Builder()
+            .withOffice(OFFICE_ID)
+            .withLocation(TEST_LOCATION2)
+            .withUnit("m")
+            .withNativeDatum("NGVD-29")
+            .withElevation(200.0)
+            .withOffsets(offsets)
+            .build();
+
+        vdiPayload = Formats.format(contentType, vdi2);
+
+        // CREATE
         given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .contentType(contentType.toString())
+            .body(vdiPayload)
+            .queryParam(OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/" + TEST_LOCATION2 + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // GET
+        String vdiList = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(contentType.toString())
             .queryParam(OFFICE, OFFICE_ID)
@@ -298,9 +330,14 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .body("size()", Matchers.equalTo(1))
-            .body("[0].elevation", Matchers.closeTo(100, 0.001))
-            .body("native-datum", Matchers.equalTo("NGVD-29"));
+            .extract().asString();
+
+        VerticalDatumInfoList list = Formats.parseContent(contentType, vdiList, VerticalDatumInfoList.class);
+
+        assertEquals(2, list.getVerticalDatumInfoList().size());
+        for (VerticalDatumInfo vdiInfo : list.getVerticalDatumInfoList()) {
+            assertTrue(vdiInfo.equals(vdi) || vdiInfo.equals(vdi2));
+        }
 
         // DELETE
         given()
@@ -327,6 +364,36 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .redirects().follow(true)
             .redirects().max(3)
             .get("/location/" + TEST_LOCATION + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/" + TEST_LOCATION2 + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //VERIFY DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.UNIT, "m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/" + TEST_LOCATION2 + "/vertical-datum")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
