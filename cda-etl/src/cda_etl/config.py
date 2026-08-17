@@ -107,21 +107,6 @@ class ProjectConfig:
             raw=data,
         )
 
-    @property
-    def qualified_id(self) -> str:
-        """
-        Returns office-qualified project id.
-
-        Example:
-            office_id = SWT
-            id = EUFA
-            qualified_id = SWT.EUFA
-        """
-        if self.id.startswith(f"{self.office_id}."):
-            return self.id
-
-        return f"{self.office_id}.{self.id}"
-
     def locations(self, enabled_only: bool = True) -> Iterator[LocationConfig]:
         for data in self.raw.get("locations", []):
             location = LocationConfig.from_dict(data)

@@ -90,30 +90,30 @@ def pipeline(config: DownloadConfig, session_manager: SessionManager) -> None:
 
 
 def _stage_project_data(project_config: ProjectConfig, config: DownloadConfig) -> None:
-    logger.info(f"Staging project {project_config.qualified_id}")
+    logger.info(f"Staging project {project_config.id}")
 
     project_locations = list(project_config.locations(enabled_only=True))
     project_timeseries = list(project_config.timeseries(enabled_only=True))
 
     logger.info(
         "Stage inputs for %s: %d location(s), %d timeseries item(s)",
-        project_config.qualified_id,
+        project_config.id,
         len(project_locations),
         len(project_timeseries),
     )
 
-    logger.info("Staging locations for project %s", project_config.qualified_id)
+    logger.info("Staging locations for project %s", project_config.id)
     location.stage_locations(project_config.office_id, project_locations)
-    logger.info("Staging project record for %s", project_config.qualified_id)
+    logger.info("Staging project record for %s", project_config.id)
     project.stage_projects([project_config])
-    logger.info("Staging timeseries data for project %s", project_config.qualified_id)
+    logger.info("Staging timeseries data for project %s", project_config.id)
     timeseries.stage_timeseries(
         project_config.office_id,
         project_timeseries,
         config.settings.start_time,
         config.settings.end_time,
     )
-    logger.info("Completed staging for project %s", project_config.qualified_id)
+    logger.info("Completed staging for project %s", project_config.id)
 
 
 def _log_startup_configuration(config: DownloadConfig, session_manager: SessionManager) -> None:
@@ -129,34 +129,34 @@ def _log_startup_configuration(config: DownloadConfig, session_manager: SessionM
 
 
 def _publish_project_data(project_config: ProjectConfig, config: DownloadConfig) -> None:
-    logger.info(f"Publishing project {project_config.qualified_id}")
+    logger.info(f"Publishing project {project_config.id}")
 
     project_locations = list(project_config.locations(enabled_only=True))
     project_timeseries = list(project_config.timeseries(enabled_only=True))
 
     logger.info(
         "Publish inputs for %s: %d location(s), %d timeseries item(s)",
-        project_config.qualified_id,
+        project_config.id,
         len(project_locations),
         len(project_timeseries),
     )
 
-    logger.info("Publishing locations for project %s", project_config.qualified_id)
+    logger.info("Publishing locations for project %s", project_config.id)
     location.publish_staged_locations(project_config.office_id, project_locations)
-    logger.info("Publishing project record for %s", project_config.qualified_id)
+    logger.info("Publishing project record for %s", project_config.id)
     project.publish_staged_projects([project_config])
-    logger.info("Publishing timeseries data for project %s", project_config.qualified_id)
+    logger.info("Publishing timeseries data for project %s", project_config.id)
     timeseries.publish_staged_timeseries(
         project_config.office_id,
         project_timeseries,
         config.settings.start_time,
         config.settings.end_time,
     )
-    logger.info("Completed publish for project %s", project_config.qualified_id)
+    logger.info("Completed publish for project %s", project_config.id)
 
 
 def _initialize_runtime():
-    config_path = _read_env("REGI_CONFIG_PATH", "regi.yml")
+    config_path = _read_env("SAMPLE_APP_CONFIG_PATH", "sample-app.yml")
     config = DownloadConfig.from_yaml(config_path)
     session_manager = SessionManager.from_env()
     utils.threading_util.init_executor(config.settings.max_threads)
