@@ -29,53 +29,53 @@ Author: Mike Perryman
 | FcstSpecCreated |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
-|                 |  | String     | 'type'             | 'forecast_specification_created'                                | |
+|                 |  | String     | "type"             | "forecast_specification_created"                                | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'office_id'        | The office identifier                                           | |
+|                 |  | String     | "office_id"        | The office identifier                                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'specification_id' | The forecast specification identifier                           | |
+|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'designator'       | The forecast designator                                         | |
+|                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'location_id'      | The specified location identifier of the primary location       | |
+|                 |  | String     | "location_id"      | The specified location identifier of the primary location       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'entity_id'        | The specified entity identifier                                 | |
+|                 |  | String     | "entity_id"        | The specified entity identifier                                 | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'description'      | The specified description                                       | |
+|                 |  | String     | "description"      | The specified description                                       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | int        | 'num_time_series'  | The number of time series specified                             | |
+|                 |  | int        | "num_time_series"  | The number of time series specified                             | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
 | FcstSpecUpdated |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
-|                 |  | String     | 'type'             | 'forecast_specification_updated'                                | |
+|                 |  | String     | "type"             | "forecast_specification_updated"                                | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'office_id'        | The office identifier                                           | |
+|                 |  | String     | "office_id"        | The office identifier                                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'specification_id' | The forecast specification identifier                           | |
+|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'designator'       | The forecast designator                                         | |
+|                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'location_id'      | The specified location identifier of the primary location       | |
+|                 |  | String     | "location_id"      | The specified location identifier of the primary location       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'entity_id'        | The specified entity identifier                                 | |
+|                 |  | String     | "entity_id"        | The specified entity identifier                                 | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'description'      | The specified description                                       | |
+|                 |  | String     | "description"      | The specified description                                       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | int        | 'num_time_series'  | The number of time series specified                             | |
+|                 |  | int        | "num_time_series"  | The number of time series specified                             | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
 | FcstSpecDeleted |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
-|                 |  | String     | 'type'             | 'forecast_specification_deleted'                                | |
+|                 |  | String     | "type"             | "forecast_specification_deleted"                                | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'office_id'        | The office identifier                                           | |
+|                 |  | String     | "office_id"        | The office identifier                                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'specification_id' | The forecast specification identifier                           | |
+|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'designator'       | The forecast designator                                         | |
+|                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
 
@@ -87,69 +87,69 @@ Author: Mike Perryman
 | FcstInstCreated |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
-|                 |  | String     | 'type'             | 'forecast_instance_created'                                     | |
+|                 |  | String     | "type"             | "forecast_instance_created"                                     | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'office_id'        | The office identifier                                           | |
+|                 |  | String     | "office_id"        | The office identifier                                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'specification_id' | The forecast specification identifier                           | |
+|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'designator'       | The forecast designator                                         | |
+|                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | long       | 'forecast_time'    | The forecast date/time in epoch milliseconds                    | |
+|                 |  | long       | "forecast_time"    | The forecast date/time in epoch milliseconds                    | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | long       | 'issue_time'       | The issue date/time in epoch milliseconds                       | |
+|                 |  | long       | "issue_time"       | The issue date/time in epoch milliseconds                       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | int        | 'max_age'          | The number of hours after issue date that the forecast is valid | |
+|                 |  | int        | "max_age"          | The number of hours after issue date that the forecast is valid | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'notes'            | Any notes specific to the forecast                              | |
+|                 |  | String     | "notes"            | Any notes specific to the forecast                              | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'info'             | Key/values pairs for the forecast, in JSON format               | |
+|                 |  | String     | "info"             | Key/values pairs for the forecast, in JSON format               | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'blob_file_name'   | The file name of the specified blob                             | |
+|                 |  | String     | "blob_file_name"   | The file name of the specified blob                             | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'media_type'       | The media type of the specified blob                            | |
+|                 |  | String     | "media_type"       | The media type of the specified blob                            | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
 | FcstInstUpdated |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
-|                 |  | String     | 'type'             | 'forecast_instance_updated'                                     | |
+|                 |  | String     | "type"             | "forecast_instance_updated"                                     | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'office_id'        | The office identifier                                           | |
+|                 |  | String     | "office_id"        | The office identifier                                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'specification_id' | The forecast specification identifier                           | |
+|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'designator'       | The forecast designator                                         | |
+|                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | long       | 'forecast_time'    | The forecast date/time in epoch milliseconds                    | |
+|                 |  | long       | "forecast_time"    | The forecast date/time in epoch milliseconds                    | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | long       | 'issue_time'       | The issue date/time in epoch milliseconds                       | |
+|                 |  | long       | "issue_time"       | The issue date/time in epoch milliseconds                       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | int        | 'max_age'          | The number of hours after issue date that the forecast is valid | |
+|                 |  | int        | "max_age"          | The number of hours after issue date that the forecast is valid | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'notes'            | Any notes specific to the forecast                              | |
+|                 |  | String     | "notes"            | Any notes specific to the forecast                              | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'info'             | Key/values pairs for the forecast, in JSON format               | |
+|                 |  | String     | "info"             | Key/values pairs for the forecast, in JSON format               | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'blob_file_name'   | The file name of the specified blob                             | |
+|                 |  | String     | "blob_file_name"   | The file name of the specified blob                             | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'media_type'       | The media type of the specified blob                            | |
+|                 |  | String     | "media_type"       | The media type of the specified blob                            | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
 | FcstInstDeleted |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
-|                 |  | String     | 'type'             | 'forecast_instance_deleted'                                     | |
+|                 |  | String     | "type"             | "forecast_instance_deleted"                                     | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'office_id'        | The office identifier                                           | |
+|                 |  | String     | "office_id"        | The office identifier                                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'specification_id' | The forecast specification identifier                           | |
+|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | 'designator'       | The forecast designator                                         | |
+|                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | long       | 'forecast_time'    | The forecast date/time in epoch milliseconds                    | |
+|                 |  | long       | "forecast_time"    | The forecast date/time in epoch milliseconds                    | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | long       | 'issue_time'       | The issue date/time in epoch milliseconds                       | |
+|                 |  | long       | "issue_time"       | The issue date/time in epoch milliseconds                       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
 

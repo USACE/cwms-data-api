@@ -31,47 +31,47 @@ Author: Mike Perryman
 | RatingTemplateCreated | +------------+--------------------------+-----------------------------------------------------------+ |
 |                       | | Value Type |  Value Name              | Value                                                     | |
 |                       | +============+==========================+===========================================================+ |
-|                       | | String     | 'type'                   | 'rating_template_created'                                 | |
+|                       | | String     | "type"                   | "rating_template_created"                                 | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'office_id'              | The office identifier                                     | |
+|                       | | String     | "office_id"              | The office identifier                                     | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'independent_parameters' | The independent parameter ids, in order, comma separated  | |
+|                       | | String     | "independent_parameters" | The independent parameter ids, in order, comma separated  | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'dependent_parameter'    | The dependent parameter id                                | |
+|                       | | String     | "dependent_parameter"    | The dependent parameter id                                | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'version'                | The template version                                      | |
+|                       | | String     | "version"                | The template version                                      | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'description'            | The description for the template                          | |
+|                       | | String     | "description"            | The description for the template                          | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
 +-----------------------+-------------------------------------------------------------------------------------------------------+
 | RatingTemplateUpdated | +------------+--------------------------+-----------------------------------------------------------+ |
 |                       | | Value Type |  Value Name              | Value                                                     | |
 |                       | +============+==========================+===========================================================+ |
-|                       | | String     | 'type'                   | 'rating_template_updated'                                 | |
+|                       | | String     | "type"                   | "rating_template_updated"                                 | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'office_id'              | The office identifier                                     | |
+|                       | | String     | "office_id"              | The office identifier                                     | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'independent_parameters' | The independent parameter ids, in order, comma separated  | |
+|                       | | String     | "independent_parameters" | The independent parameter ids, in order, comma separated  | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'dependent_parameter'    | The dependent parameter id                                | |
+|                       | | String     | "dependent_parameter"    | The dependent parameter id                                | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'version'                | The template version                                      | |
+|                       | | String     | "version"                | The template version                                      | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'description'            | The description for the template                          | |
+|                       | | String     | "description"            | The description for the template                          | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
 +-----------------------+-------------------------------------------------------------------------------------------------------+
 | RatingTemplateDeleted | +------------+--------------------------+-----------------------------------------------------------+ |
 |                       | | Value Type |  Value Name              | Value                                                     | |
 |                       | +============+==========================+===========================================================+ |
-|                       | | String     | 'type'                   | 'rating_template_deleted'                                 | |
+|                       | | String     | "type"                   | "rating_template_deleted"                                 | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'office_id'              | The office identifier                                     | |
+|                       | | String     | "office_id"              | The office identifier                                     | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'independent_parameters' | The independent parameter ids, in order, comma separated  | |
+|                       | | String     | "independent_parameters" | The independent parameter ids, in order, comma separated  | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'dependent_parameter'    | The dependent parameter id                                | |
+|                       | | String     | "dependent_parameter"    | The dependent parameter id                                | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
-|                       | | String     | 'version'                | The template version                                      | |
+|                       | | String     | "version"                | The template version                                      | |
 |                       | +------------+--------------------------+-----------------------------------------------------------+ |
 +-----------------------+-------------------------------------------------------------------------------------------------------+
 
@@ -83,87 +83,87 @@ Author: Mike Perryman
 | RatingSpecificationCreated | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | Value Type | Value Name                | Value                                                                                                              | |
 |                            | +============+===========================+====================================================================================================================+ |
-|                            | | String     | 'type'                    | 'rating_specification_created'                                                                                     | |
+|                            | | String     | "type"                    | "rating_specification_created"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'office_id'               | The office identifier                                                                                              | |
+|                            | | String     | "office_id"               | The office identifier                                                                                              | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'location_id'             | The location identifier for the rating specification                                                               | |
+|                            | | String     | "location_id"             | The location identifier for the rating specification                                                               | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'template_id'             | The rating template identifier                                                                                     | |
+|                            | | String     | "template_id"             | The rating template identifier                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'version'                 | The rating specification version                                                                                   | |
+|                            | | String     | "version"                 | The rating specification version                                                                                   | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'source_agency'           | The entity that generates ratings for this specification                                                           | |
+|                            | | String     | "source_agency"           | The entity that generates ratings for this specification                                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'in_range_method'         | The interpoloation method used when values are in range of rating values                                           | |
+|                            | | String     | "in_range_method"         | The interpoloation method used when values are in range of rating values                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'out_range_low_method'    | The extrapolation method used when values are below the range of rating values                                     | |
+|                            | | String     | "out_range_low_method"    | The extrapolation method used when values are below the range of rating values                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'out_range_high_method'   | The extrapolation method used when values are above the range of rating values                                     | |
+|                            | | String     | "out_range_high_method"   | The extrapolation method used when values are above the range of rating values                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'active'                  | Whether the specification is active                                                                                | |
+|                            | | boolean    | "active"                  | Whether the specification is active                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'auto_update'             | Whether ratings with this specification should be automatically updated                                            | |
+|                            | | boolean    | "auto_update"             | Whether ratings with this specification should be automatically updated                                            | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'auto_activate'           | Whether ratings with this specification should be set to active when automatically updated                         | |
+|                            | | boolean    | "auto_activate"           | Whether ratings with this specification should be set to active when automatically updated                         | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'auto_migrate_extensions' | Whether ratings with this specification should have existing rating extensions migrated when automatically updated | |
+|                            | | boolean    | "auto_migrate_extensions" | Whether ratings with this specification should have existing rating extensions migrated when automatically updated | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'independent_rounding'    | Rounding specifications for independent parameters, in order, comma separated                                      | |
+|                            | | String     | "independent_rounding"    | Rounding specifications for independent parameters, in order, comma separated                                      | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'dependent_rounding'      | Rounding specification for the dependent parameter                                                                 | |
+|                            | | String     | "dependent_rounding"      | Rounding specification for the dependent parameter                                                                 | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'description'             | The description for the specification                                                                              | |
+|                            | | String     | "description"             | The description for the specification                                                                              | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | RatingSpecificationUpdated | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | Value Type | Value Name                | Value                                                                                                              | |
 |                            | +============+===========================+====================================================================================================================+ |
-|                            | | String     | 'type'                    | 'rating_specification_updated'                                                                                     | |
+|                            | | String     | "type"                    | "rating_specification_updated"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'office_id'               | The office identifier                                                                                              | |
+|                            | | String     | "office_id"               | The office identifier                                                                                              | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'location_id'             | The location identifier for the rating specification                                                               | |
+|                            | | String     | "location_id"             | The location identifier for the rating specification                                                               | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'template_id'             | The rating template identifier                                                                                     | |
+|                            | | String     | "template_id"             | The rating template identifier                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'version'                 | The rating specification version                                                                                   | |
+|                            | | String     | "version"                 | The rating specification version                                                                                   | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'source_agency'           | The entity that generates ratings for this specification                                                           | |
+|                            | | String     | "source_agency"           | The entity that generates ratings for this specification                                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'in_range_method'         | The interpoloation method used when values are in range of rating values                                           | |
+|                            | | String     | "in_range_method"         | The interpoloation method used when values are in range of rating values                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'out_range_low_method'    | The extrapolation method used when values are below the range of rating values                                     | |
+|                            | | String     | "out_range_low_method"    | The extrapolation method used when values are below the range of rating values                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'out_range_high_method'   | The extrapolation method used when values are above the range of rating values                                     | |
+|                            | | String     | "out_range_high_method"   | The extrapolation method used when values are above the range of rating values                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'active'                  | Whether the specification is active                                                                                | |
+|                            | | boolean    | "active"                  | Whether the specification is active                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'auto_update'             | Whether ratings with this specification should be automatically updated                                            | |
+|                            | | boolean    | "auto_update"             | Whether ratings with this specification should be automatically updated                                            | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'auto_activate'           | Whether ratings with this specification should be set to active when automatically updated                         | |
+|                            | | boolean    | "auto_activate"           | Whether ratings with this specification should be set to active when automatically updated                         | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | boolean    | 'auto_migrate_extensions' | Whether ratings with this specification should have existing rating extensions migrated when automatically updated | |
+|                            | | boolean    | "auto_migrate_extensions" | Whether ratings with this specification should have existing rating extensions migrated when automatically updated | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'independent_rounding'    | Rounding specifications for independent parameters, in order, comma separated                                      | |
+|                            | | String     | "independent_rounding"    | Rounding specifications for independent parameters, in order, comma separated                                      | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | dependent_rounding'       | Rounding specification for the dependent parameter                                                                 | |
+|                            | | String     | "dependent_rounding"      | Rounding specification for the dependent parameter                                                                 | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'description'             | The description for the specification                                                                              | |
+|                            | | String     | "description"             | The description for the specification                                                                              | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | RatingSpecificationDeleted | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | Value Type | Value Name                | Value                                                                                                              | |
 |                            | +============+===========================+====================================================================================================================+ |
-|                            | | String     | 'type'                    | 'rating_specification_deleted'                                                                                     | |
+|                            | | String     | "type"                    | "rating_specification_deleted"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'office_id'               | The office identifier                                                                                              | |
+|                            | | String     | "office_id"               | The office identifier                                                                                              | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'location_id'             | The location identifier for the rating specification                                                               | |
+|                            | | String     | "location_id"             | The location identifier for the rating specification                                                               | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'template_id'             | The rating template identifier                                                                                     | |
+|                            | | String     | "template_id"             | The rating template identifier                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | 'version'                 | The rating specification version                                                                                   | |
+|                            | | String     | "version"                 | The rating specification version                                                                                   | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
@@ -175,53 +175,53 @@ Author: Mike Perryman
 | RatingCreated | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | Value Type | Value Name         | Value                                                                                           | |
 |               | +============+====================+=================================================================================================+ |
-|               | | String     | 'type'             | 'rating_created'                                                                                | |
+|               | | String     | "type"             | "rating_created"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'office_id'        | The office identifier                                                                           | |
+|               | | String     | "office_id"        | The office identifier                                                                           | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'specification_id' | The rating specification identifier                                                             | |
+|               | | String     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | long       | 'effective_time'   | The date/time the rating comes into effect, in epoch milliseconds                               | |
+|               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | long       | 'transition_time'  | The date/time the to begin linear interpolation from the previous rating, in epoch milliseconds | |
+|               | | long       | "transition_time"  | The date/time the to begin linear interpolation from the previous rating, in epoch milliseconds | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | long       | 'creation_time'    | The date/time before which no there is no knowlege of this rating, in epoch milliseconds        | |
+|               | | long       | "creation_time"    | The date/time before which no there is no knowlege of this rating, in epoch milliseconds        | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | boolean    | 'active'           | Whether this rating is active                                                                   | |
+|               | | boolean    | "active"           | Whether this rating is active                                                                   | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'rating_type'      | 'lookup', 'expression', 'virtual', or 'transitional'                                            | |
+|               | | String     | "rating_type"      | "lookup", "expression", "virtual", or "transitional"                                            | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | RatingUpdated | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | Value Type | Value Name         | Value                                                                                           | |
 |               | +============+====================+=================================================================================================+ |
-|               | | String     | 'type'             | 'rating_updated'                                                                                | |
+|               | | String     | "type"             | "rating_updated"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'office_id'        | The office identifier                                                                           | |
+|               | | String     | "office_id"        | The office identifier                                                                           | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'specification_id' | The rating specification identifier                                                             | |
+|               | | String     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | long       | 'effective_time'   | The date/time the rating comes into effect, in epoch milliseconds                               | |
+|               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | long       | 'transition_time'  | The date/time the to begin linear interpolation from the previous rating, in epoch milliseconds | |
+|               | | long       | "transition_time"  | The date/time the to begin linear interpolation from the previous rating, in epoch milliseconds | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | long       | 'creation_time'    | The date/time before which no there is no knowlege of this rating, in epoch milliseconds        | |
+|               | | long       | "creation_time"    | The date/time before which no there is no knowlege of this rating, in epoch milliseconds        | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | boolean    | 'active'           | Whether this rating is active                                                                   | |
+|               | | boolean    | "active"           | Whether this rating is active                                                                   | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'rating_type'      | 'lookup', 'expression', 'virtual', or 'transitional'                                            | |
+|               | | String     | "rating_type"      | "lookup", "expression", "virtual", or "transitional"                                            | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | RatingDeleted | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | Value Type | Value Name         | Value                                                                                           | |
 |               | +============+====================+=================================================================================================+ |
-|               | | String     | 'type'             | 'rating_deleted'                                                                                | |
+|               | | String     | "type"             | "rating_deleted"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'office_id'        | The office identifier                                                                           | |
+|               | | String     | "office_id"        | The office identifier                                                                           | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | 'specification_id' | The rating specification identifier                                                             | |
+|               | | String     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | long       | 'effective_time'   | The date/time the rating comes into effect, in epoch milliseconds                               | |
+|               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
 
