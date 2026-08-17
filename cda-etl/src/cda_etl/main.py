@@ -156,7 +156,7 @@ def _publish_project_data(project_config: ProjectConfig, config: DownloadConfig)
 
 
 def _initialize_runtime():
-    config_path = _read_env("SAMPLE_APP_CONFIG_PATH", "sample-app.yml")
+    config_path = _read_env("ETL_CONFIG_PATH", "sample-app.yml")
     config = DownloadConfig.from_yaml(config_path)
     session_manager = SessionManager.from_env()
     utils.threading_util.init_executor(config.settings.max_threads)

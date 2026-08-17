@@ -5,7 +5,7 @@ settings:
   endTime: "now"
   maxThreads: 10
   logLevel: INFO
-  path: "/data/sample-app"
+  path: "/data/sample-data"
 
 offices:
   - id: SWT

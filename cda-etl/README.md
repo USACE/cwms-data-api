@@ -25,7 +25,7 @@ The data is organized by office, project, and resource type, then written to a f
 
 The main runtime configuration is stored in a YAML file, defaulting to `sample-app.yml` in the working directory.
 
-The application reads the YAML path from the `SAMPLE_APP_CONFIG_PATH` environment variable. If the variable is not set, it looks for `sample-app.yml` next to where the process starts.
+The application reads the YAML path from the `ETL_CONFIG_PATH` environment variable. If the variable is not set, it looks for `sample-app.yml` next to where the process starts.
 
 ### Example Structure
 
@@ -90,19 +90,19 @@ Environment variable values are trimmed. Empty or whitespace-only values are tre
 
 ### Other Runtime Settings
 
-- `SAMPLE_APP_CONFIG_PATH`: Path to the YAML config file. Defaults to `sample-app.yml`.
+- `ETL_CONFIG_PATH`: Path to the YAML config file. Defaults to `sample-app.yml`.
 - `LOG_LEVEL`: Console log level for the application process. Defaults to `INFO`.
 
 ## Docker Usage
 
 ### docker run
 
-Mount the YAML file into the container and point `SAMPLE_APP_CONFIG_PATH` at it.
+Mount the YAML file into the container and point `ETL_CONFIG_PATH` at it.
 
 ```powershell
 docker run --rm `
-  -v ${PWD}\data\sample-app\sample-app.yml:/app/sample-app.yml `
-  -e SAMPLE_APP_CONFIG_PATH=/app/sample-app.yml `
+  -v ${PWD}\data\sample-data\sample-app.yml:/app/sample-app.yml `
+  -e ETL_CONFIG_PATH=/app/sample-app.yml `
   -e SOURCE_CDA_URL=https://source.example/cwms-data `
   -e SOURCE_CDA_API_KEY=your-source-key `
   -e DEST_CDA_URL=https://dest.example/cwms-data `
@@ -114,7 +114,7 @@ If you do not want to download from the source API, omit `SOURCE_CDA_URL` and th
 
 ### docker-compose
 
-The included `docker-compose.yml` mounts `sample-app.yml` into the container and sets `SAMPLE_APP_CONFIG_PATH=/app/sample-app.yml`.
+The included `docker-compose.yml` mounts `ETL_CONFIG_PATH` for the yml config file path.
 
 You still need to supply the API endpoint environment variables when running Compose.
 
