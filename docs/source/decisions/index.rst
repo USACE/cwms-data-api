@@ -32,3 +32,4 @@ Some decisions may also be a proposal and marked appropriately.
     CDA User Lists <./0013-cda-user-lists.md>
     JMS Pub/Sub Message Formats - Forecasts <./0014-queue-messages-forecast.rst>
     JMS Pub/Sub Message Formats - Ratings <./0015-queue-messages-rating.rst>
+    JMS Pub/Sub Message Formats - Ratings <./0016-queue-messages-levels.rst>
