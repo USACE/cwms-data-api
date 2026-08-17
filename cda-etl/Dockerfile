@@ -7,4 +7,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY src/ /app/src/
 
-ENTRYPOINT ["python", "src/cda_etl/main.py"]
+CMD ["python", "src/cda_etl/main.py"]
