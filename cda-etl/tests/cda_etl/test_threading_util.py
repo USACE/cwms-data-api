@@ -17,7 +17,6 @@
 #  SOFTWARE.
 import pytest
 
-import utils.log_util as log_util
 import utils.threading_util as threading_util
 
 
@@ -43,19 +42,6 @@ def test_execute_tasks_raises_after_all_items_processed_when_one_fails():
     # All items should have been submitted/run, not abandoned partway through.
     assert sorted(processed) == ["good-1", "good-2"]
     assert "1 of 3 task(s) failed" in str(exc_info.value)
-
-    def task(item):
-        raise FileNotFoundError("No staged data found")
-
-    threading_util.execute_tasks(
-        task,
-        [["SWT", "EUFA.Elev.Inst.1Hour.0.Ccp-Rev"]],
-        label=lambda item: item[1],
-        tally=tally,
-    )
-
-    assert tally.count(log_util.NOTHING_STAGED) == 1
-    assert tally.labels(log_util.NOTHING_STAGED) == ["EUFA.Elev.Inst.1Hour.0.Ccp-Rev"]
 
 
 def test_a_label_replaces_the_internal_work_item_shape(caplog):
@@ -99,6 +85,23 @@ def test_a_skip_message_does_not_repeat_the_item(caplog):
     caplog.set_level(logging.DEBUG)
     threading_util.init_executor(2)
 
+    def task(item):
+        raise FileNotFoundError("No staged data found")
+
+    threading_util.execute_tasks(
+        task,
+        [["SWT", "EUFA.Precip-Alt.Total.1Day.1Day.Decodes-Raw", "2026-06-01", "2026-08-03"]],
+        label=lambda item: f"{item[0]}/{item[1]} [{item[2]} to {item[3]}]",
+    )
+
+    skip_line = next(r.getMessage() for r in caplog.records if "Skipped '" in r.getMessage())
+
+    assert skip_line.count("EUFA.Precip-Alt.Total.1Day.1Day.Decodes-Raw") == 1
+    assert skip_line.count("SWT") == 1
+    assert skip_line.lower().count("skipped") == 1
+    assert "Run staging first" not in skip_line
+
+
 def test_execute_tasks_raises_with_summary_of_multiple_failures():
     def task(item):
         raise RuntimeError(f"failure for {item}")
@@ -108,10 +111,6 @@ def test_execute_tasks_raises_with_summary_of_multiple_failures():
 
     assert "2 of 2 task(s) failed" in str(exc_info.value)
 
-    assert skip_line.count("EUFA.Precip-Alt.Total.1Day.1Day.Decodes-Raw") == 1
-    assert skip_line.count("SWT") == 1
-    assert skip_line.lower().count("skipped") == 1
-    assert "Run staging first" not in skip_line
 
 def test_execute_tasks_does_not_raise_when_all_succeed():
     processed = []

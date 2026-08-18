@@ -84,8 +84,9 @@ class TaskExecutionError(RuntimeError):
     missing staged data.
     """
 
-    def __init__(self, failures: list[tuple[object, BaseException]], label_of=None):
+    def __init__(self, failures: list[tuple[object, BaseException]], total: int, label_of=None):
         self.failures = failures
+        self.total = total
         render = label_of or _format_item
         summary = "; ".join(
             f"{render(item)}: {exc}" for item, exc in failures[:_MAX_REPORTED_FAILURES]
@@ -94,7 +95,7 @@ class TaskExecutionError(RuntimeError):
         if remainder > 0:
             summary = f"{summary}; and {remainder} more"
 
-        super().__init__(f"{len(failures)} task(s) failed. {summary}")
+        super().__init__(f"{len(failures)} of {total} task(s) failed. {summary}")
 
 
 _MAX_REPORTED_FAILURES = 5
@@ -153,7 +154,7 @@ def execute_tasks(
         failures.append((item, exception))
 
     if failures:
-        raise TaskExecutionError(failures, label_of)
+        raise TaskExecutionError(failures, len(futures_to_items), label_of)
 
     return BatchResult(total=len(futures_to_items), skipped=skipped)
 

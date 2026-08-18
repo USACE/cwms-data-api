@@ -361,7 +361,10 @@ def outcome(
         message = f"{message} ({detail})"
 
     if tally.count(NOTHING_STAGED):
-        log.warning("%s.", message)
+        log.warning(
+            "%s. If this is unexpected, run the extract phase and publish again.",
+            message,
+        )
     else:
         log.info(message)
 

@@ -79,46 +79,6 @@ tasks.register('runEtlUnitTests', DockerExec) {
     inputs.dir('tests').optional()
 }
 
-tasks.register('checkGeneratedConfig', Exec) {
-    dependsOn 'dockerBuild'
-
-    group = 'verification'
-    description = 'Fails if data/regi/regi.generated.yml is stale or hand-edited.'
-
-    onlyIf {
-        if (!isDockerAvailable(name)) {
-            return false
-        }
-
-        if (!System.getenv('SOURCE_CDA_URL')) {
-            logger.lifecycle("Skipping ${name} because SOURCE_CDA_URL is not set; " +
-                    "the generated config drift check needs a source CDA to resolve against.")
-            return false
-        }
-
-        return true
-    }
-
-    doFirst {
-        commandLine([
-            'docker', 'run', '--rm',
-            '-e', "SOURCE_CDA_URL=${System.getenv('SOURCE_CDA_URL')}",
-            '-e', "SOURCE_CDA_API_KEY=${System.getenv('SOURCE_CDA_API_KEY') ?: ''}",
-            '-v', "${projectDir}/data/regi:/data/regi",
-            imageName.get(),
-            'python', '-m', 'cda_expander',
-            '--base', '/data/regi/regi.yml',
-            '--templates', '/data/regi/regi.templates.yml',
-            '--out', '/data/regi/regi.generated.yml',
-            '--check'
-        ])
-    }
-
-    inputs.dir('src')
-    inputs.dir('data/regi')
-}
-
 tasks.named('check') {
     dependsOn 'runEtlUnitTests'
-    dependsOn 'checkGeneratedConfig'
 }

@@ -129,8 +129,8 @@ def test_publish_project_data_passes_project_items_through(mocker):
 
 
 def test_data_path_defaults_to_the_config_setting(mocker, monkeypatch):
-    monkeypatch.delenv("APP_DATA_PATH", raising=False)
-    monkeypatch.setenv("APP_CONFIG_PATH", str(
+    monkeypatch.delenv("ETL_DATA_PATH", raising=False)
+    monkeypatch.setenv("ETL_CONFIG_PATH", str(
         __import__("pathlib").Path(__file__).resolve().parents[1] / "resources" / "download_config_valid.yml"))
     monkeypatch.setenv("DEST_CDA_URL", "http://dest.test/cwms-data")
     mock_root = mocker.patch("utils.filesystem_store.set_storage_root")
@@ -147,8 +147,8 @@ def test_data_path_env_overrides_the_config_setting(mocker, monkeypatch):
     ./cda-etl/data/sample-app at /data/sample-app). A local run needs to point elsewhere
     without editing committed config.
     """
-    monkeypatch.setenv("APP_DATA_PATH", "./data/sample-app")
-    monkeypatch.setenv("APP_CONFIG_PATH", str(
+    monkeypatch.setenv("ETL_DATA_PATH", "./data/sample-app")
+    monkeypatch.setenv("ETL_CONFIG_PATH", str(
         __import__("pathlib").Path(__file__).resolve().parents[1] / "resources" / "download_config_valid.yml"))
     monkeypatch.setenv("DEST_CDA_URL", "http://dest.test/cwms-data")
     mock_root = mocker.patch("utils.filesystem_store.set_storage_root")
