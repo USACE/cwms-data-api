@@ -25,7 +25,7 @@ from config import TimeseriesConfig
 
 def test_stage_timeseries(mocker):
     mock_execute = mocker.patch("utils.threading_util.execute_tasks")
-    ts_items = [TimeseriesConfig(id="SWT.Loc.Flow.Inst.1Hour.0.Cda", enabled=True, raw={})]
+    ts_items = [TimeseriesConfig(id="Loc.Flow.Inst.1Hour.0.Cda", enabled=True, raw={})]
 
     timeseries.stage_timeseries("SWT", ts_items, "2026-01-01", "2026-01-02")
 
@@ -35,7 +35,7 @@ def test_stage_timeseries(mocker):
 
 def test_publish_staged_timeseries(mocker):
     mock_execute = mocker.patch("utils.threading_util.execute_tasks")
-    ts_items = [TimeseriesConfig(id="SWT.Loc.Flow.Inst.1Hour.0.Cda", enabled=True, raw={})]
+    ts_items = [TimeseriesConfig(id="Loc.Flow.Inst.1Hour.0.Cda", enabled=True, raw={})]
 
     timeseries.publish_staged_timeseries("SWT", ts_items, "2026-01-01", "2026-01-02")
 

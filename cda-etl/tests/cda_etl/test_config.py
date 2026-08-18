@@ -55,13 +55,13 @@ def test_download_config_from_yaml():
 
     swt_projects = list(offices[0].projects())
     assert len(swt_projects) == 2
-    assert swt_projects[0].qualified_id == "SWT.EUFA"
-    assert swt_projects[1].qualified_id == "SWT.BEND"
+    assert swt_projects[0].id == "EUFA"
+    assert swt_projects[1].id == "BEND"
 
     fwr_projects = list(offices[1].projects())
     assert len(fwr_projects) == 2
-    assert fwr_projects[0].qualified_id == "FWR.RAYH"
-    assert fwr_projects[1].qualified_id == "FWR.LEWN"
+    assert fwr_projects[0].id == "RAYH"
+    assert fwr_projects[1].id == "LEWN"
 
     eufa_locations = list(swt_projects[0].locations())
     assert len(eufa_locations) == 2
@@ -79,12 +79,12 @@ def test_download_config_from_yaml():
 
     eufa_levels = list(swt_projects[0].location_levels())
     assert len(eufa_levels) == 1
-    assert eufa_levels[0].id == "SWT.EUFA-Dam.Elev.Inst.0.Top of Flood"
+    assert eufa_levels[0].id == "EUFA-Dam.Elev.Inst.0.Top of Flood"
     assert eufa_levels[0].period_of_record is True
 
     eufa_ratings = list(swt_projects[0].ratings())
     assert len(eufa_ratings) == 1
-    assert eufa_ratings[0].id == "SWT.EUFA.Stage;Flow.Standard.Production"
+    assert eufa_ratings[0].id == "EUFA.Stage;Flow.Standard.Production"
     assert eufa_ratings[0].period_of_record is True
 
     eufa_properties = list(swt_projects[0].properties())

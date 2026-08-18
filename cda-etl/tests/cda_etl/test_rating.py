@@ -25,7 +25,7 @@ from config import RatingConfig
 
 def test_stage_ratings_por(mocker):
     mock_execute = mocker.patch("utils.threading_util.execute_tasks")
-    ratings = [RatingConfig(id="SWT.EUFA.Stage;Flow.Standard.Production", enabled=True, raw={"por": True})]
+    ratings = [RatingConfig(id="EUFA.Stage;Flow.Standard.Production", enabled=True, raw={"por": True})]
 
     rating.stage_ratings("SWT", ratings, "2026-01-01", "2026-01-02")
 
@@ -48,14 +48,14 @@ def test_download_one_rating_por(mocker):
     mock_write_json = mocker.patch("utils.filesystem_store.write_json")
     mock_get_ratings_xml = mocker.patch("cwms.get_ratings_xml", return_value="<ratings>xml</ratings>")
 
-    rating._download_one_rating(["SWT", "SWT.EUFA.Stage;Flow.Standard.Production", None, None, True])
+    rating._download_one_rating(["SWT", "EUFA.Stage;Flow.Standard.Production", None, None, True])
 
-    mock_get_ratings_xml.assert_called_once_with("SWT.EUFA.Stage;Flow.Standard.Production", "SWT")
+    mock_get_ratings_xml.assert_called_once_with("EUFA.Stage;Flow.Standard.Production", "SWT")
     mock_write_json.assert_called_once_with(
         {"xml": "<ratings>xml</ratings>"},
         "SWT",
         "Ratings",
-        "SWT.EUFA.Stage;Flow.Standard.Production.por",
+        "EUFA.Stage;Flow.Standard.Production.por",
     )
 
 
@@ -63,7 +63,7 @@ def test_upload_one_rating_uses_xml_only(mocker):
     mock_store_rating = mocker.patch("cwms.store_rating")
     mocker.patch("utils.filesystem_store.read_json", return_value={"xml": "<ratings>xml</ratings>"})
 
-    rating._upload_one_rating(["SWT", "SWT.EUFA.Stage;Flow.Standard.Production", None, None, True])
+    rating._upload_one_rating(["SWT", "EUFA.Stage;Flow.Standard.Production", None, None, True])
 
     mock_store_rating.assert_called_once_with("<ratings>xml</ratings>", store_template=True)
 

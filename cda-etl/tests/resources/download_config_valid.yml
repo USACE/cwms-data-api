@@ -24,10 +24,10 @@ offices:
         clobs:
           - id: SWT.EUFA.PROJECT.NOTES
         locationLevels:
-          - id: SWT.EUFA-Dam.Elev.Inst.0.Top of Flood
+          - id: EUFA-Dam.Elev.Inst.0.Top of Flood
             por: true
         ratings:
-          - id: SWT.EUFA.Stage;Flow.Standard.Production
+          - id: EUFA.Stage;Flow.Standard.Production
             por: true
         properties:
           - categoryId: REGI
