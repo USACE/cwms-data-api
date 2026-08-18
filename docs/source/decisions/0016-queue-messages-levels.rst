@@ -22,6 +22,8 @@ Author: Mike Perryman
 
 **Specified Levels**
 
+Only "type", "office_id", and "specified_level_id" values are required.
+
 +-----------------------+--------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                      |
 +=======================+================================================================================+
@@ -61,6 +63,10 @@ Author: Mike Perryman
 +-----------------------+--------------------------------------------------------------------------------+
 
 **Location Levels**
+
+Only "type", "office_id", "location_level_id", "effective_time", and "virtual" values are required.
+
+If the location level has an attribute, "attribute_id", "attribute_value", and "attribute_name" are also required.
 
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type         | Structure                                                                                                                                                  |

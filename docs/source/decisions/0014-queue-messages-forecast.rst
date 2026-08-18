@@ -23,6 +23,8 @@ Author: Mike Perryman
 
 **Forecast Specifications**
 
+Only "type", "office_id", "specification_id" and "designator" values are required.
+
 +-----------------+--------------------------------------------------------------------------------------------------------+
 | Message Type    | Structure                                                                                              |
 +=================+========================================================================================================+
@@ -80,6 +82,8 @@ Author: Mike Perryman
 +-----------------+--------------------------------------------------------------------------------------------------------+
 
 **Forecast Instances**
+
+Only "type", "office_id", "specification_id", "designator, "forecast_time" and "issue_time" values are required.
 
 +-----------------+--------------------------------------------------------------------------------------------------------+
 | Message Type    | Structure                                                                                              |
