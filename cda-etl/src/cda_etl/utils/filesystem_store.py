@@ -25,13 +25,12 @@ from urllib.parse import quote, unquote
 _STORAGE_ROOT = Path("./data")
 
 # CWMS ids and property names legitimately contain characters that NTFS forbids
-# in a filename: < > : " / \ | ? * and the control range. REGI's association
-# properties are the live example - "Regi_project_INPUT.Elev_Area.?GLOBAL?"
+# in a filename. REGI's association properties are the live example - "Regi_project_INPUT.Elev_Area.?GLOBAL?"
 # cannot be written on Windows at all ([Errno 22] Invalid argument), while the
 # same name is fine on Linux, so this only shows up outside the container.
 #
-# "%" is escaped too, otherwise a real "%3F" in an id would decode back to "?"
-# and collide. list_json_stems reverses this, so names handed back to callers
+# "%" is escaped too, otherwise a real "%3F" in an id would decode back to "?" and collide.
+# list_json_stems reverses this, so names handed back to callers
 # (and on to CDA) are always the true ones.
 _ILLEGAL_IN_FILENAMES = '<>:"/\\|?*%'
 _SAFE_CHARACTERS = "".join(

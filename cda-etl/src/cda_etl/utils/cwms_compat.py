@@ -132,10 +132,6 @@ def disable_retry_on_missing_data() -> bool:
                 )
 
                 if attempt == attempts - 1:
-                    # The caller reports the failure itself, and its message
-                    # carries the URL and the server's response. What only this
-                    # loop knows is how many tries and how much backoff went
-                    # into it, which is why the run took as long as it did.
                     logger.warning(
                         "Gave up on %s after %d attempts over %s during %s. Last error: %s",
                         _describe_chunk(error),

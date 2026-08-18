@@ -17,27 +17,6 @@
 #  SOFTWARE.
 """
 Shared vocabulary for cda-etl's log output.
-
-Three things live here because they were previously spelled differently in every
-module, which made one run read like several tools:
-
-* **One display format for timestamps.** timeseries, rating and location_level
-  each define a `DATE_TIME_FORMAT` of ``"%Y-%m-%d %H.%M.%S"``. Those dots exist
-  so the value can go in a filename - a storage concern - and it should not be
-  what a person reads. `display` and `window` are for the log; the dotted format
-  stays where it belongs, in the paths.
-
-* **Which half of the pipeline is running.** Extract and load log near-identical
-  wording, so a line lifted out of context - pasted into a ticket, grepped out of
-  a file - could not say which direction it described. `phase` records that,
-  `install_phase_tag` puts it on every record, and `direction` renders it as
-  prose for lines that report a failed call rather than the phase itself.
-  `session_manager` enters `phase` with the session, so the two cannot disagree.
-
-* **Per-item outcomes.** "Nothing here" is an ordinary, bulk outcome: whole
-  association categories are applied to every project, so most ids have nothing
-  for most projects. One line each buried the run. `Tally` collects them so a
-  batch can account for itself once.
 """
 from __future__ import annotations
 
@@ -139,8 +118,6 @@ def duration(seconds: float) -> str:
     return f"{minutes}m{remainder:02d}s"
 
 
-# Process-wide rather than thread-local: worker threads have to see it, and a
-# threading.local set on the main thread is invisible to them.
 _current_phase: str | None = None
 
 

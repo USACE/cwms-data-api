@@ -23,10 +23,6 @@ downloads staged data from - so the expander reads SOURCE_CDA_URL /
 SOURCE_CDA_API_KEY. Those are the same variables cda-etl already uses (see
 etl.env.example), which keeps a single place to point both tools at an
 instance.
-
-This deliberately does not import cda_etl.session_manager. A few duplicated
-lines buy full independence between the two tools; see the dependency rule
-in this package's __init__.
 """
 from __future__ import annotations
 

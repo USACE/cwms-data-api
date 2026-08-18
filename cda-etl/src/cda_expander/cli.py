@@ -28,20 +28,6 @@ Exit codes:
     0  success (or, under --check, the output on disk is up to date)
     1  under --check, the output on disk differs from freshly generated output
     2  error (bad input, missing env, resolution failure)
-
-Determinism
------------
-The generated file's header deliberately contains **no timestamp**. Because
-the output is committed to git, a timestamp would produce a diff on every
-regeneration even when nothing actually changed, which is exactly the noise
-that would make the audit trail useless. The header records the expander
-version and a SHA-256 of each input, so output bytes are a pure function of
-(base, templates, resolved values, expander version) and --check can
-byte-compare.
-
-The source CDA URL is deliberately *not* in the header either - it varies by
-environment and would make the committed file environment-specific. It is
-logged instead.
 """
 from __future__ import annotations
 
