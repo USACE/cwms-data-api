@@ -15,126 +15,78 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
-import pytest
 from unittest.mock import MagicMock
+
 import timeseries
-from timeseries import TsCacheData
+from config import TimeseriesConfig
 
-@pytest.fixture
-def mock_config():
-    config = MagicMock()
-    config.timeseries = ["SWT.TestLoc.Flow.Inst.1Hour.0.Cda"]
-    config.start_time = "2026-01-01T00:00:00"
-    config.end_time = "2026-01-02T00:00:00"
-    return config
-
-@pytest.fixture
-def mock_session_manager():
-    return MagicMock()
-
-def test_process(mock_config, mock_session_manager, mocker):
-    mock_process_timeseries = mocker.patch("timeseries.process_timeseries")
-    mock_process_timeseries.return_value = TsCacheData([])
-    
-    result = timeseries.process(mock_config, mock_session_manager)
-    
-    mock_process_timeseries.assert_called_once_with(
-        mock_config.timeseries, mock_config.start_time, mock_config.end_time, mock_session_manager
-    )
-    assert isinstance(result, TsCacheData)
-
-def test_process_timeseries(mock_session_manager, mocker):
-    mocker.patch("location.process_locations")
+def test_stage_timeseries(mocker):
     mock_execute = mocker.patch("utils.threading_util.execute_tasks")
-    
-    # Mocking results for 3 calls to execute_tasks
-    # 1. Identifier retrieval
-    # 2. Identifier storage
-    # 3. Data retrieval
-    # 4. Data storage
-    mock_execute.side_effect = [[], [], [], ["success"]]
-    
-    ts_list = ["SWT.Loc.Flow.Inst.1Hour.0.Cda"]
-    begin = "2026-01-01"
-    end = "2026-01-02"
-    
-    result = timeseries.process_timeseries(ts_list, begin, end, mock_session_manager)
-    
-    assert mock_session_manager.use_source_session.called
-    assert mock_session_manager.use_dest_session.called
-    assert mock_execute.call_count == 4
-    assert result.ts_data == ["success"]
+    ts_items = [TimeseriesConfig(id="Loc.Flow.Inst.1Hour.0.Cda", enabled=True, raw={})]
 
-def test_process_timeseries_invalid_format(mock_session_manager, mocker):
-    mocker.patch("location.process_locations")
-    mocker.patch("utils.threading_util.execute_tasks", return_value=[])
-    
-    ts_list = ["invalid.format"]
-    result = timeseries.process_timeseries(ts_list, "begin", "end", mock_session_manager)
-    assert result.ts_data == []
+    timeseries.stage_timeseries("SWT", ts_items, "2026-01-01", "2026-01-02")
 
-def test_retrieve_one_ts_identifier_cache(mocker):
-    mock_get_cache = mocker.patch("utils.cache_util.get_from_cache")
-    mock_get_cache.return_value = {"id": "CachedId"}
-    
-    ts_info = ["SWT", "Loc.Flow.Inst.1Hour.0.Cda", "begin", "end"]
-    result = timeseries._retrieve_one_ts_identifier(ts_info)
-    
-    assert result == {"id": "CachedId"}
-    mock_get_cache.assert_called_once_with("SWT", "Loc.Flow.Inst.1Hour.0.Cda", "id")
+    assert mock_execute.call_count == 1
+    assert mock_execute.call_args_list[0].args[0] == timeseries._download_one_ts_data
 
-def test_retrieve_one_ts_identifier_cwms(mocker):
-    mocker.patch("utils.cache_util.get_from_cache", return_value=None)
-    mock_put_cache = mocker.patch("utils.cache_util.put_in_cache")
-    mock_cwms_get = mocker.patch("cwms.get_timeseries_identifier")
-    
+
+def test_publish_staged_timeseries(mocker):
+    mock_execute = mocker.patch("utils.threading_util.execute_tasks")
+    ts_items = [TimeseriesConfig(id="Loc.Flow.Inst.1Hour.0.Cda", enabled=True, raw={})]
+
+    timeseries.publish_staged_timeseries("SWT", ts_items, "2026-01-01", "2026-01-02")
+
+    assert mock_execute.call_count == 1
+    assert mock_execute.call_args_list[0].args[0] == timeseries._upload_one_ts_data
+
+
+def test_stage_timeseries_invalid_format(mocker):
+    mock_execute = mocker.patch("utils.threading_util.execute_tasks")
+    ts_items = [TimeseriesConfig(id="invalid.format", enabled=True, raw={})]
+
+    timeseries.stage_timeseries("SWT", ts_items, "2026-01-01", "2026-01-02")
+
+    mock_execute.assert_not_called()
+
+def test_download_one_ts_data_always_refreshes_from_cwms(mocker):
+    mock_write_json = mocker.patch("utils.filesystem_store.write_json")
+    mock_cwms_get = mocker.patch("cwms.get_timeseries")
+
     mock_response = MagicMock()
-    mock_response.json = {"id": "CwmsId"}
+    mock_response.json = {"data": "FreshData"}
     mock_cwms_get.return_value = mock_response
-    
-    ts_info = ["SWT", "Loc.Flow.Inst.1Hour.0.Cda", "begin", "end"]
-    result = timeseries._retrieve_one_ts_identifier(ts_info)
-    
-    assert result == {"id": "CwmsId"}
-    mock_cwms_get.assert_called_once_with("SWT", "Loc.Flow.Inst.1Hour.0.Cda")
-    mock_put_cache.assert_called_once_with({"id": "CwmsId"}, "SWT", "Loc.Flow.Inst.1Hour.0.Cda", "id")
 
-def test_retrieve_one_ts_data_cache(mocker):
-    mock_get_cache = mocker.patch("utils.cache_util.get_from_cache")
-    mock_get_cache.return_value = {"data": "CachedData"}
-    
-    ts_info = ["SWT", "Loc.Flow.Inst.1Hour.0.Cda", "begin", "end"]
-    result = timeseries._retrieve_one_ts_data(ts_info)
-    
-    assert result == {"data": "CachedData"}
-    mock_get_cache.assert_called_once_with("SWT", "Loc.Flow.Inst.1Hour.0.Cda", "begin", "end", "data")
+    begin = timeseries._parse_timestamp("2026-01-01", "start")
+    end = timeseries._parse_timestamp("2026-01-02", "end")
+    ts_info = ["SWT", "Loc.Flow.Inst.1Hour.0.Cda", begin, end]
+    timeseries._download_one_ts_data(ts_info)
+
+    mock_cwms_get.assert_called_once_with("Loc.Flow.Inst.1Hour.0.Cda", "SWT", begin=begin, end=end)
+    mock_write_json.assert_called_once()
 
 def test_retrieve_one_ts_data_cwms(mocker):
-    mocker.patch("utils.cache_util.get_from_cache", return_value=None)
-    mock_put_cache = mocker.patch("utils.cache_util.put_in_cache")
+    mock_write_json = mocker.patch("utils.filesystem_store.write_json")
     mock_cwms_get = mocker.patch("cwms.get_timeseries")
-    
+
     mock_response = MagicMock()
     mock_response.json = {"data": "CwmsData"}
     mock_cwms_get.return_value = mock_response
-    
-    ts_info = ["SWT", "Loc.Flow.Inst.1Hour.0.Cda", "begin", "end"]
-    result = timeseries._retrieve_one_ts_data(ts_info)
-    
-    assert result == {"data": "CwmsData"}
-    mock_cwms_get.assert_called_once_with("Loc.Flow.Inst.1Hour.0.Cda", "SWT", begin="begin", end="end")
-    mock_put_cache.assert_called_once_with({"data": "CwmsData"}, "SWT", "Loc.Flow.Inst.1Hour.0.Cda", "begin", "end", "data")
 
-def test_store_one_ts_id(mocker):
-    mock_cwms_store = mocker.patch("cwms.store_timeseries_identifier")
-    data = {"id": "TestId"}
-    result = timeseries._store_one_ts_id(data)
-    assert result == data
-    mock_cwms_store.assert_called_once_with(data)
+    begin = timeseries._parse_timestamp("2026-01-01", "start")
+    end = timeseries._parse_timestamp("2026-01-02", "end")
+    ts_info = ["SWT", "Loc.Flow.Inst.1Hour.0.Cda", begin, end]
+    timeseries._download_one_ts_data(ts_info)
+
+    mock_cwms_get.assert_called_once_with("Loc.Flow.Inst.1Hour.0.Cda", "SWT", begin=begin, end=end)
+    assert mock_write_json.called
 
 def test_store_one_ts_data(mocker):
     mock_cwms_store = mocker.patch("cwms.store_timeseries")
-    data = {"data": "TestData"}
-    result = timeseries._store_one_ts_data(data)
-    assert result == data
-    mock_cwms_store.assert_called_once_with(data)
+    mocker.patch("utils.filesystem_store.read_json", return_value={"data": "TestData"})
+    begin = timeseries._parse_timestamp("2026-01-01", "start")
+    end = timeseries._parse_timestamp("2026-01-02", "end")
+
+    ts_info = ["SWT", "Loc.Flow.Inst.1Hour.0.Cda", begin, end]
+    timeseries._upload_one_ts_data(ts_info)
+
+    mock_cwms_store.assert_called_once_with({"data": "TestData"})

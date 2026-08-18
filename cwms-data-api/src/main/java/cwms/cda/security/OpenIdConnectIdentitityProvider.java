@@ -86,7 +86,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
                 return c; // already initialized, don't change it.
             }
             try {
-                log.atFine().log("Attempting to initalize OIDC provider for %s", wellKnownUrl);
+                log.atFine().log("Attempting to initalize OIDC provider for '%s'", wellKnownUrl);
                 URL wellKnown = new URL(wellKnownUrl);
                 return OpenIDConfig.from(wellKnown, clientId, idpHint, timeout);
             } catch (IOException ex) {

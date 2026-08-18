@@ -1,0 +1,25 @@
+version: 1
+
+settings:
+  startTime: "2026-01-01"
+  endTime: "now"
+  maxThreads: 10
+  logLevel: INFO
+  path: "/data/sample-data"
+
+offices:
+  - id: SWT
+    enabled: true
+    projects:
+      - id: EUFA
+        enabled: true
+        locations:
+          - id: EUFA-Dam
+            enabled: true
+        timeseries:
+          - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
+            enabled: true
+        outlets: []
+        turbines: []
+        embankments: []
+        clobs: []
