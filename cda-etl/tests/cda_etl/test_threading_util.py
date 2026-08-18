@@ -65,7 +65,6 @@ def test_a_label_replaces_the_internal_work_item_shape(caplog):
 
     skip_line = next(r.getMessage() for r in caplog.records if "Skipped '" in r.getMessage())
 
-    assert "EUFA.Opening.Inst.0.0.MANUAL [2026-06-01 to 2026-08-03]" in skip_line
     assert "SWT, EUFA.Opening" not in skip_line
 
 

@@ -29,6 +29,8 @@ from datetime import datetime
 from typing import Iterable, Iterator
 from urllib.parse import unquote_plus
 
+import utils.cda_errors as cda_errors
+
 logger = logging.getLogger(__name__)
 _pipeline_logger = logging.getLogger("pipeline")
 
@@ -372,6 +374,102 @@ def dedupe(items: Iterable[object], key=lambda item: item) -> tuple[list[object]
     return unique, duplicates
 
 
+_RESPONSE_STATUS_PATTERN = re.compile(r"response=<Response \[(\d{3})\]>")
+_FETCH_WINDOW_PATTERN = re.compile(
+    r"Failed to fetch data from (\S+(?: \S+)?) to (\S+(?: \S+)?):"
+)
+_FETCH_TS_NAME_PATTERN = re.compile(r"[?&]name=([^&\s)]+)")
+
+
+def _no_data_window_summary(message: str) -> tuple[str, tuple[object, ...]]:
+    window_match = _FETCH_WINDOW_PATTERN.search(message)
+    name = _FETCH_TS_NAME_PATTERN.search(message)
+
+    if window_match and name:
+        return (
+            "No values for timeseries %s between %s and %s; nothing staged.",
+            (
+                unquote_plus(name.group(1)),
+                shorten_timestamp(window_match.group(1)),
+                shorten_timestamp(window_match.group(2)),
+            ),
+        )
+
+    if window_match:
+        return (
+            "No values between %s and %s; nothing staged.",
+            (
+                shorten_timestamp(window_match.group(1)),
+                shorten_timestamp(window_match.group(2)),
+            ),
+        )
+
+    return ("No values in the requested window; nothing staged.", ())
+
+
+class FriendlyCdaLogFilter(logging.Filter):
+    """
+    Softens cwms-python's own logging to match how cda-etl treats the same
+    events: a 404 or an empty window is normal here, not a fault, and the
+    per-chunk retry warning should say which direction it happened in.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+
+        if "CDA Error: response=" in message or message.startswith("Failed to fetch data"):
+            record.name = "cwms"
+
+        if "CDA Error: response=" in message:
+            match = _RESPONSE_STATUS_PATTERN.search(message)
+            status_code = match.group(1) if match else "unknown"
+
+            if status_code == "404":
+                record.levelno = logging.DEBUG
+                record.levelname = "DEBUG"
+                record.msg = (
+                    "CWMS API request returned HTTP 404 (nothing found); the caller decides "
+                    "whether that matters and reports it."
+                )
+                record.args = ()
+                return logging.getLogger().isEnabledFor(logging.DEBUG)
+
+            if status_code == "500" and cda_errors.in_ratings_request():
+                record.levelno = logging.DEBUG
+                record.levelname = "DEBUG"
+                record.msg = (
+                    "CWMS API request returned HTTP 500 during a ratings request; the caller "
+                    "decides whether that means the rating is absent and reports it."
+                )
+                record.args = ()
+                return logging.getLogger().isEnabledFor(logging.DEBUG)
+            record.levelno = logging.DEBUG
+            record.levelname = "DEBUG"
+            record.msg = (
+                "CWMS API request returned HTTP %s during %s; "
+                "the caller reports the outcome."
+            )
+            record.args = (status_code, direction())
+            return logging.getLogger().isEnabledFor(logging.DEBUG)
+
+        if message.startswith("Failed to fetch data") and (
+            "May be the result of an empty query." in message
+            or '"message":"Not found."' in message
+        ):
+            record.levelno = logging.DEBUG
+            record.levelname = "DEBUG"
+            record.msg, record.args = _no_data_window_summary(message)
+            return logging.getLogger().isEnabledFor(logging.DEBUG)
+
+        if message.startswith("chunk attempt") and "CWMS API Error" in message:
+            record.name = "cwms"
+            record.msg = "Timeseries chunk failed during %s and will be retried: %s"
+            record.args = (direction(), message)
+            return True
+
+        return True
+
+
 __all__ = [
     "DATE_FORMAT",
     "DEBUG_FORMAT",
@@ -379,6 +477,7 @@ __all__ = [
     "EXTRACT",
     "FORMAT",
     "LOAD",
+    "FriendlyCdaLogFilter",
     "Tally",
     "UNKNOWN_DIRECTION",
     "configure",

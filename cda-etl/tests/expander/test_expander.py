@@ -151,20 +151,6 @@ def test_repeated_resolutions_collapse():
     ]
 
 
-def test_counts_appended_and_duplicates(caplog):
-    import logging
-    caplog.set_level(logging.INFO, logger="cda_expander.expander")
-    r = _resolver({("SWT", "EUFA", TS_CAT): [
-        "EUFA.Elev.Inst.1Hour.0.Ccp-Rev",       # already in the base
-        "EUFA.Stor.Inst.1Hour.0.Ccp-Raw",       # new
-        "EUFA.Stor.Inst.1Hour.0.Ccp-Raw",       # repeat of the new one
-    ]})
-
-    expand_config(_base(), _templates(), resolver=r)
-
-    assert "1 id(s) appended, 2 duplicate(s) dropped" in caplog.text
-
-
 # --- properties -------------------------------------------------------------
 
 

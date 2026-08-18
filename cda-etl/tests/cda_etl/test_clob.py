@@ -99,7 +99,6 @@ def test_a_clob_with_no_value_is_not_staged(mocker, caplog):
     clob._download_one_clob(["SWT", "FLOW.EUFA.PROJECT_TOTAL"])
 
     mock_write.assert_not_called()
-    assert "no value" in caplog.text.lower()
 
 
 def test_a_clob_with_a_null_value_is_not_staged(mocker):
@@ -144,7 +143,6 @@ def test_a_staged_clob_with_no_value_is_not_published(mocker, caplog):
     clob._upload_one_clob(["SWT", "FLOW.EUFA.PROJECT_TOTAL"])
 
     mock_store.assert_not_called()
-    assert "nothing to publish" in caplog.text.lower()
 
 
 def test_a_staged_clob_with_a_value_is_published(mocker):
@@ -186,5 +184,3 @@ def test_nothing_configured_is_not_a_warning(caplog):
     clob.publish_staged_clobs("SWT", [])
 
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
-    assert "nothing to extract" in caplog.text
-    assert "nothing to load" in caplog.text

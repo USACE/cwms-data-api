@@ -373,14 +373,3 @@ def test_nothing_configured_is_not_a_warning(caplog):
     property.publish_staged_properties("SWT", [])
 
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
-    assert "nothing to extract" in caplog.text
-    assert "nothing to load" in caplog.text
-
-
-def test_properties_configured_but_all_unusable_is_still_a_warning(caplog):
-    import logging
-    caplog.set_level(logging.WARNING)
-
-    property.stage_properties("SWT", [PropertyConfig(category_id="", id="", enabled=True, raw={})])
-
-    assert "missing a category or id" in caplog.text

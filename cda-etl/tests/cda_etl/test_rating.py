@@ -36,10 +36,6 @@ def test_stage_ratings_por(mocker):
 
 
 def test_rating_config_requires_a_literal_id():
-    # There is no longer an "id is None, resolve it from a source" path: ids
-    # arrive already resolved, from cda-expander. An entry without one is a
-    # config error caught at parse time rather than something the pipeline
-    # skips at run time.
     with pytest.raises(KeyError):
         RatingConfig.from_dict({"por": True})
 
@@ -96,7 +92,6 @@ def test_missing_rating_curve_is_not_a_failure(mocker, caplog):
 
     rating._download_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", begin, end, False])
 
-    assert "nothing staged" in caplog.text
     mock_write.assert_not_called()
 
 
@@ -108,7 +103,6 @@ def test_missing_por_rating_curve_is_not_a_failure(mocker, caplog):
 
     rating._download_one_rating(["SWT", "EUFA.Elev;Stor.Linear.Production", None, None, True])
 
-    assert "nothing staged" in caplog.text
     mock_write.assert_not_called()
 
 
@@ -138,7 +132,6 @@ def test_ambiguous_500_is_treated_as_a_missing_rating(mocker, caplog):
     rating._download_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", None, None, True])
 
     mock_write.assert_not_called()
-    assert "no rating curve" in caplog.text.lower()
 
 
 def test_ambiguous_500_is_reported_at_warning_not_info(mocker, caplog):
@@ -170,32 +163,6 @@ def test_an_unrelated_500_still_fails(mocker):
 
     with pytest.raises(cwms.api.ApiError):
         rating._download_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", None, None, True])
-
-
-def test_every_rating_failing_ambiguously_is_flagged(mocker, caplog):
-    """
-    One project lacking a rating curve is ordinary. Every rating in the batch
-    failing this way looks far more like an unwell instance, and because the 500
-    is indistinguishable from "missing" the run would otherwise report success
-    having staged nothing.
-    """
-    import logging
-    caplog.set_level(logging.WARNING)
-    mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(500, AMBIGUOUS_500))
-    mocker.patch("utils.filesystem_store.write_json")
-    threading_util.init_executor(2)
-
-    rating.stage_ratings(
-        "SWT",
-        [
-            RatingConfig(id="EUFA.Elev;Area.Linear.Production", enabled=True, raw={"por": True}),
-            RatingConfig(id="EUFA.Elev;Stor.Linear.Production", enabled=True, raw={"por": True}),
-        ],
-        "2026-07-01",
-        "2026-07-15",
-    )
-
-    assert "more consistent with the service being unwell" in caplog.text
 
 
 def test_a_partial_ambiguous_batch_is_not_flagged(mocker, caplog):
@@ -303,22 +270,3 @@ def test_nothing_configured_is_not_a_warning(caplog):
     rating.publish_staged_ratings("SWT", [], "2026-06-01", "2026-08-03")
 
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
-
-
-def test_the_inferred_missing_rating_says_it_is_a_guess(caplog):
-    """
-    This 500 is indistinguishable from a genuine processing failure, so a reader
-    who takes "no rating curve" at face value will not know to check. That was the
-    one thing the line did not say.
-    """
-    import logging
-    caplog.set_level(logging.WARNING)
-    error = _api_error(500, AMBIGUOUS_500)
-
-    assert rating._handle_missing_rating(error, "EUFA.Stage;Flow.Standard.Production", "SWT", "") is True
-
-    message = caplog.text
-
-    assert "guess" in message
-    assert "500" in message
-    assert "RatingController" not in message

@@ -18,9 +18,7 @@
 import sys
 import logging
 import os
-import re
 import time
-from urllib.parse import unquote_plus
 import location
 import location_level
 import project
@@ -28,7 +26,6 @@ import property
 import rating
 import timeseries
 import clob
-import utils.cda_errors
 import utils.cwms_compat
 import utils.log_util as log_util
 import utils.threading_util
@@ -38,38 +35,7 @@ from session_manager import SessionManager
 
 logger = logging.getLogger(__name__)
 
-_RESPONSE_STATUS_PATTERN = re.compile(r"response=<Response \[(\d{3})\]>")
 _NOT_CONFIGURED = "<not configured>"
-_FETCH_WINDOW_PATTERN = re.compile(
-    r"Failed to fetch data from (\S+(?: \S+)?) to (\S+(?: \S+)?):"
-)
-_FETCH_TS_NAME_PATTERN = re.compile(r"[?&]name=([^&\s)]+)")
-
-
-def _no_data_window_summary(message: str) -> tuple[str, tuple[object, ...]]:
-    window = _FETCH_WINDOW_PATTERN.search(message)
-    name = _FETCH_TS_NAME_PATTERN.search(message)
-
-    if window and name:
-        return (
-            "No values for timeseries %s between %s and %s; nothing staged.",
-            (
-                unquote_plus(name.group(1)),
-                log_util.shorten_timestamp(window.group(1)),
-                log_util.shorten_timestamp(window.group(2)),
-            ),
-        )
-
-    if window:
-        return (
-            "No values between %s and %s; nothing staged.",
-            (
-                log_util.shorten_timestamp(window.group(1)),
-                log_util.shorten_timestamp(window.group(2)),
-            ),
-        )
-
-    return ("No values in the requested window; nothing staged.", ())
 
 
 def _read_env(name: str, default: str) -> str:
@@ -87,64 +53,6 @@ def _read_env(name: str, default: str) -> str:
 _STAGE = log_util.EXTRACT
 _PUBLISH = log_util.LOAD
 _phase = log_util.phase
-_direction = log_util.direction
-
-
-class _FriendlyCdaLogFilter(logging.Filter):
-    def filter(self, record: logging.LogRecord) -> bool:
-        message = record.getMessage()
-
-        if "CDA Error: response=" in message or message.startswith("Failed to fetch data"):
-            record.name = "cwms"
-
-        if "CDA Error: response=" in message:
-            match = _RESPONSE_STATUS_PATTERN.search(message)
-            status_code = match.group(1) if match else "unknown"
-
-            if status_code == "404":
-                record.levelno = logging.DEBUG
-                record.levelname = "DEBUG"
-                record.msg = (
-                    "CWMS API request returned HTTP 404 (nothing found); the caller decides "
-                    "whether that matters and reports it."
-                )
-                record.args = ()
-                return logging.getLogger().isEnabledFor(logging.DEBUG)
-
-            if status_code == "500" and utils.cda_errors.in_ratings_request():
-                record.levelno = logging.DEBUG
-                record.levelname = "DEBUG"
-                record.msg = (
-                    "CWMS API request returned HTTP 500 during a ratings request; the caller "
-                    "decides whether that means the rating is absent and reports it."
-                )
-                record.args = ()
-                return logging.getLogger().isEnabledFor(logging.DEBUG)
-            record.levelno = logging.DEBUG
-            record.levelname = "DEBUG"
-            record.msg = (
-                "CWMS API request returned HTTP %s during %s; "
-                "the caller reports the outcome."
-            )
-            record.args = (status_code, _direction())
-            return logging.getLogger().isEnabledFor(logging.DEBUG)
-
-        if message.startswith("Failed to fetch data") and (
-            "May be the result of an empty query." in message
-            or '"message":"Not found."' in message
-        ):
-            record.levelno = logging.DEBUG
-            record.levelname = "DEBUG"
-            record.msg, record.args = _no_data_window_summary(message)
-            return logging.getLogger().isEnabledFor(logging.DEBUG)
-
-        if message.startswith("chunk attempt") and "CWMS API Error" in message:
-            record.name = "cwms"
-            record.msg = "Timeseries chunk failed during %s and will be retried: %s"
-            record.args = (_direction(), message)
-            return True
-
-        return True
 
 
 def _scope_of(config: DownloadConfig) -> str:
@@ -310,7 +218,7 @@ if __name__ == "__main__":
     log_util.configure(log_level)
 
     for handler in logging.getLogger().handlers:
-        handler.addFilter(_FriendlyCdaLogFilter())
+        handler.addFilter(log_util.FriendlyCdaLogFilter())
 
     logger.debug(f"Using log level: {log_level_str}")
 

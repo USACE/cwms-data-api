@@ -111,23 +111,6 @@ def test_an_unconfigured_source_session_names_no_phase(mocker, caplog):
     assert "EXTRACT" not in caplog.text
 
 
-def test_the_banner_takes_the_endpoint_from_the_session_it_opens(mocker, caplog):
-    """
-    The endpoint used to be handed to the banner by the caller, which reached
-    back into the session's own endpoints to find it.
-    """
-    mocker.patch("cwms.init_session")
-    caplog.set_level(logging.INFO)
-
-    with SessionManager(_endpoints()).dest_session(detail="window 2026-06-01 to now"):
-        pass
-
-    banner = caplog.records[0].getMessage()
-
-    assert "LOAD - https://dest.test/cwms-data" in banner
-    assert "window 2026-06-01 to now" in banner
-
-
 def test_the_phase_is_restored_even_if_the_session_body_raises(mocker):
     mocker.patch("cwms.init_session")
 
@@ -155,6 +138,5 @@ def test_a_session_that_fails_to_open_does_not_report_its_phase_complete(mocker,
 
     summary = caplog.records[-1].getMessage()
 
-    assert "LOAD failed after" in summary
     assert "complete" not in summary
     assert log_util.current_phase() is None

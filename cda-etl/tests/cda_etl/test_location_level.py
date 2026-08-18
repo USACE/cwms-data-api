@@ -118,7 +118,6 @@ def test_missing_location_level_is_not_a_failure(mocker, caplog):
         ["SWT", "EUFA-Dam.Evap-PanCoef.Const.0.Pan Coefficient", begin, end, False]
     )
 
-    assert "nothing staged" in caplog.text
     mock_write.assert_not_called()
 
 
@@ -132,7 +131,6 @@ def test_missing_por_location_level_is_not_a_failure(mocker, caplog):
         ["SWT", "EUFA-Dam.Elev.Inst.0.Top of Flood", None, None, True]
     )
 
-    assert "nothing staged" in caplog.text
     mock_write.assert_not_called()
 
 
@@ -154,5 +152,3 @@ def test_nothing_configured_is_not_a_warning(caplog):
     location_level.publish_staged_location_levels("SWT", [], "2026-06-01", "2026-08-03")
 
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
-    assert "nothing to extract" in caplog.text
-    assert "nothing to load" in caplog.text

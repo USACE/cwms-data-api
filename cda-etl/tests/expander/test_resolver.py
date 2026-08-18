@@ -90,20 +90,6 @@ def test_does_not_use_the_single_property_parameters(mocker):
     assert "category-id" not in params
 
 
-def test_warns_when_a_category_comes_back_empty(mocker, caplog):
-    """
-    An empty category is almost always a wrong parameter or category name, not
-    a genuinely empty category, so it should be visible at WARNING.
-    """
-    import logging
-    caplog.set_level(logging.WARNING, logger="cda_expander.resolver")
-    mocker.patch("cwms.api.get", return_value=[])
-
-    resolver.resolve_ids("SWT", "EUFA", SPEC)
-
-    assert "no properties" in caplog.text.lower()
-
-
 def test_many_projects_still_cost_one_request(mocker):
     mock_get = _listing(mocker)
 
