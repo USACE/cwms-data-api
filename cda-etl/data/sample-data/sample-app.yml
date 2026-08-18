@@ -1,9 +1,9 @@
 version: 1
 
 settings:
-  startTime: "2026-01-01"
+  startTime: "2026-06-01"
   endTime: "now"
-  maxThreads: 10
+  maxThreads: 1
   logLevel: INFO
   path: "/data/sample-data"
 
@@ -15,11 +15,14 @@ offices:
         enabled: true
         locations:
           - id: EUFA-Dam
-            enabled: true
-        timeseries:
-          - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
-            enabled: true
         outlets: []
         turbines: []
         embankments: []
-        clobs: []
+        clobs:
+          - id: FLOW.EUFA.PROJECT_TOTAL
+        locationLevels:
+          - id: EUFA-Dam.Elev.Inst.0.Top of Flood
+            por: true
+        ratings:
+          - id: EUFA.Stage;Flow.Standard.Production
+            por: true
