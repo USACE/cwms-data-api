@@ -1,12 +1,12 @@
-====================================
-JMS Pub/Sub Message Formats - Levels
-====================================
+===========================
+Data Event Formats - Levels
+===========================
 
 
 Summary
 =======
 
-CWMS needs a JMS Pulish/Subscribe message structure to notify clients of location level-related events.
+CWMS needs an message structure to notify clients of location level-related events.
 
 Opinions
 ========
@@ -14,9 +14,9 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the ``jakarta.jms.MapMessage`` structure described below for level-related-related events.
+Summary: Use the structure described below for forecast-related events.
 
-All messages will be published to the ``XXX_REALTIME_OPS`` topic, where ``XXX`` represents the appropriate office identifier.
+All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
@@ -39,6 +39,19 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | | String     | "description"        | The description of the specified level | |
 |                       | +------------+----------------------+----------------------------------------+ |
 +-----------------------+--------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "specified_level_created",
+        "office_id": "SWT",
+        "specified_level_id": "24-hr Surveilance",
+        "description": "Level at which 24-hour surveillance is required"
+    }
+
++-----------------------+--------------------------------------------------------------------------------+
+| Message Type          | Structure                                                                      |
++=======================+================================================================================+
 | SpecifiedLevelUpdated | +------------+----------------------+----------------------------------------+ |
 |                       | | Value Type | Value Name           | Value                                  | |
 |                       | +============+======================+========================================+ |
@@ -51,6 +64,19 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | | String     | "description"        | The description of the specified level | |
 |                       | +------------+----------------------+----------------------------------------+ |
 +-----------------------+--------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "specified_level_updated",
+        "office_id": "SWT",
+        "specified_level_id": "24-hr Surveilance",
+        "description": "Lowest level at which 24-hour surveillance is required"
+    }
+
++-----------------------+--------------------------------------------------------------------------------+
+| Message Type          | Structure                                                                      |
++=======================+================================================================================+
 | SpecifiedLevelDeleted | +------------+----------------------+----------------------------------------+ |
 |                       | | Value Type | Value Name           | Value                                  | |
 |                       | +============+======================+========================================+ |
@@ -61,6 +87,14 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | | String     | "specified_level_id" | The specified level identifier         | |
 |                       | +------------+----------------------+----------------------------------------+ |
 +-----------------------+--------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "specified_level_deleted",
+        "office_id": "SWT",
+        "specified_level_id": "24-hr Surveilance",
+    }
 
 **Location Levels**
 
@@ -109,6 +143,22 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | | String     | "attribute_comment"   | The comment on the level attribute                                                                                | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "location_level_created",
+        "office_id": "SWT",
+        "location_level_id": "Keystone.Elev.Inst.0.24-hr Surveillance",
+        "effective_time": 1782190800000,
+        "virtual": false,
+        "constant_value": 727.4,
+        "constant_value_unit": "ft"
+    }
+
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Message Type         | Structure                                                                                                                                                  |
++======================+============================================================================================================================================================+
 | LocationLevelUpdated | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 |                      | | Value Type | Value Name            | Value                                                                                                             | |
 |                      | +============+=======================+===================================================================================================================+ |
@@ -147,6 +197,23 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | | String     | "attribute_comment"   | The comment on the level attribute                                                                                | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "location_level_updated",
+        "office_id": "SWT",
+        "location_level_id": "Keystone.Elev.Inst.0.24-hr Surveillance",
+        "effective_time": 1782190800000,
+        "virtual": false,
+        "constant_value": 727.4,
+        "constant_value_unit": "ft",
+        "level_comment": "Updated after embankment remediation"
+    }
+
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Message Type         | Structure                                                                                                                                                  |
++======================+============================================================================================================================================================+
 | LocationLevelDeleted | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 |                      | | Value Type | Value Name            | Value                                                                                                             | |
 |                      | +============+=======================+===================================================================================================================+ |
@@ -168,6 +235,15 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+.. code-block:: json
+
+    {
+        "type": "location_level_deleted",
+        "office_id": "SWT",
+        "location_level_id": "Keystone.Elev.Inst.0.24-hr Surveillance",
+        "effective_time": 1782190800000,
+        "virtual": false
+    }
 
 Decision Status
 ===============

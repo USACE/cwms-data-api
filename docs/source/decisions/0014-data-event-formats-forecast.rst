@@ -1,12 +1,12 @@
-=======================================
-JMS Pub/Sub Message Formats - Forecasts
-=======================================
+==============================
+Data Event Formats - Forecasts
+==============================
 
 
 Summary
 =======
 
-CWMS needs a JMS Pulish/Subscribe message structure to notify clients of forecast-related events.
+CWMS needs an message structure to notify clients of forecast-related events.
 
 Opinions
 ========
@@ -14,9 +14,9 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the ``jakarta.jms.MapMessage`` structure described below for forecast-related events.
+Summary: Use the structure described below for forecast-related events.
 
-All messages will be published to the ``XXX_REALTIME_OPS`` topic, where ``XXX`` represents the appropriate office identifier.
+All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
@@ -48,6 +48,23 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 |                 |  | int        | "num_time_series"  | The number of time series specified                             | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "forecast_specification_created",
+        "office_id": "SWT",
+        "specification_id": "Keystone",
+        "designator": "CAVI",
+        "location_id": "Keystone Lake",
+        "entity_id": "CESWT",
+        "description": "Official USACE forecast for Keystone Lake, OK",
+        "num_time_series": 12
+    }
+
++-----------------+--------------------------------------------------------------------------------------------------------+
+| Message Type    | Structure                                                                                              |
++=================+========================================================================================================+
 | FcstSpecUpdated |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
@@ -68,6 +85,23 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 |                 |  | int        | "num_time_series"  | The number of time series specified                             | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "forecast_specification_updated",
+        "office_id": "SWT",
+        "specification_id": "Keystone",
+        "designator": "CAVI",
+        "location_id": "Keystone Lake",
+        "entity_id": "CESWT",
+        "description": "Official USACE forecast for Keystone Lake, OK",
+        "num_time_series": 14
+    }
+
++-----------------+--------------------------------------------------------------------------------------------------------+
+| Message Type    | Structure                                                                                              |
++=================+========================================================================================================+
 | FcstSpecDeleted |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
@@ -80,6 +114,15 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 |                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "forecast_specification_deleted",
+        "office_id": "SWT",
+        "specification_id": "Keystone",
+        "designator": "CAVI"
+    }
 
 **Forecast Instances**
 
@@ -114,6 +157,26 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 |                 |  | String     | "media_type"       | The media type of the specified blob                            | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "forecast_instance_created",
+        "office_id": "SWT",
+        "specification_id": "Keystone",
+        "designator": "CAVI",
+        "forecast_time": 1787245200000,
+        "issue_time": 1787158800000,
+        "max_age": 24,
+        "notes": "Revision 2",
+        "info": "{\"forecaster\": \"M5ECHABC\"}",
+        "blob_file_name": "keys_fcst2.zip",
+        "media_type": "application/zip"
+    }
+
++-----------------+--------------------------------------------------------------------------------------------------------+
+| Message Type    | Structure                                                                                              |
++=================+========================================================================================================+
 | FcstInstUpdated |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
@@ -140,6 +203,26 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 |                 |  | String     | "media_type"       | The media type of the specified blob                            | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "forecast_instance_updated",
+        "office_id": "SWT",
+        "specification_id": "Keystone",
+        "designator": "CAVI",
+        "forecast_time": 1787245200000,
+        "issue_time": 1787158800000,
+        "max_age": 24,
+        "notes": "Revision 2",
+        "info": "{\"forecaster\": \"M5ECHABC\"}",
+        "blob_file_name": "keys_fcst3.zip",
+        "media_type": "application/zip"
+    }
+
++-----------------+--------------------------------------------------------------------------------------------------------+
+| Message Type    | Structure                                                                                              |
++=================+========================================================================================================+
 | FcstInstDeleted |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | Value Type | Value Name         | Value                                                           | |
 |                 |  +============+====================+=================================================================+ |
@@ -156,6 +239,17 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 |                 |  | long       | "issue_time"       | The issue date/time in epoch milliseconds                       | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 +-----------------+--------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "forecast_instance_deleted",
+        "office_id": "SWT",
+        "specification_id": "Keystone",
+        "designator": "CAVI",
+        "forecast_time": 1787245200000,
+        "issue_time": 1787158800000
+    }
 
 
 Decision Status

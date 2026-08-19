@@ -1,12 +1,12 @@
-=====================================
-JMS Pub/Sub Message Formats - Ratings
-=====================================
+============================
+Data Event Formats - Ratings
+============================
 
 
 Summary
 =======
 
-CWMS needs a JMS Pulish/Subscribe message structure to notify clients of rating-related events.
+CWMS needs an message structure to notify clients of rating-related events.
 
 Opinions
 ========
@@ -14,11 +14,11 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the ``jakarta.jms.MapMessage`` structure described below for rating-related events.
+Summary: Use the structure described below for rating-related events.
 
-All messages will be published to the ``XXX_REALTIME_OPS`` topic, where ``XXX`` represents the appropriate office identifier.
+All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
-After implementation, the RatingStored messages to ``XXX_TS_STORED`` and ``XXX_REALTIME_OPS`` topics will be deprecated and removed.
+After implementation, the RatingStored messages published to various ``TS_STORED`` and ``REALTIME_OPS`` topics will be deprecated and removed.
 
 Author: Mike Perryman
 
@@ -42,6 +42,19 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | | String     | "description"            | The description for the template | |
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_template_created",
+        "office_id": "SWT",
+        "template_id": "Stage;Flow.Logarithmic",
+        "description": "USGS-style stage/flow ratings"
+    }
+
++-----------------------+------------------------------------------------------------------------------+
+| Message Type          | Structure                                                                    |
++=======================+==============================================================================+
 | RatingTemplateUpdated | +------------+--------------------------+----------------------------------+ |
 |                       | | Value Type |  Value Name              | Value                            | |
 |                       | +============+==========================+==================================+ |
@@ -54,6 +67,19 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | | String     | "description"            | The description for the template | |
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_template_updated",
+        "office_id": "SWT",
+        "template_id": "Stage;Flow.Logarithmic",
+        "description": "USGS-style stage/flow BASE ratings"
+    }
+
++-----------------------+------------------------------------------------------------------------------+
+| Message Type          | Structure                                                                    |
++=======================+==============================================================================+
 | RatingTemplateDeleted | +------------+--------------------------+----------------------------------+ |
 |                       | | Value Type |  Value Name              | Value                            | |
 |                       | +============+==========================+==================================+ |
@@ -64,6 +90,14 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | | String     | "template_id"            | The rating template identifier   | |
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_template_deleted",
+        "office_id": "SWT",
+        "template_id": "Stage;Flow.Logarithmic"
+    }
 
 **Rating Specifications**
 
@@ -104,6 +138,29 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | | String     | "description"             | The description for the specification                                                                              | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_specification_created",
+        "office_id": "SWT",
+        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "source_agency": "ABRFC",
+        "in_range_method": "LINEAR",
+        "out_range_low_method": "NEAREST",
+        "out_range_high_method": "NEAREST",
+        "active": true,
+        "auto_update": true,
+        "auto_activate": true,
+        "auto_migrate_extensions": true,
+        "independent_rounding": "4444444444",
+        "dependent_rounding": "4444444444",
+        "description": "USGS streamflow rating for the Arkansas River at Tulsa, OK"
+    }
+
++----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Message Type               | Structure                                                                                                                                                       |
++============================+=================================================================================================================================================================+
 | RatingSpecificationUpdated | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | Value Type | Value Name                | Value                                                                                                              | |
 |                            | +============+===========================+====================================================================================================================+ |
@@ -136,6 +193,29 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | | String     | "description"             | The description for the specification                                                                              | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_specification_updated",
+        "office_id": "SWT",
+        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "source_agency": "ABRFC",
+        "in_range_method": "LINEAR",
+        "out_range_low_method": "NULL",
+        "out_range_high_method": "NEAREST",
+        "active": true,
+        "auto_update": true,
+        "auto_activate": true,
+        "auto_migrate_extensions": true,
+        "independent_rounding": "0223456782",
+        "dependent_rounding": "0222233332",
+        "description": "USGS streamflow rating for the Arkansas River at Tulsa, OK"
+    }
+
++----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Message Type               | Structure                                                                                                                                                       |
++============================+=================================================================================================================================================================+
 | RatingSpecificationDeleted | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | Value Type | Value Name                | Value                                                                                                              | |
 |                            | +============+===========================+====================================================================================================================+ |
@@ -146,6 +226,14 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | | String     | "specification_id"        | The rating specification identifier                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_specification_deleted",
+        "office_id": "SWT",
+        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production"
+    }
 
 **Ratings**
 
@@ -171,9 +259,26 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | boolean    | "active"           | Whether this rating is active                                                                   | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "rating_type"      | "lookup", "expression", "virtual", or "transitional"                                            | |
+|               | | String     | "rating_type"      | "lookup", "expression", "usgs", "virtual", or "transitional"                                    | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_created",
+        "office_id": "SWT",
+        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "effective_time": 1782190800000,
+        "transition_time": 1780981200000,
+        "creation_time": 1787140800000,
+        "active": false,
+        "rating_type": "usgs"
+    }
+
++---------------+---------------------------------------------------------------------------------------------------------------------------------------+
+| Message Type  | Structure                                                                                                                             |
++===============+=======================================================================================================================================+
 | RatingUpdated | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | Value Type | Value Name         | Value                                                                                           | |
 |               | +============+====================+=================================================================================================+ |
@@ -191,9 +296,26 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | boolean    | "active"           | Whether this rating is active                                                                   | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "rating_type"      | "lookup", "expression", "virtual", or "transitional"                                            | |
+|               | | String     | "rating_type"      | "lookup", "expression", "usgs", "virtual", or "transitional"                                    | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_updated",
+        "office_id": "SWT",
+        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "effective_time": 1782190800000,
+        "transition_time": 1780981200000,
+        "creation_time": 1787140800000,
+        "active": true,
+        "rating_type": "usgs"
+    }
+
++---------------+---------------------------------------------------------------------------------------------------------------------------------------+
+| Message Type  | Structure                                                                                                                             |
++===============+=======================================================================================================================================+
 | RatingDeleted | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | Value Type | Value Name         | Value                                                                                           | |
 |               | +============+====================+=================================================================================================+ |
@@ -204,7 +326,17 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | | String     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
+|               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
+
+.. code-block:: json
+
+    {
+        "type": "rating_deleted",
+        "office_id": "SWT",
+        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "effective_time": 1782190800000
+    }
 
 
 Decision Status
