@@ -93,6 +93,24 @@ parameter-id-mask
         Detailed documentation for Regex usage in CDA is currently in development and will be available at
         https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
+.. _def-rating-id:
+
+rating-id
+  A regular expression used to filter the rating specification IDs to be included in the response.
+
+    .. note::
+        Documentation for Rating Specifications is available at
+        `CWMS database - rating specification <https://cwms-database.readthedocs.io/en/latest/naming.html#rating-specifications>`_.
+
+.. _def-rating-id-mask:
+
+rating-id-mask
+  A regular expression used to filter the rating specification IDs to be included in the response.
+
+    .. note::
+        Documentation for Rating Specifications is available at
+        `CWMS database - rating specification <https://cwms-database.readthedocs.io/en/latest/naming.html#rating-specifications>`_.
+
 .. _def-start:
 
 start/begin
@@ -108,15 +126,6 @@ start/begin
     .. note::
         Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
         https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
-
-.. _def-rating-id-mask:
-
-rating-id-mask
-  A regular expression used to filter the parameter of the queried time series data.
-
-    .. note::
-        Documentation for Rating Specifications is available at
-        `CWMS database - rating specification <https://cwms-database.readthedocs.io/en/latest/naming.html#rating-specifications>`_.
 
 .. _def-timezone:
 

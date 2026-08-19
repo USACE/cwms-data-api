@@ -61,3 +61,13 @@ parameter-id-mask
     To limit results to a specific parameter or pattern, \
     for example limiting results to parameters starting with `Flow` using `Flow*`. \
     For multiple parameters, a mask may look like `Depth-Temperature` or `*-Temperature`.
+
+.. _when_rating_id:
+
+rating-id
+    To limit results to a specific rating ID or pattern.
+
+.. _when_rating_id_mask:
+
+rating-id-mask
+    To limit results to a specific rating ID or pattern.

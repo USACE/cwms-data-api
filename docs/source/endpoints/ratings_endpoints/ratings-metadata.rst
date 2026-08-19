@@ -1,64 +1,40 @@
-TimeSeries — GET /timeseries/recent
+Ratings — GET /ratings/metadata
 ===================================
 
 What it does
 ------------
-Returns the most recent value(s) from one or more time series without downloading a historical range.
-
-Retrieves time series data from 28 days before to 14 days after the current date.
+Returns the information that describes the rating and provides the context needed to identify, manage, and correctly \
+apply a rating.
 
 When to use
 -----------
-- Dashboards needing the latest readings
-- Health checks and alerts for current conditions
+- Needing information about the rating without retrieving all of the rating's computational data
 
 
-.. csv-table:: GET /timeseries/recent - Endpoint Parameters
+.. csv-table:: GET /ratings/recent - Endpoint Parameters
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 60, 25, 55
 
-    category-id, "The text identifier for the time series category defined in the CWMS database for a specific time \
-    series.","", "To limit results to a specific assigned time series category."
-    group-id, "The text identifier of the time series group defined in the CWMS database for a specific time series.","\
-    Only if ts-ids are NOT provided", "To limit results to a specific assigned time series group."
-    ts-ids, "`CWMS database - time series <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_","\
-    Only if group-id is NOT provided", "To get the recent data for the specified time series."
-    unit-system, "SI or EN, default: EN","", "To convert response data to a particular unit system."
+    end, ":ref:`def-end`", "", ":ref:`when_end`"
+    page, ":ref:`def-page`", "", ":ref:`when_page`"
+    page-size, ":ref:`def-page-size", "", ":ref:`when_page_size`"
+    start, ":ref:`def-start`", "", ":ref:`when_start`"
+    rating-id-mask, ":ref:`def-rating-id-mask`", "", ":ref:`when_rating_id_mask`"
     office, ":ref:`def-office`","", ":ref:`when_office`"
 
 
 Examples
 --------
-1. | The user wants to retrieve the recent time series data for the specified time series IDs of
-   | `STATION1.Flow.Inst.15Minutes.0.CWMS` and `STATION2.Stage.Inst.15Minutes.0.CWMS`:
-   | (**ts-ids**) :code:`STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS`
+1. | The user wants to retrieve the metadata for the rating specification ID of
+   | `KEYS.Elev;Area.Linear.Production` from the office of `SWT`:
+   | (**office-mask**) :code:`SWT`
    |
-   | and they want the data to be in the Imperial unit system:
-   | (**unit-system**) :code:`EN`
+   | (**rating-id-mask**) :code:`KEYS.Elev;Area.Linear.Production`
 
    .. code-block:: urlencoded
 
-        GET /timeseries/recent?ts-ids=STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS&unit-system=EN
+        GET /ratings/metadata?office=SWT&rating-id-mask=KEYS.Elev%3BArea.Linear.Production
 
-2. | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
-   | (**group-id**) :code:`CALC3`
-
-   .. code-block:: urlencoded
-
-        GET /timeseries/recent?group-id=CALC3
-
-3. | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
-   | (**group-id**) :code:`CALC3`
-   |
-   | and in the `COMPUTE` time series category:
-   | (**category-id**) :code:`COMPUTE`
-   |
-   | for the `HQ` office:
-   | (**office**) :code:`HQ`
-
-   .. code-block:: urlencoded
-
-        GET /timeseries/recent?group-ide=CALC3&category-id=COMPUTE&office=HQ
 
 See the consolidated API documentation: :doc:`/api-references`.
 

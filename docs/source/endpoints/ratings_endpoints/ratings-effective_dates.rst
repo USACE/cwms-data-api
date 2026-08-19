@@ -3,13 +3,12 @@ Ratings — GET /ratings/effective-dates
 
 What it does
 ------------
-Returns the effective dates and times for a given rating specification ID and office ID. Time window can be set.
+Returns the effective dates and times for a given rating specification ID and office ID. Time window can be set to filter the effective dates retrieved.
 
 
 When to use
 -----------
-- Dashboards needing the latest readings
-- Health checks and alerts for current conditions
+- Retrieving available effective dates for a rating
 
 
 .. csv-table:: GET /ratings/effective-dates - Endpoint Parameters
@@ -18,13 +17,10 @@ When to use
 
     begin, ":ref:`def-start`", "", ":ref:`when_start`"
     end, ":ref:`def-end`", "", ":ref:`when_end`"
-    office-mask, "The text identifier for the time series category defined in the CWMS database for a specific time \
-    series.","", "To limit results to a specific assigned time series category."
-    rating-id-mask, ":ref:`def-timezone`", "", "To retrieve data points in a timezone that works best with \
-    your use case, such as your local timezone."    unit-system, "SI or EN, default: EN","", "To convert response data to a particular unit system."
+    office-mask, ":ref:`def-office`","", ":ref:`when_office`"
+    rating-id-mask, ":ref:`def-rating-id-mask`", "", ":ref:`when_rating_id_mask`"
     timezone, ":ref:`def-timezone`", "", "To retrieve data points in a timezone that works best with \
-    your use case, such as your local timezone."    unit-system, "SI or EN, default: EN","", "To convert response data to a particular unit system."
-    office, ":ref:`def-office`","", ":ref:`when_office`"
+    your use case, such as your local timezone."
 
 
 Examples
@@ -37,7 +33,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/effective-dates?office-mask=SWT&rating-id-mask=KEYS.Elev%3BArea.Linear.Production
+        GET /ratings/metadata?office=SWT&rating-id-mask=KEYS.Elev%3BArea.Linear.Production
 
 
 See the consolidated API documentation: :doc:`/api-references`.

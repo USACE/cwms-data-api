@@ -1,4 +1,4 @@
-TimeSeries — GET /timeseries/recent
+Ratings — GET /ratings/{rating-id}
 ===================================
 
 What it does
@@ -13,17 +13,11 @@ When to use
 - Health checks and alerts for current conditions
 
 
-.. csv-table:: GET /timeseries/recent - Endpoint Parameters
+.. csv-table:: GET /ratings/{rating-id} - Endpoint Parameters
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 60, 25, 55
 
-    category-id, "The text identifier for the time series category defined in the CWMS database for a specific time \
-    series.","", "To limit results to a specific assigned time series category."
-    group-id, "The text identifier of the time series group defined in the CWMS database for a specific time series.","\
-    Only if ts-ids are NOT provided", "To limit results to a specific assigned time series group."
-    ts-ids, "`CWMS database - time series <https://cwms-database.readthedocs.io/en/latest/naming.html#time-series>`_","\
-    Only if group-id is NOT provided", "To get the recent data for the specified time series."
-    unit-system, "SI or EN, default: EN","", "To convert response data to a particular unit system."
+    rating-id, ":ref:`def-rating-id", "", ":ref:`
     office, ":ref:`def-office`","", ":ref:`when_office`"
 
 
