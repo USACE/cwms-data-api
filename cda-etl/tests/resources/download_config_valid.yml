@@ -1,0 +1,38 @@
+version: 1
+settings:
+  startTime: "2026-01-01"
+  endTime: "2026-06-01"
+  maxThreads: 5
+  logLevel: DEBUG
+  path: "./stage"
+offices:
+  - id: SWT
+    projects:
+      - id: EUFA
+        locations:
+          - id: EUFA-Dam
+          - id: EUFA-Canal
+        timeseries:
+          - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
+          - id: EUFA.Flow.Inst.1Hour.0.Ccp-Rev
+      - id: BEND
+        locations:
+          - id: BEND-Outlet
+          - id: BEND-Dam
+        timeseries:
+          - id: BEND.Elev.Inst.1Hour.0.Ccp-Rev
+          - id: BEND.Flow.Inst.1Hour.0.Ccp-Rev
+  - id: FWR
+    projects:
+      - id: RAYH
+        locations:
+          - id: RAYH-Dam
+          - id: RAYH-Outlet
+        timeseries:
+          - id: RAYH.Elev.Inst.1Hour.0.Ccp-Rev
+          - id: RAYH.Flow.Inst.1Hour.0.Ccp-Rev
+      - id: LEWN
+        locations:
+          - id: LEWN-Dam
+        timeseries:
+          - id: LEWN.Elev.Inst.1Hour.0.Ccp-Rev

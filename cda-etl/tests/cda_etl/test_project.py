@@ -15,82 +15,68 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
-import pytest
-from unittest.mock import MagicMock
 import project
-from project import ProjectData
+from config import ProjectConfig
 
-@pytest.fixture
-def mock_config():
-    config = MagicMock()
-    config.projects = ["SWT.TestProj"]
-    return config
-
-@pytest.fixture
-def mock_session_manager():
-    return MagicMock()
-
-def test_process(mock_config, mock_session_manager, mocker):
-    mock_process_projects = mocker.patch("project.process_projects")
-    mock_process_projects.return_value = ProjectData(["SWT.TestProj"])
-    
-    result = project.process(mock_config, mock_session_manager)
-    
-    mock_process_projects.assert_called_once_with(mock_config.projects, mock_session_manager)
-    assert result.project_ids == ["SWT.TestProj"]
-
-def test_process_projects(mock_session_manager, mocker):
-    mocker.patch("location.process_locations")
+def test_stage_projects(mocker):
     mock_execute = mocker.patch("utils.threading_util.execute_tasks")
-    
-    retrieval_results = [["SWT.TestProj", {"name": "TestProj"}]]
-    storage_results = [[retrieval_results[0], {"name": "TestProj"}]]
-    
-    mock_execute.side_effect = [retrieval_results, storage_results]
-    
-    projects = ["SWT.TestProj"]
-    result = project.cache_projects(projects, mock_session_manager)
-    
-    assert mock_session_manager.use_source_session.called
-    assert mock_session_manager.use_dest_session.called
-    assert len(mock_execute.call_args_list) == 2
-    assert result.project_ids == storage_results
+    projects = [ProjectConfig.from_dict("SWT", {"id": "TestProj"})]
 
-def test_retrieve_one_project_invalid_format(mocker):
-    logger_spy = mocker.spy(project.logger, "warning")
-    result = project._retrieve_one_project("invalid_project")
-    assert result is None
-    assert logger_spy.called
+    project.stage_projects(projects)
 
-def test_retrieve_one_project_from_cache(mocker):
-    mock_get_cache = mocker.patch("utils.cache_util.get_from_cache")
-    mock_get_cache.return_value = {"name": "CachedProj"}
-    
-    result = project._retrieve_one_project("SWT.CachedProj")
-    
-    assert result == {"name": "CachedProj"}
-    mock_get_cache.assert_called_once_with("SWT", "CachedProj")
+    mock_execute.assert_called_once_with(project._download_one_project, [["SWT", "TestProj"]])
+
+
+def test_publish_staged_projects(mocker):
+    mock_execute = mocker.patch("utils.threading_util.execute_tasks")
+    projects = [ProjectConfig.from_dict("SWT", {"id": "TestProj"})]
+
+    project.publish_staged_projects(projects)
+
+    mock_execute.assert_called_once_with(project._upload_one_project, [["SWT", "TestProj"]])
+
+def test_stage_projects_empty_input(mocker):
+    mock_execute = mocker.patch("utils.threading_util.execute_tasks")
+
+    project.stage_projects([])
+
+    mock_execute.assert_not_called()
+
+def test_download_one_project_always_refreshes_from_cwms(mocker):
+    mock_write_json = mocker.patch("utils.filesystem_store.write_json")
+    mock_api_get = mocker.patch("cwms.api.get", return_value={"name": "FreshProj"})
+
+    project._download_one_project(["SWT", "CachedProj"])
+
+    mock_api_get.assert_called_once_with(
+        endpoint="projects/CachedProj",
+        params={"office": "SWT"},
+        api_version=1,
+    )
+    mock_write_json.assert_called_once_with({"name": "FreshProj"}, "SWT", "Projects", "CachedProj")
 
 def test_retrieve_one_project_from_cwms(mocker):
-    mocker.patch("utils.cache_util.get_from_cache", return_value=None)
-    mock_put_cache = mocker.patch("utils.cache_util.put_in_cache")
-    mock_cwms_get = mocker.patch("cwms.get_project")
-    
-    mock_response = MagicMock()
-    mock_response.json = {"name": "CwmsProj"}
-    mock_cwms_get.return_value = mock_response
-    
-    result = project._retrieve_one_project("SWT.CwmsProj")
-    
-    assert result == {"name": "CwmsProj"}
-    mock_cwms_get.assert_called_once_with("SWT", "CwmsProj")
-    mock_put_cache.assert_called_once_with({"name": "CwmsProj"}, "SWT", "CwmsProj")
+    mock_write_json = mocker.patch("utils.filesystem_store.write_json")
+    mock_api_get = mocker.patch("cwms.api.get", return_value={"name": "CwmsProj"})
+
+    project._download_one_project(["SWT", "CwmsProj"])
+
+    mock_api_get.assert_called_once_with(
+        endpoint="projects/CwmsProj",
+        params={"office": "SWT"},
+        api_version=1,
+    )
+    mock_write_json.assert_called_once_with({"name": "CwmsProj"}, "SWT", "Projects", "CwmsProj")
 
 def test_store_one_project(mocker):
-    mock_cwms_store = mocker.patch("cwms.store_project")
-    project_data = {"name": "TestProj"}
-    
-    result = project._store_one_project(project_data)
-    
-    assert result == project_data
-    mock_cwms_store.assert_called_once_with(project_data)
+    mock_cwms_post = mocker.patch("cwms.api.post")
+    mocker.patch("utils.filesystem_store.read_json", return_value={"name": "TestProj"})
+
+    project._upload_one_project(["SWT", "TestProj"])
+
+    mock_cwms_post.assert_called_once_with(
+        endpoint="projects",
+        data={"name": "TestProj"},
+        params={"fail-if-exists": True},
+        api_version=1,
+    )
