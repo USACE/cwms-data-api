@@ -25,7 +25,7 @@
 package cwms.cda.data.dao;
 
 import cwms.cda.data.dto.TimeSeriesCategory;
-import cwms.cda.data.dto.TimeSeriesGroup;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;

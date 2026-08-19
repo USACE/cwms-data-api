@@ -60,7 +60,7 @@ import cwms.cda.api.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesFilteredController;
-import cwms.cda.api.TimeSeriesGroupController;
+import cwms.cda.api.timeseriesgroup.TimeSeriesGroupControllerV1;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeSeriesVersionsController;
@@ -131,6 +131,7 @@ import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserDeleteController;
+import cwms.cda.api.timeseriesgroup.TimeSeriesGroupControllerV2;
 import cwms.cda.api.watersupply.AccountingCatalogController;
 import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
@@ -281,8 +282,13 @@ public final class ApiServletRouteConfiguration {
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(String.format("/timeseries/identifier-descriptor/{%s}", Controllers.TIMESERIES_ID),
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/group/{group-id}",
-                new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        //------- Time Series Group --------//
+        String timeSeriesGroupPath = "/timeseries/group/{group-id}";
+        cdaCrudCache(timeSeriesGroupPath,
+                new TimeSeriesGroupControllerV1(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(formatV2(timeSeriesGroupPath, Controllers.GROUP_ID),
+                new TimeSeriesGroupControllerV2(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        //----------------------------------//
         cdaCrudCache("/timeseries/{timeseries}",
                 new TimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         addRatingHandlers(requiredRoles, metrics, cdaAccessManager);

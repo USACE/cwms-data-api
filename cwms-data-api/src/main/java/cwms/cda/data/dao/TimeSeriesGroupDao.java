@@ -34,7 +34,7 @@ import cwms.cda.data.dao.timeseriesgroup.DELETE_TS_GROUP_CASCADE;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeriesCategory;
-import cwms.cda.data.dto.TimeSeriesGroup;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -376,6 +376,21 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         });
     }
 
+
+    public void unassignTsIds(String categoryId, String groupId, String office, List<String> tsIds) {
+        if (tsIds == null || tsIds.isEmpty()) {
+            throw new IllegalArgumentException("At least one time series id must be provided to unassign.");
+        }
+
+        connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
+            dslContext.transaction((Configuration config) -> {
+                for (String tsId : tsIds) {
+                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config, categoryId, groupId, tsId, "F", office);
+                }
+            });
+        });
+    }
 
     public void unassignAll(String categoryId, String groupId, String office) {
         dsl.transaction((Configuration config) ->
