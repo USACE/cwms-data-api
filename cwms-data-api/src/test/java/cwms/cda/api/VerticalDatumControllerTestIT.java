@@ -34,6 +34,7 @@ import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.VerticalDatumInfoList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
@@ -250,6 +251,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
+    @MinimumSchema(260716)
     @MethodSource("provideFormats")
     @ParameterizedTest
     void test_vertical_datum_getAll(ContentType contentType) {
