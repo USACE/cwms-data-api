@@ -219,3 +219,16 @@ services:
       /usr/bin/mc admin policy attach myminio readwrite --user cda_user;
       exit 0;
       "
+  cda-etl:
+    build:
+      context: ./cda-etl
+      dockerfile: Dockerfile
+    volumes:
+      - ./cda-etl/data/sample-data/sample-app.yml:/app/sample-app.yml
+      - ./cda-etl/data/sample-data:/data/sample-data
+    environment:
+      - ETL_CONFIG_PATH=/app/sample-app.yml
+      - SOURCE_CDA_URL=${SOURCE_CDA_URL:-}
+      - SOURCE_CDA_API_KEY=${SOURCE_CDA_API_KEY:-}
+      - DEST_CDA_URL=${DEST_CDA_URL:-http://data-api:7000/cwms-data/}
+      - DEST_CDA_API_KEY=${DEST_CDA_API_KEY:-}
