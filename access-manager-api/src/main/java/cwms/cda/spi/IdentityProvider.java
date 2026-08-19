@@ -22,7 +22,7 @@ public interface IdentityProvider {
     /**
      * Define the OpenAPI V3 Security Scheme for this manager.
      *
-     * @return SecurityScheme
+     * @return SecurityScheme or null if the scheme should not be active at this time.
      */
     SecurityScheme getScheme();
 }
