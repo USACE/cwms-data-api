@@ -51,7 +51,7 @@ public final class ForecastSpecControllerV2 extends AbstractForecastSpecControll
             description = "Used to create and save forecast spec data",
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSONV1)
+                            @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSON)
                     },
                     required = true
             ),
@@ -112,7 +112,7 @@ public final class ForecastSpecControllerV2 extends AbstractForecastSpecControll
                     @OpenApiResponse(status = STATUS_200,
                             description = "A list of elements of the data set you've selected.",
                             content = {
-                                    @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSONV1)}),
+                                    @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSON)}),
                     @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
@@ -142,7 +142,7 @@ public final class ForecastSpecControllerV2 extends AbstractForecastSpecControll
                     @OpenApiResponse(status = STATUS_200,
                             description = "Returns the requested forecast spec",
                             content = {
-                                    @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSONV1)}),
+                                    @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSON)}),
                     @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
                     @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a forecast spec."),
@@ -164,7 +164,7 @@ public final class ForecastSpecControllerV2 extends AbstractForecastSpecControll
             },
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSONV1)
+                            @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSON)
                     },
                     required = true),
             responses = {

@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @JsonRootName("forecast-spec")
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class, aliases = {Formats.DEFAULT})
 @JsonDeserialize(builder = ForecastSpecV2.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

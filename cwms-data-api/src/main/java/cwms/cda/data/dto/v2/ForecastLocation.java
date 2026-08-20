@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonDeserialize(builder = ForecastLocation.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -15,9 +16,11 @@ public class ForecastLocation extends CwmsDTOBase {
     private final String locationId;
 
     @JsonProperty(required = true)
+    @Schema(example = "-1")
     private final Integer sortOrder;
 
     @JsonProperty("is-primary")
+    @Schema(example = "true")
     private final Boolean isPrimary;
 
     private ForecastLocation(Builder builder) {
