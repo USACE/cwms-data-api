@@ -2,37 +2,33 @@ package cwms.cda.data.dto.v2;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import cwms.cda.api.errors.FieldException;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DTOMatch;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.formatters.json.JsonV2;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 public class ForecastLocationTest {
 
     @Test
-    void testRoundTripJson() throws JsonProcessingException {
+    void testRoundTripJson() {
         ForecastLocation l1 = new ForecastLocation.Builder()
                 .withLocationId("location")
                 .withSortOrder(-1)
                 .withIsPrimary(true)
                 .build();
+        ContentType contentType = Formats.parseHeader(Formats.JSON, ForecastLocation.class);
 
-        ObjectMapper om = buildObjectMapper();
-
-        String jsonString = om.writeValueAsString(l1);
+        String jsonString = Formats.format(contentType, l1);
         assertNotNull(jsonString);
 
-        ForecastLocation l2 = om.readValue(jsonString, ForecastLocation.class);
+        ForecastLocation l2 = Formats.parseContent(contentType, jsonString, ForecastLocation.class);
         assertNotNull(l2);
 
-        assertForecastLocationEquals(l1, l2);
+        DTOMatch.assertMatch(l1, l2);
     }
 
     @Test
@@ -113,15 +109,6 @@ public class ForecastLocationTest {
         assertEquals(1, location.getSortOrder());
         assertEquals(Boolean.FALSE, location.isPrimary());
 
-    }
-
-    @NotNull
-    public static ObjectMapper buildObjectMapper() {
-        return JsonV2.buildObjectMapper();
-    }
-
-    void assertForecastLocationEquals(ForecastLocation l1, ForecastLocation l2) throws JsonProcessingException {
-        DTOMatch.assertMatch(l1, l2);
     }
 
 }

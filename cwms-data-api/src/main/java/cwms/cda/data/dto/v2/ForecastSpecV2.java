@@ -11,13 +11,12 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.JsonV1;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @JsonRootName("forecast-spec")
-@FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class, aliases = {Formats.DEFAULT})
+@FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class, aliases = {Formats.DEFAULT})
 @JsonDeserialize(builder = ForecastSpecV2.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)

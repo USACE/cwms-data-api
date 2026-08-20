@@ -106,7 +106,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
 
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_get_create_get(String format) throws IOException {
 
         // Structure of test:
@@ -146,7 +146,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -191,7 +191,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
 
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_get_create_get_null_designator(String format) throws IOException {
 
         // Structure of test:
@@ -231,7 +231,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -300,7 +300,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_get_delete_get(String format) throws Exception {
 
         // Structure of test:
@@ -323,7 +323,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -393,7 +393,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void create_getAll_delete_getAll(String format) throws Exception {
 
         // Structure of test:
@@ -420,7 +420,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -436,7 +436,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(tsData2)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -497,7 +497,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void create_getAll_with_entity_like_delete_getAll(String format) throws Exception {
 
         // Structure of test:
@@ -524,7 +524,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(format)
-                .contentType(Formats.JSONV1)
+                .contentType(Formats.JSON)
                 .body(tsData)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .when()
@@ -540,7 +540,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(format)
-                .contentType(Formats.JSONV1)
+                .contentType(Formats.JSON)
                 .body(tsData2)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .when()
@@ -611,8 +611,8 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
 
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
-                .contentType(Formats.JSONV1)
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
                 .body(tsData)
                 .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -628,7 +628,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         // Delete the spec
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(Formats.JSON)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(Controllers.NAME, "SPK-Daily-UKY-Test-V2")
@@ -646,7 +646,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         // Retrieve the spec and assert that it does not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV1)
+                .accept(Formats.JSON)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .queryParam(DESIGNATOR, designator)
         .when()
@@ -661,7 +661,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_get_delete_get_lrts(String format) throws Exception {
         // Structure of test:
         // 1) Create the spec
@@ -687,7 +687,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(specData)
             .header(AUTH_HEADER, user.toHeaderValue())
             .header(ApiServlet.IS_NEW_LRTS, true)
@@ -766,7 +766,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_get_update_get(String format) throws IOException {
 
         // Structure of test:
@@ -810,7 +810,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -855,7 +855,7 @@ final class ForecastSpecControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV1)
+            .contentType(Formats.JSON)
             .body(tsData)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()

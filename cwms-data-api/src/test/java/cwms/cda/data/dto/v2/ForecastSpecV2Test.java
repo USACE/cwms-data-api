@@ -4,11 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import cwms.cda.api.errors.FieldException;
-import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.helpers.DTOMatch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -28,12 +26,12 @@ public class ForecastSpecV2Test {
     void testRoundTripJson() throws JsonProcessingException {
         ForecastSpecV2 s1 = buildForecastSpecV2();
 
-        ObjectMapper om = buildObjectMapper();
+        ContentType contentType = Formats.parseHeader(Formats.JSON, ForecastSpecV2.class);
 
-        String jsonString = om.writeValueAsString(s1);
+        String jsonString = Formats.format(contentType, s1);
         assertNotNull(jsonString);
 
-        ForecastSpecV2 s2 = om.readValue(jsonString, ForecastSpecV2.class);
+        ForecastSpecV2 s2 = Formats.parseContent(contentType, jsonString, ForecastSpecV2.class);
         assertNotNull(s2);
 
         DTOMatch.assertMatch(s1, s2);
@@ -42,7 +40,7 @@ public class ForecastSpecV2Test {
     @Test
     void testFormatsSerialization() {
         ForecastSpecV2 s1 = buildForecastSpecV2();
-        ContentType contentType = Formats.parseHeader(Formats.JSONV1, ForecastSpecV2.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, ForecastSpecV2.class);
         String jsonStr = Formats.format(contentType, s1);
         assertNotNull(jsonStr);
     }
@@ -60,8 +58,8 @@ public class ForecastSpecV2Test {
             json = IOUtils.toString(stream, StandardCharsets.UTF_8);
         }
 
-        ObjectMapper om = buildObjectMapper();
-        ForecastSpecV2 fi = om.readValue(json, ForecastSpecV2.class);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, ForecastSpecV2.class);
+        ForecastSpecV2 fi = Formats.parseContent(contentType, json, ForecastSpecV2.class);
 
         assertNotNull(fi);
         DTOMatch.assertMatch(fi, buildForecastSpecV2());
@@ -112,10 +110,5 @@ public class ForecastSpecV2Test {
                 .withDescription("description")
                 .withTimeSeriesIds(tsids)
                 .build();
-    }
-
-    @NotNull
-    public static ObjectMapper buildObjectMapper() {
-        return JsonV1.buildObjectMapper();
     }
 }
