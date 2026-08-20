@@ -24,11 +24,11 @@ RUN apk --no-cache upgrade && \
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.118/bin/apache-tomcat-9.0.118.tar.gz && \
-    echo "737367433486757ccd687329d99b1188506cdec57a53a29b415173909c38cdf9da4fc9fd73b8cd17cd0a8def8610ad43bab8e84393dc904a0bd1121da8cab2fc *apache-tomcat-9.0.118.tar.gz" > checksum.txt && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.121/bin/apache-tomcat-9.0.121.tar.gz && \
+    echo "16494dd4745f808d3c506807b5275521fd71044d976f441d18eeeab0f5a38bc1b5344ca395292f6f26eb7612cd8c8e746d01ccdfb29893d394052d9f4b1f4c11 *apache-tomcat-9.0.121.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-9.0.118 /usr/local/tomcat/ && \
+    mv apache-tomcat-9.0.121 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
@@ -41,8 +41,8 @@ RUN mkdir /download && \
 # Additionally, when we are not also accounting for some legacy systems, we will likely shift to
 # Jetty, or Embedded Tomcat, to simplify the deployment process, making this subtitution unnecessary.
 RUN cd /download && \
-    wget https://repo1.maven.org/maven2/com/github/tomcat-slf4j-logback/tomcat9-slf4j-logback/9.0.115/tomcat9-slf4j-logback-9.0.115.jar && \
-    echo "cb463fb246fbb326d91b04a7280474f2b722b11cc9d3d7f6c3dbbefcff2c07e055f479d436ab785668d6fa90d0bfd325c86c4fa3a9ad9521159a2a3114916d91 *tomcat9-slf4j-logback-9.0.115.jar" > checksum.logback.txt && \
+    wget https://repo1.maven.org/maven2/com/github/tomcat-slf4j-logback/tomcat9-slf4j-logback/9.0.120/tomcat9-slf4j-logback-9.0.120.jar && \
+    echo "a24f49d57012472701172d8ec4509faa781a57a51e63b329441bdef80861e4550577fe703a333a7c5a6d5159ff14e96a16be631acef5df2ce14ec3c8cd6dae75" > checksum.logback.txt && \
     sha512sum -c checksum.logback.txt
 RUN cd /download && \
     cp tomcat9-slf4j-logback-9.0.115.jar /usr/local/tomcat/bin/tomcat-juli.jar && \
