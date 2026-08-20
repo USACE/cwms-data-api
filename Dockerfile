@@ -14,7 +14,7 @@ ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN gradle prepareDockerBuild --info --no-daemon
 
-FROM alpine:3.21.3 AS tomcat_base
+FROM alpine:3.23.5 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
         openjdk11-jre \
@@ -24,17 +24,31 @@ RUN apk --no-cache upgrade && \
 
 RUN mkdir /download && \
     cd /download && \
-    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.112/bin/apache-tomcat-9.0.112.tar.gz && \
-    echo "fc55589f28bf6659928167461c741649b6005b64285dd81df05bb5ee40f4c6de59b8ee3af84ff756ae1513fc47f5f73070e29313b555e27f096f25881c69841d *apache-tomcat-9.0.112.tar.gz" > checksum.txt && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.121/bin/apache-tomcat-9.0.121.tar.gz && \
+    echo "16494dd4745f808d3c506807b5275521fd71044d976f441d18eeeab0f5a38bc1b5344ca395292f6f26eb7612cd8c8e746d01ccdfb29893d394052d9f4b1f4c11 *apache-tomcat-9.0.121.tar.gz" > checksum.txt && \
     sha512sum -c checksum.txt && \
     tar xzf apache-tomcat-*tar.gz && \
-    mv apache-tomcat-9.0.112 /usr/local/tomcat/ && \
+    mv apache-tomcat-9.0.121 /usr/local/tomcat/ && \
     cd / && \
     rm -rf /download && \
     rm -rf /usr/local/tomcat/webapps/* && \
     mkdir /usr/local/tomcat/webapps/ROOT && \
     printf "<%% response.sendRedirect(\"/cwms-data/\"); %%>\n" > /usr/local/tomcat/webapps/ROOT/index.jsp && \
-    printf "User-agent: *\nAllow: /cwms-data/\nDisallow: /cwms-data/auth/\nDisallow: /cwms-data/catalog/\nDisallow: /cwms-data/timeseries/\nDisallow: /cwms-data/swagger-docs\nDisallow: /auth/\nSitemap: https://cwms-data.usace.army.mil/sitemap.xml\n" > /usr/local/tomcat/webapps/ROOT/robots.txt
+        printf "User-agent: *\nAllow: /cwms-data/\nDisallow: /cwms-data/auth/\nDisallow: /cwms-data/catalog/\nDisallow: /cwms-data/timeseries/\nDisallow: /cwms-data/swagger-docs\nDisallow: /auth/\nSitemap: https://cwms-data.usace.army.mil/sitemap.xml\n" > /usr/local/tomcat/webapps/ROOT/robots.txt && \
+    mkdir -p /usr/local/tomcat/conf/Catalina/localhost
+# Now replace the Tomcat logging with logback
+# NOTE: I have reviewed this jar in jd-gui and do not see anything malicious, packages are isolated to avoid issues
+# with other code.
+# Additionally, when we are not also accounting for some legacy systems, we will likely shift to
+# Jetty, or Embedded Tomcat, to simplify the deployment process, making this subtitution unnecessary.
+RUN cd /download && \ 
+    wget https://repo1.maven.org/maven2/com/github/tomcat-slf4j-logback/tomcat9-slf4j-logback/9.0.120/tomcat9-slf4j-logback-9.0.120.jar && \
+    echo "a24f49d57012472701172d8ec4509faa781a57a51e63b329441bdef80861e4550577fe703a333a7c5a6d5159ff14e96a16be631acef5df2ce14ec3c8cd6dae75  tomcat9-slf4j-logback-9.0.120.jar" > checksum.logback.txt && \
+    sha512sum -c checksum.logback.txt
+RUN cd /download && \
+    cp tomcat9-slf4j-logback-9.0.120.jar /usr/local/tomcat/bin/tomcat-juli.jar && \
+    rm /usr/local/tomcat/conf/logging.properties && \
+    rm -rf /download
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
 
 FROM tomcat_base AS api
