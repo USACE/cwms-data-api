@@ -54,13 +54,18 @@ public class LruTtlMap<K,V> implements Map<K,V> {
         var entry = map.get(key);
         V ret = null;
 
-        if (entry != null && (System.currentTimeMillis() - entry.insertTime) >= ttl) {
+        if (entry != null && isExpired(entry)) {
             map.remove(key);
             ret = null;
         } else if (entry != null) {
             ret = entry.value;
         }
         return ret;
+    }
+
+    private boolean isExpired(TtlEntry<V> entry)
+    {
+        return (System.currentTimeMillis() - entry.insertTime) >= ttl;
     }
 
     @Override
@@ -70,6 +75,11 @@ public class LruTtlMap<K,V> implements Map<K,V> {
 
     @Override
     public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        TtlEntry<V> entry = map.get(key);
+        if (entry != null && (isExpired(entry) || entry.value == null)) // treat expired as equivalent to abenst
+        {
+            map.remove(key);
+        }
         return map.computeIfAbsent(key, newKey -> new TtlEntry<V>(mappingFunction.apply(newKey))).value;
     }
 

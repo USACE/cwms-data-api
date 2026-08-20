@@ -645,6 +645,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     public Optional<DataApiPrincipal> getPrincipalFromPrincipal(String principal) throws CwmsAuthException {
         return Optional.ofNullable(authCache.computeIfAbsent(principal, newPrincipal -> {
             String user = userForPrincipal(principal);
+            logger.atInfo().log("Setup user %s from principal %s", user, principal);
             if (user != null) {
                 Set<RouteRole> roles = this.getRolesForUser(user);
                 // In this case "cac_auth" just means the user is an actually user verify by some sort of
@@ -677,7 +678,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     updateData.execute();
                 } 
             });
-            logger.atInfo().log("Created user {} from principal {}", username, principal);
+            logger.atInfo().log("Created user %s from principal %s", username, principal);
             Optional<DataApiPrincipal> apiPrincipal = getPrincipalFromPrincipal(principal);
             if (apiPrincipal.isPresent()) {
                 return apiPrincipal.get();
