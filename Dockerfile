@@ -14,7 +14,7 @@ ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN gradle prepareDockerBuild --info --no-daemon
 
-FROM alpine:3.21.3 AS tomcat_base
+FROM alpine:3.23.5 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
         openjdk11-jre \
@@ -40,12 +40,12 @@ RUN mkdir /download && \
 # with other code.
 # Additionally, when we are not also accounting for some legacy systems, we will likely shift to
 # Jetty, or Embedded Tomcat, to simplify the deployment process, making this subtitution unnecessary.
-RUN cd /download && \
+RUN cd /download && \ 
     wget https://repo1.maven.org/maven2/com/github/tomcat-slf4j-logback/tomcat9-slf4j-logback/9.0.120/tomcat9-slf4j-logback-9.0.120.jar && \
-    echo "a24f49d57012472701172d8ec4509faa781a57a51e63b329441bdef80861e4550577fe703a333a7c5a6d5159ff14e96a16be631acef5df2ce14ec3c8cd6dae75" > checksum.logback.txt && \
+    echo "a24f49d57012472701172d8ec4509faa781a57a51e63b329441bdef80861e4550577fe703a333a7c5a6d5159ff14e96a16be631acef5df2ce14ec3c8cd6dae75  tomcat9-slf4j-logback-9.0.120.jar" > checksum.logback.txt && \
     sha512sum -c checksum.logback.txt
 RUN cd /download && \
-    cp tomcat9-slf4j-logback-9.0.115.jar /usr/local/tomcat/bin/tomcat-juli.jar && \
+    cp tomcat9-slf4j-logback-9.0.120.jar /usr/local/tomcat/bin/tomcat-juli.jar && \
     rm /usr/local/tomcat/conf/logging.properties && \
     rm -rf /download
 CMD ["/usr/local/tomcat/bin/catalina.sh","run"]
