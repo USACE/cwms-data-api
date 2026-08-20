@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.v2;
+package cwms.cda.data.dto.forecast;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import cwms.cda.api.errors.FieldException;
 import cwms.cda.helpers.DTOMatch;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -23,7 +22,7 @@ import org.junit.jupiter.api.Test;
 public class ForecastSpecV2Test {
 
     @Test
-    void testRoundTripJson() throws JsonProcessingException {
+    void testRoundTripJson() {
         ForecastSpecV2 s1 = buildForecastSpecV2();
 
         ContentType contentType = Formats.parseHeader(Formats.JSON, ForecastSpecV2.class);

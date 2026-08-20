@@ -1,4 +1,4 @@
-package cwms.cda.api.v2;
+package cwms.cda.api.forecast;
 
 import static cwms.cda.api.Controllers.DESIGNATOR;
 import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
@@ -14,11 +14,10 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 
 import com.codahale.metrics.MetricRegistry;
-import cwms.cda.api.AbstractForecastSpecController;
-import cwms.cda.data.dao.AbstractForecastSpecDao;
-import cwms.cda.data.dao.ForecastSpecDaoV2;
+import cwms.cda.data.dao.forecast.ForecastSpecDao;
+import cwms.cda.data.dao.forecast.ForecastSpecDaoV2;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.v2.ForecastSpecV2;
+import cwms.cda.data.dto.forecast.ForecastSpecV2;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -31,14 +30,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class ForecastSpecControllerV2 extends AbstractForecastSpecController<ForecastSpecV2> {
+public final class ForecastSpecControllerV2 extends ForecastSpecController<ForecastSpecV2> {
 
     public ForecastSpecControllerV2(MetricRegistry metrics) {
         super(metrics);
     }
 
     @Override
-    protected AbstractForecastSpecDao<ForecastSpecV2> newDao(DSLContext dsl) {
+    protected ForecastSpecDao<ForecastSpecV2> newDao(DSLContext dsl) {
         return new ForecastSpecDaoV2(dsl);
     }
 

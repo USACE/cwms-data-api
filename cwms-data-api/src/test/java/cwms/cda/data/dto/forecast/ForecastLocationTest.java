@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.v2;
+package cwms.cda.data.dto.forecast;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

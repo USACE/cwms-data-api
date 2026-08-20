@@ -1,4 +1,4 @@
-package cwms.cda.api;
+package cwms.cda.api.forecast;
 
 import static cwms.cda.api.Controllers.DESIGNATOR;
 import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
@@ -14,8 +14,8 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
 
 import com.codahale.metrics.MetricRegistry;
-import cwms.cda.data.dao.AbstractForecastSpecDao;
-import cwms.cda.data.dao.ForecastSpecDao;
+import cwms.cda.data.dao.forecast.ForecastSpecDao;
+import cwms.cda.data.dao.forecast.ForecastSpecDaoV1;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.Formats;
@@ -30,15 +30,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class ForecastSpecController extends AbstractForecastSpecController<ForecastSpec> {
+public final class ForecastSpecControllerV1 extends ForecastSpecController<ForecastSpec> {
 
-    public ForecastSpecController(MetricRegistry metrics) {
+    public ForecastSpecControllerV1(MetricRegistry metrics) {
         super(metrics);
     }
 
     @Override
-    protected AbstractForecastSpecDao<ForecastSpec> newDao(DSLContext dsl) {
-        return new ForecastSpecDao(dsl);
+    protected ForecastSpecDao<ForecastSpec> newDao(DSLContext dsl) {
+        return new ForecastSpecDaoV1(dsl);
     }
 
     @Override

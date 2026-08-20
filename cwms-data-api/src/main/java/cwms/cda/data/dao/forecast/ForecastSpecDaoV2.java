@@ -1,8 +1,8 @@
-package cwms.cda.data.dao;
+package cwms.cda.data.dao.forecast;
 
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.v2.ForecastLocation;
-import cwms.cda.data.dto.v2.ForecastSpecV2;
+import cwms.cda.data.dto.forecast.ForecastLocation;
+import cwms.cda.data.dto.forecast.ForecastSpecV2;
 
 import org.jooq.Condition;
 import org.jooq.Record2;
@@ -31,7 +31,7 @@ import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
 
-public final class ForecastSpecDaoV2 extends AbstractForecastSpecDao<ForecastSpecV2> {
+public final class ForecastSpecDaoV2 extends ForecastSpecDao<ForecastSpecV2> {
 
     public ForecastSpecDaoV2(DSLContext dsl) {
         super(dsl);

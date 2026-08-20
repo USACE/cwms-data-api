@@ -52,8 +52,8 @@ import cwms.cda.data.dto.measurement.UsgsMeasurement;
 import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.stream.StreamLocationNode;
-import cwms.cda.data.dto.v2.ForecastLocation;
-import cwms.cda.data.dto.v2.ForecastSpecV2;
+import cwms.cda.data.dto.forecast.ForecastLocation;
+import cwms.cda.data.dto.forecast.ForecastSpecV2;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;

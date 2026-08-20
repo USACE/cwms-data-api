@@ -1,11 +1,10 @@
-package cwms.cda.data.dao;
+package cwms.cda.data.dao.forecast;
 
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.SelectConditionStep;
-import org.jooq.TableField;
 import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_LOCATION;
 import usace.cwms.db.jooq.codegen.tables.AV_FCST_SPEC;
@@ -28,12 +27,12 @@ import static java.util.stream.Collectors.toList;
 /**
  * V1 forecast spec DAO: a forecast spec has a single {@code location-id}. See
  * {@link ForecastSpecDaoV2} for the V2 shape ({@code List<ForecastLocation>}), and
- * {@link AbstractForecastSpecDao} for the logic (delete, and the office/spec-id/
+ * {@link ForecastSpecDao} for the logic (delete, and the office/spec-id/
  * designator/source-entity filters) shared between the two.
  */
-public final class ForecastSpecDao extends AbstractForecastSpecDao<ForecastSpec> {
+public final class ForecastSpecDaoV1 extends ForecastSpecDao<ForecastSpec> {
 
-    public ForecastSpecDao(DSLContext dsl) {
+    public ForecastSpecDaoV1(DSLContext dsl) {
         super(dsl);
     }
 
@@ -70,7 +69,7 @@ public final class ForecastSpecDao extends AbstractForecastSpecDao<ForecastSpec>
             forecastSpecQuery(dsl)
                 .where(buildSpecListCondition(wrapper, office, specIdRegex, designator, sourceEntityRegex, entityLike));
         return query.fetch()
-               .map(ForecastSpecDao::map);
+               .map(ForecastSpecDaoV1::map);
     }
 
     private static SelectOnConditionStep<Record7<String, String, String, String,

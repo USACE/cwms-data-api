@@ -1,4 +1,4 @@
-package cwms.cda.data.dto.v2;
+package cwms.cda.data.dto.forecast;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

@@ -1,5 +1,7 @@
-package cwms.cda.data.dao;
+package cwms.cda.data.dao.forecast;
 
+import cwms.cda.data.dao.DeleteRule;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsDTOBase;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -12,7 +14,7 @@ import java.util.List;
 /**
  * Shared logic for the forecast spec DAOs.
  *
- * <p>{@link ForecastSpecDao} backs the V1 API, where a forecast spec has a single
+ * <p>{@link ForecastSpecDaoV1} backs the V1 API, where a forecast spec has a single
  * {@code location-id}. {@link ForecastSpecDaoV2} backs the V2 API, where a forecast
  * spec has a {@code List<ForecastLocation>} (each with its own sort order and a
  * primary-location flag). Everything below does not care which of those two shapes
@@ -29,9 +31,9 @@ import java.util.List;
  *
  * @param <T> the forecast spec DTO type this instance works with
  */
-public abstract class AbstractForecastSpecDao<T extends CwmsDTOBase> extends JooqDao<T> {
+public abstract class ForecastSpecDao<T extends CwmsDTOBase> extends JooqDao<T> {
 
-    protected AbstractForecastSpecDao(DSLContext dsl) {
+    protected ForecastSpecDao(DSLContext dsl) {
         super(dsl);
     }
 

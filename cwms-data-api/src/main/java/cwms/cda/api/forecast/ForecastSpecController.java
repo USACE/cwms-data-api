@@ -1,4 +1,4 @@
-package cwms.cda.api;
+package cwms.cda.api.forecast;
 
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
@@ -18,9 +18,10 @@ import static cwms.cda.api.Controllers.requiredParam;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.AbstractForecastSpecDao;
+import cwms.cda.data.dao.forecast.ForecastSpecDao;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsDTOBase;
@@ -34,12 +35,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public abstract class AbstractForecastSpecController<T extends CwmsDTOBase> extends BaseCrudHandler {
+public abstract class ForecastSpecController<T extends CwmsDTOBase> extends BaseCrudHandler {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
-    protected static final String TAG = "Forecast";
+    static final String TAG = "Forecast";
 
-    protected AbstractForecastSpecController(MetricRegistry metrics) {
+    protected ForecastSpecController(MetricRegistry metrics) {
         super(metrics);
     }
 
@@ -48,7 +49,7 @@ public abstract class AbstractForecastSpecController<T extends CwmsDTOBase> exte
     }
 
     /** Builds the version-specific DAO for this request. */
-    protected abstract AbstractForecastSpecDao<T> newDao(DSLContext dsl);
+    protected abstract ForecastSpecDao<T> newDao(DSLContext dsl);
 
     /** The DTO type this controller reads and writes */
     protected abstract Class<T> getDtoClass();
@@ -57,7 +58,7 @@ public abstract class AbstractForecastSpecController<T extends CwmsDTOBase> exte
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            AbstractForecastSpecDao<T> dao = newDao(dsl);
+            ForecastSpecDao<T> dao = newDao(dsl);
             T forecastSpec = deserializeForecastSpec(ctx);
 
             dao.create(forecastSpec);
@@ -90,7 +91,7 @@ public abstract class AbstractForecastSpecController<T extends CwmsDTOBase> exte
         }
         try (final Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
-            AbstractForecastSpecDao<T> dao = newDao(dsl);
+            ForecastSpecDao<T> dao = newDao(dsl);
 
             dao.delete(office, name, designator, deleteRule);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
@@ -107,7 +108,7 @@ public abstract class AbstractForecastSpecController<T extends CwmsDTOBase> exte
             String entityLike = ctx.queryParamAsClass(SOURCE_ENTITY_LIKE, String.class).allowNullable().get();
 
             DSLContext dsl = getDslContext(ctx);
-            AbstractForecastSpecDao<T> dao = newDao(dsl);
+            ForecastSpecDao<T> dao = newDao(dsl);
 
             List<T> specs = dao.getForecastSpecs(office, names, designator, sourceEntity, entityLike);
 
@@ -124,7 +125,7 @@ public abstract class AbstractForecastSpecController<T extends CwmsDTOBase> exte
             String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
 
             DSLContext dsl = getDslContext(ctx);
-            AbstractForecastSpecDao<T> dao = newDao(dsl);
+            ForecastSpecDao<T> dao = newDao(dsl);
 
             T spec = dao.getForecastSpec(office, name, designator);
 
@@ -140,7 +141,7 @@ public abstract class AbstractForecastSpecController<T extends CwmsDTOBase> exte
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             T forecastSpec = deserializeForecastSpec(ctx);
             DSLContext dsl = getDslContext(ctx);
-            AbstractForecastSpecDao<T> dao = newDao(dsl);
+            ForecastSpecDao<T> dao = newDao(dsl);
             dao.update(forecastSpec);
             ctx.status(HttpServletResponse.SC_OK);
         }

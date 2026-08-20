@@ -37,7 +37,7 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-final class ForecastSpecControllerTestIT extends DataApiTestIT {
+final class ForecastSpecControllerV1TestIT extends DataApiTestIT {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE = "SPK";
     private static final String SPEC_ID = "TEST-SPEC";
