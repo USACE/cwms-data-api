@@ -3,56 +3,54 @@ Ratings — GET /ratings/{rating-id}
 
 What it does
 ------------
-Returns the most recent value(s) from one or more time series without downloading a historical range.
+Returns the rating data for a provided rating ID for a given office.
 
-Retrieves time series data from 28 days before to 14 days after the current date.
+This can be filtered for the rating data for an effective date between a given time window.
+
 
 When to use
 -----------
-- Dashboards needing the latest readings
-- Health checks and alerts for current conditions
+- Retrieving rating data for all available effective dates
+- Retrieving rating data for specific effective dates
 
 
 .. csv-table:: GET /ratings/{rating-id} - Endpoint Parameters
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 60, 25, 55
 
-    rating-id, ":ref:`def-rating-id", "", ":ref:`
-    office, ":ref:`def-office`","", ":ref:`when_office`"
+    begin, ":ref:`def-start`", "", ":ref:`when_start`"
+    end, ":ref:`def-end`", "", ":ref:`when_end`"
+    method, ":ref:`def-method`", "", ":ref:`when_method`"
+    office, ":ref:`def-office`","Yes", ":ref:`when_office`"
+    rating-id, ":ref:`def-rating-id", "Yes", ":ref:`when-rating-id`"
+    timezone, ":ref:`def-timezone`", "", "To retrieve data points in a timezone that works best with \
+    your use case, such as your local timezone."
 
 
 Examples
 --------
-1. | The user wants to retrieve the recent time series data for the specified time series IDs of
-   | `STATION1.Flow.Inst.15Minutes.0.CWMS` and `STATION2.Stage.Inst.15Minutes.0.CWMS`:
-   | (**ts-ids**) :code:`STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS`
+1. | The user wants to retrieve the all available rating data for all effective dates of the rating ID
+   | `KEYS.Elev;Area.Linear.Production`:
+   | (**rating-id**) :code:`KEYS.Elev;Area.Linear.Production`
    |
-   | and they want the data to be in the Imperial unit system:
-   | (**unit-system**) :code:`EN`
+   | (**office**) :code:`SWT`
 
    .. code-block:: urlencoded
 
-        GET /timeseries/recent?ts-ids=STATION1.Flow.Inst.15Minutes.0.CWMS,STATION2.Stage.Inst.15Minutes.0.CWMS&unit-system=EN
+        GET /ratings/KEYS.Elev%3BArea.Linear.Production?office=SWT
 
-2. | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
-   | (**group-id**) :code:`CALC3`
+2. | The user wants to retrieve the rating data for effective dates after 2020 for the rating ID
+   | `KEYS.Elev;Area.Linear.Production`:
+   | (**rating-id**) :code:`KEYS.Elev;Area.Linear.Production`
+   |
+   | (**office**) :code:`SWT`
+   |
+   | (**begin**) :code:`2020-01-01T05:00:00Z`
 
    .. code-block:: urlencoded
 
-        GET /timeseries/recent?group-id=CALC3
+        GET /ratings/KEYS.Elev%3BArea.Linear.Production?office=SWT&begin=2020-01-01T05%3A00%3A00Z
 
-3. | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
-   | (**group-id**) :code:`CALC3`
-   |
-   | and in the `COMPUTE` time series category:
-   | (**category-id**) :code:`COMPUTE`
-   |
-   | for the `HQ` office:
-   | (**office**) :code:`HQ`
-
-   .. code-block:: urlencoded
-
-        GET /timeseries/recent?group-ide=CALC3&category-id=COMPUTE&office=HQ
 
 See the consolidated API documentation: :doc:`/api-references`.
 

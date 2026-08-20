@@ -44,6 +44,11 @@ location-mask
         Detailed documentation for Regex usage in CDA is currently in development and will be available at
         https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
 
+.. _def-method:
+
+method
+  The retrieval method used. If no method is provided, the EAGER method will be used.
+
 .. _def-office:
 
 office

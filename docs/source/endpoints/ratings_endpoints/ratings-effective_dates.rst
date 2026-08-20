@@ -33,7 +33,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/metadata?office=SWT&rating-id-mask=KEYS.Elev%3BArea.Linear.Production
+        GET /ratings/effective-dates?office-mask=SWT&rating-id-mask=KEYS.Elev%3BArea.Linear.Production
 
 
 See the consolidated API documentation: :doc:`/api-references`.

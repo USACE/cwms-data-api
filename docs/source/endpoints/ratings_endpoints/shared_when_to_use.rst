@@ -24,6 +24,11 @@ location-id
     To specify the location for which you want to retrieve time series or profile data, \
     such as a specific river gauge or reservoir.
 
+.. _when_method:
+
+method
+    To specify the retrieval method used for ratings.
+
 .. _when_parameter_id:
 
 parameter-id
