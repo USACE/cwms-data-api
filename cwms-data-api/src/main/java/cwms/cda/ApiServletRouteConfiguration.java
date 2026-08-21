@@ -550,7 +550,7 @@ public final class ApiServletRouteConfiguration {
      * @throws IllegalArgumentException if the path does not contain a resource id.
      */
     @NotNull
-    public static String getResourceId(String fullPath) {
+    private static String getResourceId(String fullPath) {
         String[] subPaths = Arrays.stream(fullPath.split("/"))
                 .filter(it -> !it.isEmpty()).toArray(String[]::new);
         if (subPaths.length < 2) {
