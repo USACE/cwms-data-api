@@ -70,9 +70,9 @@ public final class WaterContractCreateController extends WaterSupplyControllerBa
             required = true),
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, description = "If true, the contract will not be stored if "
-                    + "it already exists.", type = Boolean.class),
+                    + "it already exists. Default is true", type = Boolean.class),
             @OpenApiParam(name = IGNORE_NULLS, description = "If true, null fields will be ignored "
-                    + "when storing the contract.", type = Boolean.class)
+                    + "when storing the contract. Default is false", type = Boolean.class)
         },
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "Water contract successfully stored to CWMS."),
@@ -100,8 +100,8 @@ public final class WaterContractCreateController extends WaterSupplyControllerBa
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
-            boolean failIfExists = Boolean.parseBoolean(ctx.queryParam(FAIL_IF_EXISTS));
-            boolean ignoreNulls = Boolean.parseBoolean(ctx.queryParam(IGNORE_NULLS));
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(false);
             String newContractName = ctx.pathParam(WATER_USER);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterContract(waterContract, failIfExists, ignoreNulls);
