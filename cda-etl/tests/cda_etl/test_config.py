@@ -115,9 +115,6 @@ def test_timeseries_config_from_dict_with_literal_id():
 
 
 def test_timeseries_config_requires_an_id():
-    # Ids that an application derives from association properties (or, later,
-    # PublishedTimeSeries/A2W) are resolved by cda-expander before cda-etl
-    # reads the config, so by the time we get here every entry is literal.
     with pytest.raises(KeyError):
         TimeseriesConfig.from_dict({"por": True})
 
@@ -132,7 +129,6 @@ def test_validate_timeseries_items_accepts_literal_id():
 
 
 def test_validate_timeseries_items_rejects_source_block():
-    # A "source:" block means the config was never run through cda-expander.
     with pytest.raises(ValueError, match="must have an id"):
         _validate_timeseries_items(
             "SWT", "EUFA", [{"source": {"type": "property", "categoryId": "REGI", "id": "X"}}]

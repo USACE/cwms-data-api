@@ -50,10 +50,6 @@ def test_stage_location_levels_windowed(mocker):
 
 
 def test_location_level_config_requires_a_literal_id():
-    # There is no longer an "id is None, resolve it from a source" path: ids
-    # arrive already resolved, from cda-expander. An entry without one is a
-    # config error caught at parse time rather than something the pipeline
-    # skips at run time.
     with pytest.raises(KeyError):
         LocationLevelConfig.from_dict({"por": True})
 

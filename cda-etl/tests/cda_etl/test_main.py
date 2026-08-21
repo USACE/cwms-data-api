@@ -22,8 +22,7 @@ from config import DownloadConfig, OfficeConfig, SettingsConfig
 def _office() -> OfficeConfig:
     """
     An office as cda-etl now sees one: a plain "projects:" list where every
-    item carries a literal id. Any indirection (association properties,
-    PublishedTimeSeries/A2W) has already been resolved by cda-expander.
+    item carries a literal id.
     """
     return OfficeConfig.from_dict(
         {
