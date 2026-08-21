@@ -36,7 +36,8 @@ import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dao.LocationsDaoImpl;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.LocationLevel;
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
@@ -48,8 +49,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
@@ -67,21 +67,21 @@ final class LockDaoIT extends ProjectStructureIT {
     private static final Location LOCK_LOC1 = buildProjectStructureLocation("LOCK_LOC1_IT", LOCK_KIND);
     private static final Location LOCK_LOC2 = buildProjectStructureLocation("LOCK_LOC2_IT", LOCK_KIND);
     private static final Location LOCK_LOC3 = buildProjectStructureLocation("LOCK_LOC3_IT", LOCK_KIND);
-    private static final Logger LOGGER = Logger.getLogger(LockDaoIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private List<CwmsId> locksToCleanup = new ArrayList<>();
     private List<LocationLevel> locationLevelsToCleanup = new ArrayList<>();
 
     @BeforeAll
-    public void setup() throws Exception {
+    void setup() throws Exception {
         setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
                 DSLContext context = getDslContext(c, OFFICE_ID);
                 LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
                 try {
-                    locationsDao.storeLocation(LOCK_LOC1);
-                    locationsDao.storeLocation(LOCK_LOC2);
-                    locationsDao.storeLocation(LOCK_LOC3);
+                    locationsDao.storeLocation(LOCK_LOC1, false);
+                    locationsDao.storeLocation(LOCK_LOC2, false);
+                    locationsDao.storeLocation(LOCK_LOC3, false);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -90,7 +90,7 @@ final class LockDaoIT extends ProjectStructureIT {
     }
 
     @AfterAll
-    public void tearDown() throws Exception {
+    void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
                 DSLContext context = getDslContext(c, OFFICE_ID);
@@ -101,32 +101,32 @@ final class LockDaoIT extends ProjectStructureIT {
                     locationsDao.deleteLocation(LOCK_LOC1.getName(), OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 try {
                     locationsDao.deleteLocation(LOCK_LOC2.getName(), OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 try {
                     locationsDao.deleteLocation(LOCK_LOC3.getName(), OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 try{
                     locationsDao.deleteLocation(LOCK_LOC1.getName() + "New", OFFICE_ID, true);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting location - location does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location - location does not exist");
                 }
                 for (CwmsId lock : locksToCleanup) {
                     try {
                         lockDao.deleteLock(lock, DeleteRule.DELETE_ALL);
                     } catch (NotFoundException ex) {
                         /* only an error within the tests below. */
-                        LOGGER.log(Level.CONFIG, "Error deleting lock - does not exist", ex);
+                        LOGGER.atConfig().withCause(ex).log("Error deleting lock - does not exist");
                     }
                 }
                 locksToCleanup.clear();
@@ -134,7 +134,7 @@ final class LockDaoIT extends ProjectStructureIT {
                     try {
                         locationLevelsDao.deleteLocationLevel(locationLevel.getLocationLevelId(), locationLevel.getLevelDate(), locationLevel.getOfficeId(), true);
                     } catch (NotFoundException ex) {
-                        LOGGER.log(Level.CONFIG, "Error deleting location level - does not exist", ex);
+                        LOGGER.atConfig().withCause(ex).log("Error deleting location level - does not exist");
                     }
                 }
                 locationLevelsToCleanup.clear();
@@ -156,7 +156,7 @@ final class LockDaoIT extends ProjectStructureIT {
                     lockDao.deleteLock(lock, DeleteRule.DELETE_ALL);
                 } catch (NotFoundException ex) {
                     /* only an error within the tests below. */
-                    LOGGER.log(Level.CONFIG, "Error deleting lock - does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting lock - does not exist");
                 }
             }
             locksToCleanup.clear();
@@ -164,7 +164,7 @@ final class LockDaoIT extends ProjectStructureIT {
                 try {
                     locationLevelsDao.deleteLocationLevel(locationLevel.getLocationLevelId(), locationLevel.getLevelDate(), locationLevel.getOfficeId(), true);
                 } catch (NotFoundException ex) {
-                    LOGGER.log(Level.CONFIG, "Error deleting location level - does not exist", ex);
+                    LOGGER.atConfig().withCause(ex).log("Error deleting location level - does not exist");
                 }
             }
             locationLevelsToCleanup.clear();
@@ -329,40 +329,41 @@ final class LockDaoIT extends ProjectStructureIT {
     }
 
     private List<LocationLevel> createLocationLevelList(Lock lock) {
+        var effectiveDate = ZonedDateTime.now().withSecond(0).withNano(0).toInstant();
         List<LocationLevel> retVal = new ArrayList<>();
-        LocationLevel lowLowerLevel = new LocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var lowLowerLevel = new ConstantLocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), effectiveDate)
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getLowWaterLowerPoolLocationLevel().getOfficeId())
             .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+            .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(lowLowerLevel);
-        LocationLevel lowUpperLevel = new LocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var lowUpperLevel = new ConstantLocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), effectiveDate)
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getLowWaterUpperPoolLocationLevel().getOfficeId())
             .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+            .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(lowUpperLevel);
-        LocationLevel highLowerLevel = new LocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var highLowerLevel = new ConstantLocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), effectiveDate)
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getHighWaterLowerPoolLocationLevel().getOfficeId())
             .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId())
+            .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(highLowerLevel);
-        LocationLevel highUpperLevel = new LocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now())
+        var highUpperLevel = new ConstantLocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), effectiveDate)
             .withLevelUnitsId(lock.getElevationUnits())
-            .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
             .withOfficeId(lock.getHighWaterUpperPoolLocationLevel().getOfficeId())
             .withSpecifiedLevelId(lock.getHighWaterUpperPoolLocationLevel().getSpecifiedLevelId())
+            .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
             .build();
         retVal.add(highUpperLevel);
-        LocationLevel warningBuffer = new LocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now())
+        var warningBuffer = new ConstantLocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), effectiveDate)
                 .withLevelUnitsId(lock.getElevationUnits())
-                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .withOfficeId(lock.getLocation().getOfficeId())
                 .withSpecifiedLevelId("Warning Buffer")
+                .withConstantValue(lock.getHighWaterLowerPoolWarningLevel())
                 .build();
         retVal.add(warningBuffer);
         return retVal;
@@ -432,7 +433,7 @@ final class LockDaoIT extends ProjectStructureIT {
 
     private Location buildTestLocation() {
         return new Location.Builder("TEST_LOCATION2", "LOCK", ZoneId.of("UTC"),
-            50.0, 50.0, "NVGD29", "SPK")
+            50.0, 50.0, "NGVD29", "SPK")
             .withElevation(10.0)
             .withElevationUnits("ft")
             .withLocationType("SITE")

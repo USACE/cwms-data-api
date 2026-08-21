@@ -29,6 +29,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PROJECT_MASK;
 import static cwms.cda.api.Controllers.USER_ID;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredParamAs;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -82,8 +83,7 @@ public class UpdateLockRevokerRights implements Handler {
         String userId = requiredParam(ctx, USER_ID);
         String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
         String appId = requiredParam(ctx, APPLICATION_ID);
-        Boolean allow = ctx.queryParamAsClass(Controllers.ALLOW, Boolean.class)
-                .getOrThrow(e -> new RequiredQueryParameterException(Controllers.ALLOW));
+        Boolean allow = requiredParamAs(ctx, Controllers.ALLOW, Boolean.class);
 
         try (final Timer.Context ignored = markAndTime("updateRights")) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));

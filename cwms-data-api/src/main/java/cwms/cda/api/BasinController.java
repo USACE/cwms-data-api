@@ -40,11 +40,14 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.basinconnectivity.BasinDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -56,18 +59,17 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
 public class BasinController implements CrudHandler {
-    private static final Logger LOGGER = Logger.getLogger(BasinController.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     public static final String TAG = "Basins";
 
     private final MetricRegistry metrics;
@@ -108,7 +110,9 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        description = "Returns CWMS Basin Data",
+        description = "Returns CWMS Basin Data. "
+            + "This endpoint handles multiple accept header types, including named pg json. "
+            + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG}
     )
     @Override
@@ -122,7 +126,8 @@ public class BasinController implements CrudHandler {
             String formatHeader = ctx.header(Header.ACCEPT);
             String result;
             ContentType contentType;
-            if (formatHeader != null && formatHeader.contains(Formats.NAMED_PGJSON)) {
+            if (formatHeader != null && (formatHeader.contains(Formats.NAMED_PGJSON)
+                                            || formatHeader.contains(Formats.DEFAULT))) {
                 contentType = Formats.parseHeader(formatHeader, Basin.class);
                 ctx.contentType(contentType.toString());
                 BasinDao basinDao = new BasinDao(dsl);
@@ -137,11 +142,19 @@ public class BasinController implements CrudHandler {
                 List<cwms.cda.data.dto.basin.Basin> basins = basinDao.getAllBasins(office, units);
                 result = Formats.format(contentType, basins, cwms.cda.data.dto.basin.Basin.class);
             }
-            ctx.result(result);
+            ctx.contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (SQLException ex) {
-            CdaError error = new CdaError("Error retrieving all basins");
-            LOGGER.log(Level.SEVERE, "Error retrieving all basins", ex);
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Error retrieving all basins", ex);
+            LOGGER.atSevere().withCause(ex).log("Error retrieving all basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Basins", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
@@ -177,7 +190,9 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        description = "Returns CWMS Basin Data",
+        description = "Returns CWMS Basin Data. "
+            + "This endpoint handles multiple accept header types, including named pg json. "
+            + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG}
     )
     @Override
@@ -188,7 +203,7 @@ public class BasinController implements CrudHandler {
 
             String units =
                     ctx.queryParamAsClass(UNIT, String.class).getOrDefault(UnitSystem.EN.value());
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Basin.class);
             ctx.contentType(contentType.toString());
@@ -206,12 +221,15 @@ public class BasinController implements CrudHandler {
                 cwms.cda.data.dto.basin.Basin basin = basinDao.getBasin(basinId, units);
                 result = Formats.format(contentType, basin);
             }
-            ctx.result(result);
+            ctx.contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (SQLException ex) {
-            CdaError error = new CdaError("Error retrieving " + name);
-            String errorMsg = "Error retrieving " + name;
-            LOGGER.log(Level.SEVERE, errorMsg, ex);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Basin", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basin");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
@@ -251,7 +269,8 @@ public class BasinController implements CrudHandler {
             .withOfficeId(officeId)
             .build();
         basinDao.renameBasin(oldLoc, newLoc);
-        ctx.status(HttpServletResponse.SC_OK).json("Updated Location");
+        StatusResponse re = new StatusResponse(officeId, "Updated Location", newBasinId);
+        ctx.status(HttpServletResponse.SC_OK).json(re);
     }
 
     @OpenApi(
@@ -276,13 +295,15 @@ public class BasinController implements CrudHandler {
         String newBasinId = basin.getBasinId().getName();
         cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
         basinDao.storeBasin(basin);
-        ctx.status(HttpServletResponse.SC_CREATED).json(newBasinId + " Created");
+        StatusResponse re = new StatusResponse(basin.getBasinId().getOfficeId(),
+                "Basin successfully stored to CWMS.", newBasinId);
+        ctx.status(HttpServletResponse.SC_CREATED).json(re);
     }
 
     @OpenApi(
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the"
-                    + " owning office of the basin to be renamed."),
+                    + " owning office of the basin to be deleted."),
             @OpenApiParam(name = METHOD, required = true, description = "Specifies the delete method used.",
                 type = JooqDao.DeleteMethod.class)
         },
@@ -290,7 +311,7 @@ public class BasinController implements CrudHandler {
             @OpenApiParam(name = NAME, description = "Specifies the name of "
                     + "the basin to be deleted.")
         },
-        description = "Renames CWMS Basin",
+        description = "Deletes CWMS Basin",
         tags = {TAG}
     )
     @Override
@@ -300,9 +321,10 @@ public class BasinController implements CrudHandler {
         cwms.cda.data.dao.basin.BasinDao basinDao = new cwms.cda.data.dao.basin.BasinDao(dsl);
         CwmsId basinId = new CwmsId.Builder()
                 .withName(name)
-                .withOfficeId(ctx.queryParam(OFFICE))
+                .withOfficeId(requiredParam(ctx, OFFICE))
                 .build();
         basinDao.deleteBasin(basinId, deleteMethod.getRule());
-        ctx.status(HttpServletResponse.SC_NO_CONTENT).json(basinId.getName() + " Deleted");
+        StatusResponse re = new StatusResponse(basinId.getOfficeId(), "Deleted CWMS Basin", basinId.getName());
+        ctx.status(HttpServletResponse.SC_OK).json(re);
     }
 }

@@ -12,14 +12,10 @@ eclipse {
     }
 }
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
-    }
-}
-
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
 }
 
 test {
@@ -30,11 +26,19 @@ test {
 }
 
 checkstyle {
-    toolVersion = '9.3'
+    toolVersion = '10.26.1'
+}
+
+dependencyCheck {
+    nvd {
+        apiKey = providers.gradleProperty('nvdApiKey')
+                .orElse(providers.environmentVariable('NVD_API_KEY'))
+                .getOrNull()
+    }
 }
 
 jacoco {
-    toolVersion = "0.8.7"
+    toolVersion = "0.8.14"
 }
 
 jacocoTestReport {

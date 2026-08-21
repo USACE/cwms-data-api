@@ -9,46 +9,41 @@ package cwms.cda.formatters;
 
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
+final class ContentTypeAliasMap {
+    private final Map<ContentType, ContentType> contentTypeMap = new ConcurrentHashMap<>();
+    private static final Map<Class<? extends CwmsDTOBase>, ContentTypeAliasMap> ALIAS_MAP = new ConcurrentHashMap<>();
 
-final class ContentTypeAliasMap
-{
-	private final Map<String, ContentType> _contentTypeMap = new HashMap<>();
-	private static final Map<Class<? extends CwmsDTOBase>, ContentTypeAliasMap> ALIAS_MAP = new HashMap<>();
+    private ContentTypeAliasMap() {
+    }
 
-	private ContentTypeAliasMap()
-	{
-	}
+    private ContentTypeAliasMap(Class<? extends CwmsDTOBase> dtoClass) {
+        FormattableWith[] formats = dtoClass.getAnnotationsByType(FormattableWith.class);
+        for (FormattableWith format : formats) {
+            ContentType type = new ContentType(format.contentType());
+            contentTypeMap.put(type, type); // we can always map to our self.
+            for (String alias : format.aliases()) {
+                contentTypeMap.put(new ContentType(alias), type);
+            }
+        }
+    }
 
-	private ContentTypeAliasMap(Class<? extends CwmsDTOBase> dtoClass)
-	{
-		FormattableWith[] formats = dtoClass.getAnnotationsByType(FormattableWith.class);
-		for (FormattableWith format : formats)
-		{
-			ContentType type = new ContentType(format.contentType());
+    public static ContentTypeAliasMap forDtoClass(@NotNull Class<? extends CwmsDTOBase> dtoClass) {
+        return ALIAS_MAP.computeIfAbsent(dtoClass, ContentTypeAliasMap::new);
+    }
 
-			for (String alias : format.aliases())
-			{
-				_contentTypeMap.put(alias, type);
-			}
-		}
-	}
+    public static ContentTypeAliasMap empty() {
+        return new ContentTypeAliasMap();
+    }
 
-	public static ContentTypeAliasMap forDtoClass(@NotNull Class<? extends CwmsDTOBase> dtoClass)
-	{
-		return ALIAS_MAP.computeIfAbsent(dtoClass, ContentTypeAliasMap::new);
-	}
+    public ContentType getContentType(ContentType alias) {
+        return contentTypeMap.get(alias);
+    }
 
-	public static ContentTypeAliasMap empty()
-	{
-		return new ContentTypeAliasMap();
-	}
-
-	public ContentType getContentType(String alias)
-	{
-		return _contentTypeMap.get(alias);
-	}
+    public ContentType getContentType(String alias) {
+        return contentTypeMap.get(new ContentType(alias));
+    }
 }

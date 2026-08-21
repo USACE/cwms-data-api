@@ -176,7 +176,14 @@ class RatingMetadataDaoTestIT extends DataApiTestIT {
         RatingSet ratingSet = RatingXmlFactory.ratingSet(xmlRating);
 
         assertNotNull(ratingSet);
-
+        String location = ratingSet.getRatingSpec().getLocationId();
+        String office = ratingSet.getRatingSpec().getOfficeId();
+        try {
+            // Database no longer quietly creates a location on behalf of ratings.
+            createLocation(location, true, office);
+        } catch (SQLException ex) {
+            throw new IOException("Unable to creation location for rating " + resource, ex);
+        }
         RatingJdbcFactory.store(ratingSet, c, true, true);
 
     }

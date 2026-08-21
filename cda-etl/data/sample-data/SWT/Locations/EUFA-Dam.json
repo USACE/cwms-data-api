@@ -1,0 +1,22 @@
+{
+  "office-id": "SWT",
+  "name": "EUFA-Dam",
+  "latitude": 35.3070419,
+  "longitude": -95.3627509,
+  "active": true,
+  "public-name": "Dam",
+  "long-name": "Dam",
+  "timezone-name": "US/Central",
+  "location-kind": "EMBANKMENT",
+  "nation": "US",
+  "state-initial": "OK",
+  "county-name": "Haskell",
+  "nearest-city": "Hoyt, OK",
+  "horizontal-datum": "NAD83",
+  "published-longitude": 95.3625,
+  "published-latitude": 35.306944444444,
+  "vertical-datum": "NGVD29",
+  "elevation": 497.99868766404194,
+  "bounding-office-id": "SWT",
+  "elevation-units": "ft"
+}

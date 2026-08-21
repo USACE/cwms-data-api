@@ -58,10 +58,12 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
@@ -150,8 +152,8 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
             ProjectDao projectDao = new ProjectDao(ctx);
             WaterContractDao waterContractDao = new WaterContractDao(ctx);
             try {
-                locationsDao.storeLocation(parentLocation);
-                locationsDao.storeLocation(parentLocation2);
+                locationsDao.storeLocation(parentLocation, false);
+                locationsDao.storeLocation(parentLocation2, false);
                 projectDao.store(project1, true);
                 projectDao.store(project2, true);
                 waterContractDao.storeWaterUser(CONTRACT.getWaterUser(), false);
@@ -192,8 +194,9 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_remove_from_contract() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_remove_from_contract(String format) throws Exception {
         // Structure of test:
         // 1) Create contract with pump
         // 2) Remove the pump from the contract
@@ -242,7 +245,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         // Retrieve contract and assert pump is removed
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -382,7 +385,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
         ;
     }
 
@@ -447,7 +450,7 @@ class WaterPumpDisassociateControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
         ;
     }
 }

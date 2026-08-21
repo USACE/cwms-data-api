@@ -24,8 +24,27 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME_MASK;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.STANDARD_TEXT_ID;
+import static cwms.cda.api.Controllers.STANDARD_TEXT_ID_MASK;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredParamAs;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.texttimeseries.StandardTextDao;
@@ -42,17 +61,16 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
 
 public class StandardTextController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String TAG = "Standard Text";
+    private static final String TEXT_ERROR = "Failed to process request to retrieve Standard Text";
     private final MetricRegistry metrics;
 
     public StandardTextController(MetricRegistry metrics) {
@@ -76,7 +94,9 @@ public class StandardTextController implements CrudHandler {
                     @OpenApiParam(name = OFFICE_MASK, description = "Specifies the office filter of the"
                             + "standard text."),
                     @OpenApiParam(name = STANDARD_TEXT_ID_MASK, description = "Specifies the text id filter of the "
-                            + "standard text")
+                            + "standard text"),
+                    @OpenApiParam(name = NAME_MASK, deprecated = true, description = "Specifies the text id filter of the "
+                            + "standard text.  Deprecated, use " + STANDARD_TEXT_ID_MASK)
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200,
@@ -94,10 +114,7 @@ public class StandardTextController implements CrudHandler {
             if (officeMask == null) {
                 officeMask = "*";
             }
-            String idMask = ctx.queryParam(NAME_MASK);
-            if (idMask == null) {
-                idMask = "*";
-            }
+            String idMask = queryParamAsClass(ctx, new String[]{STANDARD_TEXT_ID_MASK, NAME_MASK}, String.class, "*");
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, StandardTextCatalog.class);
             DSLContext dsl = getDslContext(ctx);
@@ -105,8 +122,16 @@ public class StandardTextController implements CrudHandler {
 
             ctx.contentType(contentType.toString());
             String result = Formats.format(contentType, catalog);
-            ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                TEXT_ERROR, ex);
+            LOGGER.atSevere().withCause(ex).log(TEXT_ERROR);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -133,10 +158,7 @@ public class StandardTextController implements CrudHandler {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String stdTextId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
-            String office = ctx.queryParam(OFFICE);
-            if (office == null) {
-                throw new IllegalArgumentException(OFFICE + " is a required parameter");
-            }
+            String office = requiredParam(ctx, OFFICE);
             DSLContext dsl = getDslContext(ctx);
             StandardTextValue standardTextValue = getDao(dsl).retrieveStandardText(stdTextId, office);
 
@@ -144,8 +166,16 @@ public class StandardTextController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, StandardTextValue.class);
             ctx.contentType(contentType.toString());
             String result = Formats.format(contentType, standardTextValue);
-            ctx.result(result);
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                TEXT_ERROR, ex);
+            LOGGER.atSevere().withCause(ex).log(TEXT_ERROR);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -182,7 +212,7 @@ public class StandardTextController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
 
@@ -204,12 +234,8 @@ public class StandardTextController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String stdTextId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
-            String office = ctx.queryParam(OFFICE);
-            if (office == null) {
-                throw new IllegalArgumentException(OFFICE + " is a required parameter");
-            }
-            JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
-                    .getOrThrow(e -> new IllegalArgumentException(METHOD + " is a required parameter"));
+            String office = requiredParam(ctx, OFFICE);
+            JooqDao.DeleteMethod deleteMethod = requiredParamAs(ctx, METHOD, JooqDao.DeleteMethod.class);
             String deleteAction;
             switch (deleteMethod) {
                 case DELETE_ALL:

@@ -44,7 +44,7 @@ final class MeasurementDaoTest {
         when(record.getHEIGHT_UNIT()).thenReturn("ft");
         when(record.getVELOCITY_UNIT()).thenReturn("fps");
         when(record.getTEMP_UNIT()).thenReturn("F");
-        when(record.getUSED()).thenReturn(JooqDao.formatBool(true));
+        when(record.getUSED()).thenReturn(Dao.formatBool(true));
         when(record.getAIR_TEMP()).thenReturn(25.0);
         when(record.getCUR_RATING_NUM()).thenReturn("1");
         when(record.getCTRL_COND_ID()).thenReturn("UNSPECIFIED");
@@ -60,7 +60,7 @@ final class MeasurementDaoTest {
         Measurement measurement = MeasurementDao.fromJooqMeasurementRecord(record);
 
         assertNotNull(measurement);
-        assertEquals("12345", measurement.getNumber());
+        assertEquals("12345", measurement.getMeasurementId());
         assertEquals("USGS", measurement.getAgency());
         assertEquals("SomeParty", measurement.getParty());
         assertEquals(instant, measurement.getInstant());
@@ -150,7 +150,7 @@ final class MeasurementDaoTest {
 
     private Measurement buildTestMeasurement() {
         return new Measurement.Builder()
-                .withNumber("12345")
+                .withMeasurementId("12345")
                 .withAgency("USGS")
                 .withParty("SomeParty")
                 .withInstant(Instant.parse("2024-01-01T00:00:00Z"))
@@ -202,7 +202,7 @@ final class MeasurementDaoTest {
 
     private Measurement buildMeasurement2() {
         return new Measurement.Builder()
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withAgency("USGS")
                 .withParty("SomeParty2")
                 .withInstant(Instant.parse("2024-02-01T00:00:00Z"))
@@ -279,7 +279,7 @@ final class MeasurementDaoTest {
     }
 
     private static void assertMatch(Measurement meas, MeasurementDao.MeasurementXmlDto xmlDto) {
-        assertEquals(meas.getNumber(), xmlDto.getNumber());
+        assertEquals(meas.getMeasurementId(), xmlDto.getNumber());
         assertEquals(meas.getAgency(), xmlDto.getAgency());
         assertEquals(meas.getParty(), xmlDto.getParty());
         assertEquals(meas.getInstant(), xmlDto.getInstant());

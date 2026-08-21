@@ -1,18 +1,35 @@
 package cwms.cda.api;
 
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.DESIGNATOR;
+import static cwms.cda.api.Controllers.DESIGNATOR_MASK;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.ID_MASK;
+import static cwms.cda.api.Controllers.METHOD;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.SOURCE_ENTITY;
+import static cwms.cda.api.Controllers.SOURCE_ENTITY_LIKE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.ForecastSpecDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -27,21 +44,13 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public final class ForecastSpecController implements CrudHandler {
+public final class ForecastSpecController extends BaseCrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     public static final String TAG = "Forecast";
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
 
     public ForecastSpecController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     protected DSLContext getDslContext(Context ctx) {
@@ -81,7 +90,7 @@ public final class ForecastSpecController implements CrudHandler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose data is to be deleted."),
-                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                         + "designator of the forecast spec whose data is to be deleted."),
                 @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
                         "Defaults to \"DELETE_KEY\"",
@@ -97,7 +106,7 @@ public final class ForecastSpecController implements CrudHandler {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String designator = requiredParam(ctx, DESIGNATOR);
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
 
         JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
                 .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
@@ -136,9 +145,12 @@ public final class ForecastSpecController implements CrudHandler {
                         + "the spec IDs to be included in the response."),
                 @OpenApiParam(name = DESIGNATOR_MASK, description = "Posix "
                         + "<a href=\"regexp.html\">regular expression</a>  that specifies the "
-                        + "designator of the forecast spec whose data to be included in the response."),
+                        + "designator of the forecast spec whose data to be included in the response. "
+                        + "Default behavior when this parameter is not provided is to search for forecast "
+                        + "specifications with a null designator. "),
                 @OpenApiParam(name = SOURCE_ENTITY, description = "Specifies the source identity "
-                        + "of the forecast spec whose data is to be included in the response.")
+                        + "of the forecast spec whose data is to be included in the response. Interpreted as a regular expression."),
+                @OpenApiParam(name = SOURCE_ENTITY_LIKE, description = "Specifies the source entity using LIKE-style matching. If provided, this parameter is used instead of the regular expression parameter 'source-entity'.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
@@ -157,23 +169,34 @@ public final class ForecastSpecController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
-            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).getOrDefault("*");
+            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
             String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
+            String entityLike = ctx.queryParamAsClass(SOURCE_ENTITY_LIKE, String.class).allowNullable().get();
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
 
             List<ForecastSpec> specs = dao.getForecastSpecs(office, names, designator,
-                    sourceEntity);
+                    sourceEntity, entityLike);
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
             String result = Formats.format(contentType, specs, ForecastSpec.class);
 
-            ctx.result(result).contentType(contentType.toString());
-            requestResultSize.update(result.length());
+            updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve forecast specs", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve forecast specs");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -187,7 +210,7 @@ public final class ForecastSpecController implements CrudHandler {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                         + "owning office of the forecast spec whose data is to be included in the "
                         + "response."),
-                @OpenApiParam(name = DESIGNATOR, required = true, description = "Specifies the "
+                @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                         + "designator of the forecast spec whose data to be included in the response.")
             },
             responses = {
@@ -208,7 +231,7 @@ public final class ForecastSpecController implements CrudHandler {
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String office = requiredParam(ctx, OFFICE);
-            String designator = requiredParam(ctx, DESIGNATOR);
+            String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao dao = new ForecastSpecDao(dsl);
@@ -219,10 +242,19 @@ public final class ForecastSpecController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, ForecastSpec.class);
             String result = Formats.format(contentType, spec);
 
-            ctx.result(result).contentType(contentType.toString());
-            requestResultSize.update(result.length());
+            updateResultSize(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve forecast spec", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve forecast spec");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -245,6 +277,7 @@ public final class ForecastSpecController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
+        logUnusedPathParameter(ctx, NAME, "Body contains information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             ForecastSpec forecastSpec = deserializeForecastSpec(ctx);
             DSLContext dsl = getDslContext(ctx);

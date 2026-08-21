@@ -26,13 +26,18 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.TS_IDS;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.codahale.metrics.MetricRegistry;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
@@ -48,28 +53,27 @@ import cwms.cda.formatters.json.JsonV1;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
-import javax.servlet.http.HttpServletResponse;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 @Tag("integration")
 class TimeSeriesRecentControllerIT extends DataApiTestIT {
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesRecentControllerIT.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String OFFICE_ID = "SPK";
     private static final String LOCATION = "Sacramento River Delta";
     private static final String TS_ID = LOCATION + ".Depth.Inst.15Minutes.0.OBS-Raw";
@@ -90,7 +94,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext ctx = getDslContext(c, OFFICE_ID);
-            TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(ctx);
+            TimeSeriesDaoImpl tsDao = new TimeSeriesDaoImpl(ctx, new MetricRegistry());
             TimeSeriesCategoryDao tsCategoryDao = new TimeSeriesCategoryDao(ctx);
             TimeSeriesGroupDao tsGroupDao = new TimeSeriesGroupDao(ctx);
             try {
@@ -98,24 +102,24 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
                         .withVersionDate(Date.from(VERSION_DATE.toInstant())).withMaxVersion(false)
                         .withOverrideProtection("F").withEndTimeInclusive(true).withStartTimeInclusive(true).build());
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "TimeSeries not found");
+                LOGGER.atConfig().log("TimeSeries not found");
             }
             try {
-                tsGroupDao.unassignAllTs(group, OFFICE_ID);
-                tsGroupDao.delete(CATEGORY_ID, GROUP_ID, OFFICE_ID);
+                tsGroupDao.delete(CATEGORY_ID, GROUP_ID, OFFICE_ID, true);
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "Group not found");
+                LOGGER.atConfig().log("Group not found");
             }
             try {
                 tsCategoryDao.delete(CATEGORY_ID, true, OFFICE_ID);
             } catch (NotFoundException e) {
-                LOGGER.log(Level.CONFIG, "Category not found");
+                LOGGER.atConfig().log("Category not found");
             }
         });
     }
 
-    @Test
-    void test_retrieving_recent_ts_data() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_retrieving_recent_ts_data(String format) throws Exception {
         TimeSeries ts = buildTimeSeries(OFFICE_ID, TS_ID);
         ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
         String json = Formats.format(contentType, ts);
@@ -144,7 +148,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
             .body(json)
@@ -160,7 +164,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
 
         group = new TimeSeriesGroup(category, OFFICE_ID, GROUP_ID, "USACE Include group", null, TS_ID);
         List<AssignedTimeSeries> tsList = Collections
-                .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, null, TS_ID, 0));
+                .singletonList(new AssignedTimeSeries(OFFICE_ID, TS_ID, null, TS_ID, 0));
         group = new TimeSeriesGroup(group, tsList);
         json = JsonV1.buildObjectMapper().writeValueAsString(group);
 
@@ -168,7 +172,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(FAIL_IF_EXISTS, false)
             .body(json)
@@ -186,7 +190,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(Controllers.CATEGORY_ID, CATEGORY_ID)
@@ -200,13 +204,14 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(1))
+            .time(lessThan(5000L))
         ;
 
         // get recent data using timeseries id
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(TS_IDS, TS_ID)
@@ -219,6 +224,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("size()", is(1))
+            .time(lessThan(5000L))
         ;
     }
 

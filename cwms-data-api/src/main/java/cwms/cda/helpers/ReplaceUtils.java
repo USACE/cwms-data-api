@@ -2,6 +2,7 @@ package cwms.cda.helpers;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -20,11 +21,11 @@ public class ReplaceUtils {
      * @param key the key to be replaced in the template
      * @return a Function that replaces occurrences of the key with a specified value
      */
-    public static UnaryOperator<String> replace(@NotNull String template, @NotNull String key){
-        return value-> replace(template, key, value);
+    public static UnaryOperator<String> replace(@NotNull String template, @NotNull String key) {
+        return value -> replace(template, key, value);
     }
 
-    public static String replace(@NotNull String template, @NotNull String key, String value){
+    public static String replace(@NotNull String template, @NotNull String key, String value) {
         return replace(template, key, value, true);
     }
 
@@ -37,8 +38,9 @@ public class ReplaceUtils {
      * @param encode true to URL encode the value, false otherwise
      * @return the modified string template with the key replaced by the value
      * @throws NullPointerException if the template is null
+     * @throws RuntimeException any other error
      */
-    public static String replace(@NotNull String template, String key, String value, boolean encode){
+    public static String replace(@NotNull String template, String key, String value, boolean encode) {
         String result = null;
 
         try {
@@ -67,12 +69,13 @@ public class ReplaceUtils {
      * @param value the value to replace the key with
      * @return a new Function that replaces occurrences of the key with the value
      */
-    public static UnaryOperator<String> alsoReplace(UnaryOperator<String> mapper, String key, String value){
-        return s-> replace(mapper.apply(s), key, value);
+    public static UnaryOperator<String> alsoReplace(UnaryOperator<String> mapper, String key, String value) {
+        return s -> replace(mapper.apply(s), key, value);
     }
 
-    public static UnaryOperator<String> alsoReplace(UnaryOperator<String> mapper, String key, String value, boolean encode){
-        return s-> replace(mapper.apply(s), key, value, encode);
+    public static UnaryOperator<String> alsoReplace(UnaryOperator<String> mapper, String key,
+        String value, boolean encode) {
+        return s -> replace(mapper.apply(s), key, value, encode);
     }
 
 
@@ -92,31 +95,48 @@ public class ReplaceUtils {
             return this;
         }
 
+        /**
+         * Replace the given parameter with the value, performing url encoding.
+         * @param key key to change
+         * @param value value to substitute
+         * @return the OperationBuilder
+         */
         public OperatorBuilder replace(String key, String value) {
             return replace(key, value, true);
         }
 
+        /**
+         * Replace the given parameter with the value, optionally performing url encoding.
+         * @param key key to change
+         * @param value value to subsitutue
+         * @param encode whether or not to perform URL Encoding.
+         * @return the OperationaBuilder
+         */
         public OperatorBuilder replace(String key, String value, boolean encode) {
-            if(value == null) {
+            if (value == null) {
                 value = "";
             }
             if (encode) {
-                try {
-                    value = URLEncoder.encode(value, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                value = URLEncoder.encode(value, StandardCharsets.UTF_8);
             }
             replacements.put(key, value);
             return this;
         }
 
+        /**
+         * Set key for replacement.
+         * @param key search key for replacement
+         * @return OperatorBuilder
+         */
         public OperatorBuilder withOperatorKey(String key) {
             this.operatorKey = key;
             return this;
         }
 
-
+        /**
+         * Create the operation for usage.
+         * @return Operator that can be called
+         */
         public UnaryOperator<String> build() {
             String result = template;
 

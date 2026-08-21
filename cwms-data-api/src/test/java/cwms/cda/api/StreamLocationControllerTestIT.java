@@ -59,8 +59,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -71,8 +73,12 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
+
     @BeforeAll
-    public static void setup() throws SQLException {
+    static void setup() throws SQLException {
         String testLoc = "StreamLoc321"; // match the stream location name in the json file
         createLocation(testLoc, true, OFFICE_ID, "STREAM_LOCATION");
         createAndStoreTestStream("ImOnThisStream2");
@@ -97,7 +103,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         for (Stream stream : STREAMS_CREATED) {
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -116,8 +122,9 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         STREAMS_CREATED.clear();
     }
 
-    @Test
-    void test_get_create_delete() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_create_delete(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location3.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -134,7 +141,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         // Create the StreamLocation
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(FAIL_IF_EXISTS, false)
                 .contentType(Formats.JSON)
                 .body(json)
@@ -146,14 +153,17 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Stream Location successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(streamLocation.getId().getName()));
 
         String streamLocationId = streamLocation.getId().getName();
 
         // Retrieve the StreamLocation and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamLocationId)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
@@ -185,24 +195,27 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
 
         // Delete the StreamLocation
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
-                .header(AUTH_HEADER, user.toHeaderValue())
-                .queryParam(OFFICE, OFFICE_ID)
-                .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
         .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/stream-locations/" + streamLocationId)
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/stream-locations/" + streamLocationId)
         .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
+            .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+            .body(MESSAGE, equalTo("Stream Location successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(streamLocation.getStreamId().getName()));
 
         // Retrieve the StreamLocation and assert that it does not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamLocationId)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STREAM_ID, streamLocation.getStreamId().getName())
@@ -256,8 +269,9 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_get_all() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_all(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream_location3.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -284,7 +298,10 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Stream Location successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(streamLocation.getId().getName()));
 
         String office = streamLocation.getId().getOfficeId();
         String streamLocationId = streamLocation.getId().getName();
@@ -292,7 +309,7 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         // Retrieve the StreamLocation and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(OFFICE_MASK, office)
                 .queryParam(NAME_MASK, streamLocationId)
                 .queryParam(STREAM_ID_MASK, streamLocation.getStreamId().getName())
@@ -335,6 +352,9 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Stream Location successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamLocation.getStreamId().getName()));
     }
 }

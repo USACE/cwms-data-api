@@ -1,0 +1,26 @@
+{
+  "office-id": "SPK",
+  "name": "Sacramento Dam.Elev.Inst.1Hour.0.Raw",
+  "interval": "PT1H",
+  "interval-offset": 0,
+  "units": "m",
+  "time-zone": "UTC",
+  "values": [
+    [
+      1209654000000,
+      2.2,
+      0
+    ],
+    [
+      1209657600000,
+      4.4,
+      0
+    ],
+    [
+      1209661200000,
+      6.6,
+      0
+    ]
+  ]
+}
+

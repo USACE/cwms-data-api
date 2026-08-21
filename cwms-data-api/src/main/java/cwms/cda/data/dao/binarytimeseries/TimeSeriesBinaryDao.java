@@ -33,6 +33,7 @@ import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TEXT_PACKAGE;
+import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 
 public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private static final String DATE_TIME = "DATE_TIME";
@@ -128,10 +129,17 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                               boolean maxVersion, boolean storeExisting, boolean storeNonExisting,
                               boolean replaceAll) {
 
-        CWMS_TEXT_PACKAGE.call_STORE_TS_BINARY(configuration, tsId, binaryData, binaryType,
-                startStamp, endStamp, verStamp, timeZone.getID(), formatBool(maxVersion),
-                formatBool(storeExisting), formatBool(storeNonExisting), formatBool(replaceAll),
-                null, officeId);
+        // There are two parameters that are not used in the stored procedure,
+        // they were previously used with a different stored procedure that has bugs in the implementation.
+        // See https://github.com/HydrologicEngineeringCenter/cwms-database/issues/28
+        DATE_TABLE_TYPE dataTableType = new DATE_TABLE_TYPE();
+        dataTableType.add(startStamp);
+        if (endStamp != null && !endStamp.equals(startStamp)) {
+            dataTableType.add(endStamp);
+        }
+        CWMS_TEXT_PACKAGE.call_STORE_TS_BINARY__2(configuration, tsId, binaryData, binaryType,
+            dataTableType, verStamp, timeZone.getID(), formatBool(maxVersion),
+            formatBool(replaceAll), null, officeId);
     }
 
     public void store(BinaryTimeSeries tts, boolean maxVersion, boolean replaceAll) {
@@ -223,19 +231,28 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
                 .withQualityCode(0L)
                 .withDestFlag(0);
         Blob b = rs.getBlob(VALUE);
-        if (b.length() > byteLimit) {
-            String binaryId = rs.getString(ID);
-            String url = urlBuilder.build().apply(dateTime.toString())
-                    //Hard-coding for now. Will be removed with schema update
-                    + format("&%s=%s", Controllers.BLOB_ID, URLEncoder.encode(binaryId, "UTF-8"));
-            builder.withValueUrl(url);
-        } else {
-            try (InputStream is = b.getBinaryStream()) {
-                byte[] bytes = BlobDao.readFully(is);
-                builder.withBinaryValue(bytes);
+        try {
+            if(b != null) {
+                if (b.length() > byteLimit) {
+                    String binaryId = rs.getString(ID);
+                    String url = urlBuilder.build().apply(dateTime.toString())
+                            //Hard-coding for now. Will be removed with schema update
+                            + format("&%s=%s", Controllers.BLOB_ID, URLEncoder.encode(binaryId, "UTF-8"));
+                    builder.withValueUrl(url);
+                } else {
+                    try (InputStream is = b.getBinaryStream()) {
+                        byte[] bytes = BlobDao.readFully(is);
+                        builder.withBinaryValue(bytes);
+                    }
+                }
+            }
+
+            return builder.build();
+        } finally {
+            if (b != null) {
+                b.free();
             }
         }
-        return builder.build();
     }
 
     private void parameterizeRetrieveTsBinText(CallableStatement stmt, String tsId, String mask,
@@ -259,7 +276,7 @@ public final class TimeSeriesBinaryDao extends JooqDao<BinaryTimeSeries> {
     private void storeRows(String officeId, String tsId, Collection<BinaryTimeSeriesRow> rows,
                            boolean maxVersion, boolean storeExisting, boolean storeNonExisting,
                            boolean replaceAll, Instant versionDate) {
-        dsl.connection(connection -> {
+        connection(dsl, connection -> {
             DSLContext connDsl = getDslContext(connection, officeId);
             connDsl.transaction((Configuration trx) -> {
                 Configuration config = trx.dsl().configuration();

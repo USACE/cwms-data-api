@@ -106,13 +106,15 @@ final class StreamDaoTestIT extends DataApiTestIT {
             //also test retrieve in bulk
             List<Stream> retrievedStreams = streamDao.retrieveStreams(OFFICE_ID, null,null, null, "km");
             assertFalse(retrievedStreams.isEmpty());
-            retrievedStreams = retrievedStreams.stream()
-                    .filter(s -> s.getId().getName().equalsIgnoreCase(stream.getId().getName()) || s.getId().getName().equalsIgnoreCase(stream2.getId().getName()))
-                    .collect(Collectors.toList());
+            Stream retrievedStreamFirst= retrievedStreams.stream()
+                    .filter(s -> s.getId().getName().equalsIgnoreCase(stream.getId().getName()))
+                    .findFirst().orElse(null);
+            Stream retrievedStreamSecond = retrievedStreams.stream()
+                    .filter(s -> s.getId().getName().equalsIgnoreCase(stream2.getId().getName()))
+                    .findFirst().orElse(null);
 
-            assertEquals(2, retrievedStreams.size());
-            DTOMatch.assertMatch(stream, retrievedStreams.get(0));
-            DTOMatch.assertMatch(stream2, retrievedStreams.get(1));
+            DTOMatch.assertMatch(stream, retrievedStreamFirst);
+            DTOMatch.assertMatch(stream2, retrievedStreamSecond);
             //delete streams
             streamDao.deleteStream(stream.getId().getOfficeId(), stream.getId().getName(), DeleteRule.DELETE_ALL);
             streamDao.deleteStream(stream2.getId().getOfficeId(), stream2.getId().getName(), DeleteRule.DELETE_ALL);

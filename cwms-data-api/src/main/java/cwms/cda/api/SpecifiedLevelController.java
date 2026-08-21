@@ -24,10 +24,26 @@
 
 package cwms.cda.api;
 
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.SPECIFIED_LEVEL_ID;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TEMPLATE_ID_MASK;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.SpecifiedLevelDao;
 import cwms.cda.data.dto.SpecifiedLevel;
 import cwms.cda.formatters.ContentType;
@@ -35,22 +51,20 @@ import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.*;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
-
 public class SpecifiedLevelController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(SpecifiedLevelController.class.getName());
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private static final String TAG = "Levels";
     private final MetricRegistry metrics;
 
@@ -74,23 +88,24 @@ public class SpecifiedLevelController implements CrudHandler {
 
 
     @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
-                            + "the Specified Levels whose data is to be included in the response."
-                            + " If this field is not specified, matching rating information from "
-                            + "all offices shall be returned."),
-                    @OpenApiParam(name = TEMPLATE_ID_MASK, description = "Mask that specifies "
-                            + "the IDs to be included in the response. If this field is not "
-                            + "specified, all specified levels shall be returned."),
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            content = {
-                                    @OpenApiContent(type = Formats.JSONV2, from =
-                                            SpecifiedLevel.class)
-                            }
-                    )},
-            tags = {TAG}
+        queryParams = {
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office of "
+                + "the Specified Levels whose data is to be included in the response."
+                + " If this field is not specified, matching rating information from "
+                + "all offices shall be returned."),
+            @OpenApiParam(name = TEMPLATE_ID_MASK, description = "Mask that specifies "
+                + "the IDs to be included in the response. If this field is not "
+                + "specified, all specified levels shall be returned."),
+        },
+        responses = {
+            @OpenApiResponse(status = STATUS_200,
+                content = {
+                    @OpenApiContent(type = Formats.JSONV2, from =
+                        SpecifiedLevel.class)
+                }
+            )
+        },
+        tags = {TAG}
     )
     @Override
     public void getAll(Context ctx) {
@@ -99,7 +114,7 @@ public class SpecifiedLevelController implements CrudHandler {
 
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeader(formatHeader, SpecifiedLevel.class);
-        try (Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             SpecifiedLevelDao dao = getDao(dsl);
@@ -108,23 +123,25 @@ public class SpecifiedLevelController implements CrudHandler {
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, levels, SpecifiedLevel.class);
-            ctx.result(result);
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (Exception ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Specified Levels", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Specified Levels");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
 
     }
 
     @OpenApi(ignore = true)
     @Override
-    public void getOne(Context ctx, String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); //To change body of
-        // generated methods, choose Tools | Specs.
+    public void getOne(@NotNull Context ctx, @NotNull String templateId) {
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -142,8 +159,8 @@ public class SpecifiedLevelController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+    public void create(@NotNull Context ctx) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.req.getContentType();
@@ -165,19 +182,19 @@ public class SpecifiedLevelController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the specified level to be renamed"),
-            @OpenApiParam(name = SPECIFIED_LEVEL_ID, description = "The new specified level id.")
+            @OpenApiParam(name = SPECIFIED_LEVEL_ID, required = true, description = "The new specified level id.")
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
-    public void update(Context ctx, @NotNull String oldSpecifiedLevelId) {
-        try (Timer.Context ignored = markAndTime(UPDATE)){
+    public void update(@NotNull Context ctx, @NotNull String oldSpecifiedLevelId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             SpecifiedLevelDao dao = getDao(dsl);
-            String newSpecifiedLevelId = ctx.queryParam(SPECIFIED_LEVEL_ID);
-            String office = ctx.queryParam(OFFICE);
+            String newSpecifiedLevelId = requiredParam(ctx, SPECIFIED_LEVEL_ID);
+            String office = requiredParam(ctx, OFFICE);
             dao.update(oldSpecifiedLevelId, newSpecifiedLevelId, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
@@ -198,12 +215,12 @@ public class SpecifiedLevelController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, String specifiedLevelId) {
-        try (Timer.Context ignored = markAndTime(UPDATE)){
+    public void delete(@NotNull Context ctx, @NotNull String specifiedLevelId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             SpecifiedLevelDao dao = getDao(dsl);
-            String office = ctx.queryParam(OFFICE);
+            String office = requiredParam(ctx, OFFICE);
             dao.delete(specifiedLevelId, office);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

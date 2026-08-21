@@ -99,8 +99,8 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
             WaterContractDao contractDao = new WaterContractDao(ctx);
             LookupTypeDao lookupTypeDao = new LookupTypeDao(ctx);
             try {
-                dao.storeLocation(testLocation);
-                dao.storeLocation(testLocation2);
+                dao.storeLocation(testLocation, false);
+                dao.storeLocation(testLocation2, false);
                 lookupTypeDao.storeLookupType("AT_PHYSICAL_TRANSFER_TYPE", "PHYS_TRANS_TYPE", testTransferType);
                 projectDao.store(testProject, true);
                 projectDao.store(testProject2, true);
@@ -399,7 +399,7 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                 .withElevation(150.6)
                 .withNation(Nation.US)
                 .withStateInitial("CA")
-                .withCountyName("Sacramento")
+                .withCountyName("Yolo")
                 .withTimeZoneName(ZoneId.of("UTC"))
                 .withElevationUnits("m")
                 .withVerticalDatum("NGVD29")
@@ -407,11 +407,11 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
                 .withPublicName("Test Public Name")
                 .withLongName("Test Long Name")
                 .withDescription("Test Description")
-                .withNearestCity("Davis")
-                .withLatitude(35.6)
-                .withLongitude(-120.6)
-                .withPublishedLatitude(35.6)
-                .withPublishedLongitude(-120.6)
+                .withNearestCity("Davis, CA")
+                .withLatitude(38.55)
+                .withLongitude(-121.73)
+                .withPublishedLatitude(38.55)
+                .withPublishedLongitude(-121.73)
                 .withActive(true)
                 .withLocationType(locationType)
                 .withLocationKind(locationType)
@@ -450,12 +450,12 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private Map<Instant, List<PumpTransfer>> buildTestPumpAccountingList() {
         Map<Instant, List<PumpTransfer>> retList = new TreeMap<>();
         List<PumpTransfer> transfers = new ArrayList<>();
-        transfers.add(new PumpTransfer(PumpType.IN, "Conduit", 100.0, "Test Transfer"));
-        transfers.add(new PumpTransfer(PumpType.OUT, "Pipeline", 200.0, "Emergency Transfer"));
+        transfers.add(new PumpTransfer(PumpType.IN, "Conduit", 100.0, "cms", "Test Transfer"));
+        transfers.add(new PumpTransfer(PumpType.OUT, "Pipeline", 200.0, "cms", "Emergency Transfer"));
         retList.put(Instant.parse("2025-10-01T00:00:00Z"), transfers);
         transfers.clear();
-        transfers.add(new PumpTransfer(PumpType.OUT, "Canal", 300.0, "Test Transfer"));
-        transfers.add(new PumpTransfer(PumpType.BELOW, "Stream", 400.0, "Emergency Transfer"));
+        transfers.add(new PumpTransfer(PumpType.OUT, "Canal", 300.0, "cms", "Test Transfer"));
+        transfers.add(new PumpTransfer(PumpType.BELOW, "Stream", 400.0, "cms", "Emergency Transfer"));
         retList.put(Instant.parse("2025-10-02T00:00:00Z"), transfers);
         return retList;
     }
@@ -463,9 +463,9 @@ class WaterSupplyAccountingDaoIT extends DataApiTestIT {
     private Map<Instant, List<PumpTransfer>> buildTestPumpAccountingListWithFewerPumps() {
         Map<Instant, List<PumpTransfer>> retList = new TreeMap<>();
         retList.put(Instant.parse("2025-10-01T00:00:00Z"),
-                Collections.singletonList(new PumpTransfer(PumpType.IN, "Conduit", 560.0, "Test Transfer")));
+                Collections.singletonList(new PumpTransfer(PumpType.IN, "Conduit", 560.0, "cms", "Test Transfer")));
         retList.put(Instant.parse("2025-10-02T00:00:00Z"),
-                Collections.singletonList(new PumpTransfer(PumpType.IN, "Canal", 750.0, "Test Transfer")));
+                Collections.singletonList(new PumpTransfer(PumpType.IN, "Canal", 750.0, "cms", "Test Transfer")));
         return retList;
     }
 

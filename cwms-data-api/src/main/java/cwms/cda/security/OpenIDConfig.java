@@ -1,105 +1,193 @@
 package cwms.cda.security;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Base64.Decoder;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
-import io.swagger.v3.oas.models.security.OAuthFlow;
-import io.swagger.v3.oas.models.security.OAuthFlows;
-import io.swagger.v3.oas.models.security.Scopes;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwsHeader;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SigningKeyResolverAdapter;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 
 public class OpenIDConfig {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
+
     private URL wellKnown;
+
     private String issuer;
-    private URL authUrl;
-    private URL tokenUrl;
-    private URL userInfoUrl;
-    private URL logoutUrl;
+    private String client_id;
+    private String idp_hint; // keycloak specific kc_idp_hint to direct federation
+    private JwtParser jwtParser;
     private URL jwksUrl;
-    
-    private Scopes scopes = new Scopes();
-    private OAuthFlows flows = new OAuthFlows();
 
-    public OpenIDConfig(URL wellKnown, String altAuthUrl) throws IOException {
+
+    private OpenIDConfig(URL wellKnown, String client_id, String idp_hint, JwtParser jwtParser) throws IOException {
         this.wellKnown = wellKnown;
-        HttpURLConnection http = null;
-        try
-        {
-            http = (HttpURLConnection)wellKnown.openConnection();
-            http.setRequestMethod("GET");
-            http.setInstanceFollowRedirects(true);            
-            int status = http.getResponseCode();
-            if (status == 200) {
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode node = mapper.readTree(http.getInputStream());
-                jwksUrl = new URL(node.get("jwks_uri").asText());
-                issuer = node.get("issuer").asText();
-                tokenUrl = substituteBase(new URL(node.get("token_endpoint").asText()),altAuthUrl);
-                userInfoUrl = substituteBase(new URL(node.get("userinfo_endpoint").asText()),altAuthUrl);
-                logoutUrl = substituteBase(new URL(node.get("end_session_endpoint").asText()),altAuthUrl);
-                authUrl = substituteBase(new URL(node.get("authorization_endpoint").asText()),altAuthUrl);
-                JsonNode scopes = node.get("scopes_supported");
-                for(JsonNode scope: scopes) {
-                    this.scopes.addString(scope.asText(), "");
-                }
-
-                JsonNode grants = node.get("grant_types_supported");
-                for(JsonNode grant: grants) {
-                    OAuthFlow flow = new OAuthFlow();
-                    flow.setTokenUrl(tokenUrl.toString());
-                    flow.setAuthorizationUrl(authUrl.toString());
-                    flow.setScopes(this.scopes);
-                    String grantStr = grant.asText();
-                    if (grantStr.equalsIgnoreCase("implicit")) {
-                        flows.setImplicit(flow);
-                    } else if(grantStr.equalsIgnoreCase("password")) {
-                        flows.setPassword(flow);
-                    } else if(grantStr.equalsIgnoreCase("authorization_code")) {
-                        flows.setAuthorizationCode(flow);
-                    } else if (grantStr.equalsIgnoreCase("client_credentials")) {
-                        flows.setClientCredentials(flow);
-                    }
-                }
-
-
-            } else {
-                log.atSevere().log("Unable to retrieve data from realm. Response code %d",status);
-            }
-        } finally {
-            if (http != null) {
-                http.disconnect();
-            }
-        }
-    }
-
-    private URL substituteBase(URL endPoint, String altAuthUrl) throws MalformedURLException {
-        if (altAuthUrl == null) {
-            return endPoint;
-        }
-        log.atInfo().log("Changing '%s' with '%s'", endPoint.toString(), altAuthUrl);
-        String originalPath = endPoint.getPath();
-        log.atInfo().log("New Path = %s", altAuthUrl+originalPath);
-        return new URL(altAuthUrl+originalPath);
+        this.idp_hint = idp_hint;
+        this.client_id = client_id;
+        this.jwtParser = jwtParser;
     }
 
     public URL getJwksUrl() {
         return jwksUrl;
     }
 
+    public static OpenIDConfig from(URL wellKnown, String clientId, String idpHint, int timeout) throws IOException
+    {
+        HttpURLConnection http = null;
+        try
+        {
+            http = (HttpURLConnection)wellKnown.openConnection();
+            http.setRequestMethod("GET");
+            http.setInstanceFollowRedirects(true);
+            int status = http.getResponseCode();
+            if (status == 200) {
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode node = mapper.readTree(http.getInputStream());
+                URL jwksUrl = new URL(node.get("jwks_uri").asText());
+                String issuer = node.get("issuer").asText();
+
+                JwtParser jwtParser = Jwts.parserBuilder()
+                        .requireIssuer(issuer)
+                        .setSigningKeyResolver(new UrlResolver(jwksUrl, timeout))
+                        .build();
+                return new OpenIDConfig(wellKnown, clientId, idpHint, jwtParser);
+            } else {
+                log.atSevere().log("Unable to retrieve data from realm. Response code %d", status);
+            }
+        } finally {
+            if (http != null) {
+                http.disconnect();
+            }
+        }
+        throw new IOException("Unable to retrieve OIDC information from provider.");
+    }
+
+    public JwtParser getJwtParser()
+    {
+        return this.jwtParser;
+    }
+
+    static SecurityScheme buildScheme(String wellKnownUrl, String clientId, String idpHint) {
+        SecurityScheme scheme =  new SecurityScheme().type(Type.OPENIDCONNECT)
+                                                    .openIdConnectUrl(wellKnownUrl);
+        if (idpHint != null)
+        {
+            Map<String, Object> hint = new HashMap<>();
+            hint.put("query-parameter", "kc_idp_hint");
+            ArrayList<String> values = new ArrayList<>();
+            for (String value: idpHint.split(",")) {
+                values.add(value.trim());
+            }
+            hint.put("values", values);
+            scheme.addExtension("x-kc_idp_hint", hint);
+        }
+
+        scheme.addExtension("x-oidc-client-id", clientId);
+        return scheme;
+    }
+
     public SecurityScheme getScheme() {
-        return new SecurityScheme().type(Type.OPENIDCONNECT)
-                                   .openIdConnectUrl(wellKnown.toString())
-                                   .name("Authorization")
-                                   .flows(flows)
-                                   .in(In.HEADER);
+
+        SecurityScheme scheme = buildScheme(wellKnown.toString(), client_id, idp_hint);
+        return scheme;
+    }
+
+
+    private static class UrlResolver extends SigningKeyResolverAdapter {
+        private final URL jwksUrl;
+        private ZonedDateTime lastCheck;
+        private final Map<String,Key> realmPublicKeys = new HashMap<>();
+        private final int realmPublicKeyTimeoutMinutes;
+        private KeyFactory keyFactory = null;
+
+        public UrlResolver(URL jwksUrl, int keyTimeoutMinutes) {
+            this.jwksUrl = jwksUrl;
+            this.realmPublicKeyTimeoutMinutes = keyTimeoutMinutes;
+            try {
+                keyFactory = KeyFactory.getInstance("RSA");
+            } catch (NoSuchAlgorithmException ex) {
+                log.atSevere().withCause(ex).log("Unable to initialize key factory.");
+            }
+        }
+
+        private void updateKey() {
+            if (realmPublicKeys.isEmpty() || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
+                log.atInfo().log("Checking for new key at %s",jwksUrl);
+                try {
+                    realmPublicKeys.clear();
+                    updateSigningKey();
+                } catch (IOException ex) {
+                    log.atSevere().withCause(ex).log("Unable to update key. Will continue to use previous key.");
+                } catch (InvalidKeySpecException ex) {
+                    log.atSevere().withCause(ex).log("New Public Key was not valid. Will continue to use previous key.");
+                }
+                lastCheck = ZonedDateTime.now();
+            }
+        }
+
+        private void updateSigningKey() throws IOException, InvalidKeySpecException {
+            HttpURLConnection http = null;
+            try {
+                http = (HttpURLConnection)jwksUrl.openConnection();
+                http.setRequestMethod("GET");
+                http.setInstanceFollowRedirects(true);
+                int status = http.getResponseCode();
+                if (status == 200) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    JsonNode keys = mapper.readTree(http.getInputStream()).get("keys");
+                    for (JsonNode key: keys) {
+                        String kid = key.get("kid").textValue();
+                        Decoder b64 = Base64.getUrlDecoder(); // https://datatracker.ietf.org/doc/id/draft-jones-json-web-key-01.html#RFC4648
+                        String nStr = key.get("n").textValue();
+                        String eStr = key.get("e").textValue();
+                        log.atInfo().log("Loading Key %s with parameters (n,e) -> (%s,%s)",kid,nStr,eStr);
+                        BigInteger n = new BigInteger(1,b64.decode(nStr));
+                        BigInteger e = new BigInteger(1,b64.decode(eStr));
+                        Key pubKey = keyFactory.generatePublic(new RSAPublicKeySpec(n, e));
+                        realmPublicKeys.put(kid,pubKey);
+                    }
+                } else {
+                    log.atSevere().log("Unable to retrieve actual keys. Response code %d",status);
+                }
+            } finally {
+                if (http != null) {
+                    http.disconnect();
+                }
+            }
+        }
+
+        @Override
+        public Key resolveSigningKey(JwsHeader header, Claims claims) {
+            if (!header.getAlgorithm().toLowerCase().startsWith("rs")) {
+                log.atWarning().log("Request with invalid algorithm '%s'",header.getAlgorithm());
+                return null; // we only deal with RSA keys right now.
+            }
+            updateKey();
+            Key key = realmPublicKeys.get(header.getKeyId());
+            if (key == null) {
+                log.atSevere().log("Key not found for id '%s'",header.getKeyId());
+            }
+            return key;
+        }
     }
 }

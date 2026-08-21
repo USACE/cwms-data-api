@@ -135,7 +135,7 @@ begin
                             p_ts_group_id=>'LessThan3',
                             p_ts_id=>'Pine Flat-Outflow.Stage.Inst.15Minutes.0.one',
                             p_ts_attribute=>0,
-                            p_ts_alias_id=>null,
+                            p_ts_alias_id=>'test alias 1',
                             p_ref_ts_id=>NULL,
                             p_db_office_id=>l_office);
 

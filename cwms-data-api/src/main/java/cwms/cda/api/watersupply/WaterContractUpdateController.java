@@ -37,6 +37,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
@@ -55,10 +56,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterContractUpdateController extends WaterSupplyControllerBase implements Handler {
+public final class WaterContractUpdateController extends WaterSupplyControllerBase {
 
     public WaterContractUpdateController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(
@@ -82,6 +83,7 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
                     required = true)
         },
         responses = {
+            @OpenApiResponse(status = "200", description = "Contract successfully renamed in CWMS."),
             @OpenApiResponse(status = "404", description = "The provided combination of "
                     + "parameters did not find a contract"),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
@@ -94,6 +96,10 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
 
     @Override
     public void handle(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, PROJECT_ID, "Body contains required information.");
+        logUnusedPathParameter(ctx, OFFICE, "Body contains required information.");
+        logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
+
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
             String contractName = ctx.pathParam(CONTRACT_NAME);
@@ -107,7 +113,9 @@ public final class WaterContractUpdateController extends WaterSupplyControllerBa
                     .withProjectId(waterContract.getWaterUser().getProjectId())
                     .withWaterRight(waterContract.getWaterUser().getWaterRight()).build();
             contractDao.renameWaterContract(ref, contractName, newName);
-            ctx.status(HttpServletResponse.SC_OK).json("Contract renamed successfully");
+            StatusResponse re = new StatusResponse(waterContract.getOfficeId(),
+                    "Contract Renamed Successfully", newName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
 
     }

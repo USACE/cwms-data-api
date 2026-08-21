@@ -30,28 +30,43 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OutputFormatter;
-import org.jetbrains.annotations.NotNull;
-
+import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
+import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
+import java.time.Instant;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.ZoneId;
 import java.util.List;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Formatter for CDA generated JSON.
  */
 public class JsonV2 implements OutputFormatter {
 
+    private static final ObjectMapper OBJECT_MAPPER = buildObjectMapper();
     private final ObjectMapper om;
 
     public JsonV2() {
-        this.om = buildObjectMapper();
+        this.om = OBJECT_MAPPER;
     }
 
+    public JsonV2(ObjectMapper om) {
+        this.om = om;
+    }
+
+    /**
+     * Create ObjectMapper instance with system expected default settings.
+     * @return ObjectMapper instance.
+     */
     @NotNull
     public static ObjectMapper buildObjectMapper() {
         ObjectMapper retVal = new ObjectMapper();
@@ -64,6 +79,13 @@ public class JsonV2 implements OutputFormatter {
         retVal.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         retVal.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         retVal.registerModule(new JavaTimeModule());
+        retVal.registerModule(new Jdk8Module());
+
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
+        retVal.registerModule(module);
+
         return retVal;
     }
 

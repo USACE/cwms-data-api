@@ -1,0 +1,29 @@
+{
+  "office-id": "SPK",
+  "name": "TsBinTestLoc.Binary.Inst.0.0.irreg",
+  "interval-offset": 0,
+  "time-zone": "UTC",
+  "version-date": 1749168000000,
+  "binary-values": [
+    {
+      "date-time": 1748736000000,
+      "data-entry-date": 1749081600000,
+      "media-type": "text/plain",
+      "binary-value": "TFJUU0JpbmFyeURhdGEx",
+      "value-url": "http://somehost:80/path?thequery",
+      "dest-flag": 0
+    },
+    {
+      "date-time": 1748822480000,
+      "data-entry-date": 1749081601000,
+      "media-type": "text/plain",
+      "binary-value": "TFJUU0JpbmFyeURhdGEy"
+    },
+    {
+      "date-time": 1748908807000,
+      "data-entry-date": 1749081602000,
+      "media-type": "text/plain",
+      "binary-value": "TFJUU0JpbmFyeURhdGEz"
+    }
+  ]
+}

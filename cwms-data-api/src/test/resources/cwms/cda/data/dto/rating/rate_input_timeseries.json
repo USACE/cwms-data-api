@@ -1,0 +1,17 @@
+{
+  "output-unit": "cfs",
+  "rating-time": 1672531200000,
+  "round": "true",
+  "time-series-ids": [
+    "CGR-RO1.Opening.Inst.0.0.CENWP-Manual-Raw",
+    "CGR-RO1-Bypass.Elev.Inst.0.0.GDACS-RAW"
+  ],
+  "start-time": 1672531200000,
+  "end-time": 1388534400000,
+  "version-date": 1451606400000,
+  "trim": "true",
+  "start-inclusive": "false",
+  "end-inclusive": "false",
+  "previous": "true",
+  "next": "true"
+}

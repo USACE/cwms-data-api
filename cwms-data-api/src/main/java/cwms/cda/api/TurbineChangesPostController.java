@@ -40,6 +40,7 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
@@ -54,6 +55,7 @@ import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.location.kind.TurbineDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -73,16 +75,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public final class TurbineChangesPostController implements Handler {
-    private final MetricRegistry metrics;
+public final class TurbineChangesPostController extends BaseHandler {
 
 
     public TurbineChangesPostController(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -107,12 +104,15 @@ public final class TurbineChangesPostController implements Handler {
         method = HttpMethod.POST,
         tags = {TurbineController.TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Turbine successfully stored to CWMS."),
+            @OpenApiResponse(status = STATUS_201, description = "Turbine successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Project Id or Turbine location Ids not found.")
         }
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
+        logUnusedPathParameter(ctx, NAME, "Body contains required information.");
+        logUnusedPathParameter(ctx, OFFICE, "Body contains required information.");
+
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, TurbineChange.class);
@@ -122,7 +122,8 @@ public final class TurbineChangesPostController implements Handler {
             DSLContext dsl = getDslContext(ctx);
             TurbineDao dao = new TurbineDao(dsl);
             dao.storeOperationalChanges(turbine, overrideProtection);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Turbine Changes");
+            StatusResponse re = new StatusResponse(turbine.get(0).getProjectId().getOfficeId(), "Created Turbine Changes");
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 }

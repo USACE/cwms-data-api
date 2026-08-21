@@ -7,6 +7,8 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.response.Response;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -16,9 +18,16 @@ import org.junit.jupiter.params.provider.EnumSource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
 public class BlobControllerTestIT extends DataApiTestIT {
@@ -28,6 +37,11 @@ public class BlobControllerTestIT extends DataApiTestIT {
     private static final String EXISTING_BLOB_VALUE = "test value";
 
     @BeforeAll
+    public static void setup() throws Exception {
+        createExistingBlob();
+    }
+
+
     static void createExistingBlob() throws Exception
     {
         String origDesc = "test description";
@@ -40,26 +54,26 @@ public class BlobControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .contentType(Formats.JSONV2)
-                .body(serializedBlob)
-                .header("Authorization",user.toHeaderValue())
-                .queryParam("office",SPK)
-                .queryParam("fail-if-exists",false)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/blobs/")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam(Controllers.OFFICE,SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS,false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
     @Test
     void test_getOne_not_found() throws UnsupportedEncodingException {
         String blobId = "TEST";
-        String urlencoded = URLEncoder.encode(blobId, "UTF-8");
+        String urlencoded = URLEncoder.encode(blobId, StandardCharsets.UTF_8);
 
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -75,7 +89,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
 
     @Test
-    void test_create_getOne() throws JsonProcessingException
+    void test_create_getOne()
     {
         /* There is an issue with how javalin handles / in the path that are actually part
         of the object name (NOTE: good candidate for actually having a GUID or other "code"
@@ -115,17 +129,233 @@ public class BlobControllerTestIT extends DataApiTestIT {
     void test_blob_range()
     {
         // We can now do Range requests!
+        // Our example blob above has a value "test value"
+
+        // If we ask for byte 0 to the _end_ that is like a normal request for the whole file, we should get "test value"
         given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .queryParam(Controllers.OFFICE, SPK)
-            .header("Range"," bytes=3-")
-        .when()
-            .get("/blobs/" + EXISTING_BLOB_ID)
-        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .header("Range", " bytes=0-")
+                .when()
+                .get("/blobs/" + EXISTING_BLOB_ID)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is(EXISTING_BLOB_VALUE));
+
+        // Our test value is 10 bytes so if we ask for 0-9 we should get the whole value
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .header("Range", " bytes=0-9")
+                .when()
+                .get("/blobs/" + EXISTING_BLOB_ID)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is(EXISTING_BLOB_VALUE));
+
+        // If we ask for byte 3 to the end we should get "t value"
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .header("Range", " bytes=3-")
+                .when()
+                .get("/blobs/" + EXISTING_BLOB_ID)
+                .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
             .body( is("t value"));
+
+        // If we ask for byte 3 to 7 we should get "t val"
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, SPK)
+                .header("Range", " bytes=3-7")
+                .when()
+                .get("/blobs/" + EXISTING_BLOB_ID)
+                .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+                .body( is("t val"));
+    }
+
+    @Test
+    void testCreateUpdateDelete() throws Exception
+    {
+        String blobId = "TEST_BLOBIT_ID";
+        String blobValue = "testing value";
+        String origDesc = "testing description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Store new blob
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS,false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // retrieve blob, assert value matches expected
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(blobValue));
+
+        // update blob
+        String newDescription = "new description";
+        String newBlobValue = "new blob value";
+        byte[] newBlobBytes = newBlobValue.getBytes();
+        blob = new Blob(SPK, blobId, newDescription, mediaType, newBlobBytes);
+        serializedBlob = om.writeValueAsString(blob);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // retrieve blob, assert value matches expected
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(newBlobValue));
+
+        // delete blob
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .delete("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // retrieve blob, assert not found
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
+    void testIdCase() throws Exception
+    {
+        String blobId = "test_blob_id_case";
+        String blobValue = "testing value";
+        String origDesc = "testing description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // Store new blob
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS,false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // retrieve blob, assert value matches expected
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(blobValue));
+
+        // delete blob
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .delete("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        // retrieve blob, assert not found
+        given()
+            .log()
+            .ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @ParameterizedTest
@@ -144,6 +374,125 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .contentType(is(test._expectedContentType));
     }
+
+    @Test
+    void test_create_too_long_name() throws Exception
+    {
+        String blobId = RandomStringUtils.randomAlphabetic(300);
+        String blobValue = "test value";
+        String origDesc = "test description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization",user.toHeaderValue())
+            .queryParam("office",SPK)
+            .queryParam("fail-if-exists",false)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", containsString("One or more provided values exceeds the maximum length for the parameter."));
+    }
+
+
+    @Test
+    void test_pagination_works() {
+        int count = 11;
+        String prefix = "test_blob_pagination_";
+        assertTimeout(Duration.ofMinutes(5), () -> {
+
+            createBlobs(count, prefix);
+
+            final int pageSize = 5;
+            Response initialResponse =
+                    given()
+                            .log()
+                            .ifValidationFails(LogDetail.ALL, true)
+                            .queryParam(Controllers.OFFICE, SPK)
+                            .queryParam(Controllers.PAGE_SIZE, pageSize)
+                            .queryParam(Controllers.LIKE, prefix + ".+")
+                            .when()
+                            .get("/blobs/" )
+                            .then()
+                            .log().ifValidationFails(LogDetail.ALL, true)
+                            .assertThat()
+                            .statusCode(is(HttpServletResponse.SC_OK))
+                            .extract().response();
+
+            String nextPage = initialResponse.path("next-page");
+            assertNotNull(nextPage, "Expected a next page to be returned");
+            int totalRetrieved = initialResponse.path("blobs.size()");
+            assertEquals(pageSize, totalRetrieved, "Expected the first page to return the configured page size");
+
+            do {
+                Response pageN =
+                        given()
+                                .log()
+                                .ifValidationFails(LogDetail.ALL, true)
+                                .queryParam(Controllers.OFFICE, SPK)
+                                .queryParam("page", nextPage)
+                                .when()
+                                .get("/blobs/" )
+                                .then()
+                                .log().ifValidationFails(LogDetail.ALL, true)
+                                .assertThat()
+                                .statusCode(is(HttpServletResponse.SC_OK))
+                                .extract().response();
+
+                nextPage = pageN.path("next-page");
+                int pageTotal = pageN.path("blobs.size()");
+                assertTrue(pageTotal <= pageSize, "Expected the page to return no more than the configured page size. Expected " + pageTotal + "<=" + pageSize);
+
+                totalRetrieved += pageTotal;
+            } while( nextPage != null );
+
+            assertTrue(totalRetrieved > pageSize, "Expected more than one page of blobs");
+            assertEquals(count, totalRetrieved, "Expected to retrieve the blobs we created. ");
+
+
+        }, "Blobs retrieval got stuck; possibly in endless loop");
+    }
+
+    private static void createBlobs(int count, String prefix) throws JsonProcessingException {
+        //
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String mediaType = "application/octet-stream";
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        for( int i = 0; i < count; i++ ) {
+            String testValue = "test value " + i ;
+            Blob blob = new Blob(SPK, prefix + i, "test blob number "+i, mediaType, testValue.getBytes() );
+            String serializedBlob = om.writeValueAsString(blob);
+            given()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .contentType(Formats.JSONV2)
+                    .body(serializedBlob)
+                    .header("Authorization",user.toHeaderValue())
+                    .queryParam("office",SPK)
+                    .queryParam("fail-if-exists",false)
+                    .when()
+                    .redirects().follow(true)
+                    .redirects().max(3)
+                    .post("/blobs/")
+                    .then()
+                    .log().ifValidationFails(LogDetail.ALL,true)
+                    .assertThat()
+                    .statusCode(is(HttpServletResponse.SC_CREATED));
+        }
+    }
+
 
     enum GetAllTest
     {

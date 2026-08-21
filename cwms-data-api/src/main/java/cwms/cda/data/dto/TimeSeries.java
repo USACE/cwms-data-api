@@ -4,15 +4,21 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.json.adapters.TimeSeriesRecordSerializer;
 import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,15 +26,19 @@ import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @JsonRootName("timeseries")
 @JsonPropertyOrder(alphabetic = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.CSV, formatter = OutputFormatter.DUMMY.class)
 public class TimeSeries extends CwmsDTOPaginated {
     public static final String ZONED_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ'['VV']'";
 
@@ -41,10 +51,10 @@ public class TimeSeries extends CwmsDTOPaginated {
     @Schema(description = "The units of the time series data",required = true)
     String units;
 
-    @Schema(description = "The version type for the time series being queried. Can be in the form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. " +
-            "MAX_AGGREGATE will get the latest version date value for each value in the date range. SINGLE_VERSION must be called with a valid " +
-            "version date and will return the values for the version date provided. UNVERSIONED return values from an unversioned time series. " +
-            "Note that SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED each require a null version date.")
+    @Schema(description = "The version type for the time series being queried. Can be in the form of MAX_AGGREGATE, SINGLE_VERSION, or UNVERSIONED. "
+            + "MAX_AGGREGATE will get the latest version date value for each value in the date range. SINGLE_VERSION must be called with a valid "
+            + "version date and will return the values for the version date provided. UNVERSIONED return values from an unversioned time series. "
+            + "Note that SINGLE_VERSION requires a valid version date while MAX_AGGREGATE and UNVERSIONED each require a null version date.")
     @JsonFormat(shape = Shape.STRING)
     VersionType dateVersionType;
 
@@ -63,20 +73,23 @@ public class TimeSeries extends CwmsDTOPaginated {
     @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
-            description = "The requested start time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+            description = "The start time represented by the values in this response, in ISO-8601 format with offset and timezone ('"
+                    + ZONED_DATE_TIME_FORMAT + "'). When trim=true and values are returned, this reflects the first returned value."
     )
     ZonedDateTime begin;
 
     @JsonFormat(shape = Shape.STRING)
     @Schema(
             accessMode = AccessMode.READ_ONLY,
-            description = "The requested end time of the data, in ISO-8601 format with offset and timezone ('" + ZONED_DATE_TIME_FORMAT + "')"
+            description = "The end time represented by the values in this response, in ISO-8601 format with offset and timezone ('"
+                    + ZONED_DATE_TIME_FORMAT + "'). When trim=true and values are returned, this reflects the last returned value."
     )
     ZonedDateTime end;
 
     @ArraySchema(
             schema = @Schema(
-                    description = "List of retrieved time-series values",
+                    description = "List of retrieved time-series values. The values-columns property describes the structure of the data value array. "
+                            + "Refer to the value-columns property for more information.",
                     implementation = Record.class
             )
     )
@@ -102,13 +115,13 @@ public class TimeSeries extends CwmsDTOPaginated {
 
 
     @SuppressWarnings("unused") // required so JAXB can initialize and marshal
-    private TimeSeries() {}
+    protected TimeSeries() {}
 
     public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval) {
         this(page, pageSize, total, name, officeId, begin, end, units, interval, null, null, null, null, null);
     }
 
-    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate, VersionType dateVersionType){
+    public TimeSeries(String page, int pageSize, Integer total, String name, String officeId, ZonedDateTime begin, ZonedDateTime end, String units, Duration interval, VerticalDatumInfo info, ZonedDateTime versionDate, VersionType dateVersionType) {
         this(page, pageSize, total, name, officeId, begin, end,  units, interval, info, null, null, versionDate, dateVersionType);
     }
 
@@ -158,7 +171,7 @@ public class TimeSeries extends CwmsDTOPaginated {
     }
 
     // Use the array shape to optimize data transfer to client
-    @JsonFormat(shape=JsonFormat.Shape.ARRAY)
+    @JsonFormat(shape = JsonFormat.Shape.ARRAY)
     public List<Record> getValues() {
         return values;
     }
@@ -168,8 +181,7 @@ public class TimeSeries extends CwmsDTOPaginated {
         return values;
     }
 
-    public VerticalDatumInfo getVerticalDatumInfo()
-    {
+    public VerticalDatumInfo getVerticalDatumInfo() {
         return verticalDatumInfo;
     }
 
@@ -181,56 +193,115 @@ public class TimeSeries extends CwmsDTOPaginated {
         return timeZone;
     }
 
+    /**
+     * Clears the pagination information (page, nextPage. total) for this TimeSeries.
+     */
+    public void clearPagination() {
+        this.page = null;
+        this.nextPage = null;
+        this.total = null;
+    }
+
     public ZonedDateTime getVersionDate() {
         return versionDate;
     }
 
-    public VersionType getDateVersionType() { return dateVersionType; }
+    public VersionType getDateVersionType() {
+        return dateVersionType;
+    }
 
     @JsonProperty(value = "value-columns")
-    @Schema(name = "value-columns", accessMode = AccessMode.READ_ONLY)
+    @Schema(name = "value-columns",
+            description = "The columns of the time-series data array returned, this property is used to describe "
+                    + "the data structure of the records array. Contains [name, ordinal, datatype]. "
+                    + "Name corresponds to the variable described by the data, "
+                    + "ordinal is the order of the column in the data value array returned (starts at index 1), "
+                    + "and datatype is the class name of the data type for the variable. Since the records array "
+                    + "can be of variable length, the column index value is used to identify the position of the "
+                    + "data in the array.",
+            accessMode = AccessMode.READ_ONLY)
     public List<Column> getValueColumnsJSON() {
+        if (values != null && !values.isEmpty() && values.get(0) != null && values.get(0).getDataEntryDate() != null) {
+            return getColumnDescriptorWithEntryDate();
+        }
         return getColumnDescriptor();
     }
 
-    public boolean addValue(Timestamp dateTime, Double value, int qualityCode) {
-        // Set the current page, if not set
-        if ((page == null || page.isEmpty()) && values.isEmpty()) {
-            page = encodeCursor(String.format("%d", dateTime.getTime()), pageSize, total);
+    public void addValue(Timestamp dateTime, Double value, int qualityCode) {
+        addValue(new Record(dateTime, value, qualityCode));
+    }
+
+    public void addValue(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
+        addValue(new Record(dateTime, value, qualityCode, dataEntryDate));
+    }
+
+    public void addValue(Record record) {
+        // Only paged responses expose cursors. page-size=-1 requests the entire window.
+        if (pageSize > 0 && (page == null || page.isEmpty()) && (values == null || values.isEmpty())) {
+            page = encodeCursor(String.format("%d", record.dateTime.getTime()), pageSize, total);
         }
         if (pageSize > 0 && values.size() == pageSize) {
-            nextPage = encodeCursor(String.format("%d", dateTime.toInstant().toEpochMilli()), pageSize, total);
-            return false;
+            nextPage = encodeCursor(String.format("%d", record.dateTime.toInstant().toEpochMilli()), pageSize, total);
         } else {
-            return values.add(new Record(dateTime, value, qualityCode));
+            values.add(record);
         }
     }
 
-    private List<Column> getColumnDescriptor() {
-        List<Column> columns = new ArrayList<>();
+    public TimeSeries withValues(List<Record> values) {
+        this.values.clear();
+        this.values.addAll(values);
+        return this;
+    }
 
+    public TimeSeries alignWindowToReturnedValues(boolean trim) {
+        if (!trim || values == null || values.isEmpty()) {
+            return this;
+        }
+
+        begin = values.get(0).getDateTime().toInstant().atZone(ZoneOffset.UTC);
+        end = values.get(values.size() - 1).getDateTime().toInstant().atZone(ZoneOffset.UTC);
+        return this;
+    }
+
+    public static List<Column> getColumnDescriptor() {
+        List<Column> columns = new ArrayList<>();
         for (Field f: Record.class.getDeclaredFields()) {
             JsonProperty field = f.getAnnotation(JsonProperty.class);
-            if(field != null) {
+            if (field != null) {
+                String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
+                if (fieldName.equals("data-entry-date")) {
+                    // Skip data entry date
+                    continue;
+                }
+                int fieldIndex = field.index();
+                columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
+            }
+        }
+        return columns;
+    }
+
+    private List<Column> getColumnDescriptorWithEntryDate() {
+        List<Column> columns = new ArrayList<>();
+        for (Field f: TimeSeries.Record.class.getDeclaredFields()) {
+            JsonProperty field = f.getAnnotation(JsonProperty.class);
+            if (field != null) {
                 String fieldName = !field.value().isEmpty() ? field.value() : f.getName();
                 int fieldIndex = field.index();
                 columns.add(new TimeSeries.Column(fieldName, fieldIndex + 1, f.getType()));
             }
         }
-
         return columns;
     }
-
 
 
     @ArraySchema(
             schema = @Schema(
                     name = "TimeSeries.Record",
                     description = "A representation of a time-series record in the form [dateTime, value, qualityCode]",
-                    type="array"
+                    type = "array"
             ),
             arraySchema = @Schema(
-                    type="array",
+                    type = "array",
                     example = "[1509654000000, 54.3, 0]",
                     description = "Time is Milliseconds since the UNIX Epoch. Value is Double (for missing data you "
                                 + "can use null, or -Float.MAX_VALUE (-340282346638528859811704183484516925440), "
@@ -239,6 +310,9 @@ public class TimeSeries extends CwmsDTOPaginated {
                                 + "placeholder which can be important in irregular and psuedo regular timeseries."
             )
     )
+
+    @JsonSerialize(using = TimeSeriesRecordSerializer.class)
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Record {
         // Explicitly set property order for array serialization
         @JsonProperty(value = "date-time", index = 0)
@@ -252,13 +326,26 @@ public class TimeSeries extends CwmsDTOPaginated {
         @JsonProperty(value = "quality-code", index = 2)
         int qualityCode;
 
+        @JsonIgnore
+        @JsonProperty(value = "data-entry-date", index = 3)
+        Timestamp dataEntryDate;
+
         @SuppressWarnings("unused") // required so JAXB can initialize and marshal
-        private Record() {}
+        private Record() {
+        }
 
         public Record(Timestamp dateTime, Double value, int qualityCode) {
             this.dateTime = dateTime;
             this.value = value;
             this.qualityCode = qualityCode;
+            this.dataEntryDate = null;
+        }
+
+        public Record(Timestamp dateTime, Double value, int qualityCode, Timestamp dataEntryDate) {
+            this.dateTime = dateTime;
+            this.value = value;
+            this.qualityCode = qualityCode;
+            this.dataEntryDate = dataEntryDate;
         }
 
         // When serialized, the value is unix epoch at UTC.
@@ -274,60 +361,68 @@ public class TimeSeries extends CwmsDTOPaginated {
             return qualityCode;
         }
 
-        @Override
-        public boolean equals(Object o)
-        {
-            if(this == o)
-            {
-                return true;
-            }
-            if(o == null || getClass() != o.getClass())
-            {
-                return false;
-            }
-
-            final Record record = (Record) o;
-
-            if(getQualityCode() != record.getQualityCode())
-            {
-                return false;
-            }
-            if(getDateTime() != null ? !getDateTime().equals(record.getDateTime()) : record.getDateTime() != null)
-            {
-                return false;
-            }
-            return getValue() != null ? getValue().equals(record.getValue()) : record.getValue() == null;
+        public Timestamp getDataEntryDate() {
+            return dataEntryDate;
         }
 
         @Override
-        public int hashCode()
-        {
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            final Record tsRecord = (Record) o;
+
+            if (getQualityCode() != tsRecord.getQualityCode()) {
+                return false;
+            }
+            if (getDateTime() != null
+                ? !getDateTime().equals(tsRecord.getDateTime()) : tsRecord.getDateTime() != null) {
+                return false;
+            }
+            if (getDataEntryDate() != null
+                ? !getDataEntryDate().equals(tsRecord.getDataEntryDate()) : tsRecord.getDataEntryDate() != null) {
+                return false;
+            }
+            return getValue() != null ? getValue().equals(tsRecord.getValue()) : tsRecord.getValue() == null;
+        }
+
+        @Override
+        public int hashCode() {
             int result = getDateTime() != null ? getDateTime().hashCode() : 0;
             result = 31 * result + (getValue() != null ? getValue().hashCode() : 0);
             result = 31 * result + getQualityCode();
+            result = 31 * result + (getDataEntryDate() != null ? getDataEntryDate().hashCode() : 0);
             return result;
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
+            if (dataEntryDate != null) {
+                return "Record{" + "dateTime=" + dateTime + ", value=" + value
+                    + ", qualityCode=" + qualityCode + ", dataEntryDate=" + dataEntryDate + '}';
+            }
             return "Record{" + "dateTime=" + dateTime + ", value=" + value + ", qualityCode=" + qualityCode + '}';
         }
     }
 
     @Schema(hidden = true, name = "TimeSeries.Column", accessMode = Schema.AccessMode.READ_ONLY)
-    private static class Column {
+    public static class Column {
         public final String name;
         public final int ordinal;
         public final Class<?> datatype;
 
         // JAXB seems to need a default ctor
-        private Column(){
+        private Column() {
             this(null, 0,null);
         }
 
         @JsonCreator
-        protected Column(@JsonProperty("name") String name, @JsonProperty("ordinal") int number, @JsonProperty("datatype") Class<?> datatype) {
+        protected Column(@JsonProperty("name") String name,
+            @JsonProperty("ordinal") int number, @JsonProperty("datatype") Class<?> datatype) {
             this.name = name;
             this.ordinal = number;
             this.datatype = datatype;

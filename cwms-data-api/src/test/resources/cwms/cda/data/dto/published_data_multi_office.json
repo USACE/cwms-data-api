@@ -1,0 +1,137 @@
+{
+  "cursor": "cursor",
+  "page-size": 20,
+  "total": 3,
+  "next-page": "",
+  "location-to-published-data": [
+    {
+      "location-id": {
+        "office-id": "SPK",
+        "name": "AARK"
+      },
+      "bounding-office-id": "SPK",
+      "kind": "SITE",
+      "published-times-series": {
+        "STAGE": {
+          "time-series-id": {
+            "office-id": "SPK",
+            "name": "AARK.Stage.Inst.15Minutes.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Stage data for AARK"
+        },
+        "INFLOW": {
+          "time-series-id": {
+            "office-id": "SPK",
+            "name": "AARK.Flow.Inst.1Hour.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Flow data for AARK"
+        },
+        "PRECIP": {
+          "time-series-id": {
+            "office-id": "SPK",
+            "name": "AARK.Precip.Inst.1Hour.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Precip data for AARK"
+        }
+      }
+    },
+    {
+      "location-id": {
+        "office-id": "SWT",
+        "name": "ADDI"
+      },
+      "bounding-office-id": "SWT",
+      "kind": "SITE",
+      "published-times-series": {
+        "STAGE": {
+          "time-series-id": {
+            "office-id": "SWT",
+            "name": "ADDI.Stage.Inst.15Minutes.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Stage data for ADDI"
+        },
+        "INFLOW": {
+          "time-series-id": {
+            "office-id": "SWT",
+            "name": "ADDI.Flow.Inst.1Hour.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Flow data for ADDI"
+        },
+        "PRECIP": {
+          "time-series-id": {
+            "office-id": "SWT",
+            "name": "ADDI.Precip.Inst.1Hour.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Precip data for ADDI"
+        }
+      }
+    },
+    {
+      "location-id": {
+        "office-id": "NWD",
+        "name": "BBNK"
+      },
+      "bounding-office-id": "NWD",
+      "kind": "SITE",
+      "published-times-series": {
+        "STAGE": {
+          "time-series-id": {
+            "office-id": "NWD",
+            "name": "BBNK.Stage.Inst.15Minutes.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Stage data for BBNK"
+        },
+        "INFLOW": {
+          "time-series-id": {
+            "office-id": "NWD",
+            "name": "BBNK.Flow.Inst.1Hour.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Flow data for BBNK"
+        },
+        "PRECIP": {
+          "time-series-id": {
+            "office-id": "NWD",
+            "name": "BBNK.Precip.Inst.1Hour.0.Ccp-Rev"
+          },
+          "timezone-name": "UTC",
+          "interval-offset-minutes": 0,
+          "active": true,
+          "date-refreshed": "2025-03-03T12:00:00Z",
+          "notes": "Precip data for BBNK"
+        }
+      }
+    }
+  ]
+}

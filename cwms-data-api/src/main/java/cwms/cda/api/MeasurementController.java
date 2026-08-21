@@ -21,42 +21,51 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
-import com.codahale.metrics.Timer;
 import static cwms.cda.api.Controllers.AGENCY;
 import static cwms.cda.api.Controllers.BEGIN;
 import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE_FORMAT;
 import static cwms.cda.api.Controllers.DELETE;
-import static cwms.cda.api.Controllers.EXAMPLE_DATE;
+import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.MAX_FLOW;
 import static cwms.cda.api.Controllers.MAX_HEIGHT;
+import static cwms.cda.api.Controllers.MAX_NUMBER;
+import static cwms.cda.api.Controllers.MEASUREMENT_ID;
 import static cwms.cda.api.Controllers.MIN_FLOW;
 import static cwms.cda.api.Controllers.MIN_HEIGHT;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.MIN_NUMBER;
-import static cwms.cda.api.Controllers.MAX_NUMBER;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.QUALITY;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
+import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsDouble;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.MeasurementDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.measurement.Measurement;
+import cwms.cda.data.dto.measurement.MeasurementLegacy;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -68,18 +77,17 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
 public final class MeasurementController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
-    static final String TAG = "Measurements";
+    public static final String TAG = "Measurements";
 
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
@@ -98,16 +106,13 @@ public final class MeasurementController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description = "Office id mask for filtering measurements. Use null to retrieve measurements for all offices."),
                     @OpenApiParam(name = ID_MASK, description = "Location id mask for filtering measurements. Use null to retrieve measurements for all locations."),
-                    @OpenApiParam(name = MIN_NUMBER, description = "Minimum measurement number-id for filtering measurements."),
-                    @OpenApiParam(name = MAX_NUMBER, description = "Maximum measurement number-id for filtering measurements."),
-                    @OpenApiParam(name = BEGIN, description = "The start of the time "
-                            + "window to delete. The format for this field is ISO 8601 extended, with "
-                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                            + EXAMPLE_DATE + "'. A null value is treated as an unbounded start."),
-                    @OpenApiParam(name = END, description = "The end of the time "
-                            + "window to delete.The format for this field is ISO 8601 extended, with "
-                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                            + EXAMPLE_DATE + "'.A null value is treated as an unbounded end."),
+                    @OpenApiParam(name = MEASUREMENT_ID, description = "Measurement ID filter. Supports UUIDs (and optionally integer IDs). This filter has precedence over min-number and max-number filters."),
+                    @OpenApiParam(name = MIN_NUMBER, type = Integer.class, description = "Minimum measurement number-id for filtering measurements. Only applies to integer measurement IDs."),
+                    @OpenApiParam(name = MAX_NUMBER, type = Integer.class, description = "Maximum measurement number-id for filtering measurements. Only applies to integer measurement IDs."),
+                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. " +
+                            TIME_FORMAT_DESC + " A null value is treated as an unbounded start."),
+                    @OpenApiParam(name = END, description = "The end of the time window to delete." +
+                            TIME_FORMAT_DESC + " A null value is treated as an unbounded end."),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                             + "to be used if the format of the " + BEGIN + "and " + END
                             + " parameters do not include offset or time zone information. "
@@ -127,8 +132,9 @@ public final class MeasurementController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = "200", content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Measurement.class),
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = Measurement.class)
+                            @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Measurement.class),
+                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = MeasurementLegacy.class),
+                            @OpenApiContent(isArray = true, type = Formats.JSON, from = MeasurementLegacy.class)
                     })
             },
             description = "Returns matching measurement data.",
@@ -143,6 +149,7 @@ public final class MeasurementController implements CrudHandler {
         Instant maxDate = queryParamAsInstant(ctx, END);
         String minNum = ctx.queryParam(MIN_NUMBER);
         String maxNum = ctx.queryParam(MAX_NUMBER);
+        String measurementId = ctx.queryParam(MEASUREMENT_ID);
         Number minHeight = queryParamAsDouble(ctx, MIN_HEIGHT);
         Number maxHeight = queryParamAsDouble(ctx, MAX_HEIGHT);
         Number minFlow = queryParamAsDouble(ctx, MIN_FLOW);
@@ -153,31 +160,37 @@ public final class MeasurementController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
             List<Measurement> measurements = dao.retrieveMeasurements(officeId, locationId, minDate, maxDate, unitSystem,
-                    minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agency, quality);
+                    minHeight, maxHeight, minFlow, maxFlow, minNum, maxNum, agency, quality, measurementId);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, Measurement.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, measurements, Measurement.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Measurements", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Measurements");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
-
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSONV1),
-                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSON)
+                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSONV2),
+                            @OpenApiContent(isArray = true, from = MeasurementLegacy.class, type = Formats.JSONV1),
+                            @OpenApiContent(isArray = true, from = MeasurementLegacy.class, type = Formats.JSON)
                     },
                     required = true),
             queryParams = {
@@ -188,7 +201,7 @@ public final class MeasurementController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = "204", description = "Measurement(s) successfully stored.")
+                    @OpenApiResponse(status = "201", description = "Measurement(s) successfully stored.")
             }
     )
     @Override
@@ -202,21 +215,15 @@ public final class MeasurementController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
             dao.storeMeasurements(measurements, failIfExists);
-            String statusMsg = "Created Measurement";
-            if(measurements.size() > 1)
-            {
-                statusMsg += "s";
-            }
-            ctx.status(HttpServletResponse.SC_CREATED).json(statusMsg);
+            StatusResponse re = new StatusResponse(measurements.get(0).getOfficeId(), "Measurement(s) successfully stored.");
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationId) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -226,27 +233,23 @@ public final class MeasurementController implements CrudHandler {
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the office of the measurements to delete"),
-                    @OpenApiParam(name = BEGIN, required = true, description = "The start of the time "
-                            + "window to delete. The format for this field is ISO 8601 extended, with "
-                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                            + EXAMPLE_DATE + "'."),
-                    @OpenApiParam(name = END, required = true, description = "The end of the time "
-                            + "window to delete.The format for this field is ISO 8601 extended, with "
-                            + "optional offset and timezone, i.e., '" + DATE_FORMAT + "', e.g., '"
-                            + EXAMPLE_DATE + "'."),
+                    @OpenApiParam(name = BEGIN, description = "The start of the time window to delete. " +
+                            TIME_FORMAT_DESC),
+                    @OpenApiParam(name = END, description = "The end of the time window to delete." +
+                            TIME_FORMAT_DESC),
                     @OpenApiParam(name = TIMEZONE, description = "This field specifies a default timezone "
                             + "to be used if the format of the " + BEGIN + "and " + END
                             + " parameters do not include offset or time zone information. "
                             + "Defaults to UTC."),
-                    @OpenApiParam(name = MIN_NUMBER, description = "Specifies the min number-id of the measurement to delete."),
-                    @OpenApiParam(name = MAX_NUMBER, description = "Specifies the max number-id of the measurement to delete."),
+                    @OpenApiParam(name = MIN_NUMBER, type = Integer.class, description = "Specifies the min number-id of the measurement to delete. Only applies to integer measurement IDs."),
+                    @OpenApiParam(name = MAX_NUMBER, type = Integer.class, description = "Specifies the max number-id of the measurement to delete. Only applies to integer measurement IDs."),
             },
             description = "Delete an existing measurement.",
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = "204", description = "Measurement successfully deleted."),
-                    @OpenApiResponse(status = "404", description = "Measurement not found.")
+                    @OpenApiResponse(status = STATUS_200, description = "Measurement successfully deleted."),
+                    @OpenApiResponse(status = STATUS_404, description = "Measurement not found.")
             }
     )
     @Override
@@ -259,8 +262,9 @@ public final class MeasurementController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             MeasurementDao dao = new MeasurementDao(dsl);
-            dao.deleteMeasurements(officeId, locationId, minDate, maxDate,minNum, maxNum);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json( "Measurements for " + locationId + " Deleted");
+            dao.deleteMeasurements(officeId, locationId, minDate, maxDate, minNum, maxNum, null);
+            StatusResponse re = new StatusResponse(officeId, "Measurement successfully deleted for specified location-id.", locationId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 

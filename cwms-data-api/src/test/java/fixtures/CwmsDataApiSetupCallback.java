@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,26 +19,33 @@ import mil.army.usace.hec.test.database.TeamCityUtilities;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
+import cwms.cda.data.dao.JooqDao;
+import cwms.cda.security.OpenIdConnectIdentitityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
+import io.restassured.config.EncoderConfig;
 import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
-import org.testcontainers.images.ImagePullPolicy;
 import org.testcontainers.images.PullPolicy;
 
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
 
 @SuppressWarnings("rawtypes")
+@ExtendWith(KeyCloakExtension.class)
 public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallback {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -47,7 +55,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static final String ORACLE_IMAGE =
         System.getProperty("CDA.oracle.database.image",
-                           "registry-public.hecdev.net/cwms/database-ready-ora-23.5:latest-dev"
+                           "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
                        );
     private static final String ORACLE_VOLUME =
         System.getProperty("CDA.oracle.database.volume",
@@ -55,7 +63,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                           );
     static final String CWMS_DB_IMAGE =
         System.getProperty("CDA.cwms.database.image",
-                           "registry.hecdev.net/cwms/schema_installer:99.99.99.11-CDA_STAGING"
+                           "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer:latest-dev"
                           );
 
 
@@ -64,18 +72,21 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     public static final String VERSION_STRING;
     public static final int VERSION_INT;
 
-    static
-    {
+    static {
         VERSION_STRING = schemaVersion();
         VERSION_INT = versionInt();
     }
 
-    private static String schemaVersion()
-    {
-        String ret = "Unknown";
+    static {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+    }
+
+    private static String schemaVersion() {
+        String ret;
         if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
         {
-            ret = "Bypass";
+            ret = System.getProperty("testcontainer.cwms.bypass.version","Bypass");
         }
         else if (ORACLE_IMAGE.contains("database-ready"))
         {
@@ -90,19 +101,34 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static int versionInt()
     {
-        int ret = -999999;
+        int ret;
         String tmp = schemaVersion();
         if (tmp.equalsIgnoreCase("latest-dev")) {
-            ret = 999999;
-        }
-        else if(tmp.toLowerCase().endsWith("staging")) {
+            ret = LATEST_SCHEMA;
+        } else if (tmp.equalsIgnoreCase("Bypass")) {
+            ret = -1;
+        } else if(tmp.toLowerCase().endsWith("staging")) {
             ret = 1009999;
-        }
-        else
-        {
-            ret = Dao.versionAsInteger(tmp);
+        } else {
+            ret = Dao.versionAsInteger(tmp.replaceAll("-RC.*", "").replace("-","."));
         }
         return ret;
+    }
+
+    public static int getSchemaVersion() {
+        if (cwmsDb == null) {
+            // Class-level execution conditions run before the database container starts.
+            return VERSION_INT;
+        }
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        try {
+            return db.connection((c) -> {
+                var ctx = JooqDao.getDslContext(c, db.getOfficeId());
+                return Dao.versionAsInteger(Dao.getVersion(ctx));
+            }, webUser);
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override
@@ -113,7 +139,6 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void beforeAll(ExtensionContext context) throws Exception {
         if (cdaInstance == null ) {
             cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(ORACLE_IMAGE)
@@ -121,7 +146,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                             .withOfficeId("HQ")
                             .withVolumeName(TeamCityUtilities.cleanupBranchName(ORACLE_VOLUME))
                             .withSchemaImage(CWMS_DB_IMAGE);
-            cwmsDb.withImagePullPolicy(PullPolicy.defaultPolicy());
+            cwmsDb.withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(1)));
             cwmsDb.start();
 
             final String jdbcUrl = cwmsDb.getJdbcUrl();
@@ -138,6 +163,12 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             System.setProperty("CDA_JDBC_USERNAME", webUser);
             System.setProperty("CDA_JDBC_PASSWORD", pw);
 
+            // OIDC properties
+            System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
+            System.setProperty(OpenIdConnectIdentitityProvider.CREATE_USERS_KEY,"true");
+            System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
+            System.setProperty(OpenIdConnectIdentitityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
+
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
             cdaInstance = new TomcatServer("build/tomcat",
@@ -149,18 +180,31 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = System.getProperty("warContext");
-            // we only use doubles
-            RestAssured.config()
-                       .jsonConfig(
-                            JsonConfig.jsonConfig()
-                                      .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
+            // actually assign the new config to the global configuration. just running this here without
+            // the assignment apparently does nothing.
+            RestAssured.config = RestAssured.config()
+                        // we only use doubles (NOTE: this is commend out because this config was
+                        // never originally active and will be addressed in a followup)
+                    //    .jsonConfig(
+                    //         JsonConfig.jsonConfig()
+                    //                   .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))
+                        // our content type processing is a bit more picky now.
+                        // I also don't recal seeing any default COntent-Type or Accept header
+                        // defaults from browsers that include this much.
+                        // if we start seeing it we need to add explicity @FormattableWith annotations
+                        // per character as that is a distinct content-type.
+                       .encoderConfig(
+                            EncoderConfig.encoderConfig()
+                                         .appendDefaultContentCharsetToContentTypeIfUndefined(
+                                            false
+                                         ));
             healthCheck();
         }
     }
 
     private static void healthCheck() throws InterruptedException {
         int attempts = 0;
-        int maxAttempts = 15;
+        int maxAttempts = 30;
         for (; attempts < maxAttempts; attempts++) {
             try {
                 given()
@@ -174,7 +218,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                 break;
             } catch (Throwable e) {
                 logger.atInfo().log("Waiting for the server to start...");
-                Thread.sleep(100);
+                // yes, 100 millis *should* be fine. But at least my machine keeps lagging.
+                Thread.sleep(300);
             }
         }
         if (attempts == maxAttempts) {
@@ -187,7 +232,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         StringReader reader = new StringReader(csv);
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
-            cwmsDb2.connection( (c) -> {
+            cwmsDb2.connection( c -> {
                 TsRandomSampler.save_to_db(samples, c);
             },"cwms_20");
         } catch (IOException e) {
@@ -202,7 +247,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     private void loadDefaultData(CwmsDatabaseContainer cwmsDb) throws SQLException {
         ArrayList<String> defaultList = getDefaultList();
         for( String data: defaultList){
-            String user_resource[] = data.split(":");
+            String[] user_resource = data.split(":");
             String user = user_resource[0];
             if( user.equalsIgnoreCase("dba")){
                 user = cwmsDb.getDbaUser();
@@ -210,6 +255,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                 user = cwmsDb.getUsername();
             }
             logger.atInfo().log(String.format("Running %s as %s %s", data, user, cwmsDb.getPassword()));
+            logger.atInfo().log("Webuser = " + webUser);
             cwmsDb.executeSQL(loadResourceAsString(user_resource[1]).replace("&pduser", cwmsDb.getPdUser())
                                                                     .replace("&user", cwmsDb.getUsername())
                                                                     .replace("&webuser", webUser)
@@ -242,6 +288,39 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     public static CwmsDatabaseContainer<?> getDatabaseLink() {
         return cwmsDb;
+    }
+
+    public static void shutdown() throws Exception {
+        Exception failure = null;
+        if (cdaInstance != null) {
+            try {
+                cdaInstance.stop();
+            } catch (Exception e) {
+                failure = e;
+            } finally {
+                cdaInstance = null;
+            }
+        }
+
+        if (cwmsDb != null) {
+            try {
+                cwmsDb.stop();
+            } catch (Exception e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+            } finally {
+                cwmsDb = null;
+            }
+        }
+
+        webUser = null;
+
+        if (failure != null) {
+            throw failure;
+        }
     }
 
     private String loadResourceAsString(String fileName) {

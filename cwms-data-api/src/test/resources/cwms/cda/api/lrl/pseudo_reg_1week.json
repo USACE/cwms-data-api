@@ -1,0 +1,10 @@
+{
+  "name": "LacQuiParle_Dam.Depth-Ice.Inst.~1Week.0.Raw-NWS-IEM",
+  "office-id": "SPK",
+  "units": "in",
+  "values":
+  [
+    [ "2024-12-16T15:00:00+00:00", 11.1, 0 ]
+  ],
+  "version-date": null
+}

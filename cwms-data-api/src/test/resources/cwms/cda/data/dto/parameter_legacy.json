@@ -1,0 +1,9 @@
+{
+  "abstract-param": "Area",
+  "name": "Area",
+  "office": "All",
+  "default-english-unit": "ft2",
+  "default-si-unit": "m2",
+  "long-name": "Surface Area",
+  "description": "Area of a surface"
+}

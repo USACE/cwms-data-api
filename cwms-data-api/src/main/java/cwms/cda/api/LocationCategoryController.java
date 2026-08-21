@@ -25,12 +25,23 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dto.LocationCategory;
@@ -45,16 +56,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationCategoryController implements CrudHandler {
-    public static final Logger logger =
-            Logger.getLogger(LocationCategoryController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String TAG = "Location Categories";
 
     private final MetricRegistry metrics;
@@ -103,24 +113,26 @@ public class LocationCategoryController implements CrudHandler {
 
                 String result = Formats.format(contentType, cats, LocationCategory.class);
 
-                ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Cannot find requested location category for "
                         + "office provided: " + office);
 
-                logger.info(() -> {
-                    StringBuilder builder = new StringBuilder(re.toString())
-                            .append("with url:").append(ctx.fullUrl());
-                    return builder.toString();
-                });
+                logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
                 ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
             }
-
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve Location Categories");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Location Categories");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(
@@ -146,7 +158,7 @@ public class LocationCategoryController implements CrudHandler {
     @Override
     public void getOne(Context ctx, @NotNull String categoryId) {
 
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             LocationCategoryDao dao = new LocationCategoryDao(dsl);
@@ -159,24 +171,26 @@ public class LocationCategoryController implements CrudHandler {
 
                 String result = Formats.format(contentType, grp.get());
 
-                ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Cannot find requested location category id: " + categoryId
                     + " with office: " + office);
 
-                logger.info(() -> {
-                    StringBuilder builder = new StringBuilder(re.toString())
-                            .append("with url:").append(ctx.fullUrl());
-                    return builder.toString();
-                });
+                logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
                 ctx.json(re).status(HttpServletResponse.SC_NOT_FOUND);
             }
-
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve Location Category");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Location Category");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(
@@ -191,7 +205,7 @@ public class LocationCategoryController implements CrudHandler {
     )
     @Override
     public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.req.getContentType();

@@ -3,8 +3,11 @@ name: Tagged Release
 on:
   push:
     tags:
+      # Allow an additional marker if multiple releases needed within a day.
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-dev[a-z]*'
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-test[a-z]*'
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[a-z]*'
       - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]'
-      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[a-zA-Z0-9]+'
 jobs:
   release:
     uses: ./.github/workflows/release.yml

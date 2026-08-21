@@ -24,10 +24,6 @@
 
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import static com.codahale.metrics.MetricRegistry.name;
-import com.codahale.metrics.Timer;
 import static cwms.cda.api.Controllers.AREA_UNIT;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
@@ -39,21 +35,26 @@ import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.NAME_MASK;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STAGE_UNIT;
 import static cwms.cda.api.Controllers.STATION_UNIT;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STREAM_ID;
 import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.StreamLocationDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -62,29 +63,19 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
-public final class StreamLocationController implements CrudHandler {
+public final class StreamLocationController extends BaseCrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     static final String TAG = "StreamLocations";
 
-    private final MetricRegistry metrics;
-    private final Histogram requestResultSize;
-
     public StreamLocationController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -125,9 +116,17 @@ public final class StreamLocationController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, streamLocations, StreamLocation.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve stream locations", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve stream locations");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -171,9 +170,17 @@ public final class StreamLocationController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, streamLocation);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve stream location", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve stream location");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -191,7 +198,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.POST,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_201, description = "Stream Location successfully stored to CWMS.")
             }
     )
     @Override
@@ -204,11 +211,17 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.storeStreamLocation(streamLocation, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Stream Location");
+            StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
+                    "Stream Location successfully stored to CWMS.", streamLocation.getId().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location-id of "
+                            + "the stream location to be renamed."),
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = StreamLocation.class, type = Formats.JSONV1)
@@ -218,11 +231,12 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully updated to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Updated Stream Location")
             }
     )
     @Override
-    public void update(Context ctx, @NotNull String locationId) {
+    public void update(Context ctx, @NotNull String name) {
+        logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(METHOD + "update")) {
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
@@ -230,7 +244,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.updateStreamLocation(streamLocation);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Updated Stream Location");
+            StatusResponse re = new StatusResponse(streamLocation.getId().getOfficeId(),
+                    "Updated Stream Location", streamLocation.getId().getName());
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -249,7 +265,7 @@ public final class StreamLocationController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Stream Location successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Stream Location successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Stream Location not found.")
             }
     )
@@ -261,7 +277,9 @@ public final class StreamLocationController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             StreamLocationDao dao = new StreamLocationDao(dsl);
             dao.deleteStreamLocation(officeId, streamId, locationId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Deleted Stream Location");
+            StatusResponse re = new StatusResponse(officeId,
+                    "Stream Location successfully deleted from CWMS.", streamId);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

@@ -17,7 +17,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import static io.restassured.RestAssured.given;
@@ -261,7 +261,7 @@ final class DownstreamLocationsGetControllerIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK));
 
         // Delete the StreamLocation2
         given()
@@ -278,7 +278,7 @@ final class DownstreamLocationsGetControllerIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK));
 
     }
 

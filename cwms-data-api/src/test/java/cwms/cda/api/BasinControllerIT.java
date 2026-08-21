@@ -43,13 +43,15 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.time.ZoneId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
@@ -62,6 +64,9 @@ class BasinControllerIT extends DataApiTestIT
 	private static final String OFFICE = "SWT";
 	private static final Basin BASIN;
 	private static final Basin BASIN_CONNECT;
+	private static final String OFFICE_ID = "office-id";
+	private static final String MESSAGE = "message";
+	private static final String IDENTIFIER = "identifier";
 	static {
 		try {
 			BASIN = new Basin.Builder()
@@ -91,7 +96,7 @@ class BasinControllerIT extends DataApiTestIT
 	}
 
 	@BeforeAll
-	public static void setup() throws Exception {
+	static void setup() throws Exception {
 		CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
 		databaseLink.connection(c -> {
 			DSLContext ctx = getDslContext(c, OFFICE);
@@ -125,8 +130,8 @@ class BasinControllerIT extends DataApiTestIT
 					.withNearestCity("Denver")
 					.build();
 			try {
-				locationsDao.storeLocation(loc);
-				locationsDao.storeLocation(loc2);
+				locationsDao.storeLocation(loc, false);
+				locationsDao.storeLocation(loc2, false);
 				basinDao.storeBasin(BASIN_CONNECT);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -137,7 +142,7 @@ class BasinControllerIT extends DataApiTestIT
 	}
 
 	@AfterAll
-	public static void tearDown() throws Exception {
+	static void tearDown() throws Exception {
 		CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
 		databaseLink.connection(c -> {
 			DSLContext ctx = getDslContext(c, OFFICE);
@@ -176,6 +181,9 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Basin successfully stored to CWMS."))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 
 		if(BASIN.getParentBasinId() != null && BASIN.getPrimaryStreamId() != null){
@@ -287,7 +295,10 @@ class BasinControllerIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Deleted CWMS Basin"))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 
 		// Retrieve basin and assert that it does not exist
@@ -303,6 +314,28 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_NOT_FOUND))
+		;
+	}
+
+	@Test
+	void test_get_one_bad_units() {
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+		// Retrieve basin with bad units
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(Formats.JSONV1)
+			.queryParam(Controllers.OFFICE, OFFICE)
+			.queryParam(UNIT, "F")
+			.header(AUTH_HEADER, user.toHeaderValue())
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("basins/" + BASIN_CONNECT.getBasinId().getName())
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+			.body("details.message", equalTo("Cannot convert from unit m2 to unit F"))
 		;
 	}
 
@@ -377,6 +410,9 @@ class BasinControllerIT extends DataApiTestIT
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Basin successfully stored to CWMS."))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 
 
@@ -489,16 +525,20 @@ class BasinControllerIT extends DataApiTestIT
 		.then()
 			.log().ifValidationFails(LogDetail.ALL, true)
 		.assertThat()
-			.statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.body(OFFICE_ID, equalTo(BASIN.getBasinId().getOfficeId()))
+			.body(MESSAGE, equalTo("Deleted CWMS Basin"))
+			.body(IDENTIFIER, equalTo(BASIN.getBasinId().getName()))
 		;
 	}
 
-	@Test
-	void test_get_all_connectivity() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.NAMED_PGJSON, Formats.DEFAULT })
+	void test_get_all_connectivity(String format) {
 		// Retrieve all basins using legacy getter and assert that the created basin is in the list
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.NAMED_PGJSON)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 			.queryParam(UNIT, "mi2")
 		.when()
@@ -513,12 +553,13 @@ class BasinControllerIT extends DataApiTestIT
 		;
 	}
 
-	@Test
-	void test_get_one_connectivity() {
+	@ParameterizedTest
+	@ValueSource(strings = { Formats.NAMED_PGJSON, Formats.DEFAULT })
+	void test_get_one_connectivity(String format) {
 		// Retrieve basin using legacy getter and assert that the created basin exists
 		given()
 			.log().ifValidationFails(LogDetail.ALL, true)
-			.accept(Formats.NAMED_PGJSON)
+			.accept(format)
 			.queryParam(Controllers.OFFICE, OFFICE)
 		.when()
 			.redirects().follow(true)

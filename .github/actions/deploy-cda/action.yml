@@ -1,0 +1,81 @@
+name: Deploy CDA
+description: Deploys CDA to appropriate registry given the required inputs
+inputs:
+  tag:
+    type: string
+    required: true
+  region:
+    type: string
+    required: true
+  iam_role:
+    type: string
+    required: true
+  token:
+    type: string
+    required: false
+  activation_tag:
+    type: string
+    required: true
+  activate:
+    type: boolean
+    required: true
+    default: false
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v6
+      with:
+        aws-region: ${{ inputs.region }}
+        role-to-assume: ${{ inputs.iam_role }}
+        output-credentials: true
+  # Hello from AWS: WhoAmI
+    - name: Sts GetCallerIdentity
+      shell: bash
+      run: |
+        aws sts get-caller-identity
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        mask-password: 'true'
+    - name: Push API Image to ECR Repo
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: cwms-wmes-data-api
+        IMAGE_TAG: ${{inputs.tag}}
+        ACTIVE_TAG: ${{inputs.activation_tag}}
+        ACTIVATE: ${{inputs.activate}}
+        IMAGE: ghcr.io/usace/cwms-data-api
+      shell: bash
+      run: |
+        docker pull ${IMAGE}:${IMAGE_TAG}
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        if [ "${ACTIVATE}" == "true" ]; then
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        fi
+    - name: Push API Migration Image to ECR Repo
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: cwms-wmes-schema_installer
+        IMAGE_TAG: ${{inputs.tag}}
+        ACTIVE_TAG: ${{inputs.activation_tag}}
+        ACTIVATE: ${{inputs.activate}}
+        IMAGE: ghcr.io/usace/cwms-data-api-schema-migration
+      shell: bash
+      run: |
+        docker pull ${IMAGE}:${IMAGE_TAG}
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker tag $IMAGE:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        if [ "${ACTIVATE}" == "true" ]; then
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ACTIVE_TAG
+        fi
+    - name: ECR Logout
+      if: always()
+      shell: bash
+      run: docker logout ${{ steps.login-ecr.outputs.registry }}

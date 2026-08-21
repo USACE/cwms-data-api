@@ -2,15 +2,18 @@ package cwms.cda.data.dto.rating;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import cwms.cda.formatters.xml.XMLv2;
 import hec.data.cwmsRating.RatingConst;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -18,10 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+@JsonRootName("rating-spec")
 @JsonDeserialize(builder = RatingSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class)
 public class RatingSpec extends CwmsDTO {
     private final String ratingId;
     private final String templateId;
@@ -36,6 +41,7 @@ public class RatingSpec extends CwmsDTO {
     private final boolean autoUpdate;
     private final boolean autoActivate;
     private final boolean autoMigrateExtension;
+
     private final IndependentRoundingSpec[] independentRoundingSpecs;
     private final String dependentRoundingSpec;
     private final String description;
@@ -112,6 +118,8 @@ public class RatingSpec extends CwmsDTO {
         return autoMigrateExtension;
     }
 
+    @JacksonXmlElementWrapper(localName = "independent-rounding-specs")
+    @JacksonXmlProperty(localName = "independent-rounding-spec")
     public IndependentRoundingSpec[] getIndependentRoundingSpecs() {
         return independentRoundingSpecs;
     }
@@ -175,7 +183,6 @@ public class RatingSpec extends CwmsDTO {
                 that.getSourceAgency()) : that.getSourceAgency() != null) {
             return false;
         }
-        // Probably incorrect - comparing Object[] arrays with Arrays.equals
         if (!Arrays.equals(getIndependentRoundingSpecs(), that.getIndependentRoundingSpecs())) {
             return false;
         }
@@ -319,6 +326,7 @@ public class RatingSpec extends CwmsDTO {
             return this;
         }
 
+
         public static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
                 String indRoundingSpecsStr) {
             IndependentRoundingSpec[] retval = null;
@@ -330,7 +338,7 @@ public class RatingSpec extends CwmsDTO {
         }
 
         @NotNull
-        private static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
+        public static IndependentRoundingSpec[] buildIndependentRoundingSpecs(
                 String[] indRoundingSpecsStrArr) {
             IndependentRoundingSpec[] retval;
             retval = new IndependentRoundingSpec[indRoundingSpecsStrArr.length];

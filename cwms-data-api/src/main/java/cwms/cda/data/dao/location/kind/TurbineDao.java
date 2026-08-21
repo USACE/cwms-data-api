@@ -62,8 +62,13 @@ public class TurbineDao extends JooqDao<Turbine> {
     public List<Turbine> retrieveTurbines(String projectLocationId, String officeId) {
         return connectionResult(dsl, conn -> {
             LOCATION_REF_T locationRefT = getLocationRef(projectLocationId, officeId);
-            return CWMS_TURBINE_PACKAGE.call_RETRIEVE_TURBINES(DSL.using(conn).configuration(), locationRefT)
-                .stream()
+            var configuration = DSL.using(conn).configuration();
+            var projectStructureObjTs = CWMS_TURBINE_PACKAGE.call_RETRIEVE_TURBINES(configuration, locationRefT);
+            if(projectStructureObjTs == null)
+            {
+                return List.of();
+            }
+            return projectStructureObjTs.stream()
                 .map(TurbineDao::map)
                 .collect(toList());
         });

@@ -8,7 +8,9 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import org.jooq.DSLContext;
-import usace.cwms.db.jooq.dao.CwmsDbStreamJooq;
+import org.jooq.Record;
+import org.jooq.Result;
+import usace.cwms.db.jooq.codegen.packages.CWMS_STREAM_PACKAGE;
 
 
 public class StreamReachDao extends JooqDao<StreamReach> {
@@ -18,13 +20,12 @@ public class StreamReachDao extends JooqDao<StreamReach> {
 
     public Set<StreamReach> getReachesOnStream(String streamId, String officeId) {
         String pStationUnitIn = Unit.KILOMETER.getValue();
-        CwmsDbStreamJooq streamJooq = new CwmsDbStreamJooq();
 
         return connectionResult(dsl, c -> {
-            try (ResultSet resultSet = streamJooq.catStreamReaches(c, streamId, null, null,
-                    null, pStationUnitIn, officeId)) {
-                return buildReachesFromResultSet(resultSet);
-            }
+            var configuration = getDslContext(c, officeId).configuration();
+            Result<Record> rs = CWMS_STREAM_PACKAGE.call_CAT_STREAM_REACHES(configuration, streamId,
+                null, null, null, pStationUnitIn, officeId);
+            return buildReachesFromResultSet(rs.intoResultSet());
         });
     }
 

@@ -1,0 +1,84 @@
+/*
+ * MIT License
+ * Copyright (c) 2026 Hydrologic Engineering Center
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+plugins {
+    id 'base'
+}
+
+final def imageName = 'cwms-data-api/etl'
+final def etlEnvFile = providers.gradleProperty('etlEnvFile').orElse('etl.env')
+
+tasks.register('dockerBuild', DockerExec) {
+    group = 'docker'
+    description = 'Builds the CDA ETL Docker image.'
+
+    doFirst {
+        commandLine 'docker', 'build', '--pull', '-t', imageName, '.'
+    }
+
+    inputs.file('Dockerfile')
+    inputs.file('requirements.txt')
+    inputs.dir('src')
+}
+
+tasks.register('runEtl', DockerExec) {
+    dependsOn 'dockerBuild'
+
+    group = 'application'
+    description = 'Runs the CDA ETL Docker container using the configured environment file.'
+
+    doFirst {
+        def envFile = file(etlEnvFile.get())
+
+        if (!envFile.exists()) {
+            throw new GradleException("ETL environment file not found: ${envFile.absolutePath}")
+        }
+
+        commandLine 'docker', 'run', '--rm', '--env-file', envFile.absolutePath, imageName
+    }
+}
+
+tasks.register('runEtlUnitTests', DockerExec) {
+    dependsOn 'dockerBuild'
+
+    group = 'verification'
+    description = 'Runs ETL unit tests in Docker with local source and tests mounted for faster iteration.'
+
+    doFirst {
+        def args = [
+            'docker', 'run', '--rm',
+            '-e', 'PYTHONPATH=/app/src/cda_etl',
+            '-v', "${projectDir}/src:/app/src"
+        ]
+
+        def testsDir = file('tests')
+        args += ['-v', "${testsDir.absolutePath}:/app/tests"]
+        args += [imageName, 'python', '-m', 'pytest']
+
+        commandLine args
+    }
+
+    inputs.dir('src')
+    inputs.dir('tests').optional()
+}
+
+tasks.named('check') {
+    dependsOn 'runEtlUnitTests'
+}

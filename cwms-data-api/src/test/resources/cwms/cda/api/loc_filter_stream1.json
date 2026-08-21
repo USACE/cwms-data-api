@@ -1,0 +1,12 @@
+{
+  "starts-downstream": true,
+  "length": 10.5,
+  "average-slope": 0.01,
+  "length-units": "km",
+  "slope-units": "%",
+  "comment": "This is a test stream.",
+  "id": {
+    "office-id": "SPK",
+    "name": "Pine Flat Area-STREAM1"
+  }
+}

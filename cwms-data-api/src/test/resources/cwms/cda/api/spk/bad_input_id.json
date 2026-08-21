@@ -1,0 +1,17 @@
+{
+  "name": "TestBadTSIdCreationLoc.Elev.Avg.1Hour.1Hour.Bad",
+  "office-id": "SPK",
+  "units": "m",
+  "values": [
+    [
+      1675335600000,
+      35,
+      0
+    ],
+    [
+      1675422000000,
+      36,
+      0
+    ]
+  ]
+}

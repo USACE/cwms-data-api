@@ -6,11 +6,15 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.data.dto.forecast.ForecastSpec;
-import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.ReplaceUtils;
+import usace.cwms.db.jooq.codegen.packages.CWMS_FCST_PACKAGE;
+import usace.cwms.db.jooq.codegen.udt.records.BLOB_FILE_T;
+
 import java.util.TimeZone;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
+import org.jooq.impl.DefaultBinding;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -92,17 +96,17 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
             " from CWMS_20.AT_FCST_INST inst" +
             "         left outer join CWMS_20.AT_FCST_SPEC spec on inst.FCST_SPEC_CODE = spec.FCST_SPEC_CODE";
 
-    private static final String GET_ALL_CONDITIONS = " WHERE (? IS NULL OR spec_office_id = ?)" +
-            " AND (? IS NULL OR spec_id = ?)" +
-            " AND (? IS NULL OR spec_designator = ?)";
+    private static final String GET_ALL_CONDITIONS = " WHERE ((spec_office_id = ?) OR (spec_office_id IS NULL AND ? IS NULL))" +
+            " AND ((spec_id = ?) OR (spec_id IS NULL AND ? IS NULL))" +
+            " AND ((spec_designator = ?) OR (spec_designator IS NULL AND ? IS NULL))";
     private static final String GET_ONE_CONDITIONS = " WHERE (spec_office_id = ?)" +
             " AND (spec_id = ?)" +
-            " AND (spec_designator = ?)" +
+            " AND ((spec_designator = ?) OR (spec_designator IS NULL AND ? IS NULL))" +
             " AND (inst.FCST_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))" +
             " AND (inst.ISSUE_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))";
     private static final String FILE_CONDITIONS = " WHERE (spec.OFFICE_CODE = CWMS_UTIL.GET_DB_OFFICE_CODE(?))" +
             " AND (spec.FCST_SPEC_ID = ?)" +
-            " AND (spec.FCST_DESIGNATOR = ?)" +
+            " AND ((spec.FCST_DESIGNATOR = ?) OR (spec.FCST_DESIGNATOR IS NULL AND ? IS NULL))" +
             " AND (inst.FCST_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))" +
             " AND (inst.ISSUE_DATE_TIME = cwms_20.cwms_util.to_timestamp(?))";
 
@@ -111,21 +115,47 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public void create(ForecastInstance forecastInst) {
-        throw new UnsupportedFormatException("The Forecast API is not yet implemented in CWMS");
-//        String officeId = forecastInst.getSpec().getOfficeId();
-//        Timestamp forecastDate = Timestamp.from(forecastInst.getDateTime());
-//        Timestamp issueDate = Timestamp.from(forecastInst.getIssueDateTime());
-//        String forecastInfo = mapToJson(forecastInst.getMetadata());
-//        byte[] fileData = forecastInst.getFileData();
-//        BLOB_FILE_T blob = new BLOB_FILE_T(forecastInst.getFilename(), forecastInst.getFileMediaType(), OffsetDateTime.now(), 0L, fileData);
-//        connection(dsl, conn -> {
-//            setOffice(conn, officeId);
-//            DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
-//            CWMS_FCST_PACKAGE.call_STORE_FCST(DSL.using(conn).configuration(), forecastInst.getSpec().getSpecId(),
-//                    forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
-//                    "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
-//                    blob, "F", "T", officeId);
-//        });
+       connection(dsl, conn -> {
+           DSLContext ctx = getDslContext(conn, forecastInst.getSpec().getOfficeId());
+           store(ctx, forecastInst);
+       });
+    }
+
+    private void store(DSLContext ctx, ForecastInstance forecastInst) {
+        String officeId = forecastInst.getSpec().getOfficeId();
+        Timestamp forecastDate = Timestamp.from(forecastInst.getDateTime());
+        Timestamp issueDate = Timestamp.from(forecastInst.getIssueDateTime());
+        String forecastInfo = mapToJson(forecastInst.getMetadata());
+        byte[] fileData = forecastInst.getFileData();
+        BLOB_FILE_T blob = new BLOB_FILE_T();
+        blob.setFILENAME(forecastInst.getFilename());
+        blob.setMEDIA_TYPE(forecastInst.getFileMediaType());
+        blob.setDATA_ENTRY_DATE(OffsetDateTime.now());
+        blob.setQUALITY_CODE(0L);
+        blob.setTHE_BLOB(fileData);
+        DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
+        // Ensure delete + store occur in a single transaction so a store failure rolls back the delete
+        ctx.transaction(configuration -> {
+            DSLContext tx = DSL.using(configuration);
+            clearExistingForecastInstance(tx, forecastInst, officeId, forecastDate, issueDate);
+            CWMS_FCST_PACKAGE.call_STORE_FCST(configuration, forecastInst.getSpec().getSpecId(),
+                    forecastInst.getSpec().getDesignator(), forecastDate, issueDate,
+                    "UTC", forecastInst.getMaxAge(), forecastInst.getNotes(), forecastInfo,
+                    blob, "F", "T", officeId);
+        });
+    }
+
+    private void clearExistingForecastInstance(DSLContext ctx, ForecastInstance forecastInst, String officeId, Timestamp forecastDate, Timestamp issueDate) {
+        ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
+                .withOperatorKey("{noop}");
+        try {
+            // If the instance doesn't exist this will throw a NotFoundException which we can ignore, if it does exist we want to delete it before storing the new one
+            getForecastInstance(ctx, 0, noopUrlBuilder, officeId, forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(), forecastDate.toInstant(), issueDate.toInstant());
+            CWMS_FCST_PACKAGE.call_DELETE_FCST(ctx.configuration(), forecastInst.getSpec().getSpecId(), forecastInst.getSpec().getDesignator(),
+                    forecastDate, issueDate, "UTC", officeId);
+        } catch (NotFoundException e) {
+            // nothing to delete
+        }
     }
 
     private static String mapToJson(Map<String, String> metadata) {
@@ -141,7 +171,7 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
 
     private static Map<String, String> mapFromJson(String forecastInfo) {
         try {
-            return JsonV2.buildObjectMapper().readValue(forecastInfo, new TypeReference<Map<String, String>>() {
+            return JsonV2.buildObjectMapper().readValue(forecastInfo, new TypeReference<>() {
             });
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Error serializing forecast info to JSON", e);
@@ -149,10 +179,18 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public List<ForecastInstance> getForecastInstances(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
-            String office, String name, String designator) {
+            String officeArg, String name, String designator) {
+
+        if(officeArg != null){
+            officeArg = officeArg.toUpperCase();
+        }
+        String office = officeArg;
 
         String query = INSTANCE_QUERY + GET_ALL_CONDITIONS;
         return connectionResult(dsl, (Connection c) -> {
+            if(office != null) {
+                setOffice(c, office);
+            }
             try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
                 //redundant variables for null checks within the condition
                 preparedStatement.setString(1, office);
@@ -202,19 +240,28 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
             if (attributes != null) {
                 fileName = (String) attributes[0];
                 mediaType = (String) attributes[1];
-                Blob blob = (Blob) attributes[4];
-                if (blob.length() > byteLimit) {
-                    String param = "&%s=%s";
-                    String utf8 = "UTF-8";
-                    url = urlBuilder.build().apply(specId) + "?"
-                            + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
-                            + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
-                            + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
-                            + format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8))
-                            + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
-                } else {
-                    try (InputStream is = blob.getBinaryStream()) {
-                        fileData = BlobDao.readFully(is);
+
+                Blob blob = (Blob) attributes[5];
+                try {
+                    if (blob.length() > byteLimit) {
+                        String param = "&%s=%s";
+                        String utf8 = "UTF-8";
+                        url = urlBuilder.build().apply(specId) + "?"
+                                + format(param, Controllers.NAME, URLEncoder.encode(specId, utf8))
+                                + format(param, Controllers.FORECAST_DATE, URLEncoder.encode(forecastDate.toString(), utf8))
+                                + format(param, Controllers.ISSUE_DATE, URLEncoder.encode(issueDate.toString(), utf8))
+                                + format(param, Controllers.OFFICE, URLEncoder.encode(officeId, utf8));
+                    if(designator != null) {
+                        url += format(param, Controllers.DESIGNATOR, URLEncoder.encode(designator, utf8));
+                    }
+                    } else {
+                        try (InputStream is = blob.getBinaryStream()) {
+                            fileData = BlobDao.readFully(is);
+                        }
+                    }
+                } finally {
+                    if (blob != null) {
+                        blob.free();
                     }
                 }
             }
@@ -244,16 +291,30 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
     }
 
     public ForecastInstance getForecastInstance(int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder,
-            String office, String name, String designator,
+            String officeArg, String name, String designator,
             Instant forecastDate, Instant issueDate) {
-        String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
         return connectionResult(dsl, c -> {
+            DSLContext ctx = getDslContext(c, officeArg);
+            return getForecastInstance(ctx, byteLimit, urlBuilder, officeArg, name, designator, forecastDate, issueDate);
+        });
+    }
+
+    private static ForecastInstance getForecastInstance(DSLContext ctx, int byteLimit, ReplaceUtils.OperatorBuilder urlBuilder, String officeArg,
+                                                        String name, String designator, Instant forecastDate, Instant issueDate) {
+        if(officeArg != null){
+            officeArg = officeArg.toUpperCase();
+        }
+        String office = officeArg;
+
+        String query = INSTANCE_QUERY + GET_ONE_CONDITIONS;
+        return connectionResult(ctx, c -> {
             try (PreparedStatement preparedStatement = c.prepareStatement(query)) {
                 preparedStatement.setString(1, office);
                 preparedStatement.setString(2, name);
                 preparedStatement.setString(3, designator);
-                preparedStatement.setLong(4, forecastDate.toEpochMilli());
-                preparedStatement.setLong(5, issueDate.toEpochMilli());
+                preparedStatement.setString(4, designator);
+                preparedStatement.setLong(5, forecastDate.toEpochMilli());
+                preparedStatement.setLong(6, issueDate.toEpochMilli());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         return map(byteLimit, urlBuilder, resultSet);
@@ -274,26 +335,30 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
         String designator = forecastInst.getSpec().getDesignator();
         Instant forecastDate = forecastInst.getDateTime();
         Instant issueDate = forecastInst.getIssueDateTime();
-        //Will throw a NotFoundException if instance doesn't exist
-        ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
-                .withOperatorKey("{noop}");
-        getForecastInstance(0, noopUrlBuilder, officeId, specId, designator, forecastDate, issueDate);
-        create(forecastInst);
+        connection(dsl, c -> {
+            DSLContext ctx = getDslContext(c, forecastInst.getSpec().getOfficeId());
+            //Will throw a NotFoundException if instance doesn't exist
+            ReplaceUtils.OperatorBuilder noopUrlBuilder = new ReplaceUtils.OperatorBuilder().withTemplate("")
+                    .withOperatorKey("{noop}");
+            getForecastInstance(ctx, 0, noopUrlBuilder, officeId, specId, designator, forecastDate, issueDate);
+            store(ctx, forecastInst);
+        });
+
     }
 
     public void delete(String office, String name, String designator,
             Instant forecastDate, Instant issueDate) {
-        throw new UnsupportedFormatException("The Forecast API is not yet implemented in CWMS");
-//        connection(dsl, conn -> {
-//            setOffice(conn, office);
-//            DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
-//            CWMS_FCST_PACKAGE.call_DELETE_FCST(DSL.using(conn).configuration(), name, designator,
-//                    Timestamp.from(forecastDate), Timestamp.from(issueDate), "UTC", office);
-//        });
+       connection(dsl, conn -> {
+           setOffice(conn, office);
+           
+           DefaultBinding.THREAD_LOCAL.set(UTC_CALENDAR);
+           CWMS_FCST_PACKAGE.call_DELETE_FCST(getDslContext(conn, office).configuration(), name, designator,
+                   Timestamp.from(forecastDate), Timestamp.from(issueDate), "UTC", office);
+       });
     }
 
     public void getFileBlob(String office, String name, String designator,
-            Instant forecastDate, Instant issueDate, BlobDao.BlobConsumer consumer) {
+            Instant forecastDate, Instant issueDate, StreamConsumer consumer) {
 
         String query = FILE_QUERY + FILE_CONDITIONS;
         connection(dsl, c -> {
@@ -301,8 +366,9 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                 preparedStatement.setString(1, office);
                 preparedStatement.setString(2, name);
                 preparedStatement.setString(3, designator);
-                preparedStatement.setLong(4, forecastDate.toEpochMilli());
-                preparedStatement.setLong(5, issueDate.toEpochMilli());
+                preparedStatement.setString(4, designator);
+                preparedStatement.setLong(5, forecastDate.toEpochMilli());
+                preparedStatement.setLong(6, issueDate.toEpochMilli());
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
                         Struct blobFile = resultSet.getObject(1, Struct.class);
@@ -313,13 +379,21 @@ public final class ForecastInstanceDao extends JooqDao<ForecastInstance> {
                                 if (mediaType == null) {
                                     mediaType = "application/octet-stream";
                                 }
-                                Blob blob = (Blob) attributes[4];
-                                consumer.accept(blob, mediaType);
-                                return;
+
+                                Blob blob = (Blob) attributes[5];
+                                try (InputStream is = blob.getBinaryStream()){
+                                    consumer.accept(is, 0, mediaType, blob.length());
+                                    return;
+                                } finally {
+                                    if (blob != null) {
+                                        blob.free();
+                                    }
+                                }
                             }
                         }
                     }
-                    consumer.accept(null, null);
+                    // If we get here there was some problem finding the stream.
+                    throw new NotFoundException("Forecast Instance file not found");
                 }
             }
         });

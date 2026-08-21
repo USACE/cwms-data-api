@@ -34,6 +34,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
@@ -46,12 +47,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterContractTypeDeleteController extends WaterSupplyControllerBase implements Handler {
+public final class WaterContractTypeDeleteController extends WaterSupplyControllerBase {
 
     private static final String DISPLAY_VALUE = "display-value";
 
     public WaterContractTypeDeleteController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(
@@ -78,7 +79,8 @@ public final class WaterContractTypeDeleteController extends WaterSupplyControll
             ctx.contentType(contentType.toString());
             WaterContractDao dao = new WaterContractDao(dsl);
             dao.deleteWaterContractType(office, displayValue);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Contract type successfully deleted from CWMS.");
+            StatusResponse re = new StatusResponse(office, "Contract type successfully deleted from CWMS.", displayValue);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

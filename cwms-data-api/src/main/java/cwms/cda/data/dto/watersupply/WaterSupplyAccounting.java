@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
-        aliases = {Formats.DEFAULT, Formats.JSON})
+        aliases = {Formats.DEFAULT, Formats.JSON, Formats.JSONV2})
 @JsonDeserialize(builder = WaterSupplyAccounting.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 public final class WaterSupplyAccounting extends CwmsDTOBase {

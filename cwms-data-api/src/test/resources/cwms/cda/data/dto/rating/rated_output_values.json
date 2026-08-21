@@ -1,0 +1,14 @@
+{
+  "rating-id": {
+    "name": "DOTW.Stage;Flow.Logarithmic.USGS-NWIS",
+    "office-id": "NWDP"
+  },
+  "unit": "cfs",
+  "values": [
+    137.90304290304002,
+    167.0693948928,
+    186.60801904128002,
+    0.0269010042624,
+    1786.7930199552
+  ]
+}

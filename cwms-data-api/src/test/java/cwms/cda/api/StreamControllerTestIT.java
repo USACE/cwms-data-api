@@ -55,8 +55,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -67,8 +69,12 @@ final class StreamControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
 
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
+
     @BeforeAll
-    public static void setup() throws SQLException {
+    static void setup() throws SQLException {
         String testLoc = "Stream123Test"; //match the stream name in the json file
         createLocation(testLoc, true, OFFICE_ID, "STREAM");
         createAndStoreTestStream("DownstreamStream123");
@@ -94,7 +100,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         for(Stream stream : STREAMS_CREATED){
             try {
                 CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
@@ -113,8 +119,9 @@ final class StreamControllerTestIT extends DataApiTestIT {
         STREAMS_CREATED.clear();
     }
 
-    @Test
-    void test_get_create_delete() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_create_delete(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -131,7 +138,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
         // Create the Stream
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .contentType(Formats.JSON)
                 .body(json)
                 .header(AUTH_HEADER, user.toHeaderValue())
@@ -142,14 +149,17 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(stream.getId().getName()));
 
         String streamId = stream.getId().getName();
 
         // Retrieve the Stream and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamId)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(STATION_UNIT, "km")
@@ -183,7 +193,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
         // Delete the Stream
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .header(AUTH_HEADER, user.toHeaderValue())
                 .queryParam(OFFICE, OFFICE_ID)
         .when()
@@ -193,12 +203,15 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamId));
 
         // Retrieve the Stream and assert that it does not exist
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(NAME, streamId)
                 .queryParam(OFFICE, OFFICE_ID)
         .when()
@@ -247,8 +260,9 @@ final class StreamControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void test_get_all() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_get_all(String format) throws IOException {
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/stream.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
@@ -274,7 +288,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+                .statusCode(is(HttpServletResponse.SC_CREATED))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully stored to CWMS."))
+                .body(IDENTIFIER, equalTo(stream.getId().getName()));
 
         String office = stream.getId().getOfficeId();
         String streamId = stream.getId().getName();
@@ -282,7 +299,7 @@ final class StreamControllerTestIT extends DataApiTestIT {
         // Retrieve the Stream and assert that it exists
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSON)
+                .accept(format)
                 .queryParam(OFFICE_MASK, office)
                 .queryParam(STREAM_ID_MASK, streamId)
                 .queryParam(STATION_UNIT, "km")
@@ -325,7 +342,10 @@ final class StreamControllerTestIT extends DataApiTestIT {
         .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
+                .body(MESSAGE, equalTo("Stream successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(streamId));
     }
 
 }

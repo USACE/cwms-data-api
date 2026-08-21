@@ -1,0 +1,17 @@
+{
+  "name": "Buckhorn.Area.Inst.1Day.0.cda-trim-test",
+  "office-id": "SPK",
+  "units": "m2",
+  "values": [
+    [
+      1675335600000,
+      35,
+      0
+    ],
+    [
+      1675422000000,
+      36,
+      0
+    ]
+  ]
+}

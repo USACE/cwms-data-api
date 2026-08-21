@@ -3,6 +3,7 @@ package cwms.cda.data.dto.catalog;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -29,6 +30,11 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
     @JacksonXmlProperty(localName = "extents")
     private List<TimeSeriesExtents> extents;
 
+    @JacksonXmlElementWrapper(localName = "aliases")
+    @JacksonXmlProperty(localName = "alias")
+    private Collection<TimeSeriesAlias> aliases;
+
+    private boolean versioned = false;
 
     public String getName() {
         return this.name;
@@ -52,18 +58,28 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
         return extents;
     }
 
+    public Collection<TimeSeriesAlias> getAliases() {
+        return aliases;
+    }
+
+    public boolean isVersioned() {
+        return versioned;
+    }
+
     private TimeseriesCatalogEntry() {
         super(null);
     }
 
-    private TimeseriesCatalogEntry(String office, String name, String units, String interval, Long intervalOffset, String timeZone, List<TimeSeriesExtents> extents) {
-        super(office);
-        this.name = name;
-        this.units = units;
-        this.interval = interval;
-        this.intervalOffset = intervalOffset;
-        this.timeZone = timeZone;
-        this.extents = extents;
+    private TimeseriesCatalogEntry(Builder builder) {
+        super(builder.office);
+        this.name = builder.tsName;
+        this.units = builder. units;
+        this.interval = builder.interval;
+        this.intervalOffset = builder.intervalOffset;
+        this.timeZone = builder.timeZone;
+        this.extents = builder.extents;
+        this.aliases = builder.aliases;
+        this.versioned = builder.versioned;
     }
 
     public String getUnits() {
@@ -90,6 +106,8 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
         private ZonedDateTime earliestTime;
         private ZonedDateTime latestTime;
         private List<TimeSeriesExtents> extents = null;
+        private Collection<TimeSeriesAlias> aliases = null;
+        private boolean versioned = false;
 
         public Builder officeId(final String office) {
             this.office = office;
@@ -143,8 +161,22 @@ public class TimeseriesCatalogEntry extends CatalogEntry {
             return this;
         }
 
+        public Builder withAliases(final Collection<TimeSeriesAlias> aliases) {
+            if (aliases == null) {
+                this.aliases = null;
+            } else {
+                this.aliases = new ArrayList<>(aliases);
+            }
+            return this;
+        }
+
+        public Builder versioned(boolean versioned) {
+            this.versioned = versioned;
+            return this;
+        }
+
         public TimeseriesCatalogEntry build() {
-            return new TimeseriesCatalogEntry(office, tsName, units, interval, intervalOffset, timeZone, extents);
+            return new TimeseriesCatalogEntry(this);
         }
     }
 }

@@ -1,12 +1,18 @@
 package cwms.cda.data.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import usace.cwms.db.dao.ifc.pool.PoolNameType;
 
+@JsonDeserialize(builder = Pool.Builder.class)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class Pool extends CwmsDTOBase {
 
@@ -145,11 +151,11 @@ public class Pool extends CwmsDTOBase {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        PoolNameType poolName = getPoolName();
+        PoolNameType poolNameType = getPoolName();
 
-        builder.append(poolName.getOfficeId())
+        builder.append(poolNameType.getOfficeId())
             .append("/").append(getProjectId())
-            .append(":").append(poolName.getPoolName());
+            .append(":").append(poolNameType.getPoolName());
         return builder.toString();
     }
 
