@@ -4,67 +4,19 @@ import "../../css/swagger.css";
 
 import {
   createCwmsLoginAuthMethod,
-  createKeycloakAuthMethod,
+  useAuth,
 } from "@usace-watermanagement/groundwork-water";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAuthConfiguration } from "../../components/auth-configuration-context";
 import { getBasePath } from "../../utils/base";
-
-function normalizeOpenIdConnectUrls(spec) {
-  const schemes = spec.components?.securitySchemes ?? {};
-  for (const scheme of Object.values(schemes)) {
-    if (scheme.type === "openIdConnect" && scheme.openIdConnectUrl) {
-      const openIdConnectUrl = new URL(scheme.openIdConnectUrl, window.location.origin);
-      if (openIdConnectUrl.hostname === "auth") {
-        openIdConnectUrl.protocol = window.location.protocol;
-        openIdConnectUrl.host = window.location.host;
-        scheme.openIdConnectUrl = openIdConnectUrl.toString();
-      }
-    }
-  }
-}
-
-function getOpenIdConnectScheme(spec) {
-  const schemes = spec.components?.securitySchemes ?? {};
-  return Object.values(schemes).find((scheme) => scheme.type === "openIdConnect");
-}
+import {
+  getKeycloakConfig,
+  isLoopbackHost,
+  normalizeOpenIdConnectUrls,
+} from "../../utils/auth-config";
 
 function getCwmsLoginScheme(spec) {
   return spec.components?.securitySchemes?.CwmsAAACacAuth;
-}
-
-function isLoopbackHost(hostname) {
-  return ["localhost", "127.0.0.1", "::1"].includes(hostname);
-}
-
-function isLocalOrigin(url) {
-  return isLoopbackHost(new URL(url).hostname);
-}
-
-function getKeycloakConfig(spec) {
-  const scheme = getOpenIdConnectScheme(spec);
-  if (!scheme?.openIdConnectUrl) {
-    return null;
-  }
-
-  const openIdConnectUrl = new URL(scheme.openIdConnectUrl);
-  const realmMatch = openIdConnectUrl.pathname.match(/^(.*)\/realms\/([^/]+)\//);
-  if (!realmMatch) {
-    return null;
-  }
-
-  const providerHint = scheme["x-kc_idp_hint"]?.values?.[0];
-  const useLocalDevCredentials = isLocalOrigin(openIdConnectUrl);
-  return {
-    host: `${openIdConnectUrl.origin}${realmMatch[1]}`,
-    realm: realmMatch[2],
-    client: scheme["x-oidc-client-id"],
-    flow: useLocalDevCredentials ? "direct-grant" : "authorization-code-pkce",
-    username: useLocalDevCredentials ? "m5hectest" : undefined,
-    password: useLocalDevCredentials ? "m5hectest" : undefined,
-    redirectUri: window.location.href.split("?")[0],
-    postLogoutRedirectUri: window.location.href.split("?")[0],
-    providerHint: useLocalDevCredentials ? undefined : providerHint,
-  };
 }
 
 function isExternalOpenIdOnLocalhost(keycloakConfig) {
@@ -75,16 +27,15 @@ function isExternalOpenIdOnLocalhost(keycloakConfig) {
 }
 
 export default function SwaggerUI() {
+  const appAuth = useAuth();
+  const { error: appAuthError } = useAuthConfiguration();
   const [authStatus, setAuthStatus] = useState("checking");
   const [customAuthType, setCustomAuthType] = useState(null);
   const [authUiMode, setAuthUiMode] = useState("hidden");
-  const [isOpenIdAuthReady, setIsOpenIdAuthReady] = useState(false);
   const [isLocalOpenIdAuth, setIsLocalOpenIdAuth] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [swaggerError, setSwaggerError] = useState(null);
   const autoLoginAttemptedRef = useRef(false);
-  const openIdAuthMethodRef = useRef(null);
-  const openIdAuthConfigSignatureRef = useRef(null);
   const cwmsAuthMethod = useMemo(() => {
     const basePath = getBasePath();
     return createCwmsLoginAuthMethod({
@@ -92,21 +43,20 @@ export default function SwaggerUI() {
       authCheckUrl: `${basePath}/auth/keys`,
     });
   }, []);
-  const openIdAuthMethod = isOpenIdAuthReady ? openIdAuthMethodRef.current : null;
-  const authMethod =
-    customAuthType === "cwms"
-      ? cwmsAuthMethod
-      : customAuthType === "openid"
-        ? openIdAuthMethod
-        : null;
+  const authMethod = customAuthType === "cwms" ? cwmsAuthMethod : null;
+  const hasAuthMethod =
+    customAuthType === "openid" ? !appAuthError : Boolean(authMethod);
   const authLabel = authUiMode === "cwms-login" ? "CWMS Login" : "CWBI Login";
 
   const getUnavailableMessage = () => {
-    if (authMethod) {
+    if (hasAuthMethod) {
       return null;
     }
 
     if (customAuthType === "openid") {
+      if (appAuthError) {
+        return appAuthError;
+      }
       return isLoopbackHost(window.location.hostname)
         ? "Local sign-in is not available for this OpenID configuration. Start the local CDA/Keycloak stack, or use Swagger's Authorize controls with an API key."
         : "Sign-in is not available because this Swagger spec does not advertise a usable OpenID client.";
@@ -158,14 +108,13 @@ export default function SwaggerUI() {
           setCustomAuthType(null);
           setAuthUiMode("hidden");
           setAuthStatus("anonymous");
-          setIsOpenIdAuthReady(false);
           setIsLocalOpenIdAuth(false);
           document.querySelector("#swagger-ui").innerHTML = "";
         }
         return;
       }
-      normalizeOpenIdConnectUrls(spec);
-      const keycloakConfig = getKeycloakConfig(spec);
+      normalizeOpenIdConnectUrls(spec, window.location.origin);
+      const keycloakConfig = getKeycloakConfig(spec, window.location.href);
       const hasCwmsLogin = Boolean(getCwmsLoginScheme(spec));
       // Some non-T7 deployments advertise CwmsAAACacAuth even though their
       // /CWMSLogin route is only a generic landing page. Prefer a usable
@@ -184,46 +133,24 @@ export default function SwaggerUI() {
       if (nextCustomAuthType === "cwms") {
         setAuthUiMode("cwms-login");
       } else if (nextCustomAuthType === "openid" && keycloakConfig) {
-        const keycloakConfigSignature = JSON.stringify(keycloakConfig);
         if (isExternalOpenIdOnLocalhost(keycloakConfig)) {
-          openIdAuthMethodRef.current = null;
-          openIdAuthConfigSignatureRef.current = null;
           setAuthUiMode("hidden");
           setAuthError(null);
           setAuthStatus("anonymous");
           setIsLocalOpenIdAuth(false);
-          setIsOpenIdAuthReady(false);
         } else {
-          try {
-            if (openIdAuthConfigSignatureRef.current !== keycloakConfigSignature) {
-              openIdAuthMethodRef.current = createKeycloakAuthMethod(keycloakConfig);
-              openIdAuthConfigSignatureRef.current = keycloakConfigSignature;
-            }
-            setAuthError(null);
-            setIsLocalOpenIdAuth(keycloakConfig.flow === "direct-grant");
-            setAuthUiMode(
-              keycloakConfig.flow === "direct-grant"
-                ? "local-keycloak"
-                : "external-openid",
-            );
-            setIsOpenIdAuthReady(true);
-          } catch (error) {
-            openIdAuthMethodRef.current = null;
-            openIdAuthConfigSignatureRef.current = null;
-            setAuthUiMode("external-openid");
-            setAuthError(error?.message ?? "Unable to configure OpenID sign-in.");
-            setAuthStatus("anonymous");
-            setIsLocalOpenIdAuth(false);
-            setIsOpenIdAuthReady(false);
-          }
+          setAuthError(null);
+          setIsLocalOpenIdAuth(keycloakConfig.flow === "direct-grant");
+          setAuthUiMode(
+            keycloakConfig.flow === "direct-grant"
+              ? "local-keycloak"
+              : "external-openid",
+          );
         }
       } else {
-        openIdAuthMethodRef.current = null;
-        openIdAuthConfigSignatureRef.current = null;
         setAuthUiMode("hidden");
         setAuthError(null);
         setIsLocalOpenIdAuth(false);
-        setIsOpenIdAuthReady(false);
       }
 
       if (cancelled) {
@@ -253,8 +180,10 @@ export default function SwaggerUI() {
             req.url = requestUrl.toString();
             req.headers = req.headers ?? {};
 
-            if (authMethod?.token) {
-              req.headers.Authorization = `Bearer ${authMethod.token}`;
+            const token =
+              customAuthType === "openid" ? appAuth.token : authMethod?.token;
+            if (token) {
+              req.headers.Authorization = `Bearer ${token}`;
             }
 
             req.cache = "no-store";
@@ -296,10 +225,10 @@ export default function SwaggerUI() {
       cancelled = true;
       document.querySelector("#swagger-ui").innerHTML = "";
     };
-  }, [authMethod, customAuthType]);
+  }, [appAuth.token, authMethod, customAuthType]);
 
   useEffect(() => {
-    if (!authMethod) {
+    if (customAuthType !== "cwms" || !authMethod) {
       setAuthStatus("anonymous");
       return;
     }
@@ -320,12 +249,12 @@ export default function SwaggerUI() {
     return () => {
       mounted = false;
     };
-  }, [authMethod]);
+  }, [authMethod, customAuthType]);
 
   useEffect(() => {
     if (
       customAuthType !== "openid" ||
-      !authMethod ||
+      !hasAuthMethod ||
       !isLocalOpenIdAuth ||
       autoLoginAttemptedRef.current
     ) {
@@ -336,14 +265,8 @@ export default function SwaggerUI() {
     let mounted = true;
     setAuthStatus("checking");
     setAuthError(null);
-    authMethod
+    appAuth
       .login()
-      .then(() => authMethod.isAuth())
-      .then((isAuth) => {
-        if (mounted) {
-          setAuthStatus(isAuth ? "authenticated" : "anonymous");
-        }
-      })
       .catch((error) => {
         if (mounted) {
           setAuthError(error?.message ?? "Automatic local sign-in failed.");
@@ -354,10 +277,10 @@ export default function SwaggerUI() {
     return () => {
       mounted = false;
     };
-  }, [authMethod, customAuthType, isLocalOpenIdAuth]);
+  }, [appAuth, customAuthType, hasAuthMethod, isLocalOpenIdAuth]);
 
   const startLogin = async () => {
-    if (!authMethod) {
+    if (!hasAuthMethod) {
       setAuthError(getUnavailableMessage());
       return;
     }
@@ -365,8 +288,12 @@ export default function SwaggerUI() {
     setAuthError(null);
     setAuthStatus("checking");
     try {
-      await authMethod.login();
-      await checkAuth();
+      if (customAuthType === "openid") {
+        await appAuth.login();
+      } else {
+        await authMethod.login();
+        await checkAuth();
+      }
     } catch (error) {
       setAuthError(error?.message ?? "Sign-in failed.");
       setAuthStatus("anonymous");
@@ -374,27 +301,33 @@ export default function SwaggerUI() {
   };
 
   const signOut = async () => {
-    if (!authMethod) {
+    if (!hasAuthMethod) {
       return;
     }
 
     setAuthError(null);
     setAuthStatus("checking");
     try {
-      await authMethod.logout();
-      await checkAuth();
+      if (customAuthType === "openid") {
+        await appAuth.logout();
+      } else {
+        await authMethod.logout();
+        await checkAuth();
+      }
     } catch (error) {
       setAuthError(error?.message ?? "Sign-out failed.");
       setAuthStatus("anonymous");
     }
   };
 
-  const isAuthenticated = authStatus === "authenticated";
-  const isCheckingAuth = authStatus === "checking";
+  const isAuthenticated =
+    customAuthType === "openid" ? appAuth.isAuth : authStatus === "authenticated";
+  const isCheckingAuth =
+    customAuthType === "openid" ? appAuth.isLoading : authStatus === "checking";
   const unavailableMessage = getUnavailableMessage();
   const showAuthBar = authUiMode !== "hidden";
   const showUnavailableMessage =
-    showAuthBar && !authMethod && authStatus !== "checking";
+    showAuthBar && !hasAuthMethod && !isCheckingAuth;
 
   return (
     <>
@@ -423,7 +356,7 @@ export default function SwaggerUI() {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            {authMethod && (
+            {hasAuthMethod && (
               <button
                 className="h-9 rounded border border-blue-700 bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-55"
                 disabled={isCheckingAuth}

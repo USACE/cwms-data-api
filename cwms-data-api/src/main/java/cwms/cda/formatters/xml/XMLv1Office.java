@@ -8,7 +8,9 @@ import java.util.List;
 
 @JsonRootName("offices")
 @JacksonXmlRootElement(localName = "offices")
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class XMLv1Office {
+
     @JacksonXmlProperty(localName = "offices")
     List<Office> offices;
 

@@ -3,6 +3,7 @@ package cwms.cda.security;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -13,8 +14,26 @@ import org.junit.jupiter.api.Test;
 class OpenIDConfigTest {
 
     @Test
+    void providerRemainsDisabledWhenWellKnownUrlIsMissing() {
+        String previousWellKnown = System.getProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY);
+        try {
+            System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY, "");
+
+            OpenIdConnectIdentitityProvider provider = new OpenIdConnectIdentitityProvider();
+
+            assertNull(provider.getScheme());
+        } finally {
+            if (previousWellKnown == null) {
+                System.clearProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY);
+            } else {
+                System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY, previousWellKnown);
+            }
+        }
+    }
+
+    @Test
     void buildSchemeUsesWellKnownDiscoveryUrlWithoutHttpAuthScheme() {
-        SecurityScheme scheme = OpenIDConfig.buildScheme(
+        SecurityScheme scheme = OpenIdConfig.buildScheme(
             "https://identityc.sec.usace.army.mil/auth/realms/cwbi/.well-known/openid-configuration",
             "cwms",
             "federation-eams, login.gov"

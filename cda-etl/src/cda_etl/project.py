@@ -16,66 +16,71 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 import logging
+from typing import Iterable
+
 import utils.threading_util as threading_util
-import utils.cache_util as cache_util
-import location
+import utils.filesystem_store as filesystem_store
 import cwms
+from config import ProjectConfig
+
 logger = logging.getLogger(__name__)
 
 
-def cache_projects(projects):
-    # Make sure we have project locations downloaded
-    location.cache_locations(projects)
-
-    # Validation
-    project_ids = location.get_valid_locations(projects)
+def stage_projects(projects: Iterable[ProjectConfig]) -> None:
+    project_ids = [[project.office_id, project.id] for project in projects]
 
     if not project_ids:
         logger.warning("No valid project identifiers found for processing")
         return
 
-    # Retrieval
-    cwms.api.API_VERSION = 1
-    threading_util.execute_tasks(_retrieve_one_project, project_ids)
-    cwms.api.API_VERSION = 2
+    logger.info("Staging %d project record(s)", len(project_ids))
+    threading_util.execute_tasks(_download_one_project, project_ids)
+    logger.info("Completed staging project records")
 
 
-def store_cached_projects(projects):
-    # Validation
-    project_ids = location.get_valid_locations(projects)
+def publish_staged_projects(projects: Iterable[ProjectConfig]) -> None:
+    project_ids = [[project.office_id, project.id] for project in projects]
 
     if not project_ids:
         logger.warning("No valid project identifiers found for processing")
         return
 
-    location.store_cached_locations(projects)
+    logger.info("Publishing %d staged project record(s)", len(project_ids))
+    threading_util.execute_tasks(_upload_one_project, project_ids)
+    logger.info("Completed publishing project records")
 
-    # Storage
-    threading_util.execute_tasks(_store_one_project, project_ids)
 
-
-def _retrieve_one_project(project):
+def _download_one_project(project):
     office_id = project[0]
     project_id = project[1]
 
-    logger.debug(f"API_VERSION before retrieving {project_id}: {cwms.api.API_VERSION}")
-    logger.debug(f"Retrieving project data for office {office_id} and project {project_id}")
-    cache_data = cache_util.get_from_cache(office_id, "Projects", project_id)
-    if cache_data:
-        logger.debug(f"Project data found in cache for office {office_id} and project {project_id}")
-    else:
-        logger.debug(f"Project data not found in cache for office {office_id} and project {project_id}, retrieving from CWMS")
-        project_data = cwms.get_project(office_id, project_id).json
-        cache_util.put_in_cache(project_data, office_id, "Projects", project_id)
+    logger.info("Refreshing staged project record %s %s", office_id, project_id)
+    project_data = cwms.api.get(
+        endpoint=f"projects/{project_id}",
+        params={"office": office_id},
+        api_version=1,
+    )
+    filesystem_store.write_json(project_data, office_id, "Projects", project_id)
 
 
-def _store_one_project(project):
+def _upload_one_project(project):
     office_id = project[0]
     project_id = project[1]
-    logger.debug(f"API_VERSION before retrieving {project_id}: {cwms.api.API_VERSION}")
-    project_data = cache_util.get_from_cache(office_id, "Projects", project_id)
-    if project_data:
-        cwms.store_project(project_data)
-    else:
-        logger.warning(f"Project data not found in cache for office {office_id} and location {project_id}")
+    logger.info("Publishing project record %s %s", office_id, project_id)
+    project_data = filesystem_store.read_json(office_id, "Projects", project_id)
+    if project_data is None:
+        raise FileNotFoundError(
+            f"No staged project data found for {office_id}.{project_id}. "
+            "Project publish skipped for this item."
+        )
+
+    cwms.api.post(
+        endpoint="projects",
+        data=project_data,
+        params={"fail-if-exists": True},
+        api_version=1,
+    )
+
+
+__all__ = ["publish_staged_projects", "stage_projects"]
 
