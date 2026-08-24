@@ -1,6 +1,7 @@
 package cwms.cda.security;
 
 import com.google.auto.service.AutoService;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
@@ -9,9 +10,7 @@ import io.javalin.http.Context;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.JwtParser;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-
 import java.io.IOException;
 import java.net.URL;
 import java.security.Principal;
@@ -20,11 +19,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 import javax.servlet.http.HttpServletResponse;
-
-import com.google.common.flogger.FluentLogger;
-
 
 @AutoService(IdentityProvider.class)
 public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
@@ -46,7 +41,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
-    private final AtomicReference<OpenIDConfig> config = new AtomicReference<>(null);
+    private final AtomicReference<OpenIdConfig> config = new AtomicReference<>(null);
 
     private final String wellKnownUrl;
     private final String issuer;
@@ -54,6 +49,10 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
     private final int timeout;
     private final String idpHint;
 
+    /**
+     * Create a new instance of OpenIDConnectProvider
+     * Constructor will pull configuration from the environment with fixed property names.
+     */
     public OpenIdConnectIdentitityProvider() {
         wellKnownUrl = System.getProperty(WELL_KNOWN_PROPERTY,System.getenv(WELL_KNOWN_PROPERTY));
         issuer = System.getProperty(ISSUER_PROPERTY,System.getenv(ISSUER_PROPERTY));
@@ -78,17 +77,15 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
         }
     }
 
-    private void initializeProvider()
-    {
+    private void initializeProvider() {
         var foundConfig = config.getAndUpdate(c -> {
-            if (c != null)
-            {
+            if (c != null) {
                 return c; // already initialized, don't change it.
             }
             try {
                 log.atFine().log("Attempting to initalize OIDC provider for '%s'", wellKnownUrl);
                 URL wellKnown = new URL(wellKnownUrl);
-                return OpenIDConfig.from(wellKnown, clientId, idpHint, timeout);
+                return OpenIdConfig.from(wellKnown, clientId, idpHint, timeout);
             } catch (IOException ex) {
                 // The downstream users of this check if the Provider is valid and respond appropriate.
                 // To test manually have OpenIDConfig throw an IOException so config stays null and
@@ -107,10 +104,10 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
 
     @Override
     public Principal authenticate(Context ctx) {
-       return getUserFromToken(ctx);
+        return getUserFromToken(ctx);
     }
 
-   private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
+    private DataApiPrincipal getUserFromToken(Context ctx) throws CwmsAuthException {
         try {
             Jws<Claims> token = config.get().getJwtParser().parseClaimsJws(getToken(ctx));
             Claims claims = token.getBody();
@@ -147,7 +144,8 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
             if (parts.length >= 2) {
                 return parts[1];
             } else {
-                throw new IllegalArgumentException(String.format(AUTHORIZATION + " header:%s could not be split.", header));
+                throw new IllegalArgumentException(
+                    String.format(AUTHORIZATION + " header:%s could not be split.", header));
             }
         }
     }

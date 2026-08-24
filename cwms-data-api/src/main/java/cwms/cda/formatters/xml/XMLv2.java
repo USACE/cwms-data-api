@@ -17,13 +17,14 @@ import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.InternalServerErrorResponse;
-import java.time.Instant;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class XMLv2 implements OutputFormatter {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

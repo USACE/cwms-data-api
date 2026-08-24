@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -21,7 +20,7 @@ import java.util.Objects;
 public abstract class DateFormat {
 
     private DateFormat() {
-
+        
     }
 
     public abstract void apply(ObjectMapper mapper, JavaTimeModule module);
@@ -81,8 +80,7 @@ public abstract class DateFormat {
                 public Instant deserialize(JsonParser p, DeserializationContext ctxt)
                         throws IOException {
                     String text = p.getText();
-                    if(text == null || text.isBlank())
-                    {
+                    if (text == null || text.isBlank()) {
                         return null;
                     }
                     return Instant.from(formatter.parse(text));
@@ -105,21 +103,21 @@ public abstract class DateFormat {
                 public ZonedDateTime deserialize(JsonParser p, DeserializationContext ctxt)
                         throws IOException {
                     String text = p.getText();
-                    if(text == null || text.isBlank())
-                    {
+                    if (text == null || text.isBlank()) {
                         return null;
                     }
                     return ZonedDateTime.ofInstant(
                             Instant.from(formatter.parse(text)),
-                            ZoneOffset.UTC
-                    );
+                            ZoneOffset.UTC);
                 }
             });
         }
 
         @Override
         public boolean equals(Object o) {
-            if (o == null || getClass() != o.getClass()) return false;
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             PatternFormat that = (PatternFormat) o;
             return Objects.equals(pattern, that.pattern);
         }
@@ -129,5 +127,4 @@ public abstract class DateFormat {
             return Objects.hashCode(pattern);
         }
     }
-
 }

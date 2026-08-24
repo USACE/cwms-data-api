@@ -1,5 +1,16 @@
 package cwms.cda.security;
 
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwsHeader;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SigningKeyResolverAdapter;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
@@ -16,34 +27,22 @@ import java.util.Base64.Decoder;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.flogger.FluentLogger;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwsHeader;
-import io.jsonwebtoken.JwtParser;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SigningKeyResolverAdapter;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.Type;
-
-public class OpenIDConfig {
+public class OpenIdConfig {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
     private URL wellKnown;
 
     private String issuer;
-    private String client_id;
-    private String idp_hint; // keycloak specific kc_idp_hint to direct federation
+    private String clientId;
+    private String idpHint; // keycloak specific kc_idp_hint to direct federation
     private JwtParser jwtParser;
     private URL jwksUrl;
 
 
-    private OpenIDConfig(URL wellKnown, String client_id, String idp_hint, JwtParser jwtParser) throws IOException {
+    private OpenIdConfig(URL wellKnown, String clientId, String idpHint, JwtParser jwtParser) throws IOException {
         this.wellKnown = wellKnown;
-        this.idp_hint = idp_hint;
-        this.client_id = client_id;
+        this.idpHint = idpHint;
+        this.clientId = clientId;
         this.jwtParser = jwtParser;
     }
 
@@ -51,11 +50,17 @@ public class OpenIDConfig {
         return jwksUrl;
     }
 
-    public static OpenIDConfig from(URL wellKnown, String clientId, String idpHint, int timeout) throws IOException
-    {
+    /**
+     * Create new Open ID Connect (OIDC) Config instance given the parameters.
+     * @param wellKnown well-known JSON describing the OpenID Connect provider's support
+     * @param clientId known Client ID
+     * @param idpHint comma separated list of known federated provides for this OIDC target.
+     * @param timeout time in minutes to key key cached. After this we reload it.
+     * @throws IOException any issue retrieving the the wellKnown config data.
+     */
+    public static OpenIdConfig from(URL wellKnown, String clientId, String idpHint, int timeout) throws IOException {
         HttpURLConnection http = null;
-        try
-        {
+        try {
             http = (HttpURLConnection)wellKnown.openConnection();
             http.setRequestMethod("GET");
             http.setInstanceFollowRedirects(true);
@@ -70,7 +75,7 @@ public class OpenIDConfig {
                         .requireIssuer(issuer)
                         .setSigningKeyResolver(new UrlResolver(jwksUrl, timeout))
                         .build();
-                return new OpenIDConfig(wellKnown, clientId, idpHint, jwtParser);
+                return new OpenIdConfig(wellKnown, clientId, idpHint, jwtParser);
             } else {
                 log.atSevere().log("Unable to retrieve data from realm. Response code %d", status);
             }
@@ -82,16 +87,14 @@ public class OpenIDConfig {
         throw new IOException("Unable to retrieve OIDC information from provider.");
     }
 
-    public JwtParser getJwtParser()
-    {
+    public JwtParser getJwtParser() {
         return this.jwtParser;
     }
 
     static SecurityScheme buildScheme(String wellKnownUrl, String clientId, String idpHint) {
         SecurityScheme scheme =  new SecurityScheme().type(Type.OPENIDCONNECT)
                                                     .openIdConnectUrl(wellKnownUrl);
-        if (idpHint != null)
-        {
+        if (idpHint != null) {
             Map<String, Object> hint = new HashMap<>();
             hint.put("query-parameter", "kc_idp_hint");
             ArrayList<String> values = new ArrayList<>();
@@ -107,9 +110,7 @@ public class OpenIDConfig {
     }
 
     public SecurityScheme getScheme() {
-
-        SecurityScheme scheme = buildScheme(wellKnown.toString(), client_id, idp_hint);
-        return scheme;
+        return buildScheme(wellKnown.toString(), clientId, idpHint);
     }
 
 
@@ -131,20 +132,26 @@ public class OpenIDConfig {
         }
 
         private void updateKey() {
-            if (realmPublicKeys.isEmpty() || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
+            if (realmPublicKeys.isEmpty() 
+                || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
                 log.atInfo().log("Checking for new key at %s",jwksUrl);
                 try {
                     realmPublicKeys.clear();
                     updateSigningKey();
                 } catch (IOException ex) {
-                    log.atSevere().withCause(ex).log("Unable to update key. Will continue to use previous key.");
+                    log.atSevere()
+                        .withCause(ex)
+                        .log("Unable to update key. Will continue to use previous key.");
                 } catch (InvalidKeySpecException ex) {
-                    log.atSevere().withCause(ex).log("New Public Key was not valid. Will continue to use previous key.");
+                    log.atSevere()
+                        .withCause(ex)
+                        .log("New Public Key was not valid. Will continue to use previous key.");
                 }
                 lastCheck = ZonedDateTime.now();
             }
         }
 
+        @SuppressWarnings("checkstyle:LocalVariableName") // names are based on mathematical contants.
         private void updateSigningKey() throws IOException, InvalidKeySpecException {
             HttpURLConnection http = null;
             try {
