@@ -17,20 +17,78 @@
 #  SOFTWARE.
 import cwms
 import logging
+import os
+from dataclasses import dataclass
+from contextlib import contextmanager
+from typing import Iterator
+
 logger = logging.getLogger(__name__)
 
-from config import Config
+
+def _read_env(name: str) -> str | None:
+    value = os.getenv(name)
+    if value is None:
+        return None
+
+    normalized = value.strip()
+    return normalized or None
+
+
+@dataclass(frozen=True)
+class SessionEndpoints:
+    source_cda_url: str | None
+    source_cda_api_key: str | None
+    dest_cda_url: str
+    dest_cda_api_key: str | None
+
+    @classmethod
+    def from_env(cls) -> "SessionEndpoints":
+        source_cda_url = _read_env("SOURCE_CDA_URL")
+        dest_cda_url = _read_env("DEST_CDA_URL")
+
+        if not dest_cda_url:
+            raise ValueError("Missing required environment variable DEST_CDA_URL")
+
+        return cls(
+            source_cda_url=source_cda_url,
+            source_cda_api_key=_read_env("SOURCE_CDA_API_KEY"),
+            dest_cda_url=dest_cda_url,
+            dest_cda_api_key=_read_env("DEST_CDA_API_KEY"),
+        )
+
+    @property
+    def has_source(self) -> bool:
+        return bool(self.source_cda_url)
 
 
 class SessionManager:
-    config: Config
+    endpoints: SessionEndpoints
 
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, endpoints: SessionEndpoints):
+        self.endpoints = endpoints
 
-    def use_source_session(self):
-        cwms.init_session(api_root=self.config.source_cda_url, api_key=self.config.source_cda_api_key)
+    @classmethod
+    def from_env(cls) -> "SessionManager":
+        return cls(SessionEndpoints.from_env())
 
-    def use_dest_session(self):
-        logger.debug(f"Initializing destination session with URL: {self.config.dest_cda_url} and api_key: {self.config.dest_cda_api_key}")
-        cwms.init_session(api_root=self.config.dest_cda_url, api_key=self.config.dest_cda_api_key)
+    @property
+    def has_source_session(self) -> bool:
+        return self.endpoints.has_source
+
+    @contextmanager
+    def source_session(self) -> Iterator[None]:
+        if not self.endpoints.source_cda_url:
+            yield
+            return
+
+        cwms.init_session(api_root=self.endpoints.source_cda_url, api_key=self.endpoints.source_cda_api_key)
+        yield
+
+    @contextmanager
+    def dest_session(self) -> Iterator[None]:
+        logger.debug(f"Initializing destination session with URL: {self.endpoints.dest_cda_url}")
+        cwms.init_session(api_root=self.endpoints.dest_cda_url, api_key=self.endpoints.dest_cda_api_key)
+        yield
+
+
+__all__ = ["SessionEndpoints", "SessionManager"]
