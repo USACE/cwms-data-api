@@ -19,7 +19,7 @@
     <logger name="org.apache" level="ERROR"/>
 
     <logger name="org.apache.catalina" level="INFO" additivity="false">
-        <appender-ref ref="STDERR" />
+        <appender-ref ref="OTEL-STDERR" />
     </logger>
 
     <logger name="org.apache.catalina.core.ContainerBase.[Catalina]" level="INFO" additivity="false">
