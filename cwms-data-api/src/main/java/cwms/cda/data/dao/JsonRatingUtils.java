@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -161,6 +162,19 @@ public class JsonRatingUtils {
                 temp.set("units-id", JsonNodeFactory.instance.textNode(units.toString()));
                 temp.remove(depParameter);
                 temp.remove(indParameter);
+            }
+            if (temp.has("values")) {
+                JsonNode values = temp.get("values");
+                ArrayNode value = mapper.createArrayNode();
+                for (JsonNode valueNode : values) {
+                    ObjectNode pointNode = mapper.createObjectNode();
+                    ObjectNode valuesNode = mapper.createObjectNode();
+                    valuesNode.set("ind", valueNode.get(0));
+                    valuesNode.set("dep", valueNode.get(1));
+                    pointNode.set("point", valuesNode);
+                    value.add(pointNode);
+                }
+                temp.set("values", value);
             }
             temp.set("active", JsonNodeFactory.instance.booleanNode(true));
             transformed.set(simpleRating, temp);
