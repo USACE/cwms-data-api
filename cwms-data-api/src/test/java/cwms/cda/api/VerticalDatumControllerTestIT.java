@@ -55,11 +55,13 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
 
     private static final String TEST_LOCATION = "VDI_LOC_TEST";
     private static final String TEST_LOCATION2 = "VDI_LOC_TEST2";
+    private static final String TEST_LOCATION3 = "VDI_LOC_TEST3";
 
     @BeforeAll
     static void setup() throws Exception {
         createLocation(TEST_LOCATION, true, OFFICE_ID);
         createLocation(TEST_LOCATION2, true, OFFICE_ID);
+        createLocation(TEST_LOCATION3, true, OFFICE_ID);
     }
 
 
@@ -261,7 +263,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
         };
         VerticalDatumInfo vdi = new VerticalDatumInfo.Builder()
             .withOffice(OFFICE_ID)
-            .withLocation(TEST_LOCATION)
+            .withLocation(TEST_LOCATION2)
             .withUnit("m")
             .withNativeDatum("NGVD-29")
             .withElevation(100.0)
@@ -283,7 +285,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/location/" + TEST_LOCATION + "/vertical-datum")
+            .post("/location/" + TEST_LOCATION2 + "/vertical-datum")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -291,7 +293,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
 
         VerticalDatumInfo vdi2 = new VerticalDatumInfo.Builder()
             .withOffice(OFFICE_ID)
-            .withLocation(TEST_LOCATION2)
+            .withLocation(TEST_LOCATION3)
             .withUnit("m")
             .withNativeDatum("NGVD-29")
             .withElevation(200.0)
@@ -311,7 +313,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/location/" + TEST_LOCATION2 + "/vertical-datum")
+            .post("/location/" + TEST_LOCATION3 + "/vertical-datum")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -349,36 +351,6 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .delete("/location/" + TEST_LOCATION + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        //VERIFY DELETE
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(contentType.toString())
-            .queryParam(OFFICE, OFFICE_ID)
-            .queryParam(Controllers.UNIT, "m")
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/location/" + TEST_LOCATION + "/vertical-datum")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
-
-        // DELETE
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(contentType.toString())
-            .queryParam(OFFICE, OFFICE_ID)
-            .header(AUTH_HEADER, user.toHeaderValue())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
             .delete("/location/" + TEST_LOCATION2 + "/vertical-datum")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -395,6 +367,36 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .redirects().follow(true)
             .redirects().max(3)
             .get("/location/" + TEST_LOCATION2 + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        // DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/location/" + TEST_LOCATION3 + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        //VERIFY DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.UNIT, "m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/" + TEST_LOCATION3 + "/vertical-datum")
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
