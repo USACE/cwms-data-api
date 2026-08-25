@@ -46,8 +46,26 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
         return ForecastSpecV2.class;
     }
 
+    /**
+     * v2 primary-resource standard: office is a required path segment
+     * ({@code /v2/forecast-spec/{office}/{name}}), not a query param.
+     */
+    @Override
+    protected String requireOffice(Context ctx) {
+        return ctx.pathParam(OFFICE);
+    }
+
+    @Override
+    protected String optionalOffice(Context ctx) {
+        return ctx.pathParam(OFFICE);
+    }
+
     @OpenApi(
             description = "Used to create and save forecast spec data",
+            pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the forecast spec to be created."),
+            },
             requestBody = @OpenApiRequestBody(
                     content = {
                             @OpenApiContent(from = ForecastSpecV2.class, type = Formats.JSON)
@@ -65,12 +83,12 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     @OpenApi(
             description = "Used to delete forecast spec data based on unique fields",
             pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the forecast spec whose data is to be deleted."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the "
                             + "spec id of the forecast spec whose data is to be deleted."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the forecast spec whose data is to be deleted."),
                     @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                             + "designator of the forecast spec whose data is to be deleted."),
                     @OpenApiParam(name = METHOD, description = "Specifies the delete method used. " +
@@ -91,10 +109,12 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
 
     @OpenApi(
             description = "Used to query multiple forecast specs",
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the "
-                            + "owning office of the forecast spec whose data is to be included in the "
+            pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the forecast specs to be included in the "
                             + "response."),
+            },
+            queryParams = {
                     @OpenApiParam(name = ID_MASK, description = "Posix "
                             + "<a href=\"regexp.html\">regular expression</a>  that specifies "
                             + "the spec IDs to be included in the response."),
@@ -127,13 +147,13 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     @OpenApi(
             description = "Used to query a single forecast spec record",
             pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the forecast spec whose data is to be included in the "
+                            + "response."),
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the "
                             + "spec id of the forecast spec whose data is to be included in the response."),
             },
             queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the forecast spec whose data is to be included in the "
-                            + "response."),
                     @OpenApiParam(name = DESIGNATOR, description = "Specifies the "
                             + "designator of the forecast spec whose data to be included in the response.")
             },
@@ -159,6 +179,8 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     @OpenApi(
             description = "Update a forecast spec with provided values",
             pathParams = {
+                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
+                            + "owning office of the forecast spec to be updated."),
                     @OpenApiParam(name = NAME, description = "Forecast spec id to be updated")
             },
             requestBody = @OpenApiRequestBody(

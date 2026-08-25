@@ -566,9 +566,13 @@ public final class ApiServletRouteConfiguration {
             throw new IllegalArgumentException("CrudHandler requires a path-parameter at the "
                     + "end of the provided path, e.g. '/users/{user-id}' or '/users/<user-id>' given: " + fullPath);
         }
-        String resourceBase = subPaths[subPaths.length - 2];
-        if (resourceBase.startsWith("{") || resourceBase.startsWith("<")
-                || resourceBase.endsWith("}") || resourceBase.endsWith(">")) {
+        // The segment immediately before the id is allowed to be a param itself (e.g. v2's
+        // "{office}" segment on a primary resource) as long as there's a literal resource
+        // base somewhere earlier in the path -- that's what actually anchors the route.
+        boolean hasLiteralResourceBase = Arrays.stream(subPaths, 0, subPaths.length - 1)
+                .anyMatch(segment -> !(segment.startsWith("{") || segment.startsWith("<")
+                        || segment.endsWith("}") || segment.endsWith(">")));
+        if (!hasLiteralResourceBase) {
             throw new IllegalArgumentException("CrudHandler requires a resource base at the "
                     + "beginning of the provided path, e.g. '/users/{user-id}' given: " + fullPath);
         }
@@ -686,7 +690,16 @@ public final class ApiServletRouteConfiguration {
         instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
+    /**
+     * Formats a v2 route path, per the standard that v2 primary-resource routes carry
+     * {office} as a path segment immediately before the resource's own id segment, e.g.
+     * {@code "/forecast-spec/{%s}"} becomes {@code "/v2/forecast-spec/{office}/{name}"}.
+     * Sub-resources (nested under some other primary resource) do not get an office
+     * segment of their own -- this only applies when formatting a primary resource's path.
+     */
     private static String formatV2(String path, Object... args) {
-        return format("/v2/" + path, args);
+        int lastSlash = path.lastIndexOf('/');
+        String pathWithOffice = path.substring(0, lastSlash) + format("/{%s}", OFFICE) + path.substring(lastSlash);
+        return format("/v2/" + pathWithOffice, args);
     }
 }
