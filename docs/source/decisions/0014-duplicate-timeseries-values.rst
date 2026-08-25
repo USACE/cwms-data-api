@@ -126,12 +126,6 @@ Questions Before Acceptance
   discarded or combined, and if so, through which response field or header?
 
 
-Decision Status
-===============
-
-(Status: proposed)
-
-
 References
 ==========
 
