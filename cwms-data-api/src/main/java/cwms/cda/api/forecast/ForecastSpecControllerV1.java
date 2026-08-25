@@ -12,6 +12,7 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_400;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STATUS_501;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.data.dao.forecast.ForecastSpecDao;
@@ -86,7 +87,8 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
-        super.delete(ctx, name);
+        String office = requiredParam(ctx, OFFICE);
+        super.delete(ctx, name, office);
     }
 
     @OpenApi(
@@ -121,7 +123,8 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        super.getAll(ctx);
+        String office = ctx.queryParam(OFFICE);
+        super.getAll(ctx, office);
     }
 
     @OpenApi(
@@ -153,7 +156,8 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
-        super.getOne(ctx, name);
+        String office = requiredParam(ctx, OFFICE);
+        super.getOne(ctx, name, office);
     }
 
     @OpenApi(

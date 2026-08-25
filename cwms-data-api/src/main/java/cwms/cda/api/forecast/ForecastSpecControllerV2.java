@@ -46,20 +46,6 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
         return ForecastSpecV2.class;
     }
 
-    /**
-     * v2 primary-resource standard: office is a required path segment
-     * ({@code /v2/forecast-spec/{office}/{name}}), not a query param.
-     */
-    @Override
-    protected String requireOffice(Context ctx) {
-        return ctx.pathParam(OFFICE);
-    }
-
-    @Override
-    protected String optionalOffice(Context ctx) {
-        return ctx.pathParam(OFFICE);
-    }
-
     @OpenApi(
             description = "Used to create and save forecast spec data",
             pathParams = {
@@ -77,6 +63,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     )
     @Override
     public void create(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, OFFICE, "Body contains information");
         super.create(ctx);
     }
 
@@ -104,7 +91,8 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
-        super.delete(ctx, name);
+        String office = ctx.pathParam(OFFICE);
+        super.delete(ctx, name, office);
     }
 
     @OpenApi(
@@ -141,7 +129,8 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        super.getAll(ctx);
+        String office = ctx.pathParam(OFFICE);
+        super.getAll(ctx, office);
     }
 
     @OpenApi(
@@ -173,7 +162,8 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
-        super.getOne(ctx, name);
+        String office = ctx.pathParam(OFFICE);
+        super.getOne(ctx, name, office);
     }
 
     @OpenApi(
@@ -197,6 +187,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
+        logUnusedPathParameter(ctx, OFFICE, "Body contains information");
         super.update(ctx, name);
     }
 }

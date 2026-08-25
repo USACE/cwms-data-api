@@ -9,11 +9,9 @@ import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.ID_MASK;
 import static cwms.cda.api.Controllers.METHOD;
 import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.SOURCE_ENTITY;
 import static cwms.cda.api.Controllers.SOURCE_ENTITY_LIKE;
 import static cwms.cda.api.Controllers.UPDATE;
-import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -54,25 +52,6 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
     /** The DTO type this controller reads and writes */
     protected abstract Class<T> getDtoClass();
 
-    /**
-     * Where to read the required office from for delete/getOne. Defaults to the
-     * {@code office} query param. V2 (and future versions that put office in the path per
-     * the v2 primary-resource standard) should override this to read {@code ctx.pathParam}
-     * instead.
-     */
-    protected String requireOffice(Context ctx) {
-        return requiredParam(ctx, OFFICE);
-    }
-
-    /**
-     * Where to read the optional office filter from for getAll. Defaults to the
-     * {@code office} query param (nullable, meaning "any office"). V2 overrides this since
-     * office is a required path segment there, not an optional filter.
-     */
-    protected String optionalOffice(Context ctx) {
-        return ctx.queryParam(OFFICE);
-    }
-
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
@@ -86,9 +65,7 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
         }
     }
 
-    @Override
-    public void delete(@NotNull Context ctx, @NotNull String name) {
-        String office = requireOffice(ctx);
+    protected void delete(Context ctx, String name, String office) {
         String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
 
         JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
@@ -117,10 +94,8 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
         }
     }
 
-    @Override
-    public void getAll(@NotNull Context ctx) {
+    protected void getAll(Context ctx, String office) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
-            String office = optionalOffice(ctx);
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
             String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
             String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
@@ -137,10 +112,8 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
         }
     }
 
-    @Override
-    public void getOne(@NotNull Context ctx, @NotNull String name) {
+    protected void getOne(Context ctx, String name, String office) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String office = requireOffice(ctx);
             String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
 
             DSLContext dsl = getDslContext(ctx);
