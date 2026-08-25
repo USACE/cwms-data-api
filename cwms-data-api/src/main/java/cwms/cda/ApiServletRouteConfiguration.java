@@ -363,14 +363,15 @@ public final class ApiServletRouteConfiguration {
         String gateChangePath = format("/projects/{%s}/{%s}/gate-changes", OFFICE,
                 Controllers.PROJECT_ID);
         String gateChangeCreatePath = "/projects/gate-changes";
-        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", OFFICE,
-                Controllers.PROJECT_ID, NAME);
-        String virtualOutletCreatePath = "/projects/virtual-outlets";
+
         cdaCrudCache(outletPath, new OutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
         post(gateChangeCreatePath, new GateChangeCreateController(metrics), requiredRoles);
         get(gateChangePath, new GateChangeGetAllController(metrics));
         delete(gateChangePath, new GateChangeDeleteController(metrics), requiredRoles);
+        String virtualOutletPath = format("/projects/{%s}/{%s}/virtual-outlets/{%s}", OFFICE,
+                Controllers.PROJECT_ID, NAME);
         cdaCrudCache(virtualOutletPath, new VirtualOutletController(metrics), requiredRoles, 1, TimeUnit.DAYS);
+        String virtualOutletCreatePath = "/projects/virtual-outlets";
         post(virtualOutletCreatePath, new VirtualOutletCreateController(metrics), requiredRoles);
 
         get("/projects/locations/", new ProjectChildLocationHandler(metrics));
@@ -445,22 +446,25 @@ public final class ApiServletRouteConfiguration {
 
     private static Boolean hasAnyRole(DataApiPrincipal p, Set<RouteRole> roles) throws MissingRolesException {
         boolean retVal = roles.stream().anyMatch(p.getRoles()::contains);
-        if(!retVal) {
+        if (!retVal) {
             List<String> requiredRoleNames = roles.stream()
                     .map(Object::toString)
                     .collect(toList());
-            throw new MissingRolesException(requiredRoleNames, "Missing one of the following roles {" + String.join(",", requiredRoleNames) + "}");
+            throw new MissingRolesException(requiredRoleNames,
+                    "Missing one of the following roles {" + String.join(",", requiredRoleNames) + "}");
         }
         return true;
     }
 
+    /**
+     * The POST handlers for /ratings/rate-* intentionally do not have
+     * require roles. Instead they are rate limited if not authenticated.
+     * POST is used as sending a body with GET is not standard and we cannot
+     * be sure clients, or future servers, would correctly support that.
+     * @param requiredRoles roles required for actions requiring authorization.
+     */
     private static void addRatingHandlers(RouteRole[] requiredRoles, MetricRegistry metrics, CdaAccessManager cdaAccessManager) {
-        /**
-         * The POST handlers for /ratings/rate-* intentionally do not have
-         * require roles. Instead they are rate limited if not authenticated.
-         * POST is used as sending a body with GET is not standard and we cannot
-         * be sure clients, or future servers, would correctly support that.
-         */
+
         String rateValues = format("/ratings/rate-values/{%s}/{%s}", OFFICE, RATING_ID);
         post(rateValues, new RateValuesController(metrics));
         String rateTs = format("/ratings/rate-ts/{%s}/{%s}", OFFICE, RATING_ID);

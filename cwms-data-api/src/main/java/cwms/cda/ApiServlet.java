@@ -88,9 +88,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
+import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
-import org.togglz.core.context.FeatureContext;
 
 
 /**
@@ -341,7 +341,7 @@ public class ApiServlet extends HttpServlet {
                 schemeProcessor.apply(ctx, api);
                 api.getPaths().forEach((key,path) -> {
                     setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
-                    // yeah, we really need to figure out how to update everything,
+                    // yeah, we really need to figure out how to update everything, 
                     // this is supported as an annotation in newer versions.
                     if (key.startsWith("/rss")) {
                         path.getGet().getResponses().forEach((p, r) -> {
@@ -356,7 +356,7 @@ public class ApiServlet extends HttpServlet {
                 try (ScanResult scanResult = new ClassGraph()
                         .acceptPackages("cwms.cda.data.dto")
                         .scan()) {
-                    List<Class<CwmsCsvDTO>> csvDtoClasses =
+                    List<Class<CwmsCsvDTO>> csvDtoClasses = 
                         scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
                                 .loadClasses(CwmsCsvDTO.class);
                     for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
@@ -397,11 +397,11 @@ public class ApiServlet extends HttpServlet {
                 doc.header(IS_NEW_LRTS,
                     Boolean.class,
                     p -> p.description(
-                        "If True, will use use the new 'Local Regular Time Series"
+                        "If True, will use use the new 'Local Regular Time Series" 
                         + " naming scheme. For example 1DayLocal. Instead of the original"
                         + " PsuedoRegular based scheme, for example ~1DayLocal."
                         + " NOTE: this parameter only applies to the input and output of"
-                        + " Time Series names. It is added to all endpoints and will be ignored"
+                        + " Time Series names. It is added to all endpoints and will be ignored" 
                         + " when not required. Default values is false if not set.")
                 );
             })
