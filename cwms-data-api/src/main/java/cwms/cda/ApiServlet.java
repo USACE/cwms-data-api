@@ -488,6 +488,7 @@ public class ApiServlet extends HttpServlet {
 
         VerticalDatumController vdiController = new VerticalDatumController(metrics);
         String vdiPath = format("/location/{%s}/vertical-datum", Controllers.LOCATION_ID);
+        get("/location/vertical-datum", vdiController::getAll);
         get(vdiPath, ctx -> vdiController.getOne(ctx, ctx.pathParam(Controllers.LOCATION_ID)));
         addCacheControl(vdiPath, 5, TimeUnit.MINUTES);
         post(vdiPath, vdiController::create, requiredRoles);

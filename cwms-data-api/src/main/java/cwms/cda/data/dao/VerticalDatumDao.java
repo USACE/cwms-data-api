@@ -26,11 +26,16 @@ package cwms.cda.data.dao;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.VerticalDatumInfoList;
 import cwms.cda.formatters.xml.XMLv1;
+import java.sql.Clob;
+import java.util.ArrayList;
+import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.Record1;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
+import usace.cwms.db.jooq.codegen_latest.udt.records.CLOB_TAB_T;
 
 /**
  * DAO responsible for CRUD operations on Vertical Datum Info for a Location.
@@ -49,6 +54,22 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
             String xml = CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(ctx.configuration(), locationId, unit, officeId);
             return TimeSeriesDaoImpl.parseVerticalDatumInfo(xml);
         });
+    }
+
+    public VerticalDatumInfoList retrieveVerticalDatumInfoList(String officeId, String locMask, String units) {
+        List<VerticalDatumInfo> resultList = new ArrayList<>();
+        connection(dsl, conn -> {
+            DSLContext ctx = getDslContext(conn, officeId);
+            String mask = locMask == null ? "%" : locMask;
+            CLOB_TAB_T datumInfo = usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE
+                .call_GET_VERTICAL_DATUM_INFO_LIST(ctx.configuration(), officeId, mask, units);
+            for (Object info : datumInfo) {
+                Clob clob = (Clob) info;
+                VerticalDatumInfo vdi = new XMLv1().parseContent(clob.getAsciiStream(), VerticalDatumInfo.class);
+                resultList.add(vdi);
+            }
+        });
+        return new VerticalDatumInfoList(resultList);
     }
 
     public void createVerticalDatumInfo(String officeId, String locationId, VerticalDatumInfo vdi) {
@@ -98,7 +119,7 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
                 .where(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.LOCATION_ID.eq(locationId))
                 .and(AV_VERT_DATUM_OFFSET.AV_VERT_DATUM_OFFSET.OFFICE_ID.eq(officeId))
                 .fetchOne();
-        if(result == null) {
+        if (result == null) {
             throw new NotFoundException("No vertical datum info found for location " + locationId + " in office " + officeId);
         }
     }
