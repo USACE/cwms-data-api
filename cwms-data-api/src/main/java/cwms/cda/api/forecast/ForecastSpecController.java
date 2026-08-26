@@ -166,7 +166,7 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
         ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
     }
 
-    private T deserializeForecastSpec(Context ctx) {
+    protected T deserializeForecastSpec(Context ctx) {
         ContentType contentType = Formats.parseHeader(ctx.req.getContentType(), getDtoClass());
         return Formats.parseContent(contentType, ctx.body(), getDtoClass());
     }

@@ -63,7 +63,8 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     )
     @Override
     public void create(@NotNull Context ctx) {
-        logUnusedPathParameter(ctx, OFFICE, "Body contains information");
+        String officeFromPath = ctx.pathParam(OFFICE);
+        validateOffice(ctx, officeFromPath);
         super.create(ctx);
     }
 
@@ -187,7 +188,19 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
-        logUnusedPathParameter(ctx, OFFICE, "Body contains information");
+        String officeFromPath = ctx.pathParam(OFFICE);
+        validateOffice(ctx, officeFromPath);
         super.update(ctx, name);
+    }
+
+    private void validateOffice(@NotNull Context ctx, String officeFromPath) {
+        if(officeFromPath == null) {
+            throw new IllegalArgumentException("Office ID is required in the path parameter.");
+        }
+        ForecastSpecV2 body = deserializeForecastSpec(ctx);
+        String officeFromBody = body.getSpecId().getOfficeId();
+        if(!(officeFromPath.equalsIgnoreCase(officeFromBody))) {
+            throw new IllegalArgumentException("Office ID in path parameter does not match office ID in request body.");
+        }
     }
 }
