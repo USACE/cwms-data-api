@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  CWMS_USER_ROLE_PRESETS,
   OfficeDropdown,
+  matchCwmsUserRolePreset,
+  resolveCwmsUserRolePreset,
   useAuth,
   useCdaRoles,
   useCdaUsers,
@@ -17,13 +20,21 @@ import {
   Strong,
   Text,
 } from "@usace/groundwork";
-import { FaSearch, FaShieldAlt, FaUserShield, FaUsers } from "react-icons/fa";
+import {
+  FaExternalLinkAlt,
+  FaSearch,
+  FaShieldAlt,
+  FaUserShield,
+  FaUsers,
+} from "react-icons/fa";
 
 import { HelpTip } from "../../components/HelpTip";
 import { EmptyState, Notice } from "../user-lists/components/StatusMessages";
 import { filterUsers, rolesForOffice, sameRoles } from "./role-state";
 
 const cdaUrl = import.meta.env.VITE_CDA_API_ROOT;
+const cliRoleDocsUrl =
+  "https://cwms-cli.readthedocs.io/en/latest/cli/users.html#add-a-role-to-a-user";
 
 function updateSummary(userName, additions, removals) {
   const changes = [];
@@ -40,6 +51,7 @@ export default function UserRoles() {
   const [selectedUserName, setSelectedUserName] = useState("");
   const [search, setSearch] = useState("");
   const [draftRoles, setDraftRoles] = useState([]);
+  const [roleMode, setRoleMode] = useState("custom");
   const [message, setMessage] = useState("");
   const [mutationError, setMutationError] = useState("");
 
@@ -83,6 +95,11 @@ export default function UserRoles() {
     () => [...(rolesQuery.data ?? [])].sort((left, right) => left.localeCompare(right)),
     [rolesQuery.data],
   );
+  const presetResolution = useMemo(
+    () =>
+      roleMode === "custom" ? null : resolveCwmsUserRolePreset(roleMode, roleCatalog),
+    [roleCatalog, roleMode],
+  );
 
   useEffect(() => {
     if (!users.some((user) => user["user-name"] === selectedUserName)) {
@@ -92,6 +109,7 @@ export default function UserRoles() {
 
   useEffect(() => {
     setDraftRoles(currentRoles);
+    setRoleMode(matchCwmsUserRolePreset(currentRoles) ?? "custom");
   }, [currentRoles]);
 
   function changeOffice(nextOffice) {
@@ -103,6 +121,8 @@ export default function UserRoles() {
   }
 
   function toggleRole(role) {
+    if (role === "All Users") return;
+    setRoleMode("custom");
     setDraftRoles((current) =>
       current.includes(role)
         ? current.filter((item) => item !== role)
@@ -110,6 +130,25 @@ export default function UserRoles() {
     );
     setMessage("");
     setMutationError("");
+  }
+
+  function selectRoleMode(mode) {
+    setRoleMode(mode);
+    if (mode === "custom") return;
+    const { roles } = resolveCwmsUserRolePreset(mode, roleCatalog);
+    const protectedRoles = currentRoles.filter((role) => role === "All Users");
+    setDraftRoles(
+      [...new Set([...protectedRoles, ...roles])].sort((left, right) =>
+        left.localeCompare(right),
+      ),
+    );
+    setMessage("");
+    setMutationError("");
+  }
+
+  function resetRoles() {
+    setDraftRoles(currentRoles);
+    setRoleMode(matchCwmsUserRolePreset(currentRoles) ?? "custom");
   }
 
   async function saveRoles(event) {
@@ -168,6 +207,15 @@ export default function UserRoles() {
           Review every active user in an authorized office and maintain the roles that
           control their CWMS access.
         </Text>
+        <a
+          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
+          href={cliRoleDocsUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          CWMS CLI user-role guide
+          <FaExternalLinkAlt aria-hidden="true" className="h-3 w-3" />
+        </a>
       </div>
 
       {mutationError && <Notice kind="error">{mutationError}</Notice>}
@@ -328,6 +376,74 @@ export default function UserRoles() {
                   </Text>
                 </div>
 
+                <fieldset className="mb-6">
+                  <legend>
+                    <Strong>Role configuration</Strong>
+                  </legend>
+                  <Text className="mt-1">
+                    Choose a cwms-cli-compatible configuration, or select Custom to
+                    assign specific roles. Applying a preset replaces other optional
+                    roles when you save.
+                  </Text>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    {CWMS_USER_ROLE_PRESETS.map((preset) => (
+                      <label
+                        key={preset.id}
+                        className={`cursor-pointer rounded-lg border p-4 transition ${
+                          roleMode === preset.id
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-zinc-200 hover:border-blue-300"
+                        }`}
+                      >
+                        <span className="flex items-start gap-3">
+                          <input
+                            type="radio"
+                            name="role-configuration"
+                            className="mt-1 h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
+                            checked={roleMode === preset.id}
+                            onChange={() => selectRoleMode(preset.id)}
+                          />
+                          <span>
+                            <Strong>{preset.label}</Strong>
+                            <Text className="mt-1 text-xs">{preset.description}</Text>
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                    <label
+                      className={`cursor-pointer rounded-lg border p-4 transition ${
+                        roleMode === "custom"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-zinc-200 hover:border-blue-300"
+                      }`}
+                    >
+                      <span className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name="role-configuration"
+                          className="mt-1 h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
+                          checked={roleMode === "custom"}
+                          onChange={() => selectRoleMode("custom")}
+                        />
+                        <span>
+                          <Strong>Custom</Strong>
+                          <Text className="mt-1 text-xs">
+                            Select the exact office roles this user needs.
+                          </Text>
+                        </span>
+                      </span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                {presetResolution?.unavailableRoles.length > 0 && (
+                  <Notice kind="error">
+                    This CDA role catalog does not include:{" "}
+                    {presetResolution.unavailableRoles.join(", ")}. The available
+                    portions of the preset are selected; review them before saving.
+                  </Notice>
+                )}
+
                 {rolesQuery.isLoading ? (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Skeleton className="h-14 w-full" />
@@ -347,27 +463,31 @@ export default function UserRoles() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       {roleCatalog.map((role) => {
                         const checked = draftRoles.includes(role);
+                        const protectedRole = role === "All Users";
                         return (
                           <label
                             key={role}
-                            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
+                            className={`flex items-start gap-3 rounded-lg border p-4 transition ${
                               checked
                                 ? "border-blue-500 bg-blue-50"
                                 : "border-zinc-200 hover:border-blue-300"
-                            }`}
+                            } ${protectedRole ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
                           >
                             <input
                               type="checkbox"
                               className="mt-1 h-4 w-4 rounded border-zinc-400 text-blue-700 focus:ring-blue-600"
                               checked={checked}
+                              disabled={protectedRole}
                               onChange={() => toggleRole(role)}
                             />
                             <span>
                               <Strong>{role}</Strong>
                               <Text className="mt-1 text-xs">
-                                {currentRoles.includes(role)
-                                  ? "Currently assigned"
-                                  : "Not currently assigned"}
+                                {protectedRole
+                                  ? "Required by CWMS and cannot be removed directly"
+                                  : currentRoles.includes(role)
+                                    ? "Currently assigned"
+                                    : "Not currently assigned"}
                               </Text>
                             </span>
                           </label>
@@ -387,7 +507,7 @@ export default function UserRoles() {
                       type="button"
                       color="light"
                       disabled={sameRoles(currentRoles, draftRoles)}
-                      onClick={() => setDraftRoles(currentRoles)}
+                      onClick={resetRoles}
                     >
                       Reset
                     </Button>
