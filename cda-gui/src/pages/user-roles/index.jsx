@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  CWMS_USER_ROLE_DESCRIPTIONS,
   CWMS_USER_ROLE_PRESETS,
   OfficeDropdown,
   matchCwmsUserRolePreset,
@@ -36,15 +37,8 @@ const cdaUrl = import.meta.env.VITE_CDA_API_ROOT;
 const cliRoleDocsUrl =
   "https://cwms-cli.readthedocs.io/en/latest/cli/users.html#add-a-role-to-a-user";
 const usersPerPage = 10;
-const roleDescriptions = {
-  "All Users": "Baseline membership required for every CWMS user.",
-  "CCP Mgr": "Allows management of CWMS Control Point configuration.",
-  "CWMS User Admins": "Allows management of users and office-scoped role assignments.",
-  "CWMS Users": "Provides standard authenticated CWMS access.",
-  "Data Acquisition Mgr": "Allows management of data-acquisition configuration.",
-  "TS ID Creator": "Allows creation of time-series identifiers.",
-  "VT Mgr": "Allows management of validation and transformation configuration.",
-};
+const fallbackRoleDescription =
+  "An office-scoped CWMS role returned by the CDA role catalog.";
 
 function updateSummary(userName, additions, removals) {
   const changes = [];
@@ -577,17 +571,23 @@ export default function UserRoles() {
                               >
                                 <Strong>{role}</Strong>
                                 <Text className="mt-1 text-xs">
-                                  {protectedRole
-                                    ? "Required by CWMS and cannot be removed directly"
-                                    : currentRoles.includes(role)
-                                      ? "Currently assigned"
-                                      : "Not currently assigned"}
+                                  {CWMS_USER_ROLE_DESCRIPTIONS[role] ??
+                                    fallbackRoleDescription}
                                 </Text>
                               </label>
-                              <HelpTip title={role}>
-                                {roleDescriptions[role] ??
-                                  "An office-scoped CWMS role returned by the CDA role catalog."}
-                              </HelpTip>
+                              <div className="flex shrink-0 items-center gap-2">
+                                <Badge
+                                  color={currentRoles.includes(role) ? "green" : "zinc"}
+                                >
+                                  {currentRoles.includes(role)
+                                    ? "Assigned"
+                                    : "Not assigned"}
+                                </Badge>
+                                <HelpTip title={role}>
+                                  {CWMS_USER_ROLE_DESCRIPTIONS[role] ??
+                                    fallbackRoleDescription}
+                                </HelpTip>
+                              </div>
                             </div>
                           );
                         })}
