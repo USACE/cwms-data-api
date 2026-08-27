@@ -244,15 +244,18 @@ export default function UserRoles() {
           Review every active user in an authorized office and maintain the roles that
           control their CWMS access.
         </Text>
-        <a
-          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
-          href={cliRoleDocsUrl}
-          target="_blank"
-          rel="noreferrer"
-        >
-          CWMS CLI user-role guide
-          <FaExternalLinkAlt aria-hidden="true" className="h-3 w-3" />
-        </a>
+        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+          <Text>Prefer the command line?</Text>
+          <a
+            className="inline-flex items-center gap-2 font-semibold text-blue-700 underline decoration-blue-300 underline-offset-4 hover:text-blue-900"
+            href={cliRoleDocsUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            CWMS CLI user-role guide
+            <FaExternalLinkAlt aria-hidden="true" className="h-3 w-3" />
+          </a>
+        </div>
       </div>
 
       {mutationError && <Notice kind="error">{mutationError}</Notice>}
