@@ -152,7 +152,6 @@ export default function UserRoles() {
   function changeUserPage(nextPage) {
     const next = paginateUsers(visibleUsers, nextPage, usersPerPage);
     setUserPage(next.currentPage);
-    setSelectedUserName(next.users[0]?.["user-name"] ?? "");
     setMessage("");
     setMutationError("");
   }
@@ -333,7 +332,7 @@ export default function UserRoles() {
               ) : (
                 <>
                   <div
-                    className="max-h-[42rem] space-y-2 overflow-y-auto pr-1"
+                    className="h-[42rem] space-y-2 overflow-y-auto pr-1"
                     role="list"
                     aria-label={`${office} users`}
                   >
