@@ -40,6 +40,12 @@ const usersPerPage = 10;
 const fallbackRoleDescription =
   "An office-scoped CWMS role returned by the CDA role catalog.";
 
+function userRoleSummary(roles) {
+  const presetId = matchCwmsUserRolePreset(roles);
+  const preset = CWMS_USER_ROLE_PRESETS.find(({ id }) => id === presetId);
+  return preset?.label ?? `Custom: ${roles.length ? roles.join(" · ") : "No roles"}`;
+}
+
 function updateSummary(userName, additions, removals) {
   const changes = [];
   if (additions.length) changes.push(`added ${additions.length}`);
@@ -326,7 +332,7 @@ export default function UserRoles() {
               ) : (
                 <>
                   <div
-                    className="h-[42rem] space-y-2 overflow-y-auto pr-1"
+                    className="h-[42rem] space-y-1.5 overflow-y-auto pr-1"
                     role="list"
                     aria-label={`${office} users`}
                   >
@@ -340,7 +346,7 @@ export default function UserRoles() {
                           type="button"
                           role="listitem"
                           aria-current={active ? "true" : undefined}
-                          className={`w-full rounded-lg border p-4 text-left transition ${
+                          className={`w-full rounded-md border px-3 py-2.5 text-left transition ${
                             active
                               ? "border-blue-600 bg-blue-50 shadow-sm"
                               : "border-zinc-200 bg-white hover:border-blue-300 hover:bg-zinc-50"
@@ -351,21 +357,27 @@ export default function UserRoles() {
                             setMutationError("");
                           }}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <Strong>{userName}</Strong>
+                          <div className="flex items-center justify-between gap-2">
+                            <Strong className="min-w-0 truncate text-sm">
+                              {userName}
+                            </Strong>
                             <Badge color={officeRoles.length ? "green" : "zinc"}>
                               {officeRoles.length} role
                               {officeRoles.length === 1 ? "" : "s"}
                             </Badge>
                           </div>
-                          <Text className="mt-1 truncate">
+                          <Text className="mt-0.5 truncate text-sm">
                             {user.email || user.principal}
                           </Text>
-                          {officeRoles.length > 0 && (
-                            <Text className="mt-2 line-clamp-2 text-xs">
-                              {officeRoles.join(" · ")}
-                            </Text>
-                          )}
+                          <div
+                            className={`mt-1.5 line-clamp-2 rounded px-2 py-1 text-xs font-medium ${
+                              active
+                                ? "bg-white/70 text-blue-900"
+                                : "bg-zinc-50 text-zinc-700"
+                            }`}
+                          >
+                            {userRoleSummary(officeRoles)}
+                          </div>
                         </button>
                       );
                     })}
