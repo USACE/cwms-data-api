@@ -15,7 +15,7 @@ import {
   Card,
   H1,
   H2,
-  Input,
+  Search,
   Skeleton,
   Strong,
   Text,
@@ -30,11 +30,21 @@ import {
 
 import { HelpTip } from "../../components/HelpTip";
 import { EmptyState, Notice } from "../user-lists/components/StatusMessages";
-import { filterUsers, rolesForOffice, sameRoles } from "./role-state";
+import { filterUsers, paginateUsers, rolesForOffice, sameRoles } from "./role-state";
 
 const cdaUrl = import.meta.env.VITE_CDA_API_ROOT;
 const cliRoleDocsUrl =
   "https://cwms-cli.readthedocs.io/en/latest/cli/users.html#add-a-role-to-a-user";
+const usersPerPage = 10;
+const roleDescriptions = {
+  "All Users": "Baseline membership required for every CWMS user.",
+  "CCP Mgr": "Allows management of CWMS Control Point configuration.",
+  "CWMS User Admins": "Allows management of users and office-scoped role assignments.",
+  "CWMS Users": "Provides standard authenticated CWMS access.",
+  "Data Acquisition Mgr": "Allows management of data-acquisition configuration.",
+  "TS ID Creator": "Allows creation of time-series identifiers.",
+  "VT Mgr": "Allows management of validation and transformation configuration.",
+};
 
 function updateSummary(userName, additions, removals) {
   const changes = [];
@@ -50,6 +60,7 @@ export default function UserRoles() {
   const [office, setOffice] = useState("");
   const [selectedUserName, setSelectedUserName] = useState("");
   const [search, setSearch] = useState("");
+  const [userPage, setUserPage] = useState(1);
   const [draftRoles, setDraftRoles] = useState([]);
   const [roleMode, setRoleMode] = useState("custom");
   const [message, setMessage] = useState("");
@@ -91,6 +102,10 @@ export default function UserRoles() {
     () => filterUsers(users, search, office),
     [users, search, office],
   );
+  const pagination = useMemo(
+    () => paginateUsers(visibleUsers, userPage, usersPerPage),
+    [userPage, visibleUsers],
+  );
   const roleCatalog = useMemo(
     () => [...(rolesQuery.data ?? [])].sort((left, right) => left.localeCompare(right)),
     [rolesQuery.data],
@@ -108,6 +123,10 @@ export default function UserRoles() {
   }, [selectedUserName, users]);
 
   useEffect(() => {
+    if (pagination.currentPage !== userPage) setUserPage(pagination.currentPage);
+  }, [pagination.currentPage, userPage]);
+
+  useEffect(() => {
     setDraftRoles(currentRoles);
     setRoleMode(matchCwmsUserRolePreset(currentRoles) ?? "custom");
   }, [currentRoles]);
@@ -116,6 +135,23 @@ export default function UserRoles() {
     setOffice(nextOffice);
     setSelectedUserName("");
     setSearch("");
+    setUserPage(1);
+    setMessage("");
+    setMutationError("");
+  }
+
+  function changeSearch(event) {
+    const nextSearch = event.target.value;
+    const matches = filterUsers(users, nextSearch, office);
+    setSearch(nextSearch);
+    setUserPage(1);
+    setSelectedUserName(matches[0]?.["user-name"] ?? "");
+  }
+
+  function changeUserPage(nextPage) {
+    const next = paginateUsers(visibleUsers, nextPage, usersPerPage);
+    setUserPage(next.currentPage);
+    setSelectedUserName(next.users[0]?.["user-name"] ?? "");
     setMessage("");
     setMutationError("");
   }
@@ -265,17 +301,12 @@ export default function UserRoles() {
               <Badge color="blue">{usersQuery.data?.total ?? users.length}</Badge>
             </div>
             <div className="p-3">
-              <div className="relative mb-3">
-                <FaSearch
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-3 text-zinc-500"
-                />
-                <Input
+              <div className="mb-3 pr-4">
+                <Search
                   aria-label="Filter office users"
-                  className="pl-9"
                   placeholder="Name, email, user ID, or role"
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={changeSearch}
                 />
               </div>
 
@@ -294,51 +325,83 @@ export default function UserRoles() {
                   Try a different name, email, user ID, or role.
                 </EmptyState>
               ) : (
-                <div
-                  className="max-h-[42rem] space-y-2 overflow-y-auto"
-                  role="list"
-                  aria-label={`${office} users`}
-                >
-                  {visibleUsers.map((user) => {
-                    const userName = user["user-name"];
-                    const active = userName === selectedUserName;
-                    const officeRoles = rolesForOffice(user, office);
-                    return (
-                      <button
-                        key={userName}
-                        type="button"
-                        role="listitem"
-                        aria-current={active ? "true" : undefined}
-                        className={`w-full rounded-lg border p-4 text-left transition ${
-                          active
-                            ? "border-blue-600 bg-blue-50 shadow-sm"
-                            : "border-zinc-200 bg-white hover:border-blue-300 hover:bg-zinc-50"
-                        }`}
-                        onClick={() => {
-                          setSelectedUserName(userName);
-                          setMessage("");
-                          setMutationError("");
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <Strong>{userName}</Strong>
-                          <Badge color={officeRoles.length ? "green" : "zinc"}>
-                            {officeRoles.length} role
-                            {officeRoles.length === 1 ? "" : "s"}
-                          </Badge>
-                        </div>
-                        <Text className="mt-1 truncate">
-                          {user.email || user.principal}
-                        </Text>
-                        {officeRoles.length > 0 && (
-                          <Text className="mt-2 line-clamp-2 text-xs">
-                            {officeRoles.join(" · ")}
+                <>
+                  <div
+                    className="max-h-[42rem] space-y-2 overflow-y-auto pr-1"
+                    role="list"
+                    aria-label={`${office} users`}
+                  >
+                    {pagination.users.map((user) => {
+                      const userName = user["user-name"];
+                      const active = userName === selectedUserName;
+                      const officeRoles = rolesForOffice(user, office);
+                      return (
+                        <button
+                          key={userName}
+                          type="button"
+                          role="listitem"
+                          aria-current={active ? "true" : undefined}
+                          className={`w-full rounded-lg border p-4 text-left transition ${
+                            active
+                              ? "border-blue-600 bg-blue-50 shadow-sm"
+                              : "border-zinc-200 bg-white hover:border-blue-300 hover:bg-zinc-50"
+                          }`}
+                          onClick={() => {
+                            setSelectedUserName(userName);
+                            setMessage("");
+                            setMutationError("");
+                          }}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <Strong>{userName}</Strong>
+                            <Badge color={officeRoles.length ? "green" : "zinc"}>
+                              {officeRoles.length} role
+                              {officeRoles.length === 1 ? "" : "s"}
+                            </Badge>
+                          </div>
+                          <Text className="mt-1 truncate">
+                            {user.email || user.principal}
                           </Text>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                          {officeRoles.length > 0 && (
+                            <Text className="mt-2 line-clamp-2 text-xs">
+                              {officeRoles.join(" · ")}
+                            </Text>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <nav
+                    className="mt-3 border-t border-zinc-200 pt-3"
+                    aria-label="Office user pages"
+                  >
+                    <Text className="mb-2 text-center text-xs">
+                      Showing {pagination.start}–{pagination.end} of{" "}
+                      {visibleUsers.length}
+                    </Text>
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        type="button"
+                        color="light"
+                        disabled={pagination.currentPage === 1}
+                        onClick={() => changeUserPage(pagination.currentPage - 1)}
+                      >
+                        Previous
+                      </Button>
+                      <Strong className="text-sm">
+                        Page {pagination.currentPage} of {pagination.pageCount}
+                      </Strong>
+                      <Button
+                        type="button"
+                        color="light"
+                        disabled={pagination.currentPage === pagination.pageCount}
+                        onClick={() => changeUserPage(pagination.currentPage + 1)}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </nav>
+                </>
               )}
             </div>
           </Card>
@@ -385,54 +448,65 @@ export default function UserRoles() {
                     assign specific roles. Applying a preset replaces other optional
                     roles when you save.
                   </Text>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div className="mt-3 overflow-hidden rounded-lg border border-zinc-200 bg-white divide-y divide-zinc-200">
                     {CWMS_USER_ROLE_PRESETS.map((preset) => (
-                      <label
+                      <div
                         key={preset.id}
-                        className={`cursor-pointer rounded-lg border p-4 transition ${
-                          roleMode === preset.id
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-zinc-200 hover:border-blue-300"
+                        className={`flex items-center gap-3 p-4 transition ${
+                          roleMode === preset.id ? "bg-blue-50" : "hover:bg-zinc-50"
                         }`}
                       >
-                        <span className="flex items-start gap-3">
-                          <input
-                            type="radio"
-                            name="role-configuration"
-                            className="mt-1 h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
-                            checked={roleMode === preset.id}
-                            onChange={() => selectRoleMode(preset.id)}
-                          />
-                          <span>
-                            <Strong>{preset.label}</Strong>
-                            <Text className="mt-1 text-xs">{preset.description}</Text>
-                          </span>
-                        </span>
-                      </label>
-                    ))}
-                    <label
-                      className={`cursor-pointer rounded-lg border p-4 transition ${
-                        roleMode === "custom"
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-zinc-200 hover:border-blue-300"
-                      }`}
-                    >
-                      <span className="flex items-start gap-3">
                         <input
+                          id={`role-mode-${preset.id}`}
                           type="radio"
                           name="role-configuration"
-                          className="mt-1 h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
-                          checked={roleMode === "custom"}
-                          onChange={() => selectRoleMode("custom")}
+                          className="h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
+                          checked={roleMode === preset.id}
+                          onChange={() => selectRoleMode(preset.id)}
                         />
-                        <span>
-                          <Strong>Custom</Strong>
+                        <label
+                          htmlFor={`role-mode-${preset.id}`}
+                          className="min-w-0 flex-1 cursor-pointer"
+                        >
+                          <Strong>{preset.label}</Strong>
                           <Text className="mt-1 text-xs">
-                            Select the exact office roles this user needs.
+                            {preset.roles.join(" · ")}
                           </Text>
-                        </span>
-                      </span>
-                    </label>
+                        </label>
+                        <HelpTip title={`${preset.label} configuration`}>
+                          {preset.description} Selecting this configuration sets the
+                          user&apos;s office roles to {preset.roles.join(", ")}.
+                        </HelpTip>
+                      </div>
+                    ))}
+                    <div
+                      className={`flex items-center gap-3 p-4 transition ${
+                        roleMode === "custom" ? "bg-blue-50" : "hover:bg-zinc-50"
+                      }`}
+                    >
+                      <input
+                        id="role-mode-custom"
+                        type="radio"
+                        name="role-configuration"
+                        className="h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
+                        checked={roleMode === "custom"}
+                        onChange={() => selectRoleMode("custom")}
+                      />
+                      <label
+                        htmlFor="role-mode-custom"
+                        className="min-w-0 flex-1 cursor-pointer"
+                      >
+                        <Strong>Custom</Strong>
+                        <Text className="mt-1 text-xs">
+                          Select specific roles from the expandable list.
+                        </Text>
+                      </label>
+                      <HelpTip title="Custom role configuration">
+                        Use Custom when a staff member needs a combination that does not
+                        exactly match the read-only, read/write, or administrator
+                        presets.
+                      </HelpTip>
+                    </div>
                   </div>
                 </fieldset>
 
@@ -444,58 +518,77 @@ export default function UserRoles() {
                   </Notice>
                 )}
 
-                {rolesQuery.isLoading ? (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Skeleton className="h-14 w-full" />
-                    <Skeleton className="h-14 w-full" />
-                    <Skeleton className="h-14 w-full" />
-                    <Skeleton className="h-14 w-full" />
-                  </div>
-                ) : roleCatalog.length === 0 ? (
-                  <EmptyState icon={FaShieldAlt} title="No roles available">
-                    CDA did not return a role catalog for this administrator.
-                  </EmptyState>
-                ) : (
-                  <fieldset>
-                    <legend className="sr-only">
-                      Roles for {selectedUser["user-name"]}
-                    </legend>
+                {roleMode === "custom" &&
+                  (rolesQuery.isLoading ? (
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {roleCatalog.map((role) => {
-                        const checked = draftRoles.includes(role);
-                        const protectedRole = role === "All Users";
-                        return (
-                          <label
-                            key={role}
-                            className={`flex items-start gap-3 rounded-lg border p-4 transition ${
-                              checked
-                                ? "border-blue-500 bg-blue-50"
-                                : "border-zinc-200 hover:border-blue-300"
-                            } ${protectedRole ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
-                          >
-                            <input
-                              type="checkbox"
-                              className="mt-1 h-4 w-4 rounded border-zinc-400 text-blue-700 focus:ring-blue-600"
-                              checked={checked}
-                              disabled={protectedRole}
-                              onChange={() => toggleRole(role)}
-                            />
-                            <span>
-                              <Strong>{role}</Strong>
-                              <Text className="mt-1 text-xs">
-                                {protectedRole
-                                  ? "Required by CWMS and cannot be removed directly"
-                                  : currentRoles.includes(role)
-                                    ? "Currently assigned"
-                                    : "Not currently assigned"}
-                              </Text>
-                            </span>
-                          </label>
-                        );
-                      })}
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full" />
                     </div>
-                  </fieldset>
-                )}
+                  ) : roleCatalog.length === 0 ? (
+                    <EmptyState icon={FaShieldAlt} title="No roles available">
+                      CDA did not return a role catalog for this administrator.
+                    </EmptyState>
+                  ) : (
+                    <fieldset className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
+                      <div className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3">
+                        <div>
+                          <Strong>Specific roles</Strong>
+                          <Text className="mt-1 text-xs">
+                            Choose the exact roles to assign.
+                          </Text>
+                        </div>
+                        <HelpTip title="Specific role selection">
+                          These selections apply only to the chosen office. All Users is
+                          required by CWMS and cannot be removed directly.
+                        </HelpTip>
+                      </div>
+                      <legend className="sr-only">
+                        Roles for {selectedUser["user-name"]}
+                      </legend>
+                      <div className="max-h-80 overflow-y-auto divide-y divide-zinc-200">
+                        {roleCatalog.map((role) => {
+                          const checked = draftRoles.includes(role);
+                          const protectedRole = role === "All Users";
+                          return (
+                            <div
+                              key={role}
+                              className={`flex items-center gap-3 px-4 py-3 transition ${
+                                checked ? "bg-blue-50" : "bg-white hover:bg-zinc-50"
+                              } ${protectedRole ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
+                            >
+                              <input
+                                id={`role-${role.replaceAll(" ", "-")}`}
+                                type="checkbox"
+                                className="mt-1 h-4 w-4 rounded border-zinc-400 text-blue-700 focus:ring-blue-600"
+                                checked={checked}
+                                disabled={protectedRole}
+                                onChange={() => toggleRole(role)}
+                              />
+                              <label
+                                htmlFor={`role-${role.replaceAll(" ", "-")}`}
+                                className={`min-w-0 flex-1 ${protectedRole ? "cursor-not-allowed" : "cursor-pointer"}`}
+                              >
+                                <Strong>{role}</Strong>
+                                <Text className="mt-1 text-xs">
+                                  {protectedRole
+                                    ? "Required by CWMS and cannot be removed directly"
+                                    : currentRoles.includes(role)
+                                      ? "Currently assigned"
+                                      : "Not currently assigned"}
+                                </Text>
+                              </label>
+                              <HelpTip title={role}>
+                                {roleDescriptions[role] ??
+                                  "An office-scoped CWMS role returned by the CDA role catalog."}
+                              </HelpTip>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                  ))}
 
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-5">
                   <Text>

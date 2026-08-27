@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { filterUsers, rolesForOffice, sameRoles } from "./role-state.js";
+import { filterUsers, paginateUsers, rolesForOffice, sameRoles } from "./role-state.js";
 
 const users = [
   {
@@ -31,4 +31,23 @@ test("sameRoles ignores selection order", () => {
 test("filterUsers searches identity fields and office roles", () => {
   assert.deepEqual(filterUsers(users, "creator", "SWT"), [users[0]]);
   assert.deepEqual(filterUsers(users, "bravo@", "SWT"), [users[1]]);
+});
+
+test("paginateUsers clamps pages and reports the visible range", () => {
+  const page = paginateUsers([1, 2, 3, 4, 5], 2, 2);
+  assert.deepEqual(page, {
+    currentPage: 2,
+    pageCount: 3,
+    users: [3, 4],
+    start: 3,
+    end: 4,
+  });
+  assert.equal(paginateUsers([1, 2, 3], 99, 2).currentPage, 2);
+  assert.deepEqual(paginateUsers([], 1, 10), {
+    currentPage: 1,
+    pageCount: 1,
+    users: [],
+    start: 0,
+    end: 0,
+  });
 });
