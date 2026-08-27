@@ -1,0 +1,5 @@
+{
+  "office-id": "SWT",
+  "id": "FLOW.KEYS.TAINTERGATE_TOTAL",
+  "value": "<flow_group override_protection=\"false\" store_rule=\"Replace All\" suffix=\"TainterGate_Total\" attribute=\"1\" is_default=\"true\"><loc_ref base_location_id=\"KEYS\" sub_location_id=\"\"><db_office_id id=\"SWT\" /></loc_ref><loc_group_ref id=\"Flow.KEYS.TainterGate_Total\"><loc_category_ref version=\"1.0\" id=\"Flow\"><db_office_id id=\"SWT\" /></loc_category_ref><db_office_id id=\"SWT\" /></loc_group_ref><output_parameter>Flow</output_parameter><time_series_set><time_series_id save_to_database=\"true\" attribute=\"0\"><loc_ref base_location_id=\"KEYS\" sub_location_id=\"\"><db_office_id id=\"SWT\" /></loc_ref><parameter>Flow-RES-TGs</parameter><parameter_type>Ave</parameter_type><interval>1Hour</interval><duration>1Hour</duration><version>regi</version><utc_offset>0s</utc_offset><incoming_time_series_ids /></time_series_id></time_series_set><flow_group_set /></flow_group>"
+}

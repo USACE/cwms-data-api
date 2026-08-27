@@ -16,7 +16,7 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 import main
-from config import DownloadConfig, OfficeConfig, SettingsConfig
+from config import DownloadConfig, LocationGroupConfig, OfficeConfig, RatingConfig, SettingsConfig
 
 
 def _office() -> OfficeConfig:
@@ -52,6 +52,13 @@ def _patch_stage(mocker) -> dict:
         "timeseries": mocker.patch("timeseries.stage_timeseries"),
         "ratings": mocker.patch("rating.stage_ratings"),
         "levels": mocker.patch("location_level.stage_location_levels"),
+        "outlets": mocker.patch("outlet.stage_outlets"),
+        "turbines": mocker.patch("turbine.stage_turbines"),
+        "turbine_changes": mocker.patch("turbine.stage_turbine_changes"),
+        "locks": mocker.patch("lock.stage_locks"),
+        "gate_changes": mocker.patch("gate_change.stage_gate_changes"),
+        "water_users": mocker.patch("water_user.stage_water_users"),
+        "water_contracts": mocker.patch("water_contract.stage_water_contracts"),
     }
     mocker.patch("location.stage_locations")
     mocker.patch("project.stage_projects")
@@ -79,6 +86,53 @@ def test_stage_project_data_passes_project_items_through(mocker):
 
     level_items = mocks["levels"].call_args.args[1]
     assert [item.id for item in level_items] == ["EUFA-Dam.Elev.Inst.0.Top of Flood"]
+
+
+def _office_with_new_resources() -> OfficeConfig:
+    return OfficeConfig.from_dict(
+        {
+            "id": "SWT",
+            "locationGroups": [{"categoryId": "CAT1", "id": "GROUP1"}],
+            "timeseriesGroups": [{"categoryId": "CAT1", "id": "GROUP1"}],
+            "projects": [
+                {
+                    "id": "EUFA",
+                    "outlets": [{"id": "EUFA-Outlet1"}],
+                    "turbines": [{"id": "EUFA-Turbine1"}],
+                    "locks": [{"id": "EUFA-Lock1"}],
+                    "waterUsers": [{"id": "ENTITY1", "contracts": [{"id": "CONTRACT1"}]}],
+                    "gateChanges": {"enabled": True},
+                    "turbineChanges": {"enabled": True},
+                }
+            ],
+        }
+    )
+
+
+def test_stage_project_data_passes_new_resource_items_through(mocker):
+    mocks = _patch_stage(mocker)
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._stage_project_data(eufa, _config())
+
+    outlet_items = mocks["outlets"].call_args.args[1]
+    assert [item.id for item in outlet_items] == ["EUFA-Outlet1"]
+
+    turbine_items = mocks["turbines"].call_args.args[1]
+    assert [item.id for item in turbine_items] == ["EUFA-Turbine1"]
+
+    lock_items = mocks["locks"].call_args.args[1]
+    assert [item.id for item in lock_items] == ["EUFA-Lock1"]
+
+    water_user_items = mocks["water_users"].call_args.args[2]
+    assert [item.id for item in water_user_items] == ["ENTITY1"]
+
+    # water_contract.stage_water_contracts receives the same water user list.
+    assert mocks["water_contracts"].call_args.args[2] is water_user_items
+
+    assert mocks["gate_changes"].call_args.args[2].enabled is True
+    assert mocks["turbine_changes"].call_args.args[2].enabled is True
 
 
 def test_stage_project_data_handles_project_with_no_items(mocker):
@@ -127,6 +181,188 @@ def test_publish_project_data_passes_project_items_through(mocker):
     ]
 
 
+def test_publish_project_data_passes_new_resource_items_through(mocker):
+    mock_publish_outlets = mocker.patch("outlet.publish_staged_outlets")
+    mock_publish_turbines = mocker.patch("turbine.publish_staged_turbines")
+    mocker.patch("turbine.publish_staged_turbine_changes")
+    mock_publish_locks = mocker.patch("lock.publish_staged_locks")
+    mocker.patch("gate_change.publish_staged_gate_changes")
+    mock_publish_water_users = mocker.patch("water_user.publish_staged_water_users")
+    mocker.patch("water_contract.publish_staged_water_contracts")
+    mocker.patch("timeseries.publish_staged_timeseries")
+    mocker.patch("rating.publish_staged_ratings")
+    mocker.patch("location_level.publish_staged_location_levels")
+    mocker.patch("location.publish_staged_locations")
+    mocker.patch("project.publish_staged_projects")
+    mocker.patch("clob.publish_staged_clobs")
+    mocker.patch("property.publish_staged_properties")
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._publish_project_data(eufa, _config())
+
+    assert [item.id for item in mock_publish_outlets.call_args.args[1]] == ["EUFA-Outlet1"]
+    assert [item.id for item in mock_publish_turbines.call_args.args[1]] == ["EUFA-Turbine1"]
+    assert [item.id for item in mock_publish_locks.call_args.args[1]] == ["EUFA-Lock1"]
+    assert [item.id for item in mock_publish_water_users.call_args.args[2]] == ["ENTITY1"]
+
+
+def test_stage_outlet_rating_dependencies_skips_when_no_outlet_has_a_rating_group(mocker):
+    mocker.patch("outlet_rating.derive_rating_location_groups", return_value=[])
+    mock_stage_groups = mocker.patch("location_group.stage_location_groups")
+    mock_stage_ratings = mocker.patch("rating.stage_ratings")
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._stage_outlet_rating_dependencies(eufa, _config(), [])
+
+    mock_stage_groups.assert_not_called()
+    mock_stage_ratings.assert_not_called()
+
+
+def test_stage_outlet_rating_dependencies_stages_derived_groups_then_ratings(mocker):
+    derived_group = LocationGroupConfig.from_dict({"categoryId": "Rating", "id": "Rating-EUFA-TG1"})
+    derived_rating = RatingConfig.from_dict({"id": "EUFA.Elev;Opening.Standard.Production"})
+    mocker.patch("outlet_rating.derive_rating_location_groups", return_value=[derived_group])
+    mock_derive_ratings = mocker.patch(
+        "outlet_rating.derive_ratings_from_location_groups", return_value=[derived_rating]
+    )
+    mock_stage_groups = mocker.patch("location_group.stage_location_groups")
+    mock_stage_ratings = mocker.patch("rating.stage_ratings")
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._stage_outlet_rating_dependencies(eufa, _config(), list(eufa.outlets()))
+
+    mock_stage_groups.assert_called_once_with("SWT", [derived_group])
+    mock_derive_ratings.assert_called_once_with("SWT", [derived_group])
+    mock_stage_ratings.assert_called_once_with("SWT", [derived_rating], None, None)
+
+
+def test_stage_outlet_rating_dependencies_stages_groups_even_with_no_alias_set_yet(mocker):
+    """
+    A freshly-created outlet's rating group can exist with no shared-loc-alias-id
+    set yet - the group should still be staged so it is not silently dropped.
+    """
+    derived_group = LocationGroupConfig.from_dict({"categoryId": "Rating", "id": "Rating-EUFA-TG1"})
+    mocker.patch("outlet_rating.derive_rating_location_groups", return_value=[derived_group])
+    mocker.patch("outlet_rating.derive_ratings_from_location_groups", return_value=[])
+    mock_stage_groups = mocker.patch("location_group.stage_location_groups")
+    mock_stage_ratings = mocker.patch("rating.stage_ratings")
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._stage_outlet_rating_dependencies(eufa, _config(), list(eufa.outlets()))
+
+    mock_stage_groups.assert_called_once_with("SWT", [derived_group])
+    mock_stage_ratings.assert_not_called()
+
+
+def test_publish_outlet_rating_dependencies_publishes_ratings_before_groups(mocker):
+    derived_group = LocationGroupConfig.from_dict({"categoryId": "Rating", "id": "Rating-EUFA-TG1"})
+    derived_rating = RatingConfig.from_dict({"id": "EUFA.Elev;Opening.Standard.Production"})
+    mocker.patch("outlet_rating.derive_rating_location_groups", return_value=[derived_group])
+    mocker.patch("outlet_rating.derive_ratings_from_location_groups", return_value=[derived_rating])
+
+    calls = []
+    mocker.patch("rating.publish_staged_ratings", side_effect=lambda *a, **k: calls.append("rating"))
+    mocker.patch("location_group.publish_staged_location_groups", side_effect=lambda *a, **k: calls.append("group"))
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._publish_outlet_rating_dependencies(eufa, _config(), list(eufa.outlets()))
+
+    assert calls == ["rating", "group"]
+
+
+def test_publish_outlet_rating_dependencies_skips_when_no_outlet_has_a_rating_group(mocker):
+    mocker.patch("outlet_rating.derive_rating_location_groups", return_value=[])
+    mock_publish_ratings = mocker.patch("rating.publish_staged_ratings")
+    mock_publish_groups = mocker.patch("location_group.publish_staged_location_groups")
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._publish_outlet_rating_dependencies(eufa, _config(), [])
+
+    mock_publish_ratings.assert_not_called()
+    mock_publish_groups.assert_not_called()
+
+
+def test_stage_project_data_stages_outlet_rating_dependencies_after_outlets(mocker):
+    mocks = _patch_stage(mocker)
+    mock_dependencies = mocker.patch("main._stage_outlet_rating_dependencies")
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._stage_project_data(eufa, _config())
+
+    mock_dependencies.assert_called_once()
+    args = mock_dependencies.call_args.args
+    assert args[0] is eufa
+    assert [item.id for item in args[2]] == [item.id for item in mocks["outlets"].call_args.args[1]]
+
+
+def test_publish_project_data_publishes_outlet_rating_dependencies_after_outlets(mocker):
+    mock_publish_outlets = mocker.patch("outlet.publish_staged_outlets")
+    mocker.patch("turbine.publish_staged_turbines")
+    mocker.patch("turbine.publish_staged_turbine_changes")
+    mocker.patch("lock.publish_staged_locks")
+    mocker.patch("gate_change.publish_staged_gate_changes")
+    mocker.patch("water_user.publish_staged_water_users")
+    mocker.patch("water_contract.publish_staged_water_contracts")
+    mocker.patch("timeseries.publish_staged_timeseries")
+    mocker.patch("rating.publish_staged_ratings")
+    mocker.patch("location_level.publish_staged_location_levels")
+    mocker.patch("location.publish_staged_locations")
+    mocker.patch("project.publish_staged_projects")
+    mocker.patch("clob.publish_staged_clobs")
+    mocker.patch("property.publish_staged_properties")
+    mock_dependencies = mocker.patch("main._publish_outlet_rating_dependencies")
+
+    office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
+
+    main._publish_project_data(eufa, _config())
+
+    mock_dependencies.assert_called_once()
+    args = mock_dependencies.call_args.args
+    assert args[0] is eufa
+    assert [item.id for item in args[2]] == [item.id for item in mock_publish_outlets.call_args.args[1]]
+
+
+def test_stage_office_data_passes_groups_through(mocker):
+    mock_location_groups = mocker.patch("location_group.stage_location_groups")
+    mock_timeseries_groups = mocker.patch("timeseries_group.stage_timeseries_groups")
+    mocker.patch("property.stage_properties")
+
+    office = _office_with_new_resources()
+
+    main._stage_office_data(office)
+
+    assert [item.id for item in mock_location_groups.call_args.args[1]] == ["GROUP1"]
+    assert [item.id for item in mock_timeseries_groups.call_args.args[1]] == ["GROUP1"]
+
+
+def test_publish_office_data_passes_groups_through(mocker):
+    mock_location_groups = mocker.patch("location_group.publish_staged_location_groups")
+    mock_timeseries_groups = mocker.patch("timeseries_group.publish_staged_timeseries_groups")
+    mocker.patch("property.publish_staged_properties")
+
+    office = _office_with_new_resources()
+
+    main._publish_office_data(office)
+
+    assert [item.id for item in mock_location_groups.call_args.args[1]] == ["GROUP1"]
+    assert [item.id for item in mock_timeseries_groups.call_args.args[1]] == ["GROUP1"]
+
+
 def test_data_path_defaults_to_the_config_setting(mocker, monkeypatch):
     monkeypatch.delenv("ETL_DATA_PATH", raising=False)
     monkeypatch.setenv("ETL_CONFIG_PATH", str(
@@ -143,7 +379,7 @@ def test_data_path_defaults_to_the_config_setting(mocker, monkeypatch):
 def test_data_path_env_overrides_the_config_setting(mocker, monkeypatch):
     """
     A committed settings.path is written for the container (compose mounts
-    ./cda-etl/data/sample-app at /data/sample-app). A local run needs to point elsewhere
+    ./cda-etl/data/sample-data at /data/sample-app). A local run needs to point elsewhere
     without editing committed config.
     """
     monkeypatch.setenv("ETL_DATA_PATH", "./data/sample-app")
@@ -156,6 +392,25 @@ def test_data_path_env_overrides_the_config_setting(mocker, monkeypatch):
     main._initialize_runtime()
 
     mock_root.assert_called_once_with("./data/sample-app")
+
+
+def test_initialize_runtime_disables_retrying_a_definitive_404(mocker, monkeypatch):
+    """
+    Unwired, this shim just sits there tested but inert: cwms-python keeps
+    retrying (and warning about) a 404 six times per chunk, and every retry
+    logs at WARNING because the vendor's own noisy loop is still the one
+    running.
+    """
+    monkeypatch.setenv("ETL_CONFIG_PATH", str(
+        __import__("pathlib").Path(__file__).resolve().parents[1] / "resources" / "download_config_valid.yml"))
+    monkeypatch.setenv("DEST_CDA_URL", "http://dest.test/cwms-data")
+    mocker.patch("utils.filesystem_store.set_storage_root")
+    mocker.patch("utils.threading_util.init_executor")
+    mock_disable_retry = mocker.patch("utils.cwms_compat.disable_retry_on_missing_data")
+
+    main._initialize_runtime()
+
+    mock_disable_retry.assert_called_once_with()
 
 
 def test_phase_marker_is_restored_afterwards():

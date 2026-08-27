@@ -56,7 +56,7 @@ def set_storage_root(path: str | Path) -> None:
 
 
 def read_json(*path_parts: str) -> Any | None:
-    path = _build_path(*path_parts)
+    path = _build_path(*path_parts, ext=".json")
     if path is None:
         return None
 
@@ -69,13 +69,33 @@ def read_json(*path_parts: str) -> Any | None:
 
 
 def write_json(value: Any, *path_parts: str) -> None:
-    path = _build_path(*path_parts)
+    path = _build_path(*path_parts, ext=".json")
     if path is None:
         raise ValueError("At least one path component is required.")
 
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as file:
         json.dump(value, file, indent=2)
+
+
+def read_xml(*path_parts: str) -> str | None:
+    path = _build_path(*path_parts, ext=".xml")
+    if path is None:
+        return None
+
+    if not path.exists():
+        return None
+
+    return path.read_text(encoding="utf-8")
+
+
+def write_xml(value: str, *path_parts: str) -> None:
+    path = _build_path(*path_parts, ext=".xml")
+    if path is None:
+        raise ValueError("At least one path component is required.")
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(value, encoding="utf-8")
 
 
 def list_json_stems(*path_parts: str) -> list[str]:
@@ -93,13 +113,13 @@ def list_json_stems(*path_parts: str) -> list[str]:
     return sorted(decode_part(path.stem) for path in directory.glob("*.json") if path.is_file())
 
 
-def _build_path(*path_parts: str) -> Path | None:
+def _build_path(*path_parts: str, ext: str) -> Path | None:
     if not path_parts:
         return None
 
     normalized_parts = _normalize_path_parts(*path_parts)
-    if not normalized_parts[-1].endswith(".json"):
-        normalized_parts[-1] = f"{normalized_parts[-1]}.json"
+    if not normalized_parts[-1].endswith(ext):
+        normalized_parts[-1] = f"{normalized_parts[-1]}{ext}"
 
     return _STORAGE_ROOT.joinpath(*normalized_parts)
 
@@ -113,4 +133,12 @@ def _normalize_path_parts(*path_parts: str) -> list[str]:
     return [_encode_part(part) for part in normalized_parts]
 
 
-__all__ = ["decode_part", "list_json_stems", "read_json", "set_storage_root", "write_json"]
+__all__ = [
+    "decode_part",
+    "list_json_stems",
+    "read_json",
+    "read_xml",
+    "set_storage_root",
+    "write_json",
+    "write_xml",
+]

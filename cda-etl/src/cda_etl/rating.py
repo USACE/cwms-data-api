@@ -173,7 +173,7 @@ def _download_one_rating(work_item: list[object]) -> None:
 
             return
 
-        filesystem_store.write_json(_xml_to_json_payload(rating_xml), office_id, RATINGS_FOLDER, f"{rating_id}.por")
+        filesystem_store.write_xml(_xml_text(rating_xml), office_id, RATINGS_FOLDER, rating_id)
         return
 
     logger.info(
@@ -193,35 +193,31 @@ def _download_one_rating(work_item: list[object]) -> None:
 
         return
 
-    filesystem_store.write_json(_xml_to_json_payload(rating_xml), office_id, RATINGS_FOLDER, rating_id)
+    filesystem_store.write_xml(_xml_text(rating_xml), office_id, RATINGS_FOLDER, rating_id)
 
 
 def _upload_one_rating(work_item: list[object]) -> None:
     office_id = work_item[0]
     rating_id = work_item[1]
-    por = work_item[4]
-
-    staged_data = filesystem_store.read_json(
-        office_id,
-        RATINGS_FOLDER,
-        f"{rating_id}.por" if por else rating_id,
-    )
-    if staged_data is None:
+    rating_xml = filesystem_store.read_xml(office_id, RATINGS_FOLDER, rating_id)
+    if not rating_xml:
         raise FileNotFoundError(
             "No staged rating data found."
         )
 
-    rating_xml = staged_data.get("xml") if isinstance(staged_data, dict) else None
-    if not rating_xml:
-        raise ValueError(f"Staged rating data for {office_id}.{rating_id} is missing XML payload.")
-    cwms.store_rating(rating_xml, store_template=True)
+    cwms.api.post(
+        "ratings",
+        rating_xml,
+        {"store-template": True, "fail-if-exists": False},
+        api_version=102,
+    )
 
 
-def _xml_to_json_payload(xml_value: Any) -> dict[str, str]:
+def _xml_text(xml_value: Any) -> str:
     if isinstance(xml_value, bytes):
-        xml_value = xml_value.decode("utf-8")
+        return xml_value.decode("utf-8")
 
-    return {"xml": str(xml_value)}
+    return str(xml_value)
 
 
 def _build_rating_work_items(
