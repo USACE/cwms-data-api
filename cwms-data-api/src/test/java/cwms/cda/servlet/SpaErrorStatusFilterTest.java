@@ -1,14 +1,17 @@
 package cwms.cda.servlet;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
+import javax.servlet.DispatcherType;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
@@ -18,6 +21,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 class SpaErrorStatusFilterTest {
 
     private final SpaErrorStatusFilter filter = new SpaErrorStatusFilter();
+
+    @Test
+    void registersForIndexErrorDispatches() {
+        WebFilter annotation = SpaErrorStatusFilter.class.getAnnotation(WebFilter.class);
+
+        assertArrayEquals(new String[] {"/index.html"}, annotation.urlPatterns());
+        assertArrayEquals(new DispatcherType[] {DispatcherType.ERROR}, annotation.dispatcherTypes());
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {

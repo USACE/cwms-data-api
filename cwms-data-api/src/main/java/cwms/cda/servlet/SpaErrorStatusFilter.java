@@ -2,18 +2,21 @@ package cwms.cda.servlet;
 
 import java.io.IOException;
 import java.util.Set;
+import javax.servlet.DispatcherType;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Converts the error dispatch used to load known client-side routes into a successful response.
  */
+@WebFilter(urlPatterns = {"/index.html"}, dispatcherTypes = {DispatcherType.ERROR})
 public final class SpaErrorStatusFilter implements Filter {
 
     // Keep these paths synchronized with cda-gui/src/route-paths.js.
