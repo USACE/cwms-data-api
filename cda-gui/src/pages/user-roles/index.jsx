@@ -93,6 +93,7 @@ export default function UserRoles() {
   const updateRoles = useUpdateCdaUserRoles({ cdaUrl, token: auth.token });
 
   const users = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data]);
+  const userTotal = usersQuery.data?.total ?? users.length;
   const selectedUser = users.find((user) => user["user-name"] === selectedUserName);
   const currentRoles = useMemo(
     () => rolesForOffice(selectedUser, office),
@@ -298,7 +299,9 @@ export default function UserRoles() {
                 <H2 className="text-xl">Office users</H2>
                 <Text>{office || "Select an office"}</Text>
               </div>
-              <Badge color="blue">{usersQuery.data?.total ?? users.length}</Badge>
+              <Badge color="blue">
+                {userTotal} {userTotal === 1 ? "user" : "users"}
+              </Badge>
             </div>
             <div className="p-3">
               <div className="mb-3 pr-4">
