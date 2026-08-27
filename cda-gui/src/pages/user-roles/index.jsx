@@ -292,7 +292,7 @@ export default function UserRoles() {
       </Card>
 
       {adminOffices.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-[minmax(19rem,0.8fr)_minmax(0,1.4fr)]">
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(19rem,0.8fr)_minmax(0,1.4fr)]">
           <Card className="p-0">
             <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
               <div>
