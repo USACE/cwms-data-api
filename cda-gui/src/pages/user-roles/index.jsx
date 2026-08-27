@@ -625,6 +625,14 @@ export default function UserRoles() {
           </Card>
         </div>
       )}
+
+      <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-zinc-200 pt-5">
+        <Badge color="amber">Planned transition</Badge>
+        <Text>
+          This page may be replaced at a later date pending completion of the new CWMS
+          authorization development.
+        </Text>
+      </div>
     </section>
   );
 }
