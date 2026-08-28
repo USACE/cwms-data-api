@@ -9,9 +9,8 @@ export default defineConfig(({ mode }) => {
     env.VITE_CDA_API_ROOT || env.CDA_API_ROOT || "http://localhost:8081",
     "http://localhost:8081",
   ).origin;
-  // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
   return {
-    base: "/cwms-data",
+    base: "/",
     plugins: [react()],
     server: {
       proxy: {
