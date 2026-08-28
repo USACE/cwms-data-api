@@ -569,6 +569,7 @@ Terminology
 
 Location Kind Hierarchy
 -----------------------
+The following table shows inheritance and polymorphic relationships that a location can possess.  ``SITE`` is the base location kind, with its general location data persisted in ``AT_PHYSICAL_LOCATION``. Kind-specific sub-tables further define locations primarily through inheritance, but also through polymorphism.
 
 .. code-block:: text
 
@@ -576,18 +577,21 @@ Location Kind Hierarchy
     ├── BASIN
     ├── STREAM
     ├── STREAM_REACH
-    ├── STREAM_LOCATION
-    │   ├── STREAM_GAGE
+    ├── STREAM_LOCATION **
+    │   ├── STREAM_GAGE **
     │   └── PUMP
-    ├── WEATHER_GAGE
+    ├── WEATHER_GAGE **
     ├── PROJECT
     ├── EMBANKMENT
-    ├── ENTITY
+    ├── ENTITY **
     ├── LOCK
     ├── TURBINE
     └── OUTLET
         ├── GATE
-        └── OVERFLOW
+        └── OVERFLOW **
+
+** Denotes a polymorphic location kind that can be assigned in addition to a primary designation. For example, a location can be a ``PROJECT`` which inherits from ``SITE`` while also being a ``STREAM_LOCATION``.
+
 
 Marker
 ------
