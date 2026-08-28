@@ -28,7 +28,7 @@ import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.security.OpenIdConnectIdentitityProvider;
+import cwms.cda.security.OpenIdConnectIdentityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
@@ -165,10 +165,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
             // OIDC properties
             System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
-            System.setProperty(OpenIdConnectIdentitityProvider.CREATE_USERS_KEY,"true");
-            System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
-            System.setProperty(OpenIdConnectIdentitityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
-
+            System.setProperty(OpenIdConnectIdentityProvider.CREATE_USERS_KEY,"true");
+            System.setProperty(OpenIdConnectIdentityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
+            System.setProperty(OpenIdConnectIdentityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
+            System.setProperty(OpenIdConnectIdentityProvider.TIMEOUT_PROPERTY, "1"); // to force at least one reload
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
             cdaInstance = new TomcatServer("build/tomcat",

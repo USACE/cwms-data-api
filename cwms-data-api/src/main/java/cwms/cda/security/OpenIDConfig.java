@@ -9,6 +9,7 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -107,13 +108,12 @@ public class OpenIDConfig {
     }
 
     public SecurityScheme getScheme() {
-
-        SecurityScheme scheme = buildScheme(wellKnown.toString(), client_id, idp_hint);
-        return scheme;
+        return buildScheme(wellKnown.toString(), client_id, idp_hint);
     }
 
 
     private static class UrlResolver extends SigningKeyResolverAdapter {
+        private static final ZoneId UTC = ZoneId.of("UTC");
         private final URL jwksUrl;
         private ZonedDateTime lastCheck;
         private final Map<String,Key> realmPublicKeys = new HashMap<>();
@@ -131,7 +131,7 @@ public class OpenIDConfig {
         }
 
         private void updateKey() {
-            if (realmPublicKeys.isEmpty() || ZonedDateTime.now().isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
+            if (realmPublicKeys.isEmpty() || ZonedDateTime.now(UTC).isAfter(lastCheck.plusMinutes(realmPublicKeyTimeoutMinutes))) {
                 log.atInfo().log("Checking for new key at %s",jwksUrl);
                 try {
                     realmPublicKeys.clear();
@@ -140,8 +140,9 @@ public class OpenIDConfig {
                     log.atSevere().withCause(ex).log("Unable to update key. Will continue to use previous key.");
                 } catch (InvalidKeySpecException ex) {
                     log.atSevere().withCause(ex).log("New Public Key was not valid. Will continue to use previous key.");
+                } finally {
+                    lastCheck = ZonedDateTime.now(UTC);
                 }
-                lastCheck = ZonedDateTime.now();
             }
         }
 
