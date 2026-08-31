@@ -2567,4 +2567,43 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             }
         });
     }
+
+    @Test
+    void test_insert_test_Data() throws Exception {
+        String locName = "SuperiorLake";
+        createLocation(locName, true, OFFICE);
+        String levelId = String.format("%s.Stage.Ave.1Month.CoordinatedStatistics", locName);
+        ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2025-06-27T21:00:00Z"), ZoneId.of("UTC"));
+        List<SeasonalValueBean> seasonalValues = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            seasonalValues.add(new SeasonalValueBean.Builder().withValue(601.51 * 1.01).withOffsetMonths(i + 1).build());
+        }
+
+        SeasonalLocationLevel level = new SeasonalLocationLevel.Builder(levelId, time.toInstant())
+            .withOfficeId(OFFICE)
+            .withLevelUnitsId("ft")
+            .withInterpolateString("F")
+            .withIntervalMonths(12)
+            .withSeasonalValues(seasonalValues)
+            .build();
+
+        String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
 }
