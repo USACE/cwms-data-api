@@ -44,6 +44,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -285,14 +286,7 @@ public class OutletDao extends JooqDao<Outlet> {
                     unitSystem.getValue(), formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
 
             if (changeTab == null) {
-                throw new NotFoundException("No changes found for " + projectId.getOfficeId() + "."
-                        + projectId.getName()
-                + "\nStart time: " + startTime
-                + "\nEnd time: " + endTime
-                + "\nStart inclusive: " + startInclusive
-                + "\nEnd inclusive: " + endInclusive
-                + "\nUnit system: " + unitSystem
-                + "\nRow limit: " + rowLimit);
+                return Collections.emptyList();
             }
             return changeTab.stream().map(OutletDao::map).collect(Collectors.toList());
         });
