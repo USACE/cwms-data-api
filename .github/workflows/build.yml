@@ -79,7 +79,7 @@ jobs:
           file: ${{ matrix.jdk }}/${{ matrix.schema.env }}-coverage.svg
           run_id: ${{ github.run_id }}
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v6.4.1
+        uses: mikepenz/action-junit-report@v6.5.0
         if: always()
         with:
           annotate_only: true
@@ -104,7 +104,7 @@ jobs:
         id: thebuild
         run: ./gradlew clean :cwms-data-api:test --tests "cwms.cda.api.OpenApiDocTest" --info --init-script init.gradle
       - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v6.4.1
+        uses: mikepenz/action-junit-report@v6.5.0
         if: always()
         with:
           annotate_only: true
