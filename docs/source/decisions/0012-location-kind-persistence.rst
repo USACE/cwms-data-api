@@ -29,6 +29,8 @@ Database Mapping:
 
 The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT_PHYSICAL_LOCATION`` table. This column contains a numeric code that maps to the ``LOCATION_KIND_CODE`` column in the ``CWMS_LOCATION_KIND`` table. The ``CWMS_LOCATION_KIND`` table also contains a ``LOCATION_KIND_ID`` column, which provides the human-readable string representation of the location kind (e.g., "PROJECT", "STREAM_GAGE").
 
+``SITE`` is listed first as the special base case. The remaining location kinds are ordered by water-resources engineering scale and containment: basin first, then stream and reach, followed by major water-control features and progressively smaller components. The non-hydraulic ``ENTITY`` kind is listed last.
+
 .. list-table:: Location Kind to Table Mapping
    :header-rows: 1
    :stub-columns: 1
@@ -39,6 +41,7 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      - AT_BASIN
      - AT_GAGE
      - AT_ENTITY
+     - AT_ENTITY_LOCATION
      - AT_PROJECT
      - AT_EMBANKMENT
      - AT_OUTLET
@@ -48,8 +51,31 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      - AT_STREAM_LOCATION
      - AT_STREAM_REACH
      - AT_PUMP
+     - AT_LOC_GROUP_ASSIGNMENT
+     - AT_GATE_GROUP
    * - SITE
      - X
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+   * - BASIN
+     - X
+     -
+     - X
+     -
      -
      -
      -
@@ -78,18 +104,24 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      -
      -
      -
-   * - BASIN
+     -
+     -
+     -
+   * - STREAM_REACH
      - X
      -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
      - X
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
      -
      -
      -
@@ -98,13 +130,16 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      -
      -
      - A
-     - A
+     -
+     -
      - X
      -
      -
      -
      -
+     -
      - A
+     -
      -
      -
      -
@@ -115,41 +150,14 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      - A
      -
      -
+     -
      - X
+     -
      -
      -
      -
      - A
      -
-     -
-     -
-   * - OUTLET
-     - X
-     -
-     -
-     -
-     -
-     -
-     -
-     - X
-     -
-     -
-     - A
-     -
-     -
-     -
-   * - TURBINE
-     - X
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     - X
-     -
-     - A
      -
      -
      -
@@ -158,33 +166,6 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      -
      -
      - A
-     - A
-     -
-     -
-     -
-     -
-     - X
-     - A
-     -
-     -
-     - A
-   * - STREAM_LOCATION
-     - X
-     -
-     -
-     - A
-     - A
-     -
-     -
-     -
-     -
-     -
-     -
-     - X
-     -
-     -
-   * - GATE
-     - X
      -
      -
      -
@@ -194,7 +175,25 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      - X
      -
      - A
+     -
+     -
+     -
+     -
+   * - OUTLET
+     - X
+     -
+     -
      - A
+     -
+     -
+     -
+     -
+     - X
+     -
+     -
+     -
+     - A
+     -
      -
      -
      -
@@ -202,6 +201,7 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      - X
      -
      -
+     - A
      -
      -
      -
@@ -211,6 +211,80 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      -
      - X
      - A
+     -
+     -
+     -
+     -
+   * - GATE
+     - X
+     -
+     -
+     - A
+     -
+     -
+     -
+     -
+     - X
+     -
+     -
+     -
+     - A
+     -
+     -
+     - X
+     - X
+   * - TURBINE
+     - X
+     -
+     -
+     - A
+     -
+     -
+     -
+     -
+     -
+     - X
+     -
+     -
+     - A
+     -
+     -
+     -
+     -
+   * - PUMP
+     - X
+     -
+     -
+     - A
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     - X
+     -
+     - X
+     -
+     -
+   * - STREAM_LOCATION
+     - X
+     -
+     -
+     - A
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     -
+     - X
+     -
+     -
      -
      -
    * - STREAM_GAGE
@@ -225,45 +299,21 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      -
      -
      -
-     - X
-     -
-     - A
-   * - STREAM_REACH
-     - X
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
-     -
      -
      - X
      -
-   * - PUMP
-     - X
      -
      -
-     - A
-     - A
      -
-     - A
-     -
-     -
-     - A
-     -
-     - X
-     -
-     - X
    * - WEATHER_GAGE
      - X
      -
      -
      - X
-     - A
+     -
+     -
+     -
+     -
      -
      -
      -
@@ -279,21 +329,26 @@ The kind of a location is determined by the ``LOCATION_KIND`` column in the ``AT
      -
      - A
      - X
+     - X
      -
      -
      -
      -
      -
+     -
+     - A
      -
      -
      -
      -
 
 **Legend (Current System):**
+
 - **X**: Required. The specialized metadata row must exist for this Kind to be valid.
 - **A**: Allowed. Optional metadata row.
 - (Blank): Not Allowed.
 
+For ``GATE``, ``AT_LOC_GROUP_ASSIGNMENT`` identifies the outlet as belonging to an ``AT_GATE_GROUP``; there is no dedicated ``AT_GATE`` table. For ``ENTITY``, ``AT_ENTITY_LOCATION`` provides the location-to-entity association and references ``AT_ENTITY``. Allowed ``AT_GAGE`` and ``AT_STREAM_LOCATION`` rows represent the supported weather-gage, stream-location, and stream-gage polymorphic relationships.
 Proposed Marker System Mapping (Decoupled Labeling)
 ---------------------------------------------------
 
