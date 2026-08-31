@@ -115,7 +115,6 @@ jobs:
           # and not the context from the workflow itself.
           context: git
           images: |
-            ${{secrets.registry != null && secrets.registry ||secrets.HEC_PUB_REGISTRY}}/cwms/data-api
             ghcr.io/${{steps.repo.outputs.name}}
           tags: |
             type=sha
