@@ -1,0 +1,18 @@
+{
+  "rating-template": {
+    "office-id": "SPK",
+    "parameters-id": "Stage;Flow",
+    "version": "EXSA",
+    "ind-parameter-specs": {
+      "ind-parameter-spec": [{
+        "position": "1",
+        "parameter": "Stage",
+        "in-range-method": "LINEAR",
+        "out-range-low-method": "NEAREST",
+        "out-range-high-method": "NEAREST"
+      }]
+    },
+    "dep-parameter": "Flow",
+    "description": ""
+  }
+}
