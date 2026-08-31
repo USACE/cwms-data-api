@@ -149,6 +149,57 @@ offices:
     - id: EUFA.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
     - id: EUFA.%-Humidity.Inst.1Hour.0.Decodes-Raw
     - id: EUFA.Code-Weather Condition.Inst.1Day.0.Wcds-Obs
+  locationGroups:
+  - categoryId: Flow
+    id: Flow.EUFA.Project_Total
+  - categoryId: Flow
+    id: Flow.EUFA.SluiceGate_Total
+  - categoryId: Flow
+    id: EUFA-SluiceGate
+  - categoryId: Flow
+    id: Flow.EUFA.TainterGate_Total
+  - categoryId: Flow
+    id: Flow.EUFA.EUFA Turbine_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Gated_Total
+  - categoryId: Flow
+    id: EUFA-TainterGate
+  - categoryId: Flow
+    id: Flow.EUFA.Turbine_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Pump_Out_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Controlled
+  - categoryId: Flow
+    id: Flow.EUFA.Pump_Out_Below_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Uncontrolled_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Lock_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Pump_In_Total
+  - categoryId: Flow
+    id: Flow.KEYS.TainterGate_Total
+  - categoryId: Flow
+    id: Flow.KEYS.SluiceGate_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Project_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Gated_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Turbine_Total
+  - categoryId: Flow
+    id: Flow.KEYS.LOW Flow_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Uncontrolled_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Pump_In_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Lock_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Pump_Out_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Pump_Out_Below_Total
   properties:
   - categoryId: LOCATION TIME SERIES ASSOCIATION
     all: true
