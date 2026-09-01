@@ -790,12 +790,13 @@ public final class DTOMatch {
             assertEquals(expectedTs.getAttribute(), actualTs.getAttribute(), "Attributes do not match for assigned time series at index " + i);
         }
 
-        List<String> firstUnassigned = first.getUnassign();
-        List<String> secondUnassigned = second.getUnassign();
+        List<CwmsId> firstUnassigned = first.getUnassign();
+        List<CwmsId> secondUnassigned = second.getUnassign();
         for (int i = 0; i < firstUnassigned.size(); i++) {
-            String expectedTsId = firstUnassigned.get(i);
-            String actualTsId = secondUnassigned.get(i);
-            assertEquals(expectedTsId, actualTsId, "Time series IDs do not match for unassigned time series at index " + i);
+            CwmsId expectedTsId = firstUnassigned.get(i);
+            CwmsId actualTsId = secondUnassigned.get(i);
+            assertEquals(expectedTsId.getOfficeId(), actualTsId.getOfficeId(), "Office IDs do not match for unassigned time series at index " + i);
+            assertEquals(expectedTsId.getName(), actualTsId.getName(), "Time series IDs do not match for unassigned time series at index " + i);
         }
     }
 

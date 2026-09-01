@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsDTOBase;
+import cwms.cda.data.dto.CwmsId;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public final class Membership extends CwmsDTOBase {
     private final List<AssignedTimeSeries> assign;
-    private final List<String> unassign;
+    private final List<CwmsId> unassign;
 
     private Membership(Builder builder) {
         this.assign = builder.assign != null ? builder.assign : new ArrayList<>();
@@ -53,14 +54,14 @@ public final class Membership extends CwmsDTOBase {
         return assign;
     }
 
-    @Schema(description = "Time series ids to unassign from the group")
-    public List<String> getUnassign() {
+    @Schema(description = "Time series to unassign from the group")
+    public List<CwmsId> getUnassign() {
         return unassign;
     }
 
     public static class Builder {
         private List<AssignedTimeSeries> assign;
-        private List<String> unassign;
+        private List<CwmsId> unassign;
 
         public Builder() {
         }
@@ -70,7 +71,7 @@ public final class Membership extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withUnassign(List<String> unassign) {
+        public Builder withUnassign(List<CwmsId> unassign) {
             this.unassign = unassign != null ? new ArrayList<>(unassign) : null;
             return this;
         }

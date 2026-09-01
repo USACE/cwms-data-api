@@ -110,7 +110,7 @@ final class TimeSeriesGroupPatchTest {
                 ASSIGN_REF_TS_ID, ASSIGN_ATTRIBUTE);
         Membership membership = new Membership.Builder()
                 .withAssign(Collections.singletonList(assign))
-                .withUnassign(Collections.singletonList(UNASSIGN_TS_ID))
+                .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(OFFICE_ID, UNASSIGN_TS_ID)))
                 .build();
         return new TimeSeriesGroupPatch.Builder()
                 .withTimeSeriesCategory(category)

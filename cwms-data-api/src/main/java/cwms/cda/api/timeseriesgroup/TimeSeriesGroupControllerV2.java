@@ -43,6 +43,7 @@ import static cwms.cda.api.Controllers.UPDATE;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsId;
@@ -59,8 +60,11 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -82,7 +86,8 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
     @OpenApi(
             pathParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning "
-                        + "office of the timeseries group(s) to be included in the response."),
+                        + "office of the timeseries group(s) to be included in the response. This is NOT the office of the "
+                        + "category."),
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
@@ -124,9 +129,8 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the "
-                        + "owning office of the timeseries assigned to the group whose data is to be included"
-                        + " in the response. This will limit the assigned timeseries returned to only those"
-                        + " assigned to the specified office. Not to be confused with the path parameter of the "
+                        + "owning office of the timeseries assigned to the group whose data is to be included "
+                        + "in the response. Not to be confused with the path parameter of the "
                         + "same name, which specifies the owning office of the group itself."),
                 @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the owning office of the "
                         + "timeseries group category"),
@@ -203,6 +207,9 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         queryParams = {
             @OpenApiParam(name = IGNORE_MISSING, type = Boolean.class, description = "If true, do not fail when "
                 + "a time series to assign does not exist. Default is false"),
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class, description = "Ignore null values in the request body. "
+                + IGNORE_NULLS + " is not used to unassign time series. Unassignment must be explicitly specified in the request body. "
+                + "Default: true")
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
@@ -212,15 +219,33 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
+            Boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(ctx.req.getContentType(), TimeSeriesGroupPatch.class);
             TimeSeriesGroupPatch patch = Formats.parseContent(contentType, ctx.body(), TimeSeriesGroupPatch.class);
             validateOffice(office, patch.getOfficeId());
 
+            Membership membership = patch.getMembership();
+            validateNoAssignUnassignOverlap(membership);
+
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             String categoryId = patch.getTimeSeriesCategory().getId();
             TimeSeriesGroup existingGroup = dao.getTimeSeriesGroup(office, null, null, categoryId, oldGroupId);
-            existingGroup = updateDescriptionIfChanged(dao, existingGroup, patch.getDescription());
+            if(existingGroup == null) {
+                throw new NotFoundException("Time series group " + oldGroupId + " does not exist in category "
+                        + categoryId + " for group office " + office);
+            }
 
+            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
+            List<AssignedTimeSeries> newAndExistingAssignedTimeSeries = mergeAssigned(existingGroup, membership);
+            TimeSeriesGroup groupWithAssignment = new TimeSeriesGroup(new TimeSeriesGroup(patch.getTimeSeriesCategory(),
+                    patch.getOfficeId(),
+                    patch.getId(),
+                    patch.getDescription(),
+                    patch.getSharedAliasId(),
+                    patch.getSharedRefTsId()), newAndExistingAssignedTimeSeries);
+            List<CwmsId> missingTimeSeries = dao.create(groupWithAssignment, false, ignoreNulls, ignoreMissing);
+
+            //Handle rename
             String currentGroupId = oldGroupId;
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && patch.getId() != null
                     && !oldGroupId.equals(patch.getId())) {
@@ -231,33 +256,61 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                 currentGroupId = patch.getId();
             }
 
-            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
-            Membership membership = patch.getMembership();
-            List<CwmsId> missingTimeSeries = Collections.emptyList();
+            //Handle unassignment
             if (membership != null) {
-                List<String> unassign = membership.getUnassign();
+                List<CwmsId> unassign = membership.getUnassign();
                 if (unassign != null && !unassign.isEmpty()) {
                     dao.unassignTsIds(categoryId, currentGroupId, office, unassign);
-                }
-
-                List<AssignedTimeSeries> assign = membership.getAssign();
-                if (assign != null && !assign.isEmpty()) {
-                    List<AssignedTimeSeries> assignedTimeSeries = new ArrayList<>();
-                    for (AssignedTimeSeries ts : assign) {
-                        String tsOffice = ts.getOfficeId() != null ? ts.getOfficeId() : office;
-                        assignedTimeSeries.add(new AssignedTimeSeries(tsOffice, ts.getTimeseriesId(),
-                                ts.getAliasId(), ts.getRefTsId(), ts.getAttribute()));
-                    }
-                    TimeSeriesGroup groupForAssign = new TimeSeriesGroup(new TimeSeriesGroup(
-                            existingGroup.getTimeSeriesCategory(), office, currentGroupId,
-                            existingGroup.getDescription(), existingGroup.getSharedAliasId(),
-                            existingGroup.getSharedRefTsId()), assignedTimeSeries);
-                    missingTimeSeries = dao.assignTs(groupForAssign, office, ignoreMissing);
                 }
             }
 
             respondToMissingTimeSeries(ctx, missingTimeSeries, ignoreMissing);
         }
+    }
+
+    private static List<AssignedTimeSeries> mergeAssigned(TimeSeriesGroup existingGroup, Membership membership) {
+        Map<String, AssignedTimeSeries> byKey = new LinkedHashMap<>();
+        for (AssignedTimeSeries ts : existingGroup.getAssignedTimeSeries()) {
+            byKey.put(key(ts.getOfficeId(), ts.getTimeseriesId()), ts);
+        }
+        if (membership != null) {
+            for (AssignedTimeSeries ts : membership.getAssign()) {
+                byKey.put(key(ts.getOfficeId(), ts.getTimeseriesId()), ts);
+            }
+        }
+        return new ArrayList<>(byKey.values());
+    }
+
+    /**
+     * A time series can't be assigned and unassigned by the same patch - reject the request
+     * up front rather than letting the outcome depend on call order.
+     */
+    private void validateNoAssignUnassignOverlap(Membership membership) {
+        if (membership == null) {
+            return;
+        }
+        List<CwmsId> unassign = membership.getUnassign();
+        List<AssignedTimeSeries> assign = membership.getAssign();
+        if (unassign == null || unassign.isEmpty() || assign == null || assign.isEmpty()) {
+            return;
+        }
+
+        Set<String> unassignKeys = new HashSet<>();
+        for (CwmsId id : unassign) {
+            unassignKeys.add(key(id.getOfficeId(), id.getName()));
+        }
+        for (AssignedTimeSeries ts : assign) {
+            String key = key(ts.getOfficeId(), ts.getTimeseriesId());
+            if (unassignKeys.contains(key)) {
+                String tsOffice = ts.getOfficeId();
+                throw new IllegalArgumentException("Time series " + ts.getTimeseriesId() + " (office " + tsOffice
+                        + ") cannot be included in both the assign and unassign lists.");
+            }
+        }
+    }
+
+    private static String key(String office, String tsId) {
+        return office.toUpperCase() + "/" + tsId.toUpperCase();
     }
 
     @OpenApi(
