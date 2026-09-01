@@ -20,7 +20,10 @@
       }
     ],
     "unassign": [
-      "Loc3.Flow.Inst.1Hour.0.Raw"
+      {
+        "office-id": "SPK",
+        "name": "Loc3.Flow.Inst.1Hour.0.Raw"
+      }
     ]
   }
 }

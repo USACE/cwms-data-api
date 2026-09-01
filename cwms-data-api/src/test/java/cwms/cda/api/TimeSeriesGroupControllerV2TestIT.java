@@ -39,6 +39,7 @@ import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.AssignedTimeSeries;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import cwms.cda.data.dto.timeseriesgroup.Membership;
@@ -304,7 +305,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         // Only specify the ids to unassign - not the full set of assigned time series.
         Membership membership = new Membership.Builder()
                 .withAssign(Collections.emptyList())
-                .withUnassign(Arrays.asList(TS1, TS2))
+                .withUnassign(Arrays.asList(CwmsId.buildCwmsId(officeId, TS1), CwmsId.buildCwmsId(officeId, TS2)))
                 .build();
         TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
                 .withOfficeId(officeId)
@@ -361,7 +362,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         // Unassign TS1 while assigning TS3, in a single request.
         Membership membership = new Membership.Builder()
                 .withAssign(Collections.singletonList(new AssignedTimeSeries(officeId, TS3, "AliasId3", TS3, 3)))
-                .withUnassign(Collections.singletonList(TS1))
+                .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
                 .build();
         TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
                 .withOfficeId(officeId)
@@ -401,6 +402,61 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .body("assigned-time-series.size()", is(2))
                 .body("assigned-time-series.timeseries-id", hasItem(TS2))
                 .body("assigned-time-series.timeseries-id", hasItem(TS3));
+    }
+
+    @Test
+    void test_v2_patch_rejects_ts_in_both_assign_and_unassign() throws Exception {
+        String officeId = user.getOperatingOffice();
+        TimeSeriesCategory cat = createCategory(officeId, "test_v2_patch_overlap");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_v2_patch_overlap",
+                "IntegrationTesting", "sharedTsAliasId", TS1);
+        group.getAssignedTimeSeries().add(new AssignedTimeSeries(officeId, TS1, "AliasId", TS1, 1));
+        groupsToCleanup.add(group);
+        createGroup(group);
+
+        // TS1 appears in both the assign and unassign lists - this should be rejected outright.
+        Membership membership = new Membership.Builder()
+                .withAssign(Collections.singletonList(new AssignedTimeSeries(officeId, TS1, "AliasId", TS1, 1)))
+                .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
+                .build();
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+                .withOfficeId(officeId)
+                .withId(group.getId())
+                .withTimeSeriesCategory(cat)
+                .withDescription(group.getDescription())
+                .withSharedAliasId(group.getSharedAliasId())
+                .withSharedRefTsId(group.getSharedRefTsId())
+                .withMembership(membership)
+                .build();
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(patchBody(patch))
+                .header("Authorization", user.toHeaderValue())
+            .when()
+                .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+            .then()
+                .log().ifValidationFails()
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+
+        // Confirm nothing changed, since the invalid request should not have been processed.
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+            .when()
+                .get(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+            .then()
+                .log().ifValidationFails()
+            .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("assigned-time-series.size()", is(1))
+                .body("assigned-time-series[0].timeseries-id", equalTo(TS1));
     }
 
     @Test
@@ -482,7 +538,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
 
         Membership membership = new Membership.Builder()
                 .withAssign(Collections.emptyList())
-                .withUnassign(Collections.singletonList(TS1))
+                .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
                 .build();
         TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
                 .withOfficeId(officeId)
@@ -538,7 +594,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
 
         Membership membership = new Membership.Builder()
                 .withAssign(Collections.emptyList())
-                .withUnassign(Collections.singletonList(TS1))
+                .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
                 .build();
         TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
                 .withOfficeId(officeId)

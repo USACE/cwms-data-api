@@ -377,7 +377,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
 
-    public void unassignTsIds(String categoryId, String groupId, String office, List<String> tsIds) {
+    public void unassignTsIds(String categoryId, String groupId, String office, List<CwmsId> tsIds) {
         if (tsIds == null || tsIds.isEmpty()) {
             throw new IllegalArgumentException("At least one time series id must be provided to unassign.");
         }
@@ -385,8 +385,8 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         connection(dsl, conn -> {
             DSLContext dslContext = getDslContext(conn, office);
             dslContext.transaction((Configuration config) -> {
-                for (String tsId : tsIds) {
-                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config, categoryId, groupId, tsId, "F", office);
+                for (CwmsId tsId : tsIds) {
+                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config, categoryId, groupId, tsId.getName(), "F", office);
                 }
             });
         });
