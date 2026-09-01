@@ -69,7 +69,7 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
-import cwms.cda.data.dto.timeseriesgroup.Membership;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.data.dto.watersupply.PumpLocation;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
@@ -774,7 +774,7 @@ public final class DTOMatch {
         );
     }
 
-    public static void assertMatch(Membership first, Membership second) {
+    public static void assertMatch(TimeSeriesGroupMembership first, TimeSeriesGroupMembership second) {
         assertEquals(first.getUnassign().size(), second.getUnassign().size(), "Unassign list sizes do not match");
         assertEquals(first.getAssign().size(), second.getAssign().size(), "Assign list sizes do not match");
 

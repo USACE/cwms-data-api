@@ -48,7 +48,7 @@ import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
-import cwms.cda.data.dto.timeseriesgroup.Membership;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -72,7 +72,7 @@ import org.jooq.DSLContext;
  * Version 2 of the Timeseries Group controller. Create, delete, and retrieve are identical to v1
  * (see {@link TimeSeriesGroupController}). PATCH/update differs: instead of a full
  * {@link TimeSeriesGroup} body carrying the complete list of assigned time series, this version
- * accepts a {@link TimeSeriesGroupPatch} body whose {@link Membership} describes only the time
+ * accepts a {@link TimeSeriesGroupPatch} body whose {@link TimeSeriesGroupMembership} describes only the time
  * series ids to assign and/or unassign. This lets callers add or remove a handful of time series
  * from a (potentially very large) group without submitting the group's entire list of assigned
  * time series.
@@ -224,7 +224,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             TimeSeriesGroupPatch patch = Formats.parseContent(contentType, ctx.body(), TimeSeriesGroupPatch.class);
             validateOffice(office, patch.getOfficeId());
 
-            Membership membership = patch.getMembership();
+            TimeSeriesGroupMembership membership = patch.getMembership();
             validateNoAssignUnassignOverlap(membership);
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
@@ -268,7 +268,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         }
     }
 
-    private static List<AssignedTimeSeries> mergeAssigned(TimeSeriesGroup existingGroup, Membership membership) {
+    private static List<AssignedTimeSeries> mergeAssigned(TimeSeriesGroup existingGroup, TimeSeriesGroupMembership membership) {
         Map<String, AssignedTimeSeries> byKey = new LinkedHashMap<>();
         for (AssignedTimeSeries ts : existingGroup.getAssignedTimeSeries()) {
             byKey.put(key(ts.getOfficeId(), ts.getTimeseriesId()), ts);
@@ -285,7 +285,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
      * A time series can't be assigned and unassigned by the same patch - reject the request
      * up front rather than letting the outcome depend on call order.
      */
-    private void validateNoAssignUnassignOverlap(Membership membership) {
+    private void validateNoAssignUnassignOverlap(TimeSeriesGroupMembership membership) {
         if (membership == null) {
             return;
         }
