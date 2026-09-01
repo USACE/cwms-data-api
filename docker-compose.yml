@@ -24,7 +24,7 @@ services:
       retries: 50
       start_period: 40m
   db_webuser_permissions:
-    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-registry-public.hecdev.net/cwms/schema_installer:latest-dev}
+    image: ${CWMS_SCHEMA_INSTALLER_IMAGE:-ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/schema_installer:latest-dev}
     restart: "no"
     environment:
       - DB_HOST_PORT=db:1521

@@ -1,4 +1,4 @@
-package cwms.cda.api;
+package cwms.cda.api.forecast;
 
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
@@ -19,9 +19,10 @@ import static cwms.cda.api.Controllers.requiredParam;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.BaseCrudHandler;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.ForecastInstanceDao;
+import cwms.cda.data.dao.forecast.ForecastInstanceDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.formatters.ContentType;
