@@ -284,7 +284,8 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .log()
             .ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("isEmpty()", is(true));
     }
 
     @Test
