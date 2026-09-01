@@ -201,14 +201,32 @@ def _download_location_groups_in_category(work_item: list) -> None:
 
     entries = []
     for ref in refs:
-        response = cwms.get_location_group(
-            loc_group_id=ref.id,
-            category_id=category_id,
-            office_id=office_id,
-            group_office_id=ref.group_office_id,
-            category_office_id=ref.category_office_id,
-        )
+        try:
+            response = cwms.get_location_group(
+                loc_group_id=ref.id,
+                category_id=category_id,
+                office_id=office_id,
+                group_office_id=ref.group_office_id,
+                category_office_id=ref.category_office_id,
+            )
+        except Exception as error:  # noqa: BLE001 - a missing group is reported, not fatal
+            if not cda_errors.is_no_data(error):
+                raise
+
+            logger.warning(
+                "No location group %s/%s found for office %s; skipping.", category_id, ref.id, office_id
+            )
+            continue
+
         entries.append(response.json)
+
+    if not entries:
+        logger.debug(
+            "None of the requested location groups for category %s in office %s were found; nothing staged.",
+            category_id,
+            office_id,
+        )
+        return
 
     with _STAGE_WRITE_LOCK:
         merged = _merge_entries(_read_category(office_id, category_id), entries)

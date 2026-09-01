@@ -207,6 +207,55 @@ def test_download_location_groups_in_category_uses_resolved_office_overrides(moc
     )
 
 
+def test_download_location_groups_in_category_skips_a_missing_group_and_stages_the_rest(mocker):
+    """
+    A 404 for one named group is a normal "doesn't exist" outcome, not a fault:
+    it must not abort the whole task, and the groups that were found still
+    get staged.
+    """
+    found = {"office-id": "SWT", "id": "EUFA.GRP.FOUND"}
+    not_found = RuntimeError(
+        "CWMS API Error (https://cda.test/location/group/EUFA-Missing). "
+        'May be the result of an empty query. {"message":"Not found."}'
+    )
+    mocker.patch("cwms.get_location_group", side_effect=[not_found, MagicMock(json=found)])
+    mocker.patch("utils.filesystem_store.read_json", return_value=None)
+    mock_write = mocker.patch("utils.filesystem_store.write_json")
+
+    location_group._download_location_groups_in_category(
+        ["SWT", "Flow", _ref("EUFA-Missing"), _ref("EUFA.GRP.FOUND")]
+    )
+
+    mock_write.assert_called_once_with([found], "SWT", "LocationGroups", "Flow")
+
+
+def test_download_location_groups_in_category_stages_nothing_when_all_are_missing(mocker):
+    not_found = RuntimeError(
+        "CWMS API Error (https://cda.test/location/group/EUFA-Missing). "
+        'May be the result of an empty query. {"message":"Not found."}'
+    )
+    mocker.patch("cwms.get_location_group", side_effect=not_found)
+    mock_write = mocker.patch("utils.filesystem_store.write_json")
+
+    location_group._download_location_groups_in_category(["SWT", "Flow", _ref("EUFA-Missing")])
+
+    mock_write.assert_not_called()
+
+
+def test_download_location_groups_in_category_reraises_genuine_failures(mocker):
+    mocker.patch("cwms.get_location_group", side_effect=RuntimeError("connection reset"))
+    mock_write = mocker.patch("utils.filesystem_store.write_json")
+
+    try:
+        location_group._download_location_groups_in_category(["SWT", "Flow", _ref("EUFA.GRP")])
+    except RuntimeError:
+        pass
+    else:
+        raise AssertionError("Expected RuntimeError to propagate")
+
+    mock_write.assert_not_called()
+
+
 def test_download_all_location_groups_in_category(mocker):
     flag = {"id": "EUFA.GRP.FLAG", "office-id": "SWT"}
     enabled = {"id": "EUFA.GRP.ENABLED", "office-id": "SWT"}
