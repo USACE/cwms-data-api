@@ -55,7 +55,7 @@ public final class TimeSeriesGroupPatch extends CwmsDTO {
     private final String description;
     private final String sharedAliasId;
     private final String sharedRefTsId;
-    private final Membership membership;
+    private final TimeSeriesGroupMembership membership;
 
     private TimeSeriesGroupPatch(Builder builder) {
         super(builder.officeId);
@@ -88,7 +88,7 @@ public final class TimeSeriesGroupPatch extends CwmsDTO {
         return sharedRefTsId;
     }
 
-    public Membership getMembership() {
+    public TimeSeriesGroupMembership getMembership() {
         return membership;
     }
 
@@ -99,7 +99,7 @@ public final class TimeSeriesGroupPatch extends CwmsDTO {
         private String description;
         private String sharedAliasId;
         private String sharedRefTsId;
-        private Membership membership;
+        private TimeSeriesGroupMembership membership;
 
         public Builder() {
         }
@@ -134,7 +134,7 @@ public final class TimeSeriesGroupPatch extends CwmsDTO {
             return this;
         }
 
-        public Builder withMembership(Membership membership) {
+        public Builder withMembership(TimeSeriesGroupMembership membership) {
             this.membership = membership;
             return this;
         }

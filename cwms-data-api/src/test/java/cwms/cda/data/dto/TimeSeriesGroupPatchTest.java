@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import cwms.cda.data.dto.timeseriesgroup.Membership;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.List;
 
 import cwms.cda.helpers.DTOMatch;
 import org.apache.commons.io.IOUtils;
@@ -108,7 +107,7 @@ final class TimeSeriesGroupPatchTest {
         TimeSeriesCategory category = new TimeSeriesCategory(OFFICE_ID, CATEGORY_ID, CATEGORY_DESCRIPTION);
         AssignedTimeSeries assign = new AssignedTimeSeries(OFFICE_ID, ASSIGN_TS_ID, ASSIGN_ALIAS_ID,
                 ASSIGN_REF_TS_ID, ASSIGN_ATTRIBUTE);
-        Membership membership = new Membership.Builder()
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
                 .withAssign(Collections.singletonList(assign))
                 .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(OFFICE_ID, UNASSIGN_TS_ID)))
                 .build();

@@ -26,6 +26,7 @@ package cwms.cda.data.dto.timeseriesgroup;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -36,15 +37,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
 
+//name in json is just "membership"
 @Schema(description = "Describes time series to assign to, and/or unassign from, a timeseries group")
-@JsonDeserialize(builder = Membership.Builder.class)
+@JsonDeserialize(builder = TimeSeriesGroupMembership.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class Membership extends CwmsDTOBase {
+@JsonRootName("membership")
+public final class TimeSeriesGroupMembership extends CwmsDTOBase {
     private final List<AssignedTimeSeries> assign;
     private final List<CwmsId> unassign;
 
-    private Membership(Builder builder) {
+    private TimeSeriesGroupMembership(Builder builder) {
         this.assign = builder.assign != null ? builder.assign : new ArrayList<>();
         this.unassign = builder.unassign != null ? builder.unassign : new ArrayList<>();
     }
@@ -77,7 +80,7 @@ public final class Membership extends CwmsDTOBase {
         }
 
         @JsonIgnore
-        public Builder from(Membership membership) {
+        public Builder from(TimeSeriesGroupMembership membership) {
             if (membership != null) {
                 this.assign = membership.getAssign();
                 this.unassign = membership.getUnassign();
@@ -85,8 +88,8 @@ public final class Membership extends CwmsDTOBase {
             return this;
         }
 
-        public Membership build() {
-            return new Membership(this);
+        public TimeSeriesGroupMembership build() {
+            return new TimeSeriesGroupMembership(this);
         }
     }
 }

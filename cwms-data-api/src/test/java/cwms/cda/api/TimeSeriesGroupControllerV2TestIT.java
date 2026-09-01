@@ -42,7 +42,7 @@ import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
-import cwms.cda.data.dto.timeseriesgroup.Membership;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -240,7 +240,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         groupsToCleanup.add(group);
         createGroup(group);
 
-        Membership membership = new Membership.Builder()
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
                 .withAssign(Arrays.asList(
                         new AssignedTimeSeries(officeId, TS2, "AliasId2", TS2, 2),
                         new AssignedTimeSeries(officeId, TS3, "AliasId3", TS3, 3)))
@@ -303,7 +303,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         createGroup(group);
 
         // Only specify the ids to unassign - not the full set of assigned time series.
-        Membership membership = new Membership.Builder()
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
                 .withAssign(Collections.emptyList())
                 .withUnassign(Arrays.asList(CwmsId.buildCwmsId(officeId, TS1), CwmsId.buildCwmsId(officeId, TS2)))
                 .build();
@@ -360,7 +360,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         createGroup(group);
 
         // Unassign TS1 while assigning TS3, in a single request.
-        Membership membership = new Membership.Builder()
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
                 .withAssign(Collections.singletonList(new AssignedTimeSeries(officeId, TS3, "AliasId3", TS3, 3)))
                 .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
                 .build();
@@ -415,7 +415,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         createGroup(group);
 
         // TS1 appears in both the assign and unassign lists - this should be rejected outright.
-        Membership membership = new Membership.Builder()
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
                 .withAssign(Collections.singletonList(new AssignedTimeSeries(officeId, TS1, "AliasId", TS1, 1)))
                 .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
                 .build();
@@ -536,7 +536,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         groupsToCleanup.add(group);
         createGroup(group);
 
-        Membership membership = new Membership.Builder()
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
                 .withAssign(Collections.emptyList())
                 .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
                 .build();
@@ -592,7 +592,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         groupsToCleanup.add(group);
         createGroup(group);
 
-        Membership membership = new Membership.Builder()
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
                 .withAssign(Collections.emptyList())
                 .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
                 .build();
