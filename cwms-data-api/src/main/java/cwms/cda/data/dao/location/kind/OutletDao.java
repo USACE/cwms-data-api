@@ -24,7 +24,6 @@ import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
 
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.DeleteConflictException;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationGroupDao;
