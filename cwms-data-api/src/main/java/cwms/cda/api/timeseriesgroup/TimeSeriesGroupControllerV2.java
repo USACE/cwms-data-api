@@ -237,9 +237,12 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
 
             boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             List<AssignedTimeSeries> newAndExistingAssignedTimeSeries = mergeAssigned(existingGroup, membership);
+            // Store metadata/assignments against the group's CURRENT id - renaming (if requested) is
+            // a separate step below. Targeting patch.getId() here would create a second row under
+            // the new id before the rename call runs, and the rename would then collide with it.
             TimeSeriesGroup groupWithAssignment = new TimeSeriesGroup(new TimeSeriesGroup(patch.getTimeSeriesCategory(),
                     patch.getOfficeId(),
-                    patch.getId(),
+                    oldGroupId,
                     patch.getDescription(),
                     patch.getSharedAliasId(),
                     patch.getSharedRefTsId()), newAndExistingAssignedTimeSeries);
