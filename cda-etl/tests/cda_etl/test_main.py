@@ -350,17 +350,67 @@ def test_stage_office_data_passes_groups_through(mocker):
     assert [item.id for item in mock_timeseries_groups.call_args.args[1]] == ["GROUP1"]
 
 
-def test_publish_office_data_passes_groups_through(mocker):
-    mock_location_groups = mocker.patch("location_group.publish_staged_location_groups")
-    mock_timeseries_groups = mocker.patch("timeseries_group.publish_staged_timeseries_groups")
+def test_publish_project_data_publishes_locks_before_timeseries(mocker):
+    """
+    A project's timeseries can be based on a lock/outlet/turbine location
+    (e.g. a lock's own timeseries) rather than just the project location, so
+    those location-creating resources must publish first - see the WEBB-Lock
+    LOCATION_ID_NOT_FOUND-style failure this regresses.
+    """
+    calls = []
+    mocker.patch("outlet.publish_staged_outlets", side_effect=lambda *a, **k: calls.append("outlets"))
+    mocker.patch("main._publish_outlet_rating_dependencies")
+    mocker.patch("turbine.publish_staged_turbines", side_effect=lambda *a, **k: calls.append("turbines"))
+    mocker.patch("lock.publish_staged_locks", side_effect=lambda *a, **k: calls.append("locks"))
+    mocker.patch(
+        "timeseries.publish_staged_timeseries", side_effect=lambda *a, **k: calls.append("timeseries")
+    )
+    mocker.patch("rating.publish_staged_ratings", side_effect=lambda *a, **k: calls.append("ratings"))
+    mocker.patch(
+        "location_level.publish_staged_location_levels", side_effect=lambda *a, **k: calls.append("levels")
+    )
+    mocker.patch("clob.publish_staged_clobs", side_effect=lambda *a, **k: calls.append("clobs"))
+    mocker.patch("turbine.publish_staged_turbine_changes")
+    mocker.patch("gate_change.publish_staged_gate_changes")
+    mocker.patch("water_user.publish_staged_water_users")
+    mocker.patch("water_contract.publish_staged_water_contracts")
+    mocker.patch("location.publish_staged_locations")
+    mocker.patch("project.publish_staged_projects")
     mocker.patch("property.publish_staged_properties")
 
     office = _office_with_new_resources()
+    eufa = next(project for project in office.projects() if project.id == "EUFA")
 
-    main._publish_office_data(office)
+    main._publish_project_data(eufa, _config())
+
+    assert calls.index("outlets") < calls.index("timeseries")
+    assert calls.index("turbines") < calls.index("timeseries")
+    assert calls.index("locks") < calls.index("timeseries")
+    assert calls.index("locks") < calls.index("ratings")
+    assert calls.index("locks") < calls.index("levels")
+    assert calls.index("locks") < calls.index("clobs")
+
+
+def test_publish_office_groups_passes_groups_through(mocker):
+    mock_location_groups = mocker.patch("location_group.publish_staged_location_groups")
+    mock_timeseries_groups = mocker.patch("timeseries_group.publish_staged_timeseries_groups")
+
+    office = _office_with_new_resources()
+
+    main._publish_office_groups(office)
 
     assert [item.id for item in mock_location_groups.call_args.args[1]] == ["GROUP1"]
     assert [item.id for item in mock_timeseries_groups.call_args.args[1]] == ["GROUP1"]
+
+
+def test_publish_office_properties_publishes_properties(mocker):
+    mock_properties = mocker.patch("property.publish_staged_properties")
+
+    office = _office_with_new_resources()
+
+    main._publish_office_properties(office)
+
+    mock_properties.assert_called_once()
 
 
 def test_data_path_defaults_to_the_config_setting(mocker, monkeypatch):

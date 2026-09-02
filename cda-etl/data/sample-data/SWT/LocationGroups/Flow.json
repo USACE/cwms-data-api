@@ -401,6 +401,175 @@
   },
   {
     "office-id": "SWT",
+    "id": "Flow.FCOB.ConduitGate_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-CG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "FCOB-CG2",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Gated_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-CG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "FCOB-CG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "FCOB-LF1",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.LOW Flow_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-LF1",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Lock_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Project_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-CG1",
+        "office-id": "SWT",
+        "attribute": 0
+      },
+      {
+        "location-id": "FCOB-CG2",
+        "office-id": "SWT",
+        "attribute": 1
+      },
+      {
+        "location-id": "FCOB-LF1",
+        "office-id": "SWT",
+        "attribute": 2
+      },
+      {
+        "location-id": "FCOB-UC",
+        "office-id": "SWT",
+        "attribute": 3
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Pump_In_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Pump_Out_Below_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Pump_Out_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-Master Conservancy District Pump",
+        "office-id": "SWT",
+        "attribute": 0
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Turbine_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.UncontrolledSpillway_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.FCOB.Uncontrolled_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-UC",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
     "id": "Flow.KEYS.Gated_Total",
     "location-category": {
       "office-id": "SWT",
@@ -926,6 +1095,244 @@
       "id": "Flow"
     },
     "shared-ref-location-id": "KEYS",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Gated_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": [
+      {
+        "location-id": "WEBB-TG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG10",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG11",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG12",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG8",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG9",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Lock_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": [
+      {
+        "location-id": "WEBB-Lock",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Project_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": [
+      {
+        "location-id": "WEBB-Lock",
+        "office-id": "SWT",
+        "attribute": 0
+      },
+      {
+        "location-id": "WEBB-TG1",
+        "office-id": "SWT",
+        "attribute": 1
+      },
+      {
+        "location-id": "WEBB-TG10",
+        "office-id": "SWT",
+        "attribute": 2
+      },
+      {
+        "location-id": "WEBB-TG11",
+        "office-id": "SWT",
+        "attribute": 3
+      },
+      {
+        "location-id": "WEBB-TG12",
+        "office-id": "SWT",
+        "attribute": 4
+      },
+      {
+        "location-id": "WEBB-TG2",
+        "office-id": "SWT",
+        "attribute": 5
+      },
+      {
+        "location-id": "WEBB-TG3",
+        "office-id": "SWT",
+        "attribute": 6
+      },
+      {
+        "location-id": "WEBB-TG4",
+        "office-id": "SWT",
+        "attribute": 7
+      },
+      {
+        "location-id": "WEBB-TG5",
+        "office-id": "SWT",
+        "attribute": 8
+      },
+      {
+        "location-id": "WEBB-TG6",
+        "office-id": "SWT",
+        "attribute": 9
+      },
+      {
+        "location-id": "WEBB-TG7",
+        "office-id": "SWT",
+        "attribute": 10
+      },
+      {
+        "location-id": "WEBB-TG8",
+        "office-id": "SWT",
+        "attribute": 11
+      },
+      {
+        "location-id": "WEBB-TG9",
+        "office-id": "SWT",
+        "attribute": 12
+      },
+      {
+        "location-id": "WEBB-Turbine1",
+        "office-id": "SWT",
+        "attribute": 13
+      },
+      {
+        "location-id": "WEBB-Turbine2",
+        "office-id": "SWT",
+        "attribute": 14
+      },
+      {
+        "location-id": "WEBB-Turbine3",
+        "office-id": "SWT",
+        "attribute": 15
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Pump_In_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Pump_Out_Below_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Pump_Out_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Turbine_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": [
+      {
+        "location-id": "WEBB-Turbine1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-Turbine3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-Turbine2",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.Uncontrolled_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.WEBB.WEBB Turbine_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "WEBB",
     "assigned-locations": []
   }
 ]

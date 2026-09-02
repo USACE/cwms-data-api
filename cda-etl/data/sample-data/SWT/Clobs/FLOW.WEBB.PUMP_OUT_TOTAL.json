@@ -1,0 +1,5 @@
+{
+  "office-id": "SWT",
+  "id": "FLOW.WEBB.PUMP_OUT_TOTAL",
+  "value": "<flow_group override_protection=\"false\" store_rule=\"Replace All\" suffix=\"Pump_Out_Total\" attribute=\"4\" is_default=\"true\"><loc_ref base_location_id=\"WEBB\" sub_location_id=\"\"><db_office_id id=\"SWT\" /></loc_ref><loc_group_ref id=\"Flow.WEBB.Pump_Out_Total\"><loc_category_ref version=\"1.0\" id=\"Flow\"><db_office_id id=\"SWT\" /></loc_category_ref><db_office_id id=\"SWT\" /></loc_group_ref><output_parameter>Flow</output_parameter><time_series_set /><flow_group_set /></flow_group>"
+}

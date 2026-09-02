@@ -1,0 +1,31 @@
+{
+  "levels": [
+    {
+      "office-id": "SWT",
+      "location-level-id": "KEYS.Coeff.Inst.0.Pan Evaporation Multiplier",
+      "specified-level-id": "Pan Evaporation Multiplier",
+      "parameter-id": "Coeff",
+      "parameter-type-id": "Inst",
+      "level-units-id": "n/a",
+      "level-date": "1964-09-11T05:00:00Z",
+      "level-comment": "Used in REGI for Qout-evap calcs",
+      "duration-id": "0",
+      "constant-value": 0.7
+    },
+    {
+      "office-id": "SWT",
+      "location-level-id": "KEYS.Coeff.Inst.0.Pan Evaporation Multiplier",
+      "specified-level-id": "Pan Evaporation Multiplier",
+      "parameter-id": "Coeff",
+      "parameter-type-id": "Inst",
+      "level-units-id": "n/a",
+      "level-date": "2011-02-01T18:00:00Z",
+      "level-comment": "Used in REGI for Qout-evap calcs",
+      "duration-id": "0",
+      "constant-value": 0.7
+    }
+  ],
+  "page": "MHx8Mnx8MTAw",
+  "page-size": 100,
+  "total": 2
+}

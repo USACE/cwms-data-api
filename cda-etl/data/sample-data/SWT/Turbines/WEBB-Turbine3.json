@@ -1,0 +1,28 @@
+{
+  "project-id": {
+    "office-id": "SWT",
+    "name": "WEBB"
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "WEBB-Turbine3",
+    "latitude": 35.5866661,
+    "longitude": -95.1683273,
+    "active": true,
+    "public-name": "Turbine3",
+    "long-name": "Turbine3",
+    "timezone-name": "US/Central",
+    "location-kind": "TURBINE",
+    "nation": "US",
+    "state-initial": "OK",
+    "county-name": "Muskogee",
+    "nearest-city": "Gore, OK",
+    "horizontal-datum": "NAD83",
+    "published-longitude": 0.0,
+    "published-latitude": 0.0,
+    "vertical-datum": "NGVD29",
+    "elevation": 133.13664,
+    "bounding-office-id": "SWT",
+    "elevation-units": "m"
+  }
+}

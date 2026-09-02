@@ -1,15 +1,15 @@
 {
   "begin": "2026-06-01T12:00:00+00:00",
   "date-version-type": "UNVERSIONED",
-  "end": "2026-08-31T12:00:00+00:00",
+  "end": "2026-09-02T12:00:00+00:00",
   "interval": "PT0S",
   "interval-offset": -2147483648,
   "name": "EUFA.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed",
   "office-id": "SWT",
-  "page": "MTc4MDMxNTIwMDAwMHx8MTR8fDMwMDAwMA==",
+  "page": "MTc4Mzk0NDAwMDAwMHx8MTR8fDMwMDAwMA==",
   "page-size": 300000,
   "time-zone": "US/Central",
-  "total": 92,
+  "total": 94,
   "units": "in",
   "value-columns": [
     {
@@ -486,6 +486,16 @@
     ],
     [
       1788177600000,
+      0.0,
+      0
+    ],
+    [
+      1788264000000,
+      0.0,
+      0
+    ],
+    [
+      1788350400000,
       0.0,
       0
     ]

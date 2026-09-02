@@ -1,0 +1,31 @@
+{
+  "project-id": {
+    "office-id": "SWT",
+    "name": "WEBB"
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "WEBB-TG5",
+    "latitude": 0.0,
+    "longitude": -95.1683333333333,
+    "active": true,
+    "public-name": "TG5",
+    "long-name": "TG5",
+    "location-kind": "OUTLET",
+    "nation": "US",
+    "nearest-city": "Brownsville",
+    "published-longitude": 95.1683333333333,
+    "published-latitude": 35.5866666666667,
+    "elevation": 0.0,
+    "elevation-units": "m"
+  },
+  "rating-group-id": {
+    "office-id": "SWT",
+    "name": "WEBB-TainterGate"
+  },
+  "rating-spec-id": "WEBB.Opening-Spillway_Gates,Elev;Flow-Spillway_Gates.Standard.Production",
+  "rating-category-id": {
+    "office-id": "SWT",
+    "name": "Rating"
+  }
+}
