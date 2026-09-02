@@ -39,9 +39,16 @@ export default [
     ],
   },
   {
-    id: "user-lists",
-    text: "User Lists",
+    id: "user-management",
+    text: "User Management",
     href: "/user-lists",
+    children: [
+      {
+        id: "user-lists",
+        text: "User Lists",
+        href: "/user-lists",
+      },
+    ],
   },
   {
     id: "help",
