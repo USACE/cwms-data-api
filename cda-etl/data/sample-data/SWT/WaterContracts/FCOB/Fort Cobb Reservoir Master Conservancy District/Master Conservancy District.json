@@ -1,5 +1,5 @@
 {
-  "office-id": "CWMS",
+  "office-id": "SWT",
   "water-user": {
     "entity-name": "Fort Cobb Reservoir Master Conservancy District",
     "project-id": {
@@ -9,7 +9,7 @@
     "water-right": "OWRB"
   },
   "contract-id": {
-    "office-id": "CWMS",
+    "office-id": "SWT",
     "name": "Master Conservancy District"
   },
   "contract-type": {
