@@ -24,6 +24,7 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.data.dto.Entity;
 import cwms.cda.data.dto.ParameterLegacy;
@@ -68,6 +69,8 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.data.dto.watersupply.PumpLocation;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
@@ -758,6 +761,43 @@ public final class DTOMatch {
                     assertMatch(tsIdsForLocation, found);
                 })
         );
+    }
+
+    public static void assertMatch(TimeSeriesGroupPatch first, TimeSeriesGroupPatch second) {
+        assertAll(() -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office IDs do not match"),
+                () -> assertEquals(first.getId(), second.getId(), "Time series group IDs do not match"),
+                () -> assertEquals(first.getDescription(), second.getDescription(), "Descriptions do not match"),
+                () -> assertEquals(first.getSharedAliasId(), second.getSharedAliasId(), "Shared alias IDs do not match"),
+                () -> assertEquals(first.getSharedRefTsId(), second.getSharedRefTsId(), "Shared reference time series IDs do not match"),
+                () -> assertEquals(first.getTimeSeriesCategory(), second.getTimeSeriesCategory(), "Time series categories do not match"),
+                () -> assertMatch(first.getMembership(), second.getMembership())
+        );
+    }
+
+    public static void assertMatch(TimeSeriesGroupMembership first, TimeSeriesGroupMembership second) {
+        assertEquals(first.getUnassign().size(), second.getUnassign().size(), "Unassign list sizes do not match");
+        assertEquals(first.getAssign().size(), second.getAssign().size(), "Assign list sizes do not match");
+
+        List<AssignedTimeSeries> firstAssigned = first.getAssign();
+        List<AssignedTimeSeries> secondAssigned = second.getAssign();
+        for (int i = 0; i < firstAssigned.size(); i++) {
+            AssignedTimeSeries expectedTs = firstAssigned.get(i);
+            AssignedTimeSeries actualTs = secondAssigned.get(i);
+            assertEquals(expectedTs.getOfficeId(), actualTs.getOfficeId(), "Office IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getTimeseriesId(), actualTs.getTimeseriesId(), "Time series IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getAliasId(), actualTs.getAliasId(), "Alias IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getRefTsId(), actualTs.getRefTsId(), "Reference time series IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getAttribute(), actualTs.getAttribute(), "Attributes do not match for assigned time series at index " + i);
+        }
+
+        List<CwmsId> firstUnassigned = first.getUnassign();
+        List<CwmsId> secondUnassigned = second.getUnassign();
+        for (int i = 0; i < firstUnassigned.size(); i++) {
+            CwmsId expectedTsId = firstUnassigned.get(i);
+            CwmsId actualTsId = secondUnassigned.get(i);
+            assertEquals(expectedTsId.getOfficeId(), actualTsId.getOfficeId(), "Office IDs do not match for unassigned time series at index " + i);
+            assertEquals(expectedTsId.getName(), actualTsId.getName(), "Time series IDs do not match for unassigned time series at index " + i);
+        }
     }
 
     public static void assertMatch(ForecastLocation first, ForecastLocation second) {
