@@ -1,0 +1,51 @@
+{
+  "office-id": "CWMS",
+  "water-user": {
+    "entity-name": "Fort Cobb Reservoir Master Conservancy District",
+    "project-id": {
+      "office-id": "SWT",
+      "name": "FCOB"
+    },
+    "water-right": "OWRB"
+  },
+  "contract-id": {
+    "office-id": "CWMS",
+    "name": "Master Conservancy District"
+  },
+  "contract-type": {
+    "office-id": "CWMS",
+    "display-value": "Storage",
+    "tooltip": "Storage contract",
+    "active": true
+  },
+  "contract-effective-date": -339530400000,
+  "contract-expiration-date": 2816226000000,
+  "contracted-storage": 24070164.577902306,
+  "initial-use-allocation": 24070164.577902306,
+  "future-use-allocation": 0.0,
+  "storage-units-id": "m3",
+  "future-use-percent-activated": 0.0,
+  "total-alloc-percent-activated": 70681.0,
+  "pump-out-location": {
+    "pump-location": {
+      "office-id": "SWT",
+      "name": "FCOB-Master Conservancy District Pump",
+      "latitude": 35.165,
+      "longitude": -98.4616666666667,
+      "active": true,
+      "public-name": "Master Conservancy District Pump",
+      "timezone-name": "US/Central",
+      "location-kind": "PUMP",
+      "nation": "US",
+      "state-initial": "OK",
+      "county-name": "Caddo",
+      "horizontal-datum": "WGS84",
+      "published-longitude": 98.4616666666667,
+      "published-latitude": 0.0,
+      "vertical-datum": "NGVD29",
+      "elevation": 389.8392,
+      "elevation-units": "m"
+    },
+    "pump-type": "OUT"
+  }
+}

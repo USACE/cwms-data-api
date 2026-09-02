@@ -1,209 +1,478 @@
+# GENERATED FILE - DO NOT EDIT
+#
+# Produced by cda-expander from the two inputs below: the base config plus
+# resolved association templates. To change anything here, edit whichever
+# input owns it and regenerate:
+#
+#     python -m cda_expander --base regi.yml \
+#                            --templates regi.templates.yml \
+#                            --out <this file>
+#
+# expander version : 1.0.0
+# base config      : regi.yml
+# base sha256      : 9798aabcb399f98a4d4ffdb694663aa9232d3d5aebd5ac1ee8f3261b6c16a0f6
+# templates        : regi.templates.yml
+# templates sha256 : 4fc18cffa00b6f5862ff13896ea1666b45a8c207fdbef1ecb1ad6b0c06a9356d
+
 version: 1
 settings:
-  startTime: "2026-06-01"
+  startTime: '2026-06-01'
   endTime: now
   maxThreads: 1
   logLevel: INFO
   path: /data/sample-data
 offices:
-- id: SWT
-  enabled: true
-  projects:
-  - id: KEYS
+  - id: SWT
     enabled: true
-    outlets:
-    - id: KEYS-TG1
-    - id: KEYS-TG2
-    - id: KEYS-TG4
-    - id: KEYS-TG6
-    - id: KEYS-TG9
-    - id: KEYS-TG10
-    - id: KEYS-TG12
-    - id: KEYS-TG14
-    - id: KEYS-TG17
-    - id: KEYS-SG2
-    - id: KEYS-SG4
-    - id: KEYS-SG7
-    - id: KEYS-SG9
-    - id: KEYS-LF1
-    - id: KEYS-TG16
-    - id: KEYS-SG1
-    - id: KEYS-SG3
-    - id: KEYS-SG5
-    - id: KEYS-SG6
-    - id: KEYS-SG8
-    - id: KEYS-TG11
-    - id: KEYS-TG13
-    - id: KEYS-TG15
-    - id: KEYS-TG18
-    - id: KEYS-TG3
-    - id: KEYS-TG5
-    - id: KEYS-TG7
-    - id: KEYS-TG8
-    turbines:
-    - id: KEYS-Turbine1
-    - id: KEYS-Turbine2
-    gateChanges:
-      enabled: true
-    turbineChanges:
-      enabled: true
-    clobs:
-    - id: FLOW.KEYS.GATED_TOTAL
-    - id: FLOW.KEYS.LOCK_TOTAL
-    - id: FLOW.KEYS.LOW FLOW_TOTAL
-    - id: FLOW.KEYS.PROJECT_TOTAL
-    - id: FLOW.KEYS.PUMP_IN_TOTAL
-    - id: FLOW.KEYS.PUMP_OUT_BELOW_TOTAL
-    - id: FLOW.KEYS.PUMP_OUT_TOTAL
-    - id: FLOW.KEYS.SLUICEGATE_TOTAL
-    - id: FLOW.KEYS.TAINTERGATE_TOTAL
-    - id: FLOW.KEYS.TURBINE_TOTAL
-    - id: FLOW.KEYS.UNCONTROLLED_TOTAL
-    ratings:
-    - id: KEYS.Elev;Area.Linear.Production
-      por: true
-    - id: KEYS.Elev;Stor.Linear.Production
-      por: true
-  - id: EUFA
-    enabled: true
-    locations:
-    - id: EUFA-Dam
-    outlets:
-    - id: EUFA-SG1
-    - id: EUFA-TG1
-    - id: EUFA-TG2
-    - id: EUFA-TG3
-    - id: EUFA-TG4
-    - id: EUFA-TG5
-    - id: EUFA-TG6
-    - id: EUFA-TG7
-    - id: EUFA-TG8
-    - id: EUFA-TG9
-    - id: EUFA-TG10
-    - id: EUFA-TG11
-    turbines:
-    - id: EUFA-Turbine1
-    - id: EUFA-Turbine2
-    - id: EUFA-Turbine3
-    embankments: []
-    locks: []
-    waterUsers: []
-    gateChanges:
-      enabled: true
-    turbineChanges:
-      enabled: true
-    clobs:
-    - id: FLOW.EUFA.CONTROLLED
-    - id: FLOW.EUFA.EUFA TURBINE_TOTAL
-    - id: FLOW.EUFA.GATED_TOTAL
-    - id: FLOW.EUFA.LOCK_TOTAL
-    - id: FLOW.EUFA.PROJECT_TOTAL
-    - id: FLOW.EUFA.PUMP_IN_TOTAL
-    - id: FLOW.EUFA.PUMP_OUT_BELOW_TOTAL
-    - id: FLOW.EUFA.PUMP_OUT_TOTAL
-    - id: FLOW.EUFA.SLUICEGATE_TOTAL
-    - id: FLOW.EUFA.TAINTERGATE_TOTAL
-    - id: FLOW.EUFA.TURBINE_TOTAL
-    - id: FLOW.EUFA.UNCONTROLLED_TOTAL
-    locationLevels:
-    - id: EUFA-Dam.Elev.Inst.0.Top of Flood
-      por: true
-    ratings:
-    - id: EUFA.Elev;Area.Linear.Production
-      por: true
-    - id: EUFA.Elev;Stor.Linear.Production
-      por: true
-    timeseries:
-    - id: EUFA.Opening.Inst.0.0.MANUAL
-    - id: EUFA.Dir-Wind.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Speed-Wind.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Flow-Navigation Out.Total.~1Day.1Day.Rev-Regi-Computed
-    - id: EUFA.Count-Lockages.Total.~1Day.1Day.Rev-Manual
-    - id: EUFA.Text.Inst.~1Day.0.Wcds-Rev
-    - id: EUFA.Elev.Inst.1Hour.0.Decodes-Raw
-    - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw
-    - id: EUFA.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Stor.Inst.1Hour.0.Ccp-Raw
-    - id: EUFA.Stor.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted
-    - id: EUFA.Temp-Air.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed
-    - id: EUFA.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev
-    - id: EUFA.%-Humidity.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Adjusted
-    - id: EUFA.Flow-Res Out.Ave.~1Day.1Day.Rev-Regi-Flowgroup
-    - id: EUFA.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
-    - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Computed
-    - id: EUFA.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup
-    - id: EUFA.Evap.Total.~1Day.1Day.Ccp-Rev
-    - id: EUFA.Precip-Inc.Total.~1Day.1Day.Ccp-Rev
-    - id: EUFA.Precip-Alt.Total.1Day.1Day.Decodes-Raw
-    - id: EUFA.Dir-Wind.Inst.1Hour.0.Decodes-Raw
-    - id: EUFA.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Speed-Wind.Inst.1Hour.0.Decodes-Raw
-    - id: EUFA.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Code-Lake Condition.Inst.1Day.0.Wcds-Obs
-    - id: EUFA.Evap-Pan.Total.1Day.0.wcds-obs
-    - id: EUFA.Temp-Air.Inst.1Hour.0.Decodes-Raw
-    - id: EUFA.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
-    - id: EUFA.%-Humidity.Inst.1Hour.0.Decodes-Raw
-    - id: EUFA.Code-Weather Condition.Inst.1Day.0.Wcds-Obs
-  locationGroups:
-  - categoryId: Flow
-    id: Flow.EUFA.Project_Total
-  - categoryId: Flow
-    id: Flow.EUFA.SluiceGate_Total
-  - categoryId: Flow
-    id: EUFA-SluiceGate
-  - categoryId: Flow
-    id: Flow.EUFA.TainterGate_Total
-  - categoryId: Flow
-    id: Flow.EUFA.EUFA Turbine_Total
-  - categoryId: Flow
-    id: Flow.EUFA.Gated_Total
-  - categoryId: Flow
-    id: EUFA-TainterGate
-  - categoryId: Flow
-    id: Flow.EUFA.Turbine_Total
-  - categoryId: Flow
-    id: Flow.EUFA.Pump_Out_Total
-  - categoryId: Flow
-    id: Flow.EUFA.Controlled
-  - categoryId: Flow
-    id: Flow.EUFA.Pump_Out_Below_Total
-  - categoryId: Flow
-    id: Flow.EUFA.Uncontrolled_Total
-  - categoryId: Flow
-    id: Flow.EUFA.Lock_Total
-  - categoryId: Flow
-    id: Flow.EUFA.Pump_In_Total
-  - categoryId: Flow
-    id: Flow.KEYS.TainterGate_Total
-  - categoryId: Flow
-    id: Flow.KEYS.SluiceGate_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Project_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Gated_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Turbine_Total
-  - categoryId: Flow
-    id: Flow.KEYS.LOW Flow_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Uncontrolled_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Pump_In_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Lock_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Pump_Out_Total
-  - categoryId: Flow
-    id: Flow.KEYS.Pump_Out_Below_Total
-  properties:
-  - categoryId: LOCATION TIME SERIES ASSOCIATION
-    all: true
-  - categoryId: LOCATION RATING ASSOCIATION
-    all: true
-  - categoryId: LOCATION LEVEL ASSOCIATION
-    all: true
+    projects:
+#      - id: KEYS
+#        enabled: true
+#        outlets:
+#          - id: KEYS-TG1
+#          - id: KEYS-TG2
+#          - id: KEYS-TG4
+#          - id: KEYS-TG6
+#          - id: KEYS-TG9
+#          - id: KEYS-TG10
+#          - id: KEYS-TG12
+#          - id: KEYS-TG14
+#          - id: KEYS-TG17
+#          - id: KEYS-SG2
+#          - id: KEYS-SG4
+#          - id: KEYS-SG7
+#          - id: KEYS-SG9
+#          - id: KEYS-LF1
+#          - id: KEYS-TG16
+#          - id: KEYS-SG1
+#          - id: KEYS-SG3
+#          - id: KEYS-SG5
+#          - id: KEYS-SG6
+#          - id: KEYS-SG8
+#          - id: KEYS-TG11
+#          - id: KEYS-TG13
+#          - id: KEYS-TG15
+#          - id: KEYS-TG18
+#          - id: KEYS-TG3
+#          - id: KEYS-TG5
+#          - id: KEYS-TG7
+#          - id: KEYS-TG8
+#        turbines:
+#          - id: KEYS-Turbine1
+#          - id: KEYS-Turbine2
+#        gateChanges:
+#          enabled: true
+#        turbineChanges:
+#          enabled: true
+#        clobs:
+#          - id: FLOW.KEYS.GATED_TOTAL
+#          - id: FLOW.KEYS.LOCK_TOTAL
+#          - id: FLOW.KEYS.LOW FLOW_TOTAL
+#          - id: FLOW.KEYS.PROJECT_TOTAL
+#          - id: FLOW.KEYS.PUMP_IN_TOTAL
+#          - id: FLOW.KEYS.PUMP_OUT_BELOW_TOTAL
+#          - id: FLOW.KEYS.PUMP_OUT_TOTAL
+#          - id: FLOW.KEYS.SLUICEGATE_TOTAL
+#          - id: FLOW.KEYS.TAINTERGATE_TOTAL
+#          - id: FLOW.KEYS.TURBINE_TOTAL
+#          - id: FLOW.KEYS.UNCONTROLLED_TOTAL
+#        ratings:
+#          - id: KEYS.Elev;Area.Linear.Production
+#            por: true
+#          - id: KEYS.Elev;Stor.Linear.Production
+#            por: true
+#        timeseries:
+#          - id: KEYS.Opening-Spillway_Gates.Inst.0.0.MANUAL
+#          - id: KEYS.Opening.Inst.0.0.MANUAL
+#          - id: KEYS.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: KEYS.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
+#          - id: KEYS.Precip-Inc.Total.~1Day.1Day.Ccp-Rev
+#          - id: KEYS.Flow-Navigation Out.Total.~1Day.1Day.Rev-Regi-Computed
+#          - id: KEYS.Count-Lockages.Total.~1Day.1Day.Rev-Manual
+#          - id: KEYS.Text.Inst.~1Day.0.Wcds-Rev
+#          - id: KEYS.Elev.Inst.1Hour.0.Decodes-Raw
+#          - id: KEYS.Elev.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw
+#          - id: KEYS.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Stor.Inst.1Hour.0.Ccp-Raw
+#          - id: KEYS.Stor.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted
+#          - id: KEYS.Temp-Air.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
+#          - id: KEYS.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed
+#          - id: KEYS.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: KEYS.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev
+#          - id: KEYS.%-Humidity.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Dir-Wind.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Speed-Wind.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Adjusted
+#          - id: KEYS.Flow-Res Out.Ave.~1Day.1Day.Rev-Regi-Flowgroup
+#          - id: KEYS.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
+#          - id: KEYS.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Computed
+#          - id: KEYS.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup
+#          - id: KEYS.Precip-Alt.Total.1Day.1Day.Decodes-Raw
+#          - id: KEYS.Dir-Wind.Inst.1Hour.0.Decodes-Raw
+#          - id: KEYS.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Speed-Wind.Inst.1Hour.0.Decodes-Raw
+#          - id: KEYS.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: KEYS.Code-Lake Condition.Inst.1Day.0.Wcds-Obs
+#          - id: KEYS.Evap-Pan.Total.1Day.0.wcds-obs
+#          - id: KEYS.Temp-Air.Inst.1Hour.0.Decodes-Raw
+#          - id: KEYS.%-Humidity.Inst.1Hour.0.Decodes-Raw
+#          - id: KEYS.Code-Weather Condition.Inst.1Day.0.Wcds-Obs
+#        locationLevels:
+#          - id: KEYS.Coeff.Inst.0.Pan Evaporation Multiplier
+#            por: true
+#      - id: EUFA
+#        enabled: true
+#        locations:
+#          - id: EUFA-Dam
+#        outlets:
+#          - id: EUFA-SG1
+#          - id: EUFA-TG1
+#          - id: EUFA-TG2
+#          - id: EUFA-TG3
+#          - id: EUFA-TG4
+#          - id: EUFA-TG5
+#          - id: EUFA-TG6
+#          - id: EUFA-TG7
+#          - id: EUFA-TG8
+#          - id: EUFA-TG9
+#          - id: EUFA-TG10
+#          - id: EUFA-TG11
+#        turbines:
+#          - id: EUFA-Turbine1
+#          - id: EUFA-Turbine2
+#          - id: EUFA-Turbine3
+#        gateChanges:
+#          enabled: true
+#        turbineChanges:
+#          enabled: true
+#        clobs:
+#          - id: FLOW.EUFA.CONTROLLED
+#          - id: FLOW.EUFA.EUFA TURBINE_TOTAL
+#          - id: FLOW.EUFA.GATED_TOTAL
+#          - id: FLOW.EUFA.LOCK_TOTAL
+#          - id: FLOW.EUFA.PROJECT_TOTAL
+#          - id: FLOW.EUFA.PUMP_IN_TOTAL
+#          - id: FLOW.EUFA.PUMP_OUT_BELOW_TOTAL
+#          - id: FLOW.EUFA.PUMP_OUT_TOTAL
+#          - id: FLOW.EUFA.SLUICEGATE_TOTAL
+#          - id: FLOW.EUFA.TAINTERGATE_TOTAL
+#          - id: FLOW.EUFA.TURBINE_TOTAL
+#          - id: FLOW.EUFA.UNCONTROLLED_TOTAL
+#        locationLevels:
+#          - id: EUFA-Dam.Elev.Inst.0.Top of Flood
+#            por: true
+#        ratings:
+#          - id: EUFA.Elev;Area.Linear.Production
+#            por: true
+#          - id: EUFA.Elev;Stor.Linear.Production
+#            por: true
+#        timeseries:
+#          - id: EUFA.Opening.Inst.0.0.MANUAL
+#          - id: EUFA.Dir-Wind.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Speed-Wind.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Flow-Navigation Out.Total.~1Day.1Day.Rev-Regi-Computed
+#          - id: EUFA.Count-Lockages.Total.~1Day.1Day.Rev-Manual
+#          - id: EUFA.Text.Inst.~1Day.0.Wcds-Rev
+#          - id: EUFA.Elev.Inst.1Hour.0.Decodes-Raw
+#          - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw
+#          - id: EUFA.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Stor.Inst.1Hour.0.Ccp-Raw
+#          - id: EUFA.Stor.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted
+#          - id: EUFA.Temp-Air.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed
+#          - id: EUFA.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev
+#          - id: EUFA.%-Humidity.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Adjusted
+#          - id: EUFA.Flow-Res Out.Ave.~1Day.1Day.Rev-Regi-Flowgroup
+#          - id: EUFA.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
+#          - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Computed
+#          - id: EUFA.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup
+#          - id: EUFA.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: EUFA.Precip-Inc.Total.~1Day.1Day.Ccp-Rev
+#          - id: EUFA.Precip-Alt.Total.1Day.1Day.Decodes-Raw
+#          - id: EUFA.Dir-Wind.Inst.1Hour.0.Decodes-Raw
+#          - id: EUFA.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Speed-Wind.Inst.1Hour.0.Decodes-Raw
+#          - id: EUFA.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: EUFA.Code-Lake Condition.Inst.1Day.0.Wcds-Obs
+#          - id: EUFA.Evap-Pan.Total.1Day.0.wcds-obs
+#          - id: EUFA.Temp-Air.Inst.1Hour.0.Decodes-Raw
+#          - id: EUFA.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
+#          - id: EUFA.%-Humidity.Inst.1Hour.0.Decodes-Raw
+#          - id: EUFA.Code-Weather Condition.Inst.1Day.0.Wcds-Obs
+#          - id: EUFA.Flow-Navigation Out.Total.~1Day.1Day.Rev-Regi-Computed
+#          - id: EUFA.Count-Lockages.Total.~1Day.1Day.Rev-Manual
+#          - id: EUFA.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
+#          - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Adjusted
+#          - id: EUFA.Flow-Res Out.Ave.~1Day.1Day.Rev-Regi-Flowgroup
+#          - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Computed
+#          - id: EUFA.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: EUFA.Precip-Inc.Total.~1Day.1Day.Ccp-Rev
+#          - id: EUFA.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
+      - id: FCOB
+        enabled: true
+        locations:
+#          - id: FCOB-Master Conservancy District Pump
+          - id: FCSO2
+#        outlets:
+#          - id: FCOB-CG1
+#          - id: FCOB-CG2
+#          - id: FCOB-LF1
+#          - id: FCOB-UC
+#        waterUsers:
+#          - id: Fort Cobb Reservoir Master Conservancy District
+#            contracts:
+#              - id: Master Conservancy District
+#                pumps:
+#                  - id: FCOB-Master Conservancy District Pump
+#                    type: OUT
+#                accounting:
+#                  enabled: false
+#        gateChanges:
+#          enabled: false
+#        clobs:
+#          - id: FLOW.FCOB.CONDUITGATE_TOTAL
+#          - id: FLOW.FCOB.GATED_TOTAL
+#          - id: FLOW.FCOB.LOCK_TOTAL
+#          - id: FLOW.FCOB.LOW FLOW_TOTAL
+#          - id: FLOW.FCOB.PROJECT_TOTAL
+#          - id: FLOW.FCOB.PUMP_IN_TOTAL
+#          - id: FLOW.FCOB.PUMP_OUT_BELOW_TOTAL
+#          - id: FLOW.FCOB.PUMP_OUT_TOTAL
+#          - id: FLOW.FCOB.TURBINE_TOTAL
+#          - id: FLOW.FCOB.UNCONTROLLED_TOTAL
+#          - id: FLOW.FCOB.UNCONTROLLEDSPILLWAY_TOTAL
+#        ratings:
+#          - id: FCOB.Elev;Area.Linear.Production
+#            por: true
+#          - id: FCOB.Elev;Stor.Linear.Production
+#            por: true
+#          - id: FCOB.Elev;Flow-Uncontrolled_Spillway.Linear.Production
+#            por: true
+#          - id: FCOB.%-Opening-Conduit_Gates,Elev;Flow-Conduit_Gates.Standard.Production
+#            por: true
+#          - id: FCOB.%-Opening-Low_Flow_Gates,Elev;Flow-Low_Flow_Gates.Standard.Production
+#            por: true
+#          - id: FCOB.Count-Conduit_Gates,Opening-Conduit_Gates,Elev;Flow-Conduit_Gates.Standard.Production
+#            por: true
+        timeseries:
+#          - id: FCSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet
+          - id: FCSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet
+          - id: FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet
+          - id: FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet
+#          - id: FCSO2.Dir-Wind.Inst.1Hour.0.Raw-Mesonet
+#          - id: FCOB.Flow-Navigation Out.Total.~1Day.1Day.Rev-Regi-Computed
+#          - id: FCOB.Count-Lockages.Total.~1Day.1Day.Rev-Manual
+#          - id: FCOB.Text.Inst.~1Day.0.Wcds-Rev
+#          - id: FCOB.Elev.Inst.1Hour.0.Decodes-Raw
+#          - id: FCOB.Elev.Inst.1Hour.0.Ccp-Rev
+#          - id: FCOB.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw
+#          - id: FCOB.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev
+#          - id: FCOB.Stor.Inst.1Hour.0.Ccp-Raw
+#          - id: FCOB.Stor.Inst.1Hour.0.Ccp-Rev
+#          - id: FCOB.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted
+#          - id: FCOB.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed
+#          - id: FCOB.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: FCOB.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev
+#          - id: FCOB.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Adjusted
+#          - id: FCOB.Flow-Res Out.Ave.~1Day.1Day.Rev-Regi-Flowgroup
+#          - id: FCOB.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
+#          - id: FCOB.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Computed
+#          - id: FCOB.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup
+#          - id: FCOB.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: FCOB.Precip-Inc.Total.~1Day.1Day.Ccp-Rev
+#          - id: FCOB.Precip-Alt.Total.1Day.1Day.Decodes-Raw
+#          - id: FCOB.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: FCOB.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: FCOB.Code-Lake Condition.Inst.1Day.0.Wcds-Obs
+#          - id: FCOB.Evap-Pan.Total.1Day.0.wcds-obs
+#          - id: FCOB.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
+#          - id: FCOB.Code-Weather Condition.Inst.1Day.0.Wcds-Obs
+#      - id: WEBB
+#        enabled: true
+#        outlets:
+#          - id: WEBB-TG1
+#          - id: WEBB-TG2
+#          - id: WEBB-TG3
+#          - id: WEBB-TG4
+#          - id: WEBB-TG5
+#          - id: WEBB-TG6
+#          - id: WEBB-TG7
+#          - id: WEBB-TG8
+#          - id: WEBB-TG9
+#          - id: WEBB-TG10
+#          - id: WEBB-TG11
+#          - id: WEBB-TG12
+#        turbines:
+#          - id: WEBB-Turbine1
+#          - id: WEBB-Turbine2
+#          - id: WEBB-Turbine3
+#        locks:
+#          - id: WEBB-Lock
+#        gateChanges:
+#          enabled: true
+#        turbineChanges:
+#          enabled: true
+#        clobs:
+#          - id: FLOW.WEBB.GATED_TOTAL
+#          - id: FLOW.WEBB.LOCK_TOTAL
+#          - id: FLOW.WEBB.PROJECT
+#          - id: FLOW.WEBB.PROJECT_T
+#          - id: FLOW.WEBB.PROJECT_TO
+#          - id: FLOW.WEBB.PROJECT_TOT
+#          - id: FLOW.WEBB.PROJECT_TOTA
+#          - id: FLOW.WEBB.PROJECT_TOTAL
+#          - id: FLOW.WEBB.PUMP_IN_TOTAL
+#          - id: FLOW.WEBB.PUMP_OUT_BELOW_TOTAL
+#          - id: FLOW.WEBB.PUMP_OUT_TOTAL
+#          - id: FLOW.WEBB.TURBINE_TOTAL
+#          - id: FLOW.WEBB.UNCONTROLLED_TOTAL
+#          - id: FLOW.WEBB.WEBB TURBINE_TOTAL
+#        ratings:
+#          - id: WEBB.Elev;Area.Linear.Production
+#            por: true
+#          - id: WEBB.Elev;Stor.Linear.Production
+#            por: true
+#          - id: WEBB.Opening-Spillway_Gates,Elev;Flow-Spillway_Gates.Standard.Production
+#            por: true
+#        timeseries:
+#          - id: WEBB-Lock.Flow-Navigation Out.Total.~1Day.1Day.Rev-Regi-Computed
+#          - id: WEBB-Lock.Count-Lockages.Total.~1Day.1Day.Rev-Manual
+#          - id: WEBB.Opening.Inst.0.0.MANUAL
+#          - id: WEBB.Flow-Navigation Out.Total.~1Day.1Day.Rev-Regi-Computed
+#          - id: WEBB.Count-Lockages.Total.~1Day.1Day.Rev-Manual
+#          - id: WEBB.Text.Inst.~1Day.0.Wcds-Rev
+#          - id: WEBB.Elev.Inst.1Hour.0.Decodes-Raw
+#          - id: WEBB.Elev.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw
+#          - id: WEBB.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Stor.Inst.1Hour.0.Ccp-Raw
+#          - id: WEBB.Stor.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted
+#          - id: WEBB.Temp-Air.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
+#          - id: WEBB.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed
+#          - id: WEBB.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: WEBB.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev
+#          - id: WEBB.%-Humidity.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Dir-Wind.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Speed-Wind.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Adjusted
+#          - id: WEBB.Flow-Res Out.Ave.~1Day.1Day.Rev-Regi-Flowgroup
+#          - id: WEBB.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Computed
+#          - id: WEBB.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup
+#          - id: WEBB.Evap.Total.~1Day.1Day.Ccp-Rev
+#          - id: WEBB.Precip-Inc.Total.~1Day.1Day.Ccp-Rev
+#          - id: WEBB.Precip-Alt.Total.1Day.1Day.Decodes-Raw
+#          - id: WEBB.Dir-Wind.Inst.1Hour.0.Decodes-Raw
+#          - id: WEBB.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Speed-Wind.Inst.1Hour.0.Decodes-Raw
+#          - id: WEBB.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev
+#          - id: WEBB.Code-Lake Condition.Inst.1Day.0.Wcds-Obs
+#          - id: WEBB.Evap-Pan.Total.1Day.0.wcds-obs
+#          - id: WEBB.Temp-Air.Inst.1Hour.0.Decodes-Raw
+#          - id: WEBB.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
+#          - id: WEBB.%-Humidity.Inst.1Hour.0.Decodes-Raw
+#          - id: WEBB.Code-Weather Condition.Inst.1Day.0.Wcds-Obs
+#    locationGroups:
+#      - categoryId: Flow
+#        id: Flow.EUFA.Project_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.SluiceGate_Total
+#      - categoryId: Flow
+#        id: EUFA-SluiceGate
+#      - categoryId: Flow
+#        id: Flow.EUFA.TainterGate_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.EUFA Turbine_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.Gated_Total
+#      - categoryId: Flow
+#        id: EUFA-TainterGate
+#      - categoryId: Flow
+#        id: Flow.EUFA.Turbine_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.Pump_Out_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.Controlled
+#      - categoryId: Flow
+#        id: Flow.EUFA.Pump_Out_Below_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.Uncontrolled_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.Lock_Total
+#      - categoryId: Flow
+#        id: Flow.EUFA.Pump_In_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.TainterGate_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.SluiceGate_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Project_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Gated_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Turbine_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.LOW Flow_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Uncontrolled_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Pump_In_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Lock_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Pump_Out_Total
+#      - categoryId: Flow
+#        id: Flow.KEYS.Pump_Out_Below_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Gated_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.UncontrolledSpillway_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Project_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.ConduitGate_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.LOW Flow_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Uncontrolled_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Lock_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Pump_Out_Below_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Pump_In_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Turbine_Total
+#      - categoryId: Flow
+#        id: Flow.FCOB.Pump_Out_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Project_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.WEBB Turbine_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Turbine_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Pump_Out_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Pump_Out_Below_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Pump_In_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Lock_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Uncontrolled_Total
+#      - categoryId: Flow
+#        id: Flow.WEBB.Gated_Total
+#    properties:
+#      - categoryId: LOCATION TIME SERIES ASSOCIATION
+#        all: true
+#      - categoryId: LOCATION RATING ASSOCIATION
+#        all: true
+#      - categoryId: LOCATION LEVEL ASSOCIATION
+#        all: true
