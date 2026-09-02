@@ -7,7 +7,6 @@ plugins {
 
 configurations {
     info
-    webjars
     docker
     baseLibs
     tomcatLibs
@@ -183,9 +182,6 @@ dependencies {
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
 
-    webjars(project(":cda-gui"))
-
-
     // override versions
     implementation(libs.bundles.overrides)
 
@@ -194,17 +190,7 @@ dependencies {
     implementation(libs.minio)
 }
 
-task extractWebJars(type: Copy) {
-    dependsOn configurations.webjars
-    from zipTree(configurations.webjars.singleFile)
-    into file("$buildDir/extra")
-    includeEmptyDirs false
-    includeEmptyDirs = false
-}
-
 war {
-    dependsOn extractWebJars
-    from "$buildDir/extra"
     from "src/resources/"
 
     manifest {
@@ -386,6 +372,11 @@ task prepareDockerBuild(type: Copy, dependsOn: war) {
         //include "${project.name}-${project.version}.jar"
         into "cda/webapps"
         rename(".*\\.war", "cwms-data.war")
+    }
+
+    from(project(":cda-gui").tasks.named("war")) {
+        into "cda/webapps"
+        rename(".*\\.war", "ROOT.war")
     }
 }
 
