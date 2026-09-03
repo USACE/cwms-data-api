@@ -9,14 +9,14 @@ import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-import cda_python
-from cda_python import ApiClient, Configuration
-from cda_python.api.offices_api import OfficesApi
-from cda_python.exceptions import ApiException
-from cda_python.models.office import Office
-from cda_python.models.time_series import TimeSeries
-from cda_python.models.abstract_rating_metadata import AbstractRatingMetadata
-from cda_python.models.expression_rating import ExpressionRating
+import cda
+from cda import ApiClient, Configuration
+from cda.api.offices_api import OfficesApi
+from cda.exceptions import ApiException
+from cda.models.office import Office
+from cda.models.time_series import TimeSeries
+from cda.models.abstract_rating_metadata import AbstractRatingMetadata
+from cda.models.expression_rating import ExpressionRating
 
 
 class ClientTest(unittest.TestCase):
@@ -63,9 +63,9 @@ class ClientTest(unittest.TestCase):
         distribution = importlib.metadata.distribution("cda-python")
         self.assertEqual(distribution.metadata["Name"].replace("_", "-"), "cda-python")
         self.assertTrue(distribution.version.startswith("0.1.0+"))
-        self.assertIn("site-packages", cda_python.__file__)
+        self.assertIn("site-packages", cda.__file__)
         self.assertTrue(any(item.startswith("pydantic") for item in distribution.requires))
-        for module in pkgutil.walk_packages(cda_python.__path__, "cda_python."):
+        for module in pkgutil.walk_packages(cda.__path__, "cda."):
             with self.subTest(module=module.name):
                 importlib.import_module(module.name)
 

@@ -1,7 +1,7 @@
 # cda-python
 
 Python SDK generated from the CWMS Data API (CDA) OpenAPI specification. Install
-the `cda-python` distribution and import `cda_python`. The SDK provides generated
+the `cda-python` distribution and import `cda`. The SDK provides generated
 API methods and models; higher-level workflows can wrap it separately.
 
 This follows the [cwmsjs generator](../typescript): Gradle exports the local CDA
@@ -50,8 +50,8 @@ python -m pip install /path/to/cda_python-<version>-py3-none-any.whl
 ```
 
 ```python
-from cda_python import ApiClient, Configuration
-from cda_python.api.offices_api import OfficesApi
+from cda import ApiClient, Configuration
+from cda.api.offices_api import OfficesApi
 
 config = Configuration(host="https://cwms-data.usace.army.mil/cwms-data")
 with ApiClient(config) as client:
