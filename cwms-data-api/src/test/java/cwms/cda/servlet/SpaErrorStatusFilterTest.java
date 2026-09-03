@@ -34,6 +34,8 @@ class SpaErrorStatusFilterTest {
     @ValueSource(strings = {
         "/api-keys",
         "/api-keys/",
+        "/api-keys/help",
+        "/api-keys/help/",
         "/data-query",
         "/filter-expressions",
         "/legacy-format",

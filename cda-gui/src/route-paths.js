@@ -1,6 +1,7 @@
 // Routes are defined here to allow building a sitemap dynamically
 export const routePaths = [
   { id: "api-keys", path: "api-keys" },
+  { id: "api-key-help", path: "api-keys/help" },
   {
     id: "home",
     index: true,

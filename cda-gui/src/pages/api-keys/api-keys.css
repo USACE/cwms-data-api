@@ -1,4 +1,4 @@
-/* Keep the shared modal panel within narrow screens, including code examples. */
+/* Keep the shared key-management dialogs within narrow screens. */
 .api-key-dialog [id^="headlessui-dialog-panel"] {
   width: 100%;
   min-width: 0;
