@@ -44,11 +44,12 @@ import org.jooq.exception.DataAccessException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.udt.records.PROJECT_OBJ_T;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -57,7 +58,7 @@ import java.time.Instant;
 
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
@@ -66,6 +67,9 @@ final class TurbineControllerIT extends DataApiTestIT {
     private static final String OFFICE = TestAccounts.KeyUser.SWT_NORMAL.getOperatingOffice();
     private static final Location PROJECT_LOC;
     private static final Turbine TURBINE;
+    private static final String OFFICE_ID = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     static {
         try(InputStream projectStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/project_location_turb.json");
             InputStream turbineStream = TurbineControllerIT.class.getResourceAsStream("/cwms/cda/api/turbine_phys.json")) {
@@ -79,7 +83,7 @@ final class TurbineControllerIT extends DataApiTestIT {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE);
@@ -89,7 +93,7 @@ final class TurbineControllerIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE);
@@ -98,8 +102,9 @@ final class TurbineControllerIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_get_create_delete() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_get_create_delete(String format) {
 
         // Structure of test:
         // 1)Create the Turbine
@@ -123,12 +128,15 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Turbine successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo("PROJ_TURB_PHYS"))
         ;
         String office = TURBINE.getLocation().getOfficeId();
         // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -155,13 +163,16 @@ final class TurbineControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Turbine successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(TURBINE.getLocation().getName()))
         ;
 
         // Retrieve a Turbine and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
         .when()
             .redirects().follow(true)
@@ -214,8 +225,9 @@ final class TurbineControllerIT extends DataApiTestIT {
         ;
     }
 
-    @Test
-    void test_get_all() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_get_all(String format) {
 
         // Structure of test:
         // 1)Create the Turbine
@@ -238,12 +250,15 @@ final class TurbineControllerIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Turbine successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo("PROJ_TURB_PHYS"))
         ;
         String office = TURBINE.getLocation().getOfficeId();
         // Retrieve the Turbine and assert that it exists
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, TURBINE.getProjectId().getName())
         .when()
@@ -271,7 +286,10 @@ final class TurbineControllerIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID, equalTo(OFFICE))
+            .body(MESSAGE, equalTo("Turbine successfully deleted from CWMS"))
+            .body(IDENTIFIER, equalTo(TURBINE.getLocation().getName()))
         ;
     }
 

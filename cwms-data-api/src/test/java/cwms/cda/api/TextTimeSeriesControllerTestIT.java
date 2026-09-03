@@ -24,35 +24,39 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.CLOB_ID;
+import static cwms.cda.api.Controllers.VERSION_DATE;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static io.restassured.RestAssured.given;
 import static java.util.stream.Collectors.toMap;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.isEmptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
-import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
+import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import cwms.cda.helpers.DateUtils;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ResponseBody;
-import io.restassured.response.ValidatableResponse;
-
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
@@ -68,6 +72,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 
 @Tag("integration")
@@ -88,7 +94,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     private static String LARGE_STRING;
 
     @BeforeAll
-    public static void create() throws Exception {
+    static void create() throws Exception {
         createLocation(locationId, true, OFFICE);
 
         createTimeseries(OFFICE, tsId, 0);  // offset needs to be valid for 1Hour
@@ -110,24 +116,20 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     }
 
     @BeforeEach
-    public void load_data() throws Exception {
+    void load_data() throws Exception {
 
         loadSqlDataFromResource(REG_LOAD_RESOURCE);
     }
 
     @AfterEach
-    public void deload_data() throws Exception {
+    void deload_data() throws Exception {
         loadSqlDataFromResource(REG_DELETE_RESOURCE);
 
     }
 
-
-
-    @Test
-    void test_create_regular() throws Exception {
-
-
-
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_regular(String format) throws Exception {
         // The basic structure of the test is to:
         // 1.  make sure the row doesn't exist
         // 2.  create/store the row
@@ -138,22 +140,22 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-01-01T08:00:00Z";
         String endStr = "2005-01-01T14:00:00Z";
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
-                .queryParam(Controllers.BEGIN,startStr)
-                .queryParam(Controllers.END,endStr)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/text")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .body("standard-text-values", nullValue())
-                .body("regular-text-values", is(empty()))
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", is(empty()))
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         // create
         InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_create_reg.json");
@@ -163,41 +165,187 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
 
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header(AUTHORIZATION, user.toHeaderValue())
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .post("/timeseries/text")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_CREATED));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTHORIZATION, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
 
         //retrieve and verify
         given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
+            .body("regular-text-values.size()", equalTo(1))
+            .body("regular-text-values[0].text-value", equalTo("newly created text value"))
+            .statusCode(is(HttpServletResponse.SC_OK));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_create_local_regular_new_LRTS_identifier(String format) throws Exception {
+        // The basic structure of the test is to:
+        // 1.  make sure the row doesn't exist
+        // 2.  create/store the row
+        // 3.  retrieve the row and verify it is there
+        // 4.  delete the row
+        // 5.  retrieve the row again and verify it is gone
+        // 6.  attempt to store the row again with the same identifier
+        //     with the old LRTS identifier and verify it fails
+
+        // make sure it doesn't exist
+        String startStr = "2005-02-01T08:00:00Z";
+        String endStr = "2005-02-01T14:00:00Z";
+        String tsIdentifier = "TsTextTestLoc.Flow.Inst.1DayLocal.0.lrts-test";
+        var assertThat =
+            given()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
+                .accept(format)
                 .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
+                .queryParam(Controllers.NAME, tsIdentifier)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
+                .header(ApiServlet.IS_NEW_LRTS, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
                 .get("/timeseries/text")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .body("standard-text-catalog", nullValue())
-                .body("standard-text-values", nullValue())
-                .body("regular-text-values.size()", equalTo(1))
-                .body("regular-text-values[0].text-value", equalTo("newly created text value"))
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
 
+        // create
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/local_regular_text_ts.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTHORIZATION, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //retrieve and verify
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
+            .body("regular-text-values.size()", equalTo(1))
+            .body("regular-text-values[0].text-value", equalTo("newly created text value"))
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .header(AUTHORIZATION, user.toHeaderValue())
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.TEXT_MASK, "*")
+            .queryParam(Controllers.BEGIN, startStr)
+            .queryParam(Controllers.END, endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/text/" + tsIdentifier )
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .header(ApiServlet.IS_NEW_LRTS, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsIdentifier)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
+            .body("regular-text-values.size()", equalTo(0))
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        assertThat =
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(format)
+                .contentType(Formats.JSONV2)
+                .body(tsData)
+                .header(AUTHORIZATION, user.toHeaderValue())
+                .header(ApiServlet.IS_NEW_LRTS, false)
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/timeseries/text")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat();
+        if (getSchemaVersion() > SCHEMA_VERSION.V2025_07_01.numeric()) {
+            assertThat.statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+        } else {
+            assertThat.statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+        }
     }
 
     @Test
@@ -221,15 +369,15 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .body("standard-text-catalog", nullValue())
                 .body("standard-text-values", nullValue())
+                .body("regular-text-values", notNullValue())
                 .body("regular-text-values.size()", equalTo(5))
                 .statusCode(is(HttpServletResponse.SC_OK));
 
     }
 
-
-
-    @Test
-    void test_update_regular() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_update_regular(String format) throws Exception {
         // The basic structure of the test is to:
         // 1)retrieve and verify
         // 2)update
@@ -238,23 +386,24 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String endStr = "2005-01-01T07:00:00Z";
 
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
-                .queryParam(Controllers.BEGIN,startStr)
-                .queryParam(Controllers.END,endStr)
-                .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/text")
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .body("standard-text-catalog", nullValue())
-                .body("standard-text-values", nullValue())
-                .body("regular-text-values.size()", equalTo(5))
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
+            .body("regular-text-values.size()", equalTo(5))
+            .statusCode(is(HttpServletResponse.SC_OK));
 
 
         //2) update
@@ -264,47 +413,49 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         assertNotNull(tsData);
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .queryParam(TextTimeSeriesController.REPLACE_ALL, "true")
-                .contentType(Formats.JSONV2)
-                .body(tsData)
-                .header(AUTHORIZATION, user.toHeaderValue())
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .patch("/timeseries/text/" + tsId)
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .queryParam(TextTimeSeriesController.REPLACE_ALL, "true")
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header(AUTHORIZATION, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/timeseries/text/" + tsId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         //3)retrieve and verify
-        ValidatableResponse response = given()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .accept(Formats.JSONV2)
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
-                .queryParam(Controllers.BEGIN,startStr)
-                .queryParam(Controllers.END,endStr)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/text")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .body("standard-text-catalog", nullValue())
-                .body("standard-text-values", nullValue())
-                .body("regular-text-values.size()", equalTo(5))
-                .body("regular-text-values[0].text-value", equalTo("still great"))
-                .statusCode(is(HttpServletResponse.SC_OK));
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
+            .body("regular-text-values.size()", equalTo(5))
+            .body("regular-text-values[0].text-value", equalTo("still great"))
+            .statusCode(is(HttpServletResponse.SC_OK));
 
     }
 
 
-    @Test
-    void test_delete_regular() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_delete_regular(String format) {
         // Structure of the test is:
         // 1) retrieve some data and verify its there
         // 2) delete it
@@ -315,77 +466,77 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String startStr = "2005-01-01T03:00:00Z";
         String endStr = "2005-01-01T04:00:00Z";
 
-        ZonedDateTime startZdt = DateUtils.parseUserDate(startStr, "UTC");
-        ZonedDateTime endZdt = DateUtils.parseUserDate(endStr, "UTC");
 
         // 1)retrieve and verify
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
-                .queryParam(Controllers.BEGIN,startStr)
-                .queryParam(Controllers.END,endStr)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/text")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .body("standard-text-catalog", nullValue())
-                .body("standard-text-values", nullValue())
-                .body("regular-text-values.size()", equalTo(2))
-                // assert the first regular-text-value item is as expected
-                .body("regular-text-values[0].text-value", equalTo(EXPECTED_TEXT_VALUE))
-                .statusCode(is(HttpServletResponse.SC_OK));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
+            .body("regular-text-values.size()", equalTo(2))
+            // assert the first regular-text-value item is as expected
+            .body("regular-text-values[0].text-value", equalTo(EXPECTED_TEXT_VALUE))
+            .statusCode(is(HttpServletResponse.SC_OK));
 
         // Step 2: delete it
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .header(AUTHORIZATION, user.toHeaderValue())
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
-                .queryParam(Controllers.TEXT_MASK, "*")
-                .queryParam(Controllers.BEGIN, startStr)
-                .queryParam(Controllers.END, endStr)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .delete("/timeseries/text/" + tsId )
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .header(AUTHORIZATION, user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.TEXT_MASK, "*")
+            .queryParam(Controllers.BEGIN, startStr)
+            .queryParam(Controllers.END, endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .delete("/timeseries/text/" + tsId )
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
 
 
         // Step 3: retrieve it again and verify its gone
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .accept(Formats.JSONV2)
-                .queryParam(Controllers.OFFICE, OFFICE)
-                .queryParam(Controllers.NAME, tsId)
-                .queryParam(Controllers.BEGIN,startStr)
-                .queryParam(Controllers.END,endStr)
-            .when()
-                .redirects().follow(true)
-                .redirects().max(3)
-                .get("/timeseries/text")
-            .then()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .assertThat()
-                .body("standard-text-catalog", nullValue())
-                .body("standard-text-values", nullValue())
-                .body("regular-text-values.size()", equalTo(0))
-                .statusCode(is(HttpServletResponse.SC_OK));
-
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(Controllers.NAME, tsId)
+            .queryParam(Controllers.BEGIN,startStr)
+            .queryParam(Controllers.END,endStr)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/text")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .body("standard-text-catalog", nullValue())
+            .body("standard-text-values", nullValue())
+            .body("regular-text-values", notNullValue())
+            .body("regular-text-values.size()", equalTo(0))
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
 
-    @Test
-    void test_large_data_url() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_large_data_url(String format) throws Exception {
 
         // Structure of test:
         // 1)Retrieve a text time series and assert that it does not exist
@@ -397,7 +548,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         String endStr = "2005-01-01T14:00:00Z";
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN,startStr)
@@ -417,7 +568,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTHORIZATION, user.toHeaderValue())
@@ -433,7 +584,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         //retrieve and verify
         String valueUrl = given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsId)
             .queryParam(Controllers.BEGIN, startStr)
@@ -445,6 +596,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
+            .body("regular-text-values", notNullValue())
             .body("regular-text-values.size()", equalTo(1))
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("regular-text-values[0].text-value", is(nullValue()))
@@ -469,7 +621,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
         ResponseBody body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
+            .accept(format)
             .queryParams(params)
             .basePath("")
         .when()
@@ -480,7 +632,8 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
-            .header("Transfer-Encoding", equalTo("chunked"))
+            .header("Accept-Ranges", equalTo("bytes"))
+            .header("Content-Length", not(isEmptyOrNullString()))
             .contentType(equalTo("text/plain"))
             .extract()
             .response()

@@ -24,6 +24,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.data.dao.location.kind.OutletDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -74,7 +75,9 @@ public class VirtualOutletCreateController extends BaseHandler {
             DSLContext dsl = getDslContext(ctx);
             OutletDao dao = new OutletDao(dsl);
             dao.storeVirtualOutlet(virtualOutlet, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Outlet");
+            StatusResponse re = new StatusResponse(virtualOutlet.getVirtualOutletId().getOfficeId(),
+                    "Virtual Outlet successfully stored to CWMS.", virtualOutlet.getVirtualOutletId().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 }

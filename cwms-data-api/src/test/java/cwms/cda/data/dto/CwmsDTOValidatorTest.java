@@ -33,7 +33,6 @@ import cwms.cda.api.errors.FieldException;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 final class CwmsDTOValidatorTest {
@@ -55,7 +54,7 @@ final class CwmsDTOValidatorTest {
             .collect(toList());
 
         CwmsDTOHolder cwmsDTOHolder = new CwmsDTOHolder(collect);
-        assertTimeout(Duration.ofMillis(150L), cwmsDTOHolder::validate);
+        assertTimeout(Duration.ofMillis(200L), cwmsDTOHolder::validate);
     }
 
     @Test

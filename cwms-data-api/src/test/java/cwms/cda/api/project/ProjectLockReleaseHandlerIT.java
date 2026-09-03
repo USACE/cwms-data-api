@@ -52,7 +52,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
@@ -104,12 +105,13 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void test_release() throws SQLException {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_release(String format) throws SQLException {
 
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSON)
+            .accept(format)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
             .queryParam(LOCK_ID, lockId)
             .queryParam(Controllers.OFFICE, OFFICE)

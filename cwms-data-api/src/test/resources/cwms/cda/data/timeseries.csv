@@ -275,11 +275,11 @@ LRL,Mississinewa.Temp-Air.Max.1Day.1Day.lrldlb-raw,T,Mississinewa,null,null,m,nu
 LRL,Mississinewa.Temp-Air.Max.1Day.1Day.lrldlb-raw,T,Mississinewa,Corps Reservoir,712.0,ft,NGVD29,40.7166667,-85.9580556,NAD27,MississinewaLake,MississinewaLake,null,US/Eastern,Miami,IN
 LRL,Mississinewa.Temp-Air.Max.1Day.1Day.lrldlb-raw,T,Mississinewa,Corps Reservoir,217.01760000000002,m,NGVD29,40.7166667,-85.9580556,NAD27,MississinewaLake,MississinewaLake,null,US/Eastern,Miami,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,39.007222222222,-86.513333333333,null,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,UTC,Monroe,IN
-LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,00
+LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,Corps Reservoir,538.0,ft,NGVD29,39.0075,-86.5125,NAD27,Monroe Lake,MonroeLake,null,US/Eastern,Monroe,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,41.94,-83.44,null,Monroe Weather Station,null,null,US/Eastern,Monroe,MI
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,39.007222222222,-86.513333333333,null,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,MONROE LAKE NEAR HARRODSBURG,UTC,Monroe,IN
-LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,00
+LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,ft,null,null,null,null,Monroe,null,null,null,Unknown County or County N/A,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,Corps Reservoir,163.9824,m,NGVD29,39.0075,-86.5125,NAD27,Monroe Lake,MonroeLake,null,US/Eastern,Monroe,IN
 LRL,Monroe.Temp-Water.Inst.0.0.lrldlb-rev,T,Monroe,null,null,m,null,41.94,-83.44,null,Monroe Weather Station,null,null,US/Eastern,Monroe,MI
 LRL,MtCarmel.Precip.Inst.1Hour.0.LRGS-raw,T,MtCarmel,null,112.46510400000001,m,NAVD88,38.3983333,-87.75638889,NAD83,"WABASH RIVER AT MT. CARMEL, IL","WABASH RIVER AT MT. CARMEL, IL",null,US/Central,Wabash,IL
@@ -1648,8 +1648,8 @@ SWG,TBLT2.Stage.Inst.15Minutes.0.Decodes-Raw,T,TBLT2,lake level+rain,0.0,ft,NGVD
 SWG,TBLT2.Stage.Inst.15Minutes.0.Decodes-Raw,T,TBLT2,lake level+rain,0.0,ft,null,30.7952778,-94.18,NAD27,B. A. Steinhagen Lake,8040000 - B,"8040000 - B. A. Steinhagen Lk at Town Bluff, TX",US/Central,Unknown County or County N/A,TX
 SWG,TBLT2.Stage.Inst.15Minutes.0.Decodes-Raw,T,TBLT2,lake level+rain,0.0,m,null,30.7952778,-94.18,NAD27,B. A. Steinhagen Lake,8040000 - B,"8040000 - B. A. Steinhagen Lk at Town Bluff, TX",US/Central,Unknown County or County N/A,TX
 SWG,TBLT2.Stage.Inst.15Minutes.0.Decodes-Raw,T,TBLT2,lake level+rain,0.0,m,NGVD29,30.7952778,-94.18,null,B. A. Steinhagen Lake,B. A. Steinhagen Lake,"8040000 - B. A. Steinhagen Lk at Town Bluff, TX",US/Central,Tyler,TX
-SWG,TXKT2-CG1.Flow.Inst.1Hour.0.Decodes-Ratings,T,TXKT2-CG1,lake level,0.0,m,NVGD,33.3044444,-94.1605556,WGS130,Wright Patman Lk CG 1,null,null,US/Central,Unknown County or County N/A,TX
-SWG,TXKT2-CG1.Flow.Inst.1Hour.0.Decodes-Ratings,T,TXKT2-CG1,lake level,0.0,ft,NVGD,33.3044444,-94.1605556,WGS130,Wright Patman Lk CG 1,null,null,US/Central,Unknown County or County N/A,TX
+SWG,TXKT2-CG1.Flow.Inst.1Hour.0.Decodes-Ratings,T,TXKT2-CG1,lake level,0.0,m,NGVD,33.3044444,-94.1605556,WGS130,Wright Patman Lk CG 1,null,null,US/Central,Unknown County or County N/A,TX
+SWG,TXKT2-CG1.Flow.Inst.1Hour.0.Decodes-Ratings,T,TXKT2-CG1,lake level,0.0,ft,NGVD,33.3044444,-94.1605556,WGS130,Wright Patman Lk CG 1,null,null,US/Central,Unknown County or County N/A,TX
 SWG,TXKT2-CG1.Flow.Inst.1Hour.0.Decodes-Ratings,T,TXKT2-CG1,lake level,0.0,ft,NGVD29,33.3044444,-94.1605556,WGS130,Wright Patman Lk CG 1,Wright Patman Lk CG 1,null,US/Central,Cass,TX
 SWG,TXKT2-CG1.Flow.Inst.1Hour.0.Decodes-Ratings,T,TXKT2-CG1,lake level,0.0,m,NGVD29,33.3044444,-94.1605556,WGS130,Wright Patman Lk CG 1,Wright Patman Lk CG 1,null,US/Central,Cass,TX
 SWL,Beaver_Dam.Flow-In.Ave.1Hour.1Hour.CCP-Comp,T,Beaver_Dam,Corps Reservoir,0.0,ft,NGVD29,36.421283,-93.847617,WGS84,Beaver Dam,"White at Beaver Dam, AR - Platform Collects Pool Elevation, ","White at Beaver Dam, AR - Platform Collects Pool Elevation, Tailwater elevation, Precip, and Turbine generation/release data (HP,HT,PC,QA,QD,QH,VA,VD,VY)",America/Chicago,Carroll,AR

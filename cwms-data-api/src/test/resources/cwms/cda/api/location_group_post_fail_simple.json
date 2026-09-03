@@ -1,0 +1,10 @@
+{
+  "office-id": "SPK",
+  "id": "LocGroupPostFailGrp2",
+  "location-category": {
+    "office-id": "SPK",
+    "id": "LocGroupPostFailCat",
+    "description": "IntegrationTesting"
+  },
+  "description": "test group description"
+}

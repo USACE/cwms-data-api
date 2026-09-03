@@ -40,9 +40,12 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
@@ -87,9 +90,12 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             = buildProjectStructureLocation(PROJECT_2_ID.getName() + "-TG2", OUTLET_KIND);
     private static final Outlet NEW_RATED_OUTLET_UNCONTROLLED
             = buildTestOutlet(RATED_OUTLET_LOCATION_UNCONTROLLED, PROJECT_LOC, RATING_GROUP_UNCONTROLLED, RATING_SPEC_ID_UNCONTROLLED);
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         setupProject();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -114,7 +120,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
             DSLContext context = getDslContext(c, OFFICE_ID);
@@ -147,7 +153,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_2_OUTLET.getLocation().getName()));
 
         //Get the newly created outlet
         given()
@@ -178,8 +187,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
-        ;
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(RENAMED_CONDUIT_GATE.getOfficeId()))
+            .body(MESSAGE, equalTo("CWMS Outlet successfully renamed."))
+            .body(IDENTIFIER, equalTo(RENAMED_CONDUIT_GATE.getName()));
 
         //Fail to retrieve old outlet name
         given()
@@ -239,7 +250,11 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_RATED_OUTLET_UNCONTROLLED.getLocation().getName()))
+        ;
 
         // Get the outlet, assert that it has null rating spec id
         given()
@@ -340,7 +355,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-                .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(RATED_OUTLET_LOCATION_UNCONTROLLED.getOfficeId()))
+                .body(MESSAGE, equalTo("Outlet successfully deleted from CWMS."))
+                .body(IDENTIFIER, equalTo(RATED_OUTLET_LOCATION_UNCONTROLLED.getName()));
 
         // Delete the LocationGroup
         given()
@@ -388,7 +406,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_RATED_OUTLET_CONTROLLED.getLocation().getName()));
 
         // Get the outlet, assert that it has null rating spec id
         given()
@@ -489,7 +510,10 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(RATED_OUTLET_LOCATION_CONTROLLED.getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(RATED_OUTLET_LOCATION_CONTROLLED.getName()));
 
         // Delete the LocationGroup
         given()
@@ -538,8 +562,9 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
 
     }
 
-    @Test
-    void test_outlet_crud() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_outlet_crud(String format) throws Exception {
         // Structure of test:
         // 1)Create the Outlet - TG3 does not exist in the db.
         // 2)Retrieve the Outlet and assert that it exists
@@ -561,12 +586,15 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         //Get the newly created outlet
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
@@ -602,12 +630,15 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         //Get the newly modified outlet
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)
@@ -636,8 +667,11 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
             .delete("projects/outlets/" + NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getOfficeId()))
+            .body(MESSAGE, equalTo("Outlet successfully deleted from CWMS."))
+            .body(IDENTIFIER, equalTo(NEW_CONDUIT_GATE_1_OUTLET.getLocation().getName()));
 
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -648,7 +682,7 @@ class OutletControllerTestIT extends BaseOutletDaoIT {
         //Re-retrieve, and ensure it doesn't exist anymore.
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE_ID)
         .when()
             .redirects().follow(true)

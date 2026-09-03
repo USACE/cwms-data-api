@@ -92,7 +92,7 @@ final class TurbineTest {
 
     private Location buildTestLocation() {
         return new Location.Builder("TEST_LOCATION2", "TURBINE", ZoneId.of("UTC"),
-                50.0, 50.0, "NVGD29", "LRL")
+                50.0, 50.0, "NGVD29", "LRL")
                 .withElevation(10.0)
                 .withElevationUnits("m")
                 .withLocationType("SITE")

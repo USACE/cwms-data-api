@@ -24,7 +24,6 @@ import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
 
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.DeleteConflictException;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.LocationGroupDao;
@@ -44,6 +43,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -76,12 +76,15 @@ public class OutletDao extends JooqDao<Outlet> {
 
             LocationGroupDao locGroupDao = new LocationGroupDao(dsl);
             List<LocationGroup> groups = locGroupDao.getLocationGroups(config, null, officeId,
-                    null, Outlet.RATING_LOC_GROUP_CATEGORY, projectId);
-
-            return CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLETS(config, locRef)
-                                      .stream()
-                                      .map(struct -> mapToOutlet(struct, groups))
-                                      .collect(Collectors.toList());
+                null, Outlet.RATING_LOC_GROUP_CATEGORY, projectId);
+            var outlets = CWMS_OUTLET_PACKAGE.call_RETRIEVE_OUTLETS(config, locRef);
+            if(outlets == null)
+            {
+                return List.of();
+            }
+            return outlets.stream()
+                .map(struct -> mapToOutlet(struct, groups))
+                .collect(Collectors.toList());
         });
     }
 
@@ -282,14 +285,7 @@ public class OutletDao extends JooqDao<Outlet> {
                     unitSystem.getValue(), formatBool(startInclusive), formatBool(endInclusive), rowLimitBig);
 
             if (changeTab == null) {
-                throw new NotFoundException("No changes found for " + projectId.getOfficeId() + "."
-                        + projectId.getName()
-                + "\nStart time: " + startTime
-                + "\nEnd time: " + endTime
-                + "\nStart inclusive: " + startInclusive
-                + "\nEnd inclusive: " + endInclusive
-                + "\nUnit system: " + unitSystem
-                + "\nRow limit: " + rowLimit);
+                return Collections.emptyList();
             }
             return changeTab.stream().map(OutletDao::map).collect(Collectors.toList());
         });
@@ -344,7 +340,10 @@ public class OutletDao extends JooqDao<Outlet> {
     }
 
     private static GateChange map(GATE_CHANGE_OBJ_T change) {
-        List<GateSetting> settings = change.getSETTINGS().stream().map(OutletDao::map).collect(Collectors.toList());
+        GATE_SETTING_TAB_T settingsTable = change.getSETTINGS();
+        List<GateSetting> settings = settingsTable == null
+                                   ? new ArrayList<>()
+                                   : settingsTable.stream().map(OutletDao::map).collect(Collectors.toList());
         CwmsId projectId = LocationUtil.getLocationIdentifier(change.getPROJECT_LOCATION_REF());
         LookupType compType = LocationUtil.getLookupType(change.getDISCHARGE_COMPUTATION());
         return new GateChange.Builder().withProjectId(projectId)

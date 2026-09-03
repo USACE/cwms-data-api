@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Context cookies="true">
+<Context cookies="true" delegate="true">
     <Resource name="jdbc/CWMS3" auth="Container" type="javax.sql.DataSource"
               username="${CDA_JDBC_USERNAME}" password="${CDA_JDBC_PASSWORD}"
               url="${CDA_JDBC_URL}"
@@ -9,15 +9,14 @@
               minIdle="${CDA_POOL_MIN_IDLE}"
               validationQuery="select 1 from dual"
               validationQueryTimeout="1"              
-              removeAbandonedOnBorrow="true"
+              removeAbandoned="false"
               removeAbandonedTimeout="10"
               testOnBorrow="true"
               testOnConnect="true"
               testWhileIdle="true"
               timeBetweenEvictionRunsMillis="5000"
-              removeAbandonedOn="true"
               logValidationErrors="true"
-              suspectTimeout="15"
+              suspectTimeout="8"
               jdbcInterceptors="QueryTimeoutInterceptor(queryTimeout=600);StatementFinalizer(trace=true);StatementCache(callable=true);SlowQueryReport(threshold=5000);ResetAbandonedTimer"
               logAbandoned="true"
               maxAge="3600000"

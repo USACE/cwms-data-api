@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-public class AccessManagerTestIT extends DataApiTestIT {
+final class AccessManagerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ArgumentsSource(UserSpecSource.class)
@@ -69,10 +69,25 @@ public class AccessManagerTestIT extends DataApiTestIT {
                                 .render();
         assertNotNull(json);
 
+        //ensure the location doesn't exist before creation
+        try {
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType("application/json")
+                .queryParam("office", user.getOperatingOffice())
+                .spec(authSpec)
+            .when()
+                .delete(  "/locations/LOC_TEST")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true);
+        } catch (Exception ex) {}
+
+        //try to create the location
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
             .contentType("application/json")
             .queryParam("office", user.getOperatingOffice())
+            .queryParam("fail-if-exists", "false")
             .spec(authSpec)
             .body(json)
         .when()
@@ -80,7 +95,21 @@ public class AccessManagerTestIT extends DataApiTestIT {
         .then()
 			.log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-			.statusCode(is(HttpServletResponse.SC_OK));
+			.statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //cleanup location after creation
+        try {
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType("application/json")
+                .queryParam("office", user.getOperatingOffice())
+                .spec(authSpec)
+            .when()
+                .delete(  "/locations/LOC_TEST")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true);
+        } catch (Exception ex) {}
+
     }
 
     @ParameterizedTest

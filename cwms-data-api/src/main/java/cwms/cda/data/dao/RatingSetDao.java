@@ -27,48 +27,35 @@ package cwms.cda.data.dao;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.rating.RatingSpec;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
-import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
-import org.jooq.DSLContext;
-import org.jooq.exception.DataAccessException;
-import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
-
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
 
-public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
+import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
+import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
+import org.jetbrains.annotations.Nullable;
+import org.jooq.ConnectionRunnable;
+import org.jooq.DSLContext;
+import org.jooq.exception.DataAccessException;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_RATING_PACKAGE;
 
+
+public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     public RatingSetDao(DSLContext dsl) {
         super(dsl);
     }
 
     @Override
-    public void create(String ratingSetXml, boolean storeTemplate) throws IOException, RatingException {
-        try {
-            connection(dsl, c -> {
-                // can't exist if we are creating, if it exists use store
-                String office = extractOfficeId(ratingSetXml);
-                DSLContext context = getDslContext(c, office);
-                String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
-                        ratingSetXml, "T", storeTemplate ? "T" : "F");
-                if (errs != null && !errs.isEmpty())
-                {
-                    throw new DataAccessException(errs);
-                }
-            });
-        } catch (DataAccessException ex) {
-            Throwable cause = ex.getCause();
-            if (cause instanceof RatingException) {
-                throw (RatingException) cause;
-            }
-            throw new IOException("Failed to create Rating", ex);
-        }
+    public void create(String ratingSetXml, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException {
+        connection(dsl, connection -> storeWithDefaultDatum(ratingSetXml, replaceBaseCurve, true, vd, connection));
     }
 
     private static String extractOfficeId(String ratingSet) throws JsonProcessingException {
@@ -83,11 +70,31 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
         return office;
     }
 
+    private static String extractLocationId(String ratingSet) throws JsonProcessingException {
+        XmlMapper xmlMapper = new XmlMapper();
+        JsonNode node = xmlMapper.readTree(ratingSet);
+        List<JsonNode> values = node.findValues("location-id");
+        String location = "";
+        if (!values.isEmpty()) {
+            //Getting the last instance since the order is template, spec, rating
+            location = values.get(values.size() - 1).textValue();
+        }
+        return location;
+    }
+
+    @Override
+    public String retrieveLatestXML(String officeId, String specificationId) {
+        return connectionResult(dsl, c -> {
+            DSLContext context = getDslContext(c, officeId);
+            return CWMS_RATING_PACKAGE.call_RETRIEVE_EFF_RATINGS_XML_F(context.configuration(), specificationId,
+                    Timestamp.from(Instant.now()), Timestamp.from(Instant.now()), null, officeId);
+        });
+    }
+
     @Override
     public RatingSet retrieve(RatingSet.DatabaseLoadMethod method, String officeId,
                               String specificationId, Instant startZdt, Instant endZdt
     ) throws IOException, RatingException {
-
         final RatingSet[] retval = new RatingSet[1];
         try {
             final Long start;
@@ -110,9 +117,12 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
             RatingSet.DatabaseLoadMethod finalMethod = method;
 
-            connection(dsl, c -> retval[0] =
-                    RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
-                        specificationId, start, end, false));
+            connection(dsl, c -> {
+                setOffice(c, officeId);
+                retval[0] = RatingJdbcFactory.ratingSet(finalMethod, new RatingConnectionProvider(c), officeId,
+                                specificationId, start, end, false);
+            });
+
 
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
@@ -130,14 +140,20 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
     // store/update
     @Override
-    public void store(String ratingSetXml, boolean includeTemplate) throws IOException, RatingException {
+    public void store(String ratingSetXml, boolean replaceBaseCurve, VerticalDatum vd) throws IOException, RatingException {
+        connection(dsl, connection -> storeWithDefaultDatum(ratingSetXml, replaceBaseCurve, false, vd, connection));
+    }
+
+    private static void storeRatingSetXml(String ratingSetXml, boolean replaceBaseCurve, boolean failIfExists, Connection c) throws RatingException, IOException {
         try {
-            connection(dsl, c -> {
-                String office = extractOfficeId(ratingSetXml);
-                DSLContext context = getDslContext(c, office);
-                CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
-                        ratingSetXml, "F", includeTemplate ? "T" : "F");
-            });
+            String office = extractOfficeId(ratingSetXml);
+            DSLContext context = getDslContext(c, office);
+            String errs = CWMS_RATING_PACKAGE.call_STORE_RATINGS_XML__5(context.configuration(),
+                    ratingSetXml, formatBool(failIfExists), formatBool(replaceBaseCurve));
+            if (errs != null && !errs.isEmpty())
+            {
+                throw new DataAccessException("Failed to store Rating", new RatingException(errs));
+            }
         } catch (DataAccessException ex) {
             Throwable cause = ex.getCause();
             if (cause instanceof RatingException) {
@@ -147,11 +163,57 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
         }
     }
 
+    private void storeWithDefaultDatum(String ratingSetXml, boolean replaceBaseCurve, boolean failIfExists,
+                                       VerticalDatum vd, Connection connection) throws Throwable {
+        String office = extractOfficeId(ratingSetXml);
+        String locationId = extractLocationId(ratingSetXml);
+        DSLContext dslContext = getDslContext(connection, office);
+        if(vd != null) {
+            withLocalAndDefaultDatum(locationId, office, vd, dslContext, c -> storeRatingSetXml(ratingSetXml, replaceBaseCurve, failIfExists, c));
+        }
+        else {
+            storeRatingSetXml(ratingSetXml, replaceBaseCurve, failIfExists, connection);
+        }
+
+    }
+
+    protected void withLocalAndDefaultDatum(String locationId, String officeId, @Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
+        boolean localDatumAdded = false;
+        try {
+            //if converting to NAVD88 or NGVD29, we need to set the local datum to the native datum temporarily or the conversion will fail in the db
+            if(targetDatum == VerticalDatum.NAVD88 || targetDatum == VerticalDatum.NGVD29) {
+                String vertDatum = CWMS_LOC_PACKAGE.call_GET_VERTICAL_DATUM_INFO_F__2(dslContext.configuration(), locationId, "m", officeId);
+                if(vertDatum != null)
+                {
+                    XmlMapper xmlMapper = new XmlMapper();
+                    VerticalDatumInfo vdi = xmlMapper.readValue(vertDatum, VerticalDatumInfo.class);
+                    String nativeDatum = vdi.getNativeDatum();
+                    // Only set local datum temporarily if native datum is NAVD88 or NGVD29 to allow conversion
+                    // If native datum is unknown for some reason then just set to the target datum since there is no conversion needed anyways
+                    if(nativeDatum == null || nativeDatum.isBlank() || "UNKNOWN".equalsIgnoreCase(nativeDatum)) {
+                        CWMS_LOC_PACKAGE.call_SET_LOCAL_VERT_DATUM_NAME__2(dslContext.configuration(), locationId, targetDatum.toString(), "T", officeId);
+                        localDatumAdded = true;
+                    } else if(VerticalDatum.NAVD88 == VerticalDatum.getVerticalDatum(nativeDatum) || VerticalDatum.NGVD29 == VerticalDatum.getVerticalDatum(nativeDatum)) {
+                        CWMS_LOC_PACKAGE.call_SET_LOCAL_VERT_DATUM_NAME__2(dslContext.configuration(), locationId, nativeDatum, "T", officeId);
+                        localDatumAdded = true;
+                    }
+                }
+            }
+            withDefaultDatum(targetDatum, dslContext, cr);
+        } catch (IOException e) {
+            throw new DataAccessException("Failed to parse vertical datum info for location " + locationId, e);
+        } finally {
+            if(localDatumAdded) {
+                CWMS_LOC_PACKAGE.call_DELETE_LOCAL_VERT_DATUM_NAME__2(dslContext.configuration(), locationId, officeId);
+            }
+        }
+    }
+
     @Override
     public void delete(String officeId, String specificationId, Instant start, Instant end) {
         Timestamp startDate = new Timestamp(start.toEpochMilli());
         Timestamp endDate = new Timestamp(end.toEpochMilli());
-        dsl.connection(c->
+        dsl.connection(c ->
             CWMS_RATING_PACKAGE.call_DELETE_RATINGS(
                 getDslContext(c,officeId).configuration(), specificationId, startDate,
                 endDate, "UTC", officeId
@@ -170,15 +232,15 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
     }
 
     private static final class RatingConnectionProvider implements ConnectionProvider {
-        private final Connection c;
+        private final Connection conn;
 
-        private RatingConnectionProvider(Connection c) {
-            this.c = c;
+        private RatingConnectionProvider(Connection conn) {
+            this.conn = conn;
         }
 
         @Override
         public Connection getConnection() {
-            return c;
+            return conn;
         }
 
         @Override

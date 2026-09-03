@@ -31,7 +31,6 @@ import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
@@ -44,13 +43,14 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.binarytimeseries.TimeSeriesBinaryDao;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -59,40 +59,33 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public class BinaryTimeSeriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(BinaryTimeSeriesController.class.getName());
+public class BinaryTimeSeriesController extends BaseCrudHandler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Binary-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
     private static final String DEFAULT_BIN_TYPE_MASK = "*";
     public static final String BINARY_TYPE_MASK = "binary-type-mask";
-    private final MetricRegistry metrics;
+
 
 
     public BinaryTimeSeriesController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
     protected TimeSeriesBinaryDao getDao(DSLContext dsl) {
         return new TimeSeriesBinaryDao(dsl);
-    }
-
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
 
@@ -165,13 +158,16 @@ public class BinaryTimeSeriesController implements CrudHandler {
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, binaryTimeSeries);
-            ctx.result(result);
 
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (URISyntaxException | UnsupportedEncodingException ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (URISyntaxException | IOException ex) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                    "Failed to process request: " + ex.getLocalizedMessage(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
@@ -179,7 +175,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -232,8 +228,8 @@ public class BinaryTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String oldBinaryTimeSeriesId) {
-
+    public void update(@NotNull Context ctx, @NotNull String name) {
+        logUnusedPathParameter(ctx, NAME, "Body contains information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
@@ -276,7 +272,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
             tags = {TAG}
     )
     @Override
-    public void delete(@NotNull Context ctx, @NotNull String binaryTimeSeriesId) {
+    public void delete(@NotNull Context ctx, @NotNull String name) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             DSLContext dsl = getDslContext(ctx);
             String office = requiredParam(ctx, OFFICE);
@@ -289,7 +285,7 @@ public class BinaryTimeSeriesController implements CrudHandler {
 
             TimeSeriesBinaryDao dao = getDao(dsl);
 
-            dao.delete(office, binaryTimeSeriesId, mask, begin, end, version);
+            dao.delete(office, name, mask, begin, end, version);
 
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }

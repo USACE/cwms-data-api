@@ -1,54 +1,43 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
-import static cwms.cda.api.Controllers.ANY_MASK;
-import static cwms.cda.api.Controllers.BOTTOM_MASK;
-import static cwms.cda.api.Controllers.CURSOR;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.ID_MASK;
-import static cwms.cda.api.Controllers.INCLUDE_EXPLICIT;
-import static cwms.cda.api.Controllers.INCLUDE_IMPLICIT;
-import static cwms.cda.api.Controllers.NAME_MASK;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.PAGE;
-import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.POOL_ID;
-import static cwms.cda.api.Controllers.PROJECT_ID;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
-import static cwms.cda.api.Controllers.STATUS_501;
-import static cwms.cda.api.Controllers.TOP_MASK;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.PoolDao;
 import cwms.cda.data.dto.Pool;
 import cwms.cda.data.dto.Pools;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.logging.Logger;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-public class PoolController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(PoolController.class.getName());
+public final class PoolController implements CrudHandler {
+
+    static final String TAG = "Pools";
+
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int defaultPageSize = 100;
 
     private final MetricRegistry metrics;
@@ -84,6 +73,11 @@ public class PoolController implements CrudHandler {
                             + " in the request you are. This is an opaque value, and can be"
                             + " obtained from the 'next-page' value in the response."
             ),
+            @OpenApiParam(name = CURSOR, deprecated = true,
+                    description = "This end point can return a lot of data, this "
+                            + "identifies where in the request you are. This is an opaque"
+                            + " value, and can be obtained from the 'next-page' value in "
+                            + "the response. Deprecated, use " + PAGE + " instead."),
             @OpenApiParam(name = PAGE_SIZE,
                     type = Integer.class,
                     description =
@@ -97,10 +91,10 @@ public class PoolController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_501, description = "request format is not"
                             + " implemented")},
             description = "Returns Pools Data",
-            tags = {"Pools"})
+            tags = {TAG})
     @Override
     public void getAll(@NotNull Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL);){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);
@@ -137,12 +131,20 @@ public class PoolController implements CrudHandler {
 
             String result = Formats.format(contentType, pools);
 
-            ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
-        }
+            ctx.contentType(contentType.toString());
 
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Pools", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Pools");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 
     @OpenApi(
@@ -177,17 +179,17 @@ public class PoolController implements CrudHandler {
                             + "inputs provided the Location Category was not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
-            description = "Retrieves requested Pool", tags = {"Pools"})
+            description = "Retrieves requested Pool", tags = {TAG})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE);){
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             PoolDao dao = new PoolDao(dsl);
 
             // These are required
-            String office = ctx.queryParam(OFFICE);
-            String projectId = ctx.queryParam(PROJECT_ID);
+            String office = requiredParam(ctx, OFFICE);
+            String projectId = requiredParam(ctx, PROJECT_ID);
 
             // These are optional
             String bottomMask =
@@ -207,10 +209,7 @@ public class PoolController implements CrudHandler {
 
             if (pool == null) {
                 CdaError re = new CdaError("Unable to find pool based on parameters given");
-                logger.info(() -> {
-                    String fullUrl = ctx.fullUrl();
-                    return re + System.lineSeparator() + "for request " + fullUrl;
-                });
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
@@ -219,29 +218,120 @@ public class PoolController implements CrudHandler {
 
                 String result = Formats.format(contentType, pool);
 
-                ctx.result(result);
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Pool", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Pool");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+          requestBody = @OpenApiRequestBody(
+                content = {
+                      @OpenApiContent(from = Pool.class, type = Formats.JSONV2)
+                },
+                required = true),
+          queryParams = {
+                @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                      description = "Create will fail if provided ID already exists. Default: true"),
+                @OpenApiParam(name = CREATE_POOL_NAME, type = Boolean.class,
+                      description = "Create will create the pool name if it doesn't already exists. Default: true")
+          },
+          description = "Create CWMS Pool",
+          method = HttpMethod.POST,
+          tags = {TAG},
+          responses = {
+                @OpenApiResponse(status = STATUS_204, description = "Pool successfully stored to CWMS.")
+          }
+    )
     @Override
     public void create(@NotNull Context ctx) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        try (Timer.Context ignored = markAndTime(CREATE)) {
+            DSLContext dsl = getDslContext(ctx);
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class)
+                  .getOrDefault(true);
+            boolean createPoolName = ctx.queryParamAsClass(CREATE_POOL_NAME, Boolean.class)
+                  .getOrDefault(true);
+            String formatHeader = ctx.req.getContentType();
+            ContentType contentType = Formats.parseHeader(formatHeader, Pool.class);
+            Pool pool = Formats.parseContent(contentType, ctx.body(), Pool.class);
+            PoolDao dao = new PoolDao(dsl);
+            dao.createPool(pool, failIfExists, createPoolName);
+            StatusResponse re = new StatusResponse(pool.getPoolName().getOfficeId(),
+                  "Pool: " + pool.getPoolName().getPoolName() + " successfully created.",
+                  pool.getPoolName().getPoolName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
+        }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+          pathParams = {
+                @OpenApiParam(name = NAME, description = "Specifies the name of "
+                      + "the pool to be renamed."),
+          },
+          queryParams = {
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                      + "the pool to be renamed."),
+                @OpenApiParam(name = NAME, required = true, description = "Specifies the new pool name. ")
+          },
+          description = "Rename CWMS Pool",
+          method = HttpMethod.PATCH,
+          tags = {TAG},
+          responses = {
+                @OpenApiResponse(status = STATUS_204, description = "Pool successfully renamed in CWMS.")
+          }
+    )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+    public void update(@NotNull Context ctx, @NotNull String poolId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
+            String office = requiredParam(ctx, OFFICE);
+            String newName = requiredParam(ctx, NAME);
+            DSLContext dsl = getDslContext(ctx);
+            PoolDao dao = new PoolDao(dsl);
+            dao.renamePool(office, poolId, newName);
+            StatusResponse re = new StatusResponse(office, "Pool: " + poolId + " successfully renamed to: " + newName, newName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
+        }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+          pathParams = {
+                @OpenApiParam(name = NAME, description = "Specifies the name of "
+                      + "the pool to be deleted."),
+          },
+          queryParams = {
+                @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of "
+                      + "the pool to be deleted."),
+                @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the owning project of "
+                      + "the pool to be deleted.")
+          },
+          description = "Delete CWMS Pool",
+          method = HttpMethod.DELETE,
+          tags = {TAG},
+          responses = {
+                @OpenApiResponse(status = STATUS_200, description = "Pool successfully deleted from CWMS."),
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                      + "inputs provided the pool was not found.")
+          }
+    )
     @Override
-    public void delete(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+    public void delete(@NotNull Context ctx, @NotNull String poolId) {
+        try (Timer.Context ignored = markAndTime(DELETE)) {
+            DSLContext dsl = getDslContext(ctx);
+            PoolDao dao = new PoolDao(dsl);
+            String office = requiredParam(ctx, OFFICE);
+            String projectId = requiredParam(ctx, PROJECT_ID);
+            dao.deletePool(office, projectId, poolId);
+            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+        }
     }
 }

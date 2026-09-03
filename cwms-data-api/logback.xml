@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+<configuration>
+    <import class="ch.qos.logback.classic.encoder.JsonEncoder"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+    <import class="ch.qos.logback.core.FileAppender"/>
+    <variable name="LOG_LEVEL" value="${LOG_LEVEL:-FINE}"/>
+    <contextName>CWMS-Data-API</contextName>
+    <appender name="STDERR" class="ConsoleAppender">
+        <encoder class="JsonEncoder"/>
+        <target>System.err</target>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+
+    <appender name="OTEL-STDERR" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+        <appender-ref ref="STDERR"/>
+    </appender>
+
+
+    <appender name="FILE" class="FileAppender">
+        <encoder class="JsonEncoder"/>
+        <append>false</append>
+        <immediateFlush>true</immediateFlush>
+        <file>build/cda.jsonl</file>
+    </appender>
+
+    <appender name="OTEL-FILE" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+    <appender-ref ref="FILE"/>
+  </appender>
+
+    <appender name="FILE-PLAIN" class="FileAppender">
+        <encoder>
+        <!-- Format includes date, level, MDC userId, and message -->
+        <pattern>%d [%thread] %-5level - %X{traceId:-none} - %logger - %msg %ex %n</pattern>
+    </encoder>
+        <append>false</append>
+        <immediateFlush>true</immediateFlush>
+        <file>build/cda-plain.log</file>
+    </appender>
+
+    <logger name="cwms.cda" level="${LOG_LEVEL}"/>
+    <logger name="fixtures" level="${LOG_LEVEL}"/>
+    <logger name="org.apache" level="ERROR"/>
+
+    <root level="INFO">
+        <appender-ref ref="OTEL-STDERR"/>
+        <appender-ref ref="OTEL-FILE"/>
+        <appender-ref ref="FILE-PLAIN"/>
+    </root>
+</configuration>

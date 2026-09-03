@@ -30,6 +30,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.CwmsAuthException;
@@ -45,6 +46,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -90,12 +92,16 @@ public class ApiKeyController implements CrudHandler {
             if (ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
                 ctx.json(new CdaError(ex.getMessage(), true)).status(ex.getAuthFailCode());
             } else {
-                throw ex;
+                throw JooqDao.wrapException(ex);
             }
         }
     }
 
     @OpenApi(
+        pathParams = {
+                @OpenApiParam(name = "key-name", required = true,
+                        description = "Name of the specific key to get more information for. NOTE: Case-sensitive.")
+        },
         responses = @OpenApiResponse(
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
@@ -179,7 +185,7 @@ public class ApiKeyController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String arg1) {
-        throw new UnsupportedOperationException("Update is not implemented. Delete and create a new key.");
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
     
 }

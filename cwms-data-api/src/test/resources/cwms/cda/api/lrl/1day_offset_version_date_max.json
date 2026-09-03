@@ -1,0 +1,18 @@
+{
+  "name": "Buckhorn.Temp-Water.Inst.1Day.0.cda-version-test",
+  "office-id": "SPK",
+  "units": "F",
+  "version-date": 1594786000000,
+  "values": [
+    [
+      1675335600000,
+      35,
+      0
+    ],
+    [
+      1675422000000,
+      36,
+      0
+    ]
+  ]
+}

@@ -10,7 +10,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.api.enums.Nation;
+import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
@@ -18,8 +20,10 @@ import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 @JsonRootName("Location")
@@ -30,6 +34,7 @@ import java.util.function.Consumer;
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@FormattableWith(contentType = Formats.GEOJSON, formatter = OutputFormatter.DUMMY.class)
 public final class Location extends CwmsDTO {
     @JsonProperty(required = true)
     private final String name;
@@ -54,6 +59,8 @@ public final class Location extends CwmsDTO {
     private final String mapLabel;
     private final String boundingOfficeId;
     private final String elevationUnits;
+    @JsonInclude(JsonInclude.Include.NON_ABSENT)
+    private final List<LocationAlias> aliases;
 
     private Location() {
         this(new Builder(null, null, null, null, null,null, null));
@@ -83,6 +90,7 @@ public final class Location extends CwmsDTO {
         this.mapLabel = builder.mapLabel;
         this.boundingOfficeId = builder.boundingOfficeId;
         this.elevationUnits = builder.elevationUnits;
+        this.aliases = builder.aliases;
     }
 
     public String getName() {
@@ -173,6 +181,10 @@ public final class Location extends CwmsDTO {
         return boundingOfficeId;
     }
 
+    public Optional<List<LocationAlias>> getAliases() {
+        return Optional.ofNullable(aliases);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -182,6 +194,27 @@ public final class Location extends CwmsDTO {
             return false;
         }
         Location location = (Location) o;
+
+        if (location.getAliases().isPresent() && !getAliases().isPresent()) {
+            return false;
+        }
+        if (aliases != null) {
+            for (LocationAlias alias : aliases) {
+                boolean found = false;
+                if (location.getAliases().isPresent()) {
+                    for (LocationAlias alias2 : location.getAliases().get()) {
+                        if (alias.equals(alias2)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    return false;
+                }
+            }
+        }
+
         return Double.compare(location.getLatitude(), getLatitude()) == 0
                 && getActive() == location.getActive()
                 && getName().equals(location.getName())
@@ -212,7 +245,7 @@ public final class Location extends CwmsDTO {
                 getLocationType(), getLocationKind(), getNation(), getStateInitial(),
                 getCountyName(), getHorizontalDatum(), getPublishedLongitude(),
                 getPublishedLatitude(), getVerticalDatum(), getElevation(), getMapLabel(),
-                getBoundingOfficeId(), getOfficeId(), getElevationUnits());
+                getBoundingOfficeId(), getOfficeId(), getElevationUnits(), getAliases());
     }
 
     @Override
@@ -270,6 +303,7 @@ public final class Location extends CwmsDTO {
         private String mapLabel;
         private String boundingOfficeId;
         private String elevationUnits;
+        private List<LocationAlias> aliases;
         private static final String MISSING_NAME_ERROR_MSG = "Location name is a required field";
         private final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
@@ -328,6 +362,7 @@ public final class Location extends CwmsDTO {
             this.mapLabel = location.getMapLabel();
             this.boundingOfficeId = location.getBoundingOfficeId();
             this.elevationUnits = location.getElevationUnits();
+            this.aliases = location.getAliases().orElse(null);
             buildPropertyFunctions();
         }
 
@@ -506,6 +541,11 @@ public final class Location extends CwmsDTO {
             return this;
         }
 
+        public Builder withAliases(List<LocationAlias> aliases) {
+            this.aliases = aliases;
+            return this;
+        }
+
         public Location build() {
             return new Location(this);
         }
@@ -529,7 +569,9 @@ public final class Location extends CwmsDTO {
         validator.required(getTimezoneName(), "timezone-name");
         validator.required(getOfficeId(), "office-id");
         validator.required(getHorizontalDatum(), "horizontal-datum");
-        validator.required(getLongitude(), "longitude");
-        validator.required(getLatitude(), "latitude");
+        if (getName().split("-").length == 1) {
+            validator.required(getLongitude(), "longitude");
+            validator.required(getLatitude(), "latitude");
+        }
     }
 }

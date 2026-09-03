@@ -1,10 +1,17 @@
 package cwms.cda.data.dto.rating;
 
+import cwms.cda.data.dto.CwmsDTOBase;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlText;
 
-public class IndependentRoundingSpec {
+@JsonDeserialize(using = IndependentRoundingSpecDeserializer.class)
+public class IndependentRoundingSpec extends CwmsDTOBase {
+    @JacksonXmlProperty(isAttribute = true)
     private final Integer position;
 
+    @JacksonXmlText
     private final String value;
 
     public IndependentRoundingSpec(@JsonProperty("position") Integer position, @JsonProperty(

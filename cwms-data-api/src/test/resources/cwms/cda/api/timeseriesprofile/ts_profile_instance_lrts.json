@@ -1,0 +1,58 @@
+{
+  "time-series-profile": {
+    "location-id": {
+      "office-id": "SPK",
+      "name": "Sacramento River"
+    },
+    "description": "River near Sacramento",
+    "parameter-list": [
+      "Depth",
+      "Temp-Water"
+    ],
+    "key-parameter": "Temp-Water"
+  },
+  "parameter-columns": [
+    {
+      "parameter": "Temp",
+      "ordinal": 1,
+      "unit": "F"
+    },
+    {
+      "parameter": "Depth",
+      "ordinal": 2,
+      "unit": "m"
+    }
+  ],
+  "data-columns": [
+    {
+      "name": "value",
+      "ordinal": 1,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "quality",
+      "ordinal": 2,
+      "datatype": "java.lang.Integer"
+    }
+  ],
+  "time-series-list": {
+    "1568033337000": [
+      [98.3, 0],
+      [719.6, 0]
+    ],
+    "1568033359000": [
+      [92.7, 0],
+      []
+    ]
+  },
+  "location-time-zone": "UTC",
+  "version": "OBS",
+  "version-date": "2024-07-09T12:00:00Z",
+  "first-date": 1594296000000,
+  "last-date": 1752062400000,
+  "page-first-date": 1594296000000,
+  "page-last-date": 1752062400000,
+  "page": null,
+  "page-size": 50,
+  "total": 300
+}

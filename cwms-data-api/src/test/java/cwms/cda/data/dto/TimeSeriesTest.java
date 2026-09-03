@@ -1,11 +1,18 @@
 package cwms.cda.data.dto;
 
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +22,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import cwms.cda.formatters.xml.XMLv2;
 
+import java.util.List;
+
+import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -24,12 +34,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class TimeSeriesTest
-{
-
+public class TimeSeriesTest {
 	@Test
-	void testRoundtripJson() throws JsonProcessingException
-	{
+	void testRoundtripJson() throws JsonProcessingException {
 		TimeSeries ts = buildTimeSeries();
 
 		ObjectMapper om = buildObjectMapper();
@@ -51,8 +58,7 @@ public class TimeSeriesTest
 	}
 
 	@Test
-	void testRoundtripJsonVertical() throws JsonProcessingException
-	{
+	void testRoundtripJsonVertical() throws JsonProcessingException {
 		TimeSeries ts = buildTimeSeries(buildVerticalDatumInfo());
 
 		ObjectMapper om = buildObjectMapper();
@@ -75,26 +81,111 @@ public class TimeSeriesTest
 		assertEquals("NGVD-29", ts.getVerticalDatumInfo().getNativeDatum());
 	}
 
+    @Test
+    void testRoundtripWithLocalDatumName() throws JsonProcessingException {
+        VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
+                .withOffice("LRL").withUnit("m").withLocation("Buckhorn")
+                .withNativeDatum("NGVD-29").withElevation(230.7).withOffset(
+                        true, "NAVD-88", -.1666)
+                .withLocalDatumName("Castle Rock");
+
+        VerticalDatumInfo expectedVDI = builder.build();
+        TimeSeries ts = buildTimeSeries(expectedVDI);
+        ObjectMapper om = buildObjectMapper();
+        String tsBody = om.writeValueAsString(ts);
+        assertNotNull(tsBody);
+        TimeSeries ts2 = om.readValue(tsBody, TimeSeries.class);
+        assertNotNull(ts2);
+        VerticalDatumInfo actualVDI = ts2.getVerticalDatumInfo();
+        assertNotNull(actualVDI);
+        assertNotNull(actualVDI.getLocalDatumName());
+        assertEquals(expectedVDI.getLocalDatumName(), actualVDI.getLocalDatumName());
+    }
+
+
+	@Test
+	void testSerializerWithNulls() {
+		TimeSeries ts = buildTimeSeriesWithNulls();
+		String tsBody = Formats.format(new ContentType(Formats.JSONV2), ts);
+		assertNotNull(tsBody);
+	}
+
+    @Test
+    void testDeserializeVerticalDatum() throws IOException {
+        InputStream stream;
+
+        // verify that we can deserialize ts that don't have vertical datum info
+        stream = getClass().getClassLoader().getResourceAsStream(
+                "cwms/cda/api/timeseries/ts_no_vertical.json");
+        assertNotNull(stream);
+        String input = IOUtils.toString(stream, StandardCharsets.UTF_8);
+        ObjectMapper om = buildObjectMapper();
+
+        TimeSeries ts = om.readValue(input, TimeSeries.class);
+        assertNotNull(ts);
+        assertNull(ts.getVerticalDatumInfo());
+
+        // verify that we can deserialize ts that do have vertical datum inf
+        stream = getClass().getClassLoader().getResourceAsStream(
+                "cwms/cda/api/timeseries/ts_with_vertical.json");
+        assertNotNull(stream);
+         input = IOUtils.toString(stream, StandardCharsets.UTF_8);
+
+         ts = om.readValue(input, TimeSeries.class);
+        assertNotNull(ts);
+        assertNotNull(ts.getVerticalDatumInfo());
+
+    }
 
 	@NotNull
-	private TimeSeries buildTimeSeries()
-	{
+	private TimeSeries buildTimeSeries() {
 		return buildTimeSeries(null);
 	}
 
 	@NotNull
-	private TimeSeries buildTimeSeries(VerticalDatumInfo vdi)
-	{
+	private TimeSeries buildTimeSeries(VerticalDatumInfo vdi) {
 		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
 
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
-		ZonedDateTime versionDate = Instant.now().atZone(ZoneId.of("UTC"));
-		return new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, versionDate, null);
+		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
+		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, vdi, versionDate, null);
+		Instant startInst = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+		ts.addValue(Timestamp.from(startInst), 12.34567, 0);
+		ts.addValue(Timestamp.from(startInst.plusSeconds(60)), 12.34567, 0);
+		return ts;
 	}
 
-	VerticalDatumInfo buildVerticalDatumInfo()
-	{
+	private TimeSeries buildTimeSeriesWithNulls() {
+		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+
+		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
+		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
+		Instant startInst = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+		ts.addValue(Timestamp.from(startInst), 12.34567, 0);
+		ts.addValue(Timestamp.from(startInst.plusSeconds(60)), 12.34567, 0);
+		ts.addValue(Timestamp.from(startInst.plusSeconds(120)), null, 0);
+		return ts;
+	}
+
+	private TimeSeries buildTimeSeriesWithEntryDates() {
+		String tsId = "RYAN3.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST";
+
+		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime end = ZonedDateTime.parse("2021-06-22T14:00:00-07:00[PST8PDT]");
+		ZonedDateTime versionDate = ZonedDateTime.parse("2025-07-22T14:00:00-00:00[UTC]");
+		TimeSeries ts = new TimeSeries(null, -1, 0, tsId, "LRL", start, end, null, Duration.ZERO, null, versionDate, null);
+		Instant startInst = Instant.now().truncatedTo(ChronoUnit.MINUTES);
+
+		ts.addValue(Timestamp.from(startInst), 12.34567, 0, Timestamp.from(Instant.now()));
+		ts.addValue(Timestamp.from(startInst.plusSeconds(60)), 12.34567, 0, Timestamp.from(Instant.now()));
+		ts.addValue(Timestamp.from(startInst.plusSeconds(120)), null, 0, Timestamp.from(Instant.now()));
+		return ts;
+	}
+
+	VerticalDatumInfo buildVerticalDatumInfo() {
 		VerticalDatumInfo.Builder builder = new VerticalDatumInfo.Builder()
 				.withOffice("LRL").withUnit("m").withLocation("Buckhorn")
 				.withNativeDatum("NGVD-29").withElevation(230.7).withOffset(
@@ -103,8 +194,25 @@ public class TimeSeriesTest
 	}
 
 	@Test
-	void testFormatter()
-	{
+	void testColumns() {
+		TimeSeries ts = buildTimeSeries();
+
+		List<TimeSeries.Column> columnList = ts.getValueColumnsJSON();
+		assertNotNull(columnList);
+		assertEquals(3, columnList.size());
+	}
+
+	@Test
+	void testColumnsWithEntryDates() {
+		TimeSeries ts = buildTimeSeriesWithEntryDates();
+
+		List<TimeSeries.Column> columnList = ts.getValueColumnsJSON();
+		assertNotNull(columnList);
+		assertEquals(4, columnList.size());
+	}
+
+	@Test
+	void testFormatter() {
 		ZonedDateTime start = ZonedDateTime.parse("2021-06-21T14:00:00-07:00[PST8PDT]");
 		DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern(TimeSeries.ZONED_DATE_TIME_FORMAT);
 
@@ -120,8 +228,7 @@ public class TimeSeriesTest
 	}
 
 	@NotNull
-	public static ObjectMapper buildObjectMapper(ObjectMapper om)
-	{
+	public static ObjectMapper buildObjectMapper(ObjectMapper om) {
 		ObjectMapper retval = om.copy();
 
 		retval.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
@@ -133,8 +240,7 @@ public class TimeSeriesTest
 
 
 	@Test
-	void test_xml_value_columns()
-	{
+	void test_xml_value_columns() {
 		TimeSeries ts = buildTimeSeries();
 
 		XMLv2 xmlV2 = new XMLv2();

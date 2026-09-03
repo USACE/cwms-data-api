@@ -75,7 +75,7 @@ final class TurbineDaoIT extends DataApiTestIT {
     private static final Location TURBINE_LOC3 = buildTurbineLocation("TURB_LOC3dao2");
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         tearDown();
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
@@ -84,9 +84,9 @@ final class TurbineDaoIT extends DataApiTestIT {
                 try {
                     CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC), "T");
                     CWMS_PROJECT_PACKAGE.call_STORE_PROJECT(context.configuration(), buildProject(PROJECT_LOC2), "T");
-                    locationsDao.storeLocation(TURBINE_LOC1);
-                    locationsDao.storeLocation(TURBINE_LOC2);
-                    locationsDao.storeLocation(TURBINE_LOC3);
+                    locationsDao.storeLocation(TURBINE_LOC1, false);
+                    locationsDao.storeLocation(TURBINE_LOC2, false);
+                    locationsDao.storeLocation(TURBINE_LOC3, false);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -95,7 +95,7 @@ final class TurbineDaoIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void tearDown() throws Exception {
+    static void tearDown() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         databaseLink.connection(c -> {
                 DSLContext context = getDslContext(c, OFFICE);
@@ -246,7 +246,7 @@ final class TurbineDaoIT extends DataApiTestIT {
 
     private static Location buildProjectLocation(String projectId) {
         return new Location.Builder(projectId, "PROJECT", ZoneId.of("UTC"),
-            38.5613824, -121.7298432, "NVGD29", OFFICE)
+            38.5613824, -121.7298432, "NGVD29", OFFICE)
             .withElevation(10.0)
             .withElevationUnits("m")
             .withLocationType("SITE")
@@ -276,7 +276,7 @@ final class TurbineDaoIT extends DataApiTestIT {
 
     private static Location buildTurbineLocation(String locationId) {
         return new Location.Builder(locationId, "TURBINE", ZoneId.of("UTC"),
-            38.5613824, -121.7298432, "NVGD29", OFFICE)
+            38.5613824, -121.7298432, "NGVD29", OFFICE)
             .withElevation(10.0)
             .withElevationUnits("m")
             .withLocationType("SITE")

@@ -1,0 +1,104 @@
+package cwms.cda.api.rating;
+
+import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.RATING_ID_MASK;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.queryParamAsInstant;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
+import cwms.cda.data.dao.RatingSpecDao;
+import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.Formats;
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.time.Instant;
+import javax.servlet.http.HttpServletResponse;
+import org.jetbrains.annotations.NotNull;
+import org.jooq.DSLContext;
+
+public final class RatingEffectiveDatesController implements Handler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+    private final MetricRegistry metrics;
+    private final Histogram requestResultSize;
+    public RatingEffectiveDatesController(MetricRegistry metrics) {
+        this.metrics = metrics;
+        String className = this.getClass().getName();
+        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
+    }
+
+    private Timer.Context markAndTime() {
+        return Controllers.markAndTime(metrics, getClass().getName(), Controllers.GET_ALL);
+    }
+
+    @OpenApi(
+            queryParams = {
+                    @OpenApiParam(name = OFFICE_MASK, description =
+                            "Office Id used to filter the results."),
+                    @OpenApiParam(name = RATING_ID_MASK, description =
+                            "Spec Id used to filter the results. " +
+                            "Defaults to '*'"),
+                    @OpenApiParam(name = TIMEZONE,  description = "Specifies "
+                            + "the time zone of the values of the begin and end fields (unless "
+                            + "otherwise specified). If this field is not specified, "
+                            + "the default time zone of UTC shall be used."),
+                    @OpenApiParam(name = BEGIN, description = "The start of the time window"),
+                    @OpenApiParam(name = END,  description = "The end of the time window"),
+            },
+            responses = {
+                    @OpenApiResponse(status = STATUS_200, content = {
+                            @OpenApiContent(type = Formats.JSONV2, from = RatingEffectiveDatesMap.class)
+                    })
+            },
+            description = "Returns mapping of office -> spec id -> effective date-times for all matching offices and spec ids.",
+            tags = {RatingController.TAG}
+    )
+    @Override
+    public void handle(@NotNull Context ctx) throws Exception {
+        String officeIdMask = ctx.queryParam(OFFICE_MASK);
+        String specIdMask = ctx.queryParamAsClass(RATING_ID_MASK, String.class).getOrDefault("*");
+        Instant begin = queryParamAsInstant(ctx, BEGIN);
+        Instant end = queryParamAsInstant(ctx, END);
+        try (Timer.Context ignored = markAndTime()) {
+            DSLContext dsl = getDslContext(ctx);
+            RatingSpecDao dao = new RatingSpecDao(dsl);
+            RatingEffectiveDatesMap effectiveDatesForSpecs = dao.retrieveSpecEffectiveDates(officeIdMask, specIdMask, begin, end);
+
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, RatingEffectiveDatesMap.class);
+            ctx.contentType(contentType.toString());
+            String serialized = Formats.format(contentType, effectiveDatesForSpecs);
+            ctx.status(HttpServletResponse.SC_OK);
+            requestResultSize.update(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve rating effective dates", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve rating effective dates");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
+    }
+}

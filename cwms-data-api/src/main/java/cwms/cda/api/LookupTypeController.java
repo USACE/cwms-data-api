@@ -24,14 +24,30 @@
 
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
+import static cwms.cda.api.Controllers.CATEGORY;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PREFIX;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.LookupTypeDao;
 import cwms.cda.data.dto.LookupType;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -40,33 +56,19 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
-public final class LookupTypeController implements CrudHandler {
+public final class LookupTypeController extends BaseCrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     static final String TAG = "LookupTypes";
-    private final MetricRegistry metrics;
-
-    private final Histogram requestResultSize;
-
 
     public LookupTypeController(MetricRegistry metrics) {
-        this.metrics = metrics;
-        String className = this.getClass().getName();
-
-        requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
-    }
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+        super(metrics);
     }
 
     @OpenApi(
@@ -96,18 +98,24 @@ public final class LookupTypeController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, lookupTypes, LookupType.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
-            requestResultSize.update(serialized.length());
+            updateResultSize(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Lookup Types", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Lookup Types");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context context, @NotNull String s) {
-        try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
-        }
+        context.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -138,11 +146,16 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.storeLookupType(category, prefix, lookupType);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Lookup Type");
+            StatusResponse re = new StatusResponse(lookupType.getOfficeId(), "Lookup Type successfully stored to CWMS.",
+                    lookupType.getDisplayValue());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location type to update.")
+            },
             queryParams = {
                     @OpenApiParam(name = CATEGORY, required = true, description = "Specifies the category id of the lookup type to be updated."),
                     @OpenApiParam(name = PREFIX, required = true, description = "Specifies the prefix of the lookup type to be updated."),
@@ -156,11 +169,12 @@ public final class LookupTypeController implements CrudHandler {
             method = HttpMethod.PATCH,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully stored to CWMS.")
+                    @OpenApiResponse(status = STATUS_200, description = "Updated Lookup Type")
             }
     )
     @Override
     public void update(Context ctx, String name) {
+        logUnusedPathParameter(ctx, NAME, "Body has required information");
         String category = requiredParam(ctx, CATEGORY);
         String prefix = requiredParam(ctx, PREFIX);
         try (Timer.Context ignored = markAndTime(UPDATE)) {
@@ -170,11 +184,16 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.updateLookupType(category, prefix, lookupType);
-            ctx.status(HttpServletResponse.SC_OK).json("Updated Lookup Type");
+            StatusResponse re = new StatusResponse(lookupType.getOfficeId(), "Updated Lookup Type",
+                    lookupType.getDisplayValue());
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
     @OpenApi(
+            pathParams = {
+                    @OpenApiParam(name = NAME, required = true, description = "Specifies the location type to delete.")
+            },
             queryParams = {
                     @OpenApiParam(name = CATEGORY, required = true, description = "Specifies the category id of the lookup type to be deleted."),
                     @OpenApiParam(name = PREFIX, required = true, description = "Specifies the prefix of the lookup type to be deleted."),
@@ -184,7 +203,7 @@ public final class LookupTypeController implements CrudHandler {
             method = HttpMethod.DELETE,
             tags = {TAG},
             responses = {
-                    @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully deleted from CWMS."),
+                    @OpenApiResponse(status = STATUS_200, description = "Lookup Type successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of inputs provided the lookup type was not found.")
             }
     )
@@ -197,7 +216,8 @@ public final class LookupTypeController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LookupTypeDao dao = new LookupTypeDao(dsl);
             dao.deleteLookupType(category, prefix, officeId, displayValue);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(displayValue + " Deleted");
+            StatusResponse re = new StatusResponse(officeId, "Lookup Type successfully deleted from CWMS.", displayValue);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 

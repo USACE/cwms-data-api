@@ -3,16 +3,16 @@ name: Tagged Release
 on:
   push:
     tags:
+      # Allow an additional marker if multiple releases needed within a day.
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-dev[a-z]*'
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-test[a-z]*'
+      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[a-z]*'
       - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]'
-      - '[0-9][0-9][0-9][0-9].[0-9][0-9].[0-9][0-9]-[a-zA-Z0-9]+'
 jobs:
   release:
     uses: ./.github/workflows/release.yml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
-      registry: ${{ secrets.HEC_PUB_REGISTRY}}
-      registry_user: ${{ secrets.ALT_REG_USER }}
-      registry_password: ${{ secrets.ALT_REG_PASSWORD }}
     with:
       branch: ${{github.ref_name}}
       nightly: false

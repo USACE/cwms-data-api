@@ -1,5 +1,6 @@
 package cwms.cda.data.dao.timeseriesprofile;
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import static cwms.cda.data.dto.CwmsDTOPaginated.delimiter;
 import static cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor;
 import static org.jooq.impl.DSL.asterisk;
@@ -9,6 +10,7 @@ import static org.jooq.impl.DSL.min;
 import static org.jooq.impl.DSL.using;
 import static org.jooq.impl.DSL.val;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsDTOPaginated;
@@ -27,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
@@ -56,7 +57,7 @@ import usace.cwms.db.jooq.codegen.udt.records.TS_PROF_DATA_TAB_T;
 
 
 public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInstance> {
-    private static final Logger LOGGER = Logger.getLogger(TimeSeriesProfileInstanceDao.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final AV_TS_PROFILE_INST_TSV2 VIEW_TSV2 = AV_TS_PROFILE_INST_TSV2.AV_TS_PROFILE_INST_TSV2;
     private static final AV_TS_PROFILE_INST VIEW = AV_TS_PROFILE_INST.AV_TS_PROFILE_INST;
 
@@ -238,14 +239,14 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         if (page != null && !page.isEmpty()) {
             final String[] parts = CwmsDTOPaginated.decodeCursor(page);
 
-            LOGGER.fine("Decoded cursor");
-            LOGGER.finest(() -> {
+            logger.atFine().log("Decoded cursor");
+            logger.atFinest().log("%s", lazy(() -> {
                 StringBuilder sb = new StringBuilder();
                 for (String part : parts) {
                     sb.append(part).append("\n");
                 }
                 return sb.toString();
-            });
+            }));
 
             if (parts.length > 1) {
                 tsCursor = Timestamp.from(Instant.ofEpochMilli(Long.parseLong(parts[0])));
@@ -323,20 +324,20 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
         // Add the time windows conditions depending on the inclusive flags
         if (startInclusive && endInclusive) {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.ge(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.le(Timestamp.from(endTime)));
         } else if (!startInclusive && endInclusive) {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.le(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.greaterThan(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.le(Timestamp.from(endTime)));
         } else if (startInclusive) {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.ge(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.ge(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.lessThan(Timestamp.from(endTime)));
         } else {
             whereCondition = whereCondition
-                    .and(VIEW_TSV2.FIRST_DATE_TIME.greaterThan(Timestamp.from(startTime)))
-                    .and(VIEW_TSV2.LAST_DATE_TIME.lessThan(Timestamp.from(endTime)));
+                    .and(VIEW_TSV2.DATE_TIME.greaterThan(Timestamp.from(startTime)))
+                    .and(VIEW_TSV2.DATE_TIME.lessThan(Timestamp.from(endTime)));
         }
         Condition finalWhereCondition = whereCondition;
 
@@ -463,7 +464,7 @@ public class TimeSeriesProfileInstanceDao extends JooqDao<TimeSeriesProfileInsta
                 }
             }
             Result<?> lastRecord = result;
-            LOGGER.fine(lastRecord::toString);
+            logger.atFine().log(lastRecord.toString());
         }
 
         // Throw 404 if no results

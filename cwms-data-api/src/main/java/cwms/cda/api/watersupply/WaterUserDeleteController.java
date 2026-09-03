@@ -39,8 +39,8 @@ import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.JooqDao.DeleteMethod;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -49,11 +49,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterUserDeleteController extends WaterSupplyControllerBase implements Handler {
+public final class WaterUserDeleteController extends WaterSupplyControllerBase {
 
 
     public WaterUserDeleteController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(
@@ -81,11 +81,13 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase i
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
             DeleteMethod deleteMode = getDeleteMethod(ctx.queryParam(METHOD));
+            DeleteMethod method = deleteMode == null ? DeleteMethod.DELETE_KEY : deleteMode;
             String entityName = ctx.pathParam(WATER_USER);
             CwmsId location = CwmsId.buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.deleteWaterUser(location, entityName, deleteMode);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json("Water user deleted successfully.");
+            contractDao.deleteWaterUser(location, entityName, method);
+            StatusResponse re = new StatusResponse(office, "Water user deleted successfully.", entityName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

@@ -27,6 +27,8 @@ package cwms.cda.data.dao;
 import cwms.cda.data.dto.LocationCategory;
 import java.util.List;
 import java.util.Optional;
+
+import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.Record3;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
@@ -57,17 +59,17 @@ public final class LocationCategoryDao extends JooqDao<LocationCategory> {
         return dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
                 table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
                 .from(table)
-                .where(table.CAT_DB_OFFICE_ID.eq(officeId))
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId.toUpperCase()))
                 .fetch().into(LocationCategory.class);
     }
 
-    public Optional<LocationCategory> getLocationCategory(String officeId, String categoryId) {
+    public Optional<LocationCategory> getLocationCategory(@NotNull String officeId, String categoryId) {
         AV_LOC_CAT_GRP table = AV_LOC_CAT_GRP.AV_LOC_CAT_GRP;
 
          Record3<String, String, String> fetchOne = dsl.selectDistinct(table.CAT_DB_OFFICE_ID,
                 table.LOC_CATEGORY_ID, table.LOC_CATEGORY_DESC)
                 .from(table)
-                .where(table.CAT_DB_OFFICE_ID.eq(officeId)
+                .where(table.CAT_DB_OFFICE_ID.eq(officeId.toUpperCase())
                         .and(table.LOC_CATEGORY_ID.eq(categoryId)))
                 .fetchOne();
         return fetchOne != null ?

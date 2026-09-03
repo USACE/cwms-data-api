@@ -1,0 +1,12 @@
+{
+  "office-id": "SPK",
+  "name": "TsTextTestLoc.Flow.Inst.1DayLocal.0.lrts-test",
+  "version-date": -27079718400000,
+  "regular-text-values": [
+    {
+      "date-time":1107244800000,
+      "data-entry-date": 1749497269000,
+      "text-value":"newly created text value"
+    }
+  ]
+}

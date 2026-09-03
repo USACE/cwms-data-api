@@ -66,6 +66,7 @@ public class ProjectLockRevoke implements Handler {
             queryParams = {
                 @OpenApiParam(name = OFFICE, required = true,
                         description = "Specifies the office of the lock."),
+                @OpenApiParam(name = APPLICATION_ID, required = true, description = "Specifies the application id."),
                 @OpenApiParam(name = REVOKE_TIMEOUT, type = Integer.class,
                         description = "time in seconds to wait for existing lock to be revoked. Default: 10")
             },

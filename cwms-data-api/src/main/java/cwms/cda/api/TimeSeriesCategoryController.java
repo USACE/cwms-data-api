@@ -31,7 +31,9 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.formatters.ContentType;
@@ -45,16 +47,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class TimeSeriesCategoryController implements CrudHandler {
-    public static final Logger logger =
-            Logger.getLogger(TimeSeriesCategoryController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries Categories";
 
     private final MetricRegistry metrics;
@@ -77,18 +78,19 @@ public class TimeSeriesCategoryController implements CrudHandler {
                     + "timeseries category(ies) whose data is to be included in the response. If "
                     + "this field is not specified, matching timeseries category information from"
                     + " all offices shall be returned."),},
-            responses = {@OpenApiResponse(status = STATUS_200,
+            responses = {
+                @OpenApiResponse(status = STATUS_200,
                     content = {@OpenApiContent(isArray = true, from = TimeSeriesCategory.class,
                             type = Formats.JSON)
                     }),
-                    @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                            + "inputs provided the categories were not found."),
-                    @OpenApiResponse(status = STATUS_501, description = "request format is not "
-                            + "implemented")}, description = "Returns CWMS timeseries category "
-            + "Data", tags = {TAG})
+                @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
+                        + "inputs provided the categories were not found."),
+                @OpenApiResponse(status = STATUS_501, description = "request format is not "
+                        + "implemented")}, description = "Returns CWMS timeseries category "
+                        + "Data", tags = {TAG})
     @Override
-    public void getAll(Context ctx) {
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+    public void getAll(@NotNull Context ctx) {
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
@@ -101,12 +103,20 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
             String result = Formats.format(contentType, cats, TimeSeriesCategory.class);
 
-            ctx.result(result).contentType(contentType.toString());
             requestResultSize.update(result.length());
 
             ctx.status(HttpServletResponse.SC_OK);
-        }
+            ctx.contentType(contentType.toString());
 
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve TimeSeries Categories", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve TimeSeries Categories");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 
     @OpenApi(
@@ -132,8 +142,8 @@ public class TimeSeriesCategoryController implements CrudHandler {
                             + "implemented")},
             description = "Retrieves requested timeseries category", tags = {TAG})
     @Override
-    public void getOne(Context ctx, @NotNull String categoryId) {
-        try (final Timer.Context timeContext = markAndTime(GET_ONE)){
+    public void getOne(@NotNull Context ctx, @NotNull String categoryId) {
+        try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
@@ -146,18 +156,24 @@ public class TimeSeriesCategoryController implements CrudHandler {
             if (grp.isPresent()) {
                 String result = Formats.format(contentType, grp.get());
 
-                ctx.result(result).contentType(contentType.toString());
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
+                ctx.contentType(contentType.toString());
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find category based on parameters given");
-                logger.info(() -> re + System.lineSeparator() + "for request " + ctx.fullUrl());
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             }
-
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to process request to retrieve TimeSeries Category");
+            logger.atSevere().withCause(ex).log("%s", re);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(
@@ -170,13 +186,15 @@ public class TimeSeriesCategoryController implements CrudHandler {
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true"),
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                description = "Ignore null values in the request body. Default: true")
         },
         method = HttpMethod.POST,
         tags = {TAG}
     )
     @Override
-    public void create(Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)){
+    public void create(@NotNull Context ctx) {
+        try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.req.getContentType();
@@ -185,16 +203,48 @@ public class TimeSeriesCategoryController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
             TimeSeriesCategory deserialize = Formats.parseContent(contentType, body, TimeSeriesCategory.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
-            dao.create(deserialize, failIfExists);
+            dao.create(deserialize, failIfExists, ignoreNulls);
             ctx.status(HttpServletResponse.SC_CREATED);
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(
+        description = "Update existing TimeSeriesCategory. Allows for renaming of the category.",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(from = TimeSeriesCategory.class, type = Formats.JSON)
+            },
+            required = true),
+        pathParams = {
+            @OpenApiParam(name = CATEGORY_ID, required = true, description = "Specifies "
+                + "the original timeseries category to rename.")
+            },
+        queryParams = {
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                    description = "Ignore null values in the request body. Default: true")
+
+            },
+        method = HttpMethod.PATCH,
+        tags = {TAG}
+    )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String locationCode) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+    public void update(@NotNull Context ctx, @NotNull String categoryId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
+            DSLContext dsl = getDslContext(ctx);
+
+            String formatHeader = ctx.req.getContentType();
+            String body = ctx.body();
+
+            boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
+            TimeSeriesCategory deserialize = Formats.parseContent(contentType, body, TimeSeriesCategory.class);
+
+            TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);
+            dao.update(categoryId, deserialize, ignoreNulls);
+            ctx.status(HttpServletResponse.SC_OK);
+        }
     }
 
     @OpenApi(
@@ -212,8 +262,8 @@ public class TimeSeriesCategoryController implements CrudHandler {
         tags = {TAG}
     )
     @Override
-    public void delete(Context ctx, @NotNull String categoryId) {
-        try (Timer.Context ignored = markAndTime(UPDATE)){
+    public void delete(@NotNull Context ctx, @NotNull String categoryId) {
+        try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesCategoryDao dao = new TimeSeriesCategoryDao(dsl);

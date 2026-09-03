@@ -49,7 +49,13 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import org.jetbrains.annotations.Nullable;
-import org.jooq.*;
+import org.jooq.Condition;
+import org.jooq.Configuration;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Result;
+import org.jooq.SelectConditionStep;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.cwms_project.CAT_PROJECT;
 import usace.cwms.db.jooq.codegen.tables.AV_PROJECT;
@@ -136,6 +142,12 @@ public class ProjectDao extends JooqDao<Project> {
         final String cursorOffice;
         final String cursorProjectId;
         int total;
+
+        if(office != null){
+            office = office.toUpperCase();
+        }
+        String finalOffice = office;
+
         if (cursor == null || cursor.isEmpty()) {
             cursorOffice = null;
             cursorProjectId = null;
@@ -143,8 +155,8 @@ public class ProjectDao extends JooqDao<Project> {
             Condition whereClause =
                     JooqDao.caseInsensitiveLikeRegexNullTrue(AV_PROJECT.AV_PROJECT.PROJECT_ID,
                             projectIdMask);
-            if (office != null) {
-                whereClause = whereClause.and(AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(office));
+            if (finalOffice != null) {
+                whereClause = whereClause.and(AV_PROJECT.AV_PROJECT.OFFICE_ID.eq(finalOffice));
             }
 
             SelectConditionStep<Record1<Integer>> count =
@@ -162,13 +174,13 @@ public class ProjectDao extends JooqDao<Project> {
 
         // There are lots of ways the variables can be null or not so we need to build the query
         // based on the parameters.
-        String query = buildTableQuery(office, projectIdMask, cursorOffice != null || cursorProjectId != null);
+        String query = buildTableQuery(finalOffice, projectIdMask, cursorOffice != null || cursorProjectId != null);
 
         int finalPageSize = pageSize;
         List<Project> projs = connectionResult(dsl, c -> {
             List<Project> projects;
             try (PreparedStatement ps = c.prepareStatement(query)) {
-                fillTableQueryParameters(ps, cursorOffice, cursorProjectId, office, projectIdMask, finalPageSize);
+                fillTableQueryParameters(ps, cursorOffice, cursorProjectId, finalOffice, projectIdMask, finalPageSize);
 
                 try (ResultSet resultSet = ps.executeQuery()) {
                     projects = new ArrayList<>();
@@ -190,9 +202,13 @@ public class ProjectDao extends JooqDao<Project> {
         Project.Builder builder = new Project.Builder();
         String prjOffice = resultSet.getString(OFFICE_ID);
         String prjId = resultSet.getString(PROJECT_ID);
+        String publicName = resultSet.getString(PUBLIC_NAME);
+        String longName = resultSet.getString(LONG_NAME);
         Location prjLoc = new Location.Builder(prjOffice, prjId)
-                .withActive(null)
-                .build();
+              .withPublicName(publicName)
+              .withLongName(longName)
+              .withActive(null)
+              .build();
 
         builder.withLocation(prjLoc);
         builder.withAuthorizingLaw(resultSet.getString(AUTHORIZING_LAW));
@@ -423,73 +439,6 @@ public class ProjectDao extends JooqDao<Project> {
         }
 
         return retval;
-    }
-
-
-    /**
-     * Retrieves the locations associated with a project.
-     *
-     * @param office The office ID associated with the project.
-     * @return A list of Location objects representing the project's locations.
-     */
-    public List<Location> catProject(String office) {
-
-        return connectionResult(dsl, c -> {
-            Configuration conf = getDslContext(c, office).configuration();
-            CAT_PROJECT catProject = CWMS_PROJECT_PACKAGE.call_CAT_PROJECT(conf, office);
-
-            // catProject has two open ResultSets.
-            // Other places close the basin one we aren't using
-            // FYI basinRs here is a MockResultSet
-            // The MockResultSet.close() impl just sets its internal Result variable to null
-            // So I suspect that with jOOQ we don't actually have to "close" anything here.
-            ResultSet basinRs = catProject.getP_BASIN_CAT().intoResultSet();
-            if (basinRs != null && !basinRs.isClosed()) {
-                basinRs.close();
-            }
-
-            Result<Record> projectCatalog = catProject.getP_PROJECT_CAT();
-            return projectCatalog.map(this::buildLocation);
-        });
-    }
-
-    private Location buildLocation(Record r) {
-
-        String office = r.get(DB_OFFICE_ID, String.class);
-
-        String base = r.get(BASE_LOCATION_ID, String.class);
-        String sub = r.get(SUB_LOCATION_ID, String.class);
-        String name = getLocationId(base, sub);
-        Location.Builder builder = new Location.Builder(office, name);
-
-        String timeZoneName = r.get(TIME_ZONE_NAME, String.class);
-        if (timeZoneName != null) {
-            builder.withTimeZoneName(toZoneId(timeZoneName, name));
-        }
-        Double latitude = r.get(LATITUDE, Double.class);
-        if (latitude != null) {
-            builder.withLatitude(latitude);
-        }
-        Double longitude = r.get(LONGITUDE, Double.class);
-        if (longitude != null) {
-            builder.withLongitude(longitude);
-        }
-        String horizontalDatum = r.get(HORIZONTAL_DATUM, String.class);
-        if (horizontalDatum != null) {
-            builder.withHorizontalDatum(horizontalDatum);
-        }
-        builder.withElevation(r.get(ELEVATION, Double.class));
-        builder.withElevationUnits(r.get(ELEV_UNIT_ID, String.class));
-        builder.withVerticalDatum(r.get(VERTICAL_DATUM, String.class));
-        builder.withPublicName(r.get(PUBLIC_NAME, String.class));
-        builder.withLongName(r.get(LONG_NAME, String.class));
-        builder.withDescription(r.get(DESCRIPTION, String.class));
-        String activeStr = r.get(ACTIVE_FLAG, String.class);
-        if (activeStr != null) {
-            builder.withActive(parseBool(activeStr));
-        }
-
-        return builder.build();
     }
 
 }

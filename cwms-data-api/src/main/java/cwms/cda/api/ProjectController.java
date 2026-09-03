@@ -49,6 +49,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
@@ -65,13 +66,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.logging.Logger;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class ProjectController implements CrudHandler {
-    public static final Logger logger = Logger.getLogger(ProjectController.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int DEFAULT_PAGE_SIZE = 100;
     public static final String TAG = "Projects";
 
@@ -136,12 +137,18 @@ public class ProjectController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Projects.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, projects);
-            ctx.result(serialized);
+            ctx.contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
 
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error writing response");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(
@@ -177,10 +184,7 @@ public class ProjectController implements CrudHandler {
 
             if (project == null) {
                 CdaError re = new CdaError("Unable to find Project based on parameters given");
-                logger.info(() -> {
-                    String fullUrl = ctx.fullUrl();
-                    return re + System.lineSeparator() + "for request " + fullUrl;
-                });
+                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
                 ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
             } else {
                 String formatHeader = ctx.header(Header.ACCEPT);
@@ -189,11 +193,18 @@ public class ProjectController implements CrudHandler {
 
                 String result = Formats.format(contentType, project);
 
-                ctx.result(result);
+                ctx.contentType(contentType.toString());
+                ctx.status(HttpServletResponse.SC_OK);
                 requestResultSize.update(result.length());
 
-                ctx.status(HttpServletResponse.SC_OK);
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error writing response");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 
@@ -234,8 +245,8 @@ public class ProjectController implements CrudHandler {
             @OpenApiParam(name = NAME, description = "The name of the project to be renamed"),
         },
         queryParams = {
-            @OpenApiParam(name = NAME, description = "The new name of the project"),
-            @OpenApiParam(name = OFFICE, description = "The office of the project to be renamed"),
+            @OpenApiParam(name = NAME, required = true, description = "The new name of the project"),
+            @OpenApiParam(name = OFFICE, required = true, description = "The office of the project to be renamed"),
         },
         requestBody = @OpenApiRequestBody(
             content = {

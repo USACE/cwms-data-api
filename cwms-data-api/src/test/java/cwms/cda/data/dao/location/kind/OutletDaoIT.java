@@ -192,7 +192,7 @@ class OutletDaoIT extends BaseOutletDaoIT {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(context);
             locationsDao.deleteLocation(TG_LOC4_ID.getName(), TG_LOC4_ID.getOfficeId(), true);
             try {
-                locationsDao.storeLocation(TAINTER_GATE_3_LOC);
+                locationsDao.storeLocation(TAINTER_GATE_3_LOC, false);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

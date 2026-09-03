@@ -1,13 +1,30 @@
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.BOUNDING_OFFICE_LIKE;
-import static cwms.cda.api.Controllers.EXCLUDE_EMPTY;
-import static cwms.cda.api.Controllers.LIKE;
-import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_GROUP_LIKE;
-import static cwms.cda.api.Controllers.LOCATION_KIND_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.TIMESERIES_GROUP_LIKE;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import static cwms.cda.api.Controllers.*;
+import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.basin.Basin;
+import cwms.cda.data.dto.catalog.TimeSeriesAlias;
+import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.data.dto.stream.Stream;
+import cwms.cda.formatters.ContentType;
+import cwms.cda.formatters.json.JsonV2;
+import fixtures.MinimumSchema;
+import fixtures.TestAccounts;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dao.DeleteRule;
@@ -19,6 +36,8 @@ import java.sql.SQLException;
 import java.time.Duration;
 
 import java.time.ZoneId;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,6 +50,8 @@ import static io.restassured.RestAssured.*;
 
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.Matchers.*;
 
@@ -38,6 +59,7 @@ import static org.hamcrest.Matchers.*;
 public class CatalogControllerTestIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
+    private static final TestAccounts.KeyUser USER = TestAccounts.KeyUser.SPK_NORMAL;
 
     //// These have to match the groups in ts_catalog_setup.sql
     public static final String A_TO_M = "A to M";
@@ -47,7 +69,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     ////
 
     @BeforeAll
-    public static void setup_data() throws Exception {
+    static void setup_data() throws Exception {
         // Create some locations and create some ts.
         createLocation("Alder Springs",true, OFFICE);
         createLocation("Wet Meadows",true, OFFICE);
@@ -55,6 +77,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         createLocation("Flat Lake",true, OFFICE);
 
         createProject("Flat Project", OFFICE);
+        createProject("Paonia", OFFICE);
         createTimeseries(OFFICE,"Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
         createTimeseries(OFFICE,"Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
         createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
@@ -71,7 +94,30 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         // Complicated
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_setup.sql");
 
+        loadSqlDataFromResource("cwms/cda/data/sql/location_catalog_setup.sql");
 
+        InputStream resource = DataApiTestIT.class.getClassLoader().getResourceAsStream("cwms/cda/api/template_num_ts_create.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        assertNotNull(tsData);
+        tsData = tsData.replace("{OFFICE}", OFFICE)
+            .replace("{TSID}", "Wet Meadows.Depth-SWE.Inst.15Minutes.0.four")
+            .replace("{UNITS}", "ft")
+            .replace("{VERSION_DATE}", Instant.now().truncatedTo(ChronoUnit.MINUTES).toString());
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", USER.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
     private static void createProject(String id, String office) throws SQLException {
@@ -102,14 +148,18 @@ public class CatalogControllerTestIT extends DataApiTestIT {
     }
 
     @AfterAll
-    public static void deload_data() throws Exception {
+    static void deload_data() throws Exception {
         loadSqlDataFromResource("cwms/cda/data/sql/ts_catalog_cleanup.sql");
         deleteProject("Flat Project", OFFICE);
+        cleanupBasins();
+        cleanupStreams();
     }
 
-    @Test
-    void test_no_aliased_results_returned() {
-        given().accept(Formats.JSONV2)
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_no_aliased_results_returned(String format) {
+        given()
+            .accept(format)
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EXCLUDE_EMPTY,false)
@@ -123,6 +173,103 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("$",hasKey("total"))
             .body("total",is(4))
             .body("entries.size()",is(4));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_no_aliases_returned(String format) {
+        Integer numAliases = given()
+            .accept(format)
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EXCLUDE_EMPTY, false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .extract()
+            .jsonPath()
+            .getObject("entries.aliases.aliases.size()", Integer.class);
+        assertEquals(0, (int) numAliases, "Expected no aliases, but found some.");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_no_versions_returned(String format) {
+        given()
+            .accept(format)
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(INCLUDE_VERSIONS, false)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("entries.findAll { it.versioned == true }.size()", greaterThanOrEqualTo(1))
+            .body("entries.extents.flatten()", everyItem(not(hasKey("version-time"))))
+            ;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_aliases_returned(String format) {
+        Integer numAliases = given().accept(format)
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EXCLUDE_EMPTY,false)
+            .queryParam(INCLUDE_ALIASES,true)
+        .when()
+            .get("/catalog/TIMESERIES")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(200))
+            .extract()
+            .jsonPath()
+            .getObject("entries.aliases.aliases.size()", Integer.class);
+        assertTrue(numAliases > 0, "Expected aliases, but found none.");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_alias_is_correct(String format) throws JsonProcessingException {
+        Response response = given().accept(format)
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(EXCLUDE_EMPTY, false)
+                .queryParam(INCLUDE_ALIASES, true)
+        .when()
+                .get("/catalog/TIMESERIES");
+        String json = response.body().asPrettyString();
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        JsonNode root = om.readTree(json);
+        JsonNode entriesNode = root.get("entries");
+        String entriesJson = om.writeValueAsString(entriesNode);
+        List<TimeseriesCatalogEntry> entries = om.readValue(entriesJson, new TypeReference<List<TimeseriesCatalogEntry>>() {});
+        assertNotNull(entries);
+        TimeseriesCatalogEntry alias = entries
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet()).stream()
+                .filter(e -> e.getName().equals("Pine Flat-Outflow.Stage.Inst.15Minutes.0.one"))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(alias);
+        assertTrue(alias.getAliases().contains(new TimeSeriesAlias.Builder()
+                .withName("Test Category-LessThan3")
+                .withValue("test alias 1")
+                .build()));
+        //make sure no entries exist with name "test alias 1"
+        List<TimeseriesCatalogEntry> aliasesAsAnEntry = entries
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(e -> e.getName().equals("test alias 1"))
+                .collect(Collectors.toList());
+        assertTrue(aliasesAsAnEntry.isEmpty(), "Found entries with name 'test alias 1', which should not exist.");
     }
 
 
@@ -144,14 +291,15 @@ public class CatalogControllerTestIT extends DataApiTestIT {
             .body("entries.size()",is(2));
     }
 
-    @Test
-    void test_all_office_pagination_works() {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_all_office_pagination_works(String format) {
         assertTimeout(Duration.ofMinutes(5), () -> {
             final int pageSize = 50;
             Response initialResponse =
                 given()
                     .log().ifValidationFails(LogDetail.ALL, true)
-                    .accept(Formats.JSONV2)
+                    .accept(format)
                     .queryParam("page-size",pageSize)
                     .queryParam(EXCLUDE_EMPTY,false)
                 .when()
@@ -177,7 +325,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
                 Response pageN =
                     given()
                         .log().ifValidationFails(LogDetail.ALL, true)
-                        .accept(Formats.JSONV2)
+                        .accept(format)
                         .queryParam("page",nextPage)
                         .queryParam(EXCLUDE_EMPTY,false)
                     .when()
@@ -360,4 +508,374 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         ;
     }
 
+    @Test
+    void test_loc_aliases() {
+
+        String pattern = "*Streamflow";
+
+        // Retrieve without aliases
+        given()
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+            .queryParam(INCLUDE_ALIASES, false)
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(2))
+            .body("entries[0].aliases.size()", is(0))
+        ;
+
+        // retrieve with aliases
+        given()
+            .accept("application/json;version=2")
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LIKE, pattern)
+            .queryParam(INCLUDE_ALIASES, true)
+        .when()
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(200))
+            .body("$", hasKey("total"))
+            .body("total", is(2))
+            .body("$", hasKey("entries"))
+            .body("entries.size()", is(2))
+            .body("entries[0].name", isOneOf("Alder Springs Streamflow", "Pine Flat-Outflow Streamflow"))
+            .body("entries[0].aliases.size()", isOneOf(1, 2))
+            .body("entries[0].aliases[0].value",
+                isOneOf("Alder Stream Alias Loc", "Alder Stream Alias Loc 2", "Pine Stream Alias Loc"))
+        ;
+    }
+
+    @Test
+    void testFilterLocations() throws Exception{
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String officeId = "SPK";
+
+        String json = loadResourceAsString("cwms/cda/api/filter_locations.json");
+        ContentType contentType = new ContentType(Formats.JSON);
+        List<Location> locations = Formats.parseContentList(contentType, json, Location.class);
+
+        String baseLocationName = locations.get(0).getName();
+
+        // create base location
+        createLocation(baseLocationName, true, officeId, locations.get(0).getLocationKind());
+
+        String subLocationName = locations.get(1).getName();
+
+        // create sub-location
+        createLocation(subLocationName, true, officeId, locations.get(1).getLocationKind());
+
+        String downStreamJson1 = loadResourceAsString("cwms/cda/api/loc_filter_stream1.json");
+        Stream stream1 = Formats.parseContent(contentType, downStreamJson1, Stream.class);
+        createStream(stream1);
+
+        String subLocation2Name = locations.get(2).getName();
+
+        // create second sub-location
+        createLocation(subLocation2Name, true, officeId, locations.get(2).getLocationKind());
+
+        String basinJson = loadResourceAsString("cwms/cda/api/loc_filter_basin.json");
+        Basin basin = Formats.parseContent(contentType, basinJson, Basin.class);
+        createBasin(basin);
+
+        String subLocation3Name = locations.get(3).getName();
+
+        // create second sub-location
+        createLocation(subLocation3Name, true, officeId, locations.get(3).getLocationKind());
+
+        String downStreamJson2 = loadResourceAsString("cwms/cda/api/loc_filter_stream2.json");
+        Stream stream2 = Formats.parseContent(contentType, downStreamJson2, Stream.class);
+        createStream(stream2);
+
+        String stringToMatch = String.format("%s-.*", baseLocationName);
+
+        // get all valid locations
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, String.format("%s*", baseLocationName))
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(4))
+            .body("entries[0].name", isOneOf(baseLocationName, subLocationName, subLocation2Name, subLocation3Name))
+            .body("entries[1].name", isOneOf(baseLocationName, subLocationName, subLocation2Name, subLocation3Name))
+            .body("entries[2].name", isOneOf(baseLocationName, subLocationName, subLocation2Name, subLocation3Name))
+            .body("entries[3].name", isOneOf(baseLocationName, subLocationName, subLocation2Name, subLocation3Name));
+
+        // get all valid locations filtering out base location
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, stringToMatch)
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(3))
+            .body("entries[0].name", isOneOf(subLocationName, subLocation2Name, subLocation3Name))
+            .body("entries[1].name", isOneOf(subLocationName, subLocation2Name, subLocation3Name))
+            .body("entries[2].name", isOneOf(subLocationName, subLocation2Name, subLocation3Name));
+
+        // get valid locations using base location, filtering out OUTLET kind
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, stringToMatch)
+            .queryParam(LOCATION_KIND_LIKE, "^(BASIN)$")
+            .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(2))
+            .body("entries[0].name", isOneOf(subLocationName, subLocation3Name))
+            .body("entries[1].name", isOneOf(subLocationName, subLocation3Name));
+
+        // get valid locations using base location, filtering out STREAM kind
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, stringToMatch)
+            .queryParam(LOCATION_KIND_LIKE, "^(STREAM)*$")
+            .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(1))
+            .body("entries[0].name", is(subLocation2Name));
+
+        // get valid locations using base location, filtering out STREAM kind using NOT operator
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, stringToMatch)
+            .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(1))
+            .body("entries[0].name", is(subLocation2Name));
+
+        // get valid locations using base location, filtering out STREAM kind using NOT operator and negation parameter
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, stringToMatch)
+            .queryParam(LOCATION_KIND_LIKE, "NOT:^(STREAM)*$")
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+            .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(1))
+            .body("entries[0].name", is(subLocation2Name));
+
+        // get valid locations using base location, filtering out expected kinds. Should return 0 locations
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, officeId)
+            .queryParam(LIKE, stringToMatch)
+            .queryParam(UNIT_SYSTEM, UnitSystem.SI.getValue())
+            .queryParam(LOCATION_KIND_LIKE, "^(BASIN|STREAM)*$")
+            .queryParam(NEGATE_LOCATION_KIND_LIKE, true)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/catalog/LOCATIONS")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.size()", is(0));
+    }
+
+    @Test
+    void test_locations_unsupported_param_single() {
+        // When requesting the LOCATIONS catalog, certain timeseries params are not supported.
+        // Verify that supplying a single unsupported parameter results in a 400 with only that parameter listed.
+        Response resp =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE)
+                .queryParam(INCLUDE_EXTENTS, true)
+            .when()
+                .get("/catalog/LOCATIONS")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                .body("message", is("Unsupported parameter(s) for Locations catalog"))
+                .body("details.'unsupported query parameters'", is(INCLUDE_EXTENTS))
+                .extract()
+                .response();
+
+        // Ensure only the provided unsupported parameter is mentioned
+        String details = resp.path("details.'unsupported query parameters'");
+        assertEquals(INCLUDE_EXTENTS, details);
+    }
+
+    @Test
+    void test_locations_unsupported_params_multiple() {
+        // Verify that if multiple unsupported params are provided, only those provided are reported.
+        Response resp =
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE)
+                .queryParam(INCLUDE_EXTENTS, true)
+                .queryParam(EXCLUDE_EMPTY, true)
+            .when()
+                .get("/catalog/LOCATIONS")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .assertThat()
+                .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+                .body("message", is("Unsupported parameter(s) for Locations catalog"))
+                .body("details", hasKey("unsupported query parameters"))
+                .extract()
+                .response();
+
+        String details = resp.path("details.'unsupported query parameters'");
+        assertNotNull(details);
+        String[] parts = details.split(",");
+        assertEquals(2, parts.length, "Expected exactly two unsupported parameters to be reported");
+        // Order of parameters in the message is not guaranteed; verify as a set
+        assertTrue(List.of(parts).containsAll(List.of(INCLUDE_EXTENTS, EXCLUDE_EMPTY)));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_timeseries_unsupported_search_text() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(SEARCH_TEXT, "test")
+        .when()
+            .get("/catalog/" + TIMESERIES)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_IMPLEMENTED));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_basic() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(SEARCH_TEXT, "outflow")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.name", hasItem("Pine Flat-Outflow"));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_on_location_kind() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(SEARCH_TEXT, "project")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.name", hasItem("Paonia"));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_combines_with_location_kind_filter() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, OFFICE)
+            .queryParam(SEARCH_TEXT, "flat")
+            .queryParam(LOCATION_KIND_LIKE, "PROJECT")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("total", is(1))
+            .body("entries.size()", is(1))
+            .body("entries[0].name", is("Flat Project"));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_no_matches() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, OFFICE)
+            .queryParam(SEARCH_TEXT, "zzzzzzzzzz-fake-location")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("total", is(0))
+            .body("entries.size()", is(0));
+    }
 }

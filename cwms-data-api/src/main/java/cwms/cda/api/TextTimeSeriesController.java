@@ -24,18 +24,33 @@
 
 package cwms.cda.api;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION_DATE;
+import static cwms.cda.api.Controllers.queryParamAsInstant;
+import static cwms.cda.api.Controllers.requiredInstant;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -44,12 +59,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Instant;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
@@ -57,8 +70,8 @@ import org.jooq.DSLContext;
 
 
 
-public class TextTimeSeriesController implements CrudHandler {
-    private static final Logger logger = Logger.getLogger(TextTimeSeriesController.class.getName());
+public class TextTimeSeriesController extends BaseCrudHandler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Text-TimeSeries";
 
     public static final String REPLACE_ALL = "replace-all";
@@ -66,22 +79,14 @@ public class TextTimeSeriesController implements CrudHandler {
     public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
     public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
 
-    private final MetricRegistry metrics;
-
     public TextTimeSeriesController(MetricRegistry metrics) {
-        this.metrics = metrics;
+        super(metrics);
     }
 
     @NotNull
     protected TimeSeriesTextDao getDao(DSLContext dsl) {
         return new TimeSeriesTextDao(dsl);
     }
-
-
-    private Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
-    }
-
 
     @OpenApi(
             summary = "Retrieve text time series values for a provided time window and date version."
@@ -96,6 +101,8 @@ public class TextTimeSeriesController implements CrudHandler {
                         + "the time zone of the values of the begin and end fields (unless "
                         + "otherwise specified). If this field is not specified, "
                         + "the default time zone of UTC shall be used."),
+                @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of the "
+                        + "text timeseries. If not specified, the latest version will be used."),
                 @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                 @OpenApiParam(name = END, required = true, description = "The end of the time window.")
             },
@@ -147,13 +154,16 @@ public class TextTimeSeriesController implements CrudHandler {
             ctx.contentType(contentType.toString());
 
             String result = Formats.format(contentType, textTimeSeries);
-            ctx.result(result);
 
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (URISyntaxException | UnsupportedEncodingException ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.log(Level.SEVERE, re.toString(), ex);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (URISyntaxException | IOException ex) {
+            CdaError re = ExceptionTraceSupport.buildError(ctx,
+                    "Failed to process request: " + ex.getLocalizedMessage(), ex);
+            logger.atSevere().withCause(ex).log("%s", re);
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
 
@@ -163,7 +173,7 @@ public class TextTimeSeriesController implements CrudHandler {
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
-        throw new UnsupportedOperationException(NOT_SUPPORTED_YET);
+        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
     @OpenApi(
@@ -218,7 +228,7 @@ public class TextTimeSeriesController implements CrudHandler {
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
-
+        logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class)
                 .getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);

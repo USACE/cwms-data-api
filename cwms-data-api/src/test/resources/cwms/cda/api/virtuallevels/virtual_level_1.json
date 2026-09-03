@@ -1,0 +1,28 @@
+{
+  "office-id" : "SPK",
+  "location-level-id" : "virtual_level_value.Stage.Ave.1Day.Regulating",
+  "specified-level-id" : "Total",
+  "parameter-id" : "Stage",
+  "attribute-value" : 12.5,
+  "attribute-units-id" : "ft",
+  "attribute-parameter-id" : "Stage",
+  "attribute-parameter-type-id" : "Inst",
+  "level-units-id" : "ft",
+  "level-date" : "2023-06-01T00:00:00-07:00",
+  "expiration-date" : 1685689200000,
+  "constituents" : [
+    {
+      "type": "LOCATION_LEVEL",
+      "abbr": "L1",
+      "name": "level_get_all_loc1.Stage.Ave.1Day.Regulating",
+      "attribute-id": "Stage",
+      "attribute-value": 16.5
+    },
+    {
+      "type": "RATING",
+      "abbr": "R1",
+      "name": "LevelsControllerTestIT.Stage;Flow.COE.Production"
+    }
+  ],
+  "constituent-connections": "L1=R1I1"
+}

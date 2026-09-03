@@ -1,0 +1,77 @@
+import com.github.gradle.node.npm.task.NpmTask
+import com.github.gradle.node.npm.task.NpxTask
+
+plugins {
+    id 'java'
+    id 'com.github.node-gradle.node' version '7.1.0'
+}
+
+def npmCacheDir = layout.buildDirectory.dir("npm-cache")
+
+tasks.withType(NpmTask).configureEach {
+    environment.put("npm_config_cache", npmCacheDir.get().asFile.absolutePath)
+}
+
+tasks.withType(NpxTask).configureEach {
+    environment.put("npm_config_cache", npmCacheDir.get().asFile.absolutePath)
+}
+
+def cdaGuiViteMode = providers.gradleProperty('cdaGuiMode')
+        .orElse(providers.environmentVariable('CDA_GUI_MODE'))
+        .orElse('production')
+
+task buildGuiVite(type:NpxTask) {
+    dependsOn npmInstall
+    command = "vite"
+    args = ["build", "--mode", cdaGuiViteMode.get()]
+    inputs.files('package.json', 'package-lock.json', 'vite.config.js', 'index.html',
+            '.env.development', '.env.localhost', '.env.production', '.env.test')
+    inputs.dir('src')
+    inputs.dir('public')
+    inputs.dir(fileTree("node_modules").exclude(".cache"))
+    outputs.dir('dist')
+}
+
+task buildGuiSitemap(type: Exec) {
+    dependsOn buildGuiVite
+    executable "node"
+    args "scripts/generate-sitemap.mjs"
+    workingDir project.layout.projectDirectory
+    inputs.dir('scripts')
+    inputs.files('src/route-paths.js')
+    outputs.file('dist/sitemap.xml')
+}
+
+task buildGui {
+    dependsOn buildGuiSitemap
+}
+
+task cleanNode(type: Delete) {
+    delete project.layout.projectDirectory.dir('dist')
+    delete project.layout.projectDirectory.dir('node_modules')
+}
+
+build.dependsOn buildGui
+clean.dependsOn cleanNode
+
+
+task runGuiDev(type: Exec) {
+    dependsOn npmInstall
+    executable "npm"
+    args  "run", "dev"
+    workingDir project.layout.projectDirectory
+}
+
+sourceSets {
+    java {
+        main {
+            resources {
+                srcDir(project.layout.projectDirectory.dir('dist'))
+            }
+        }
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn buildGui
+}

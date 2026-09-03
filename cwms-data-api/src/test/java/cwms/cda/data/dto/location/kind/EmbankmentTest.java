@@ -41,12 +41,12 @@ import java.time.ZoneId;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 final class EmbankmentTest {
 
     @ParameterizedTest
-    @CsvSource({Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
+    @ValueSource(strings = {Formats.JSON, Formats.JSONV1, Formats.DEFAULT})
     void testTurbineSerializationRoundTrip(String format) {
         Embankment embankment = buildTestEmbankment();
         String serialized = Formats.format(Formats.parseHeader(format, Embankment.class), embankment);
@@ -118,7 +118,7 @@ final class EmbankmentTest {
 
     private Location buildTestLocation() {
         return new Location.Builder("TEST_LOCATION2", "EMBANKMENT", ZoneId.of("UTC"),
-                50.0, 50.0, "NVGD29", "LRL")
+                50.0, 50.0, "NGVD29", "LRL")
                 .withElevation(10.0)
                 .withElevationUnits("m")
                 .withLocationType("SITE")

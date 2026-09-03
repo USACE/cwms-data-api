@@ -42,7 +42,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 @Tag("integration")
-public class OfficeControllerIT extends DataApiTestIT {
+final class OfficeControllerIT extends DataApiTestIT {
 
     public static final String OFFICE = "SPK";
 
@@ -85,6 +85,24 @@ public class OfficeControllerIT extends DataApiTestIT {
     }
 
     @Test
+    void test_get_one_default()  {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.DEFAULT)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/offices/" + OFFICE)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .header(Header.ETAG, not(isEmptyOrNullString()))
+            .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+            .body("long-name", containsString("Sacramento"));
+    }
+
+    @Test
     void test_get_all()  {
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -101,6 +119,25 @@ public class OfficeControllerIT extends DataApiTestIT {
                 .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
                 .rootPath("find {it.name == '%s'}", withArgs("CPC"))
                 .body("long-name", CoreMatchers.equalTo("Central Processing Center"));
+    }
+
+    @Test
+    void test_get_all_default()  {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.DEFAULT)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/offices/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .header(Header.ETAG, not(isEmptyOrNullString()))
+            .headers(Header.CACHE_CONTROL.toLowerCase(), containsString("max-age="))
+            .rootPath("find {it.name == '%s'}", withArgs("CPC"))
+            .body("long-name", CoreMatchers.equalTo("Central Processing Center"));
     }
 
     @EnumSource(AliasTest.class)

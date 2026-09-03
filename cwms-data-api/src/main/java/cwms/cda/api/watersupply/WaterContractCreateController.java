@@ -39,10 +39,10 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -56,10 +56,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 
-public final class WaterContractCreateController extends WaterSupplyControllerBase implements Handler {
+public final class WaterContractCreateController extends WaterSupplyControllerBase {
 
     public WaterContractCreateController(MetricRegistry metrics) {
-        waterMetrics(metrics);
+        super(metrics);
     }
 
     @OpenApi(
@@ -70,9 +70,9 @@ public final class WaterContractCreateController extends WaterSupplyControllerBa
             required = true),
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, description = "If true, the contract will not be stored if "
-                    + "it already exists.", type = Boolean.class),
+                    + "it already exists. Default is true", type = Boolean.class),
             @OpenApiParam(name = IGNORE_NULLS, description = "If true, null fields will be ignored "
-                    + "when storing the contract.", type = Boolean.class)
+                    + "when storing the contract. Default is false", type = Boolean.class)
         },
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "Water contract successfully stored to CWMS."),
@@ -94,18 +94,22 @@ public final class WaterContractCreateController extends WaterSupplyControllerBa
 
     @Override
     public void handle(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, PROJECT_ID, "Body contains required information.");
+        logUnusedPathParameter(ctx, OFFICE, "Body contains required information.");
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUserContract.class);
             ctx.contentType(contentType.toString());
             WaterUserContract waterContract = Formats.parseContent(contentType, ctx.body(), WaterUserContract.class);
-            boolean failIfExists = Boolean.parseBoolean(ctx.queryParam(FAIL_IF_EXISTS));
-            boolean ignoreNulls = Boolean.parseBoolean(ctx.queryParam(IGNORE_NULLS));
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+            boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(false);
             String newContractName = ctx.pathParam(WATER_USER);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterContract(waterContract, failIfExists, ignoreNulls);
-            ctx.status(HttpServletResponse.SC_CREATED).json(newContractName + " created successfully");
+            StatusResponse re = new StatusResponse(waterContract.getOfficeId(),
+                    "Water Contract Created Successfully", newContractName);
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 }

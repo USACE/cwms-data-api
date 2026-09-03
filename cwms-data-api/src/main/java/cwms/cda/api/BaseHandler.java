@@ -23,6 +23,8 @@ package cwms.cda.api;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.RESULTS;
@@ -30,6 +32,7 @@ import static cwms.cda.api.Controllers.SIZE;
 
 public abstract class BaseHandler implements Handler {
 
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
@@ -46,5 +49,14 @@ public abstract class BaseHandler implements Handler {
 
     protected final void updateResultSize(int value) {
         requestResultSize.update(value);
+    }
+
+    protected final void updateResultSize(long value) {
+        requestResultSize.update(value);
+    }
+
+    protected final void logUnusedPathParameter(Context ctx, String pathParam, String reason) {
+        String param = ctx.pathParam(pathParam);
+        LOGGER.atFinest().log("Path parameter '%s' is documented but not used in handler '%s'\nValue: '%s'\nReason: '%s'", pathParam, this.getClass().getSimpleName(), param, reason);
     }
 }

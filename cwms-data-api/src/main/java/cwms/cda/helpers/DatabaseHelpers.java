@@ -1,20 +1,49 @@
 package cwms.cda.helpers;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.SQLException;
-
-import javax.servlet.http.HttpServletRequest;
 
 public class DatabaseHelpers {
-    public static Connection setSession(Connection conn, HttpServletRequest request) throws SQLException{
-        String sessionKey = (String)request.getSession(false).getAttribute("SESSION_KEY");
-        try (
-            CallableStatement setSession = conn.prepareCall("call cwms_env.set_session_id(?)");
-        ){
-            setSession.setString(1,sessionKey);
-            setSession.execute();
-            return conn;
+
+    public static final int LATEST_SCHEMA = 999999;
+    
+    @SuppressWarnings({"checkstyle:typename","checkstyle:abbreviationaswordinname"})
+    public enum SCHEMA_VERSION {
+        V2025_07_01(250701, "25.07.01"),
+        V2026_02_17(260217, "26.02.17"),
+        V2026_07_16(260716, "26.07.16"),
+        LATEST_DEV(LATEST_SCHEMA, "99.99.99"),
+        BYPASS(-1, "Bypass")
+        ;
+
+        private final int numeric;
+        private final String text;
+
+        SCHEMA_VERSION(int numeric, String text) {
+            this.numeric = numeric;
+            this.text = text;
+        }
+
+        public int numeric() {
+            return this.numeric;
+        }
+
+        public String text() {
+            return this.text;
+        }
+
+        /**
+         * Return Schema enum constant from provided database version integer.
+         * @param value the integer representation of the database schema version.
+         * @return the appropriate Enum
+         * @throws IllegalArgumentException if the value cannot be mapped.
+         */
+        public static SCHEMA_VERSION fromNumeric(int value) {
+            for (var tmp: SCHEMA_VERSION.values()) {
+                if (tmp.numeric == value) {
+                    return tmp;
+                }
+            }
+            throw new IllegalArgumentException(
+                "Numeric Value " + value + " does not match an available version enumeration.");
         }
     }
 }

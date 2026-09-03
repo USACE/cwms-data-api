@@ -29,7 +29,7 @@ class ContentTypeTest {
         ContentType ct = new ContentType("");
         Map<String, String> parameters = ct.getParameters();
         assertTrue(parameters == null || parameters.isEmpty());
-        assertNull(ct.getCharset());
+        assertNull(ct.getInstanceCharset());
     }
 
     @Test
@@ -37,7 +37,7 @@ class ContentTypeTest {
         ContentType ct = new ContentType("qawicxqyjx");
         Map<String, String> parameters = ct.getParameters();
         assertTrue(parameters == null || parameters.isEmpty());
-        assertNull(ct.getCharset());
+        assertNull(ct.getInstanceCharset());
     }
 
 
@@ -47,7 +47,7 @@ class ContentTypeTest {
         assertEquals("application/json", ct.getType());
         Map<String, String> parameters = ct.getParameters();
         assertTrue(parameters == null || parameters.isEmpty());
-        assertEquals("UTF-8", ct.getCharset());
+        assertEquals("UTF-8", ct.getInstanceCharset());
     }
 
     @Test
@@ -57,7 +57,7 @@ class ContentTypeTest {
         Map<String, String> parameters = ct.getParameters();
         assertTrue(parameters == null || parameters.isEmpty());
 
-        assertEquals("UTF-8", ct.getCharset());
+        assertEquals("UTF-8", ct.getInstanceCharset());
     }
 
 

@@ -37,7 +37,7 @@ import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
@@ -47,11 +47,15 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.LockDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -64,12 +68,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class LockController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+    private static final String ERROR_MSG = "Failed to process request to retrieve Locks";
     static final String TAG = "Locks";
     private final MetricRegistry metrics;
 
@@ -106,7 +113,7 @@ public final class LockController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = requiredParam(ctx, OFFICE);
-            String projectId = ctx.queryParam(PROJECT_ID);
+            String projectId = requiredParam(ctx, PROJECT_ID);
             CwmsId project = CwmsId.buildCwmsId(office, projectId);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
@@ -116,9 +123,16 @@ public final class LockController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, locks, Lock.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, ERROR_MSG, ex);
+            LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -160,9 +174,17 @@ public final class LockController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, lock);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, ERROR_MSG, ex);
+            LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -180,7 +202,7 @@ public final class LockController implements CrudHandler {
         method = HttpMethod.POST,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Lock successfully stored to CWMS.")
+            @OpenApiResponse(status = STATUS_201, description = "Lock successfully stored to CWMS.")
         }
     )
     @Override
@@ -201,7 +223,9 @@ public final class LockController implements CrudHandler {
             }
             LockDao dao = new LockDao(dsl);
             dao.storeLock(lock, failIfExists);
-            ctx.status(HttpServletResponse.SC_CREATED).json("Created Lock");
+            StatusResponse re = new StatusResponse(lock.getLocation().getOfficeId(),
+                    "Lock successfully stored to CWMS.", lock.getLocation().getName());
+            ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
     }
 
@@ -219,7 +243,7 @@ public final class LockController implements CrudHandler {
         method = HttpMethod.PATCH,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Lock successfully renamed in CWMS.")
+            @OpenApiResponse(status = STATUS_200, description = "Lock successfully renamed in CWMS.")
         }
     )
     @Override
@@ -230,7 +254,8 @@ public final class LockController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
             dao.renameLock(CwmsId.buildCwmsId(office, name), newName);
-            ctx.status(HttpServletResponse.SC_OK).json("Renamed Lock");
+            StatusResponse re = new StatusResponse(office, "Lock successfully renamed in CWMS.", newName);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 
@@ -249,7 +274,7 @@ public final class LockController implements CrudHandler {
         method = HttpMethod.DELETE,
         tags = {TAG},
         responses = {
-            @OpenApiResponse(status = STATUS_204, description = "Lock successfully deleted from CWMS."),
+            @OpenApiResponse(status = STATUS_200, description = "Lock successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                 + "inputs provided the lock was not found.")
         }
@@ -263,7 +288,8 @@ public final class LockController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
             dao.deleteLock(CwmsId.buildCwmsId(office, name), deleteMethod.getRule());
-            ctx.status(HttpServletResponse.SC_NO_CONTENT).json(name + " Deleted");
+            StatusResponse re = new StatusResponse(office, "Lock successfully deleted from CWMS.", name);
+            ctx.status(HttpServletResponse.SC_OK).json(re);
         }
     }
 }

@@ -24,31 +24,46 @@
 
 package cwms.cda.data.dao;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
-import com.google.common.flogger.StackSize;
 import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.AlreadyExists;
+import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.Controllers;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
+import cwms.cda.datasource.DelegatingConnectionPreparer;
+import cwms.cda.datasource.LrtsSessionPreparer;
+import cwms.cda.datasource.SessionOfficePreparer;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLClientInfoException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -66,16 +81,33 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 
 
 public abstract class JooqDao<T> extends Dao<T> {
     protected static final int ORACLE_CURSOR_TYPE = -10;
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    public static final int DEFAULT_FETCH_SIZE = 1000;
+    public static final int DEFAULT_SMALL_FETCH_SIZE = 500;
+    public static final int ORACLE_ECID_MAX_LENGTH = 22;
+    public static final int REQUIRE_NEW_LRTS_ID_FORMAT = 6;
+    public static final int REQUIRE_OLD_LRTS_ID_FORMAT = 0;
+    public static final String SESSION_USE_LRTS_ID_FORMAT = "USE_NEW_LRTS_ID_FORMAT";
 
     static ExecuteListener listener = new ExceptionWrappingListener();
-    private static Pattern INVALID_OFFICE_ID = Pattern.compile(
-        "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
+    private static final Pattern INVALID_OFFICE_ID = Pattern.compile(
+            "INVALID_OFFICE_ID: \"([^\"]+)\" is not a valid CWMS office id");
+    private static final Pattern INVALID_UNIT = Pattern.compile(
+            "ORA-20102: The unit: \\S+"
+                    + " is not a recognized CWMS Database unit for the");
+    private static final Pattern CONVERSION_ERROR = Pattern.compile(
+            "^ORA-20998: ERROR: Cannot convert ((parameter .+ from specified units: .+$)"
+                    + "|(from unit .+ to unit .+$))");
+    private static final Pattern FIELD_LENGTH_EXCEEDED = Pattern.compile(
+            "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
+                    + "\\(actual: (\\d+), maximum: (\\d+)\\)");
+    private static final Pattern REGEX_META_CHARS_EXCEPT_DOT = Pattern.compile("[\\\\^$|?+()\\[\\]{}]");
+    private static final Pattern ORA_CODE = Pattern.compile("^ORA-\\d+: ERROR: .*");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -92,6 +124,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             return rule;
         }
     }
+
 
     protected JooqDao(DSLContext dsl) {
         super(dsl);
@@ -110,20 +143,39 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @return A DSLContext for the current request.
      */
     public static DSLContext getDslContext(Context ctx) {
+        return getDslContext(ctx, null);
+    }
+
+    /**
+     * Creates a DSL context whose checked-out connections use the supplied CWMS
+     * session office. Callers should only supply an office when the endpoint's
+     * database behavior requires it; setting it globally changes legacy access
+     * checks for unrelated endpoints.
+     *
+     * @param ctx The current request context.
+     * @param office The session office to prepare, or null to leave it unchanged.
+     * @return A DSLContext for the current request.
+     */
+    public static DSLContext getDslContext(Context ctx, String office) {
         DSLContext retVal;
-        final String officeId = ctx.attribute(ApiServlet.OFFICE_ID);
+
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        if (dataSource != null) {
-            DataSource wrappedDataSource = new ConnectionPreparingDataSource(connection ->
-                    setClientInfo(ctx, connection), dataSource);
-            retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE18C);
-        } else {
-            // Some tests still use this method
-            logger.atFine().withStackTrace(StackSize.FULL)
-                  .log("System still using old context method.");
-            Connection database = ctx.attribute(ApiServlet.DATABASE);
-            retVal = getDslContext(database, officeId);
-        }
+        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null
+            && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+
+        // Snapshot client-info and the requested office up front so the per-checkout
+        // preparer lambdas don't capture the Javalin Context — async work (e.g. the
+        // total-count future in TimeSeriesDaoImpl) can outlive the request facade.
+        final String module = (ctx.handlerType() == HandlerType.BEFORE)
+                ? "BEFORE-HANDLER" : ctx.endpointHandlerPath();
+        final String action = ctx.method();
+        final String clientId = ctx.url().replace(ctx.path(), "") + ctx.contextPath();
+        DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
+                connection -> setClientInfo(connection, module, action, clientId),
+                new LrtsSessionPreparer(isNewLRTS),
+                new SessionOfficePreparer(office));
+        DataSource wrappedDataSource = new ConnectionPreparingDataSource(preparer, dataSource);
+        retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE18C);
 
         retVal.configuration().set(new DefaultExecuteListenerProvider(listener));
 
@@ -145,28 +197,25 @@ public abstract class JooqDao<T> extends Dao<T> {
         // This method should probably be called from within a connection{  } block and jOOQ
         // code within the block should use the returned DSLContext or the connection.
         DSLContext dsl = DSL.using(connection, SQLDialect.ORACLE18C);
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), officeId);
-
+        setOffice(connection, officeId);
         return dsl;
     }
 
-    private static Connection setClientInfo(Context ctx, Connection connection) {
+    private static Connection setClientInfo(Connection connection, String module, String action, String clientId) {
         try {
-            connection.setClientInfo("OCSID.ECID", ApiServlet.APPLICATION_TITLE + " " + ApiServlet.getApiVersion());
-            connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
-            connection.setClientInfo("OCSID.ACTION", ctx.method());
-            connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
+            final String apiVersion = ApiServlet.getApiVersion();
+            connection.setClientInfo("OCSID.ECID",
+                    ApiServlet.APPLICATION_TITLE + " "
+                            + apiVersion.substring(0, Math.min(ORACLE_ECID_MAX_LENGTH, apiVersion.length())));
+            connection.setClientInfo("OCSID.MODULE", module);
+            connection.setClientInfo("OCSID.ACTION", action);
+            connection.setClientInfo("OCSID.CLIENTID", clientId);
         } catch (SQLClientInfoException ex) {
-            logger.atWarning()
+            logger.atFinest() // this is usually useless information
                     .withCause(ex)
                     .log("Unable to set client info on connection.");
         }
         return connection;
-    }
-
-    @Override
-    public List<T> getAll(String officeId) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -184,29 +233,90 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     /**
+     * The idea here is that this will check the current default datum,
+     * possible switch to the specified datum and
+     * then run the code and
+     * if the datum was previously switched
+     * then switch back to the initial datum.
+     *
+     * @param targetDatum The desired ver
+     * @param dslContext
+     * @param cr
+     */
+    protected void withDefaultDatum(@Nullable VerticalDatum targetDatum, DSLContext dslContext, ConnectionRunnable cr) {
+        String defaultVertDatum = CWMS_LOC_PACKAGE.call_GET_DEFAULT_VERTICAL_DATUM(dslContext.configuration());
+        String targetName = (targetDatum != null) ? targetDatum.toString() : null;
+        boolean changeDefaultDatum = !Objects.equals(targetName, defaultVertDatum);
+        try {
+            if (changeDefaultDatum) {
+                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), targetName);
+            }
+
+            connection(dslContext, cr);
+        } finally {
+            if (changeDefaultDatum) {
+                // If we changed it we should restore.
+                CWMS_LOC_PACKAGE.call_SET_DEFAULT_VERTICAL_DATUM(dslContext.configuration(), defaultVertDatum);
+            }
+        }
+    }
+
+    /**
      * Oracle supports case insensitive regexp search but the syntax for calling it is a
      * bit weird.  This method lets Dao classes add a case-insensitive regexp search in
      * an easy to read manner without having to worry about the syntax.
      */
     public static Condition caseInsensitiveLikeRegex(Field<String> field, String regex) {
+        if ("*".equals(regex) || ".*".equals(regex)) {
+            return DSL.noCondition();
+        }
         return new CustomCondition() {
             @Override
             public void accept(org.jooq.Context<?> ctx) {
-                if (ctx.family() == ORACLE) {
-                    ctx.visit(DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex)));
+                if (regex.toUpperCase().startsWith("NOT:")) {
+                    String finalRegex = regex.substring(4);
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(caseInsensitiveRegexCondition(field, finalRegex, true));
+                    } else {
+                        ctx.visit(DSL.upper(field).notLikeRegex(finalRegex.toUpperCase()));
+                    }
                 } else {
-                    ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
+                    if (ctx.family() == ORACLE) {
+                        ctx.visit(caseInsensitiveRegexCondition(field, regex, false));
+                    } else {
+                        ctx.visit(DSL.upper(field).likeRegex(regex.toUpperCase()));
+                    }
                 }
             }
         };
     }
 
-    protected static Condition filterExact(Field<String> field, String filter) {
-        if (filter == null) {
-            return DSL.noCondition();
+    private static Condition caseInsensitiveRegexCondition(Field<String> field, String regex, boolean negate) {
+        Condition condition;
+        if (isPlainTextPattern(regex)) {
+            condition = DSL.upper(field).eq(regex.toUpperCase());
+        } else if (isSimpleGlobPattern(regex)) {
+            condition = DSL.upper(field).like(toSqlLikePattern(regex).toUpperCase(), '\\');
         } else {
-            return field.eq(filter);
+            condition = DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.inline(regex));
         }
+        return negate ? condition.not() : condition;
+    }
+
+    private static boolean isPlainTextPattern(String regex) {
+        return regex != null && regex.indexOf('*') < 0 && !REGEX_META_CHARS_EXCEPT_DOT.matcher(regex).find();
+    }
+
+    private static boolean isSimpleGlobPattern(String regex) {
+        return regex != null && regex.indexOf('*') >= 0 && !REGEX_META_CHARS_EXCEPT_DOT.matcher(regex).find();
+    }
+
+    private static String toSqlLikePattern(String regex) {
+        return regex.replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace(".*", "%")
+                .replace("_", "\\_")
+                .replace("*", "%");
     }
 
     /**
@@ -228,6 +338,7 @@ public abstract class JooqDao<T> extends Dao<T> {
      * is one of several types of exception (e.q NotFound,
      * AlreadyExists, NullArg) that can be specially handled by ApiServlet
      * by returning specific HTTP codes or error messages.
+     *
      * @param input the observed exception
      * @return An exception, possibly wrapped
      */
@@ -251,6 +362,12 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildUnsupportedOperationException(input);
         } else if (isInvalidOffice(input)) {
             retVal = buildInvalidOffice(input);
+        } else if (isValueTooLargeException(input)) {
+            retVal = buildFieldLengthExceededException(input);
+        } else if (isTSIDInvalidIntervalException(input)) {
+            retVal = buildInvalidTSIDIntervalException(input);
+        } else if (isBadRequest(input)) {
+            retVal = buildBadRequest(input);
         }
 
         return retVal;
@@ -282,7 +399,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     private static boolean hasCodeAndMessage(SQLException sqlException,
-                                            List<Integer> codes, List<String> segments) {
+                                             List<Integer> codes, List<String> segments) {
         final String localizedMessage = sqlException.getLocalizedMessage();
 
         return codes.contains(sqlException.getErrorCode())
@@ -293,6 +410,45 @@ public abstract class JooqDao<T> extends Dao<T> {
     // See link for a more complete list of CWMS Error codes:
     // https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database_origin_teamcity_work/browse/src/buildSqlScripts.py#4866
 
+    public static boolean isBadRequest(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            if (!sqlException.getLocalizedMessage().contains("CAN_NOT_DELETE")) {
+                List<Integer> codes = IntStream.range(20000, 20999).boxed().collect(Collectors.toList());
+
+                retVal = hasCodeOrMessage(sqlException, codes, new ArrayList<>());
+            }
+        }
+        return retVal;
+    }
+
+    public static BadRequestResponse buildBadRequest(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            String errorMessage = parts[0].replace("'", "");
+            if (ORA_CODE.matcher(errorMessage).matches()) {
+                errorMessage = errorMessage.substring(errorMessage.indexOf("ERROR: ") + 7);
+            }
+            errorMessage = sanitizeOrNull(errorMessage);
+            Map<String, String> errorDetails = new HashMap<>();
+            errorDetails.put("message", errorMessage);
+            return new BadRequestResponse("", errorDetails);
+        }
+        return new BadRequestResponse();
+    }
+
+
     public static boolean isNotFound(RuntimeException input) {
         boolean retVal = false;
 
@@ -300,14 +456,13 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20001, 20025, 20034);
+            List<Integer> codes = Arrays.asList(20001, 20025, 20034, 1403);
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
-            if(!retVal)
-            {
+            if (!retVal) {
                 segments = Collections.singletonList("does not exist as a stream location");
                 retVal = hasCodeAndMessage(sqlException, Collections.singletonList(20998), segments);
             }
@@ -317,11 +472,47 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static boolean isInvalidOffice(RuntimeException input) {
         return getSqlException(input)
-            .map(sqlException -> {
-                return hasCodeOrMessage(sqlException, Collections.singletonList(20010),
-                    Collections.singletonList("INVALID_OFFICE_ID"));
-            })
-            .orElse(false);
+                .map(sqlException -> hasCodeOrMessage(sqlException, Collections.singletonList(20010),
+                        Collections.singletonList("INVALID_OFFICE_ID")))
+                .orElse(false);
+    }
+
+    public static boolean isValueTooLargeException(RuntimeException input) {
+        return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
+                        Arrays.asList(6502, 12899, 20041, 17072),
+                        Arrays.asList("value too large for column", "character string buffer too small",
+                                "Error while writing value at JDBC bind index:")))
+                .orElse(false);
+    }
+
+    public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
+        return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
+                        Arrays.asList(20205, 20998),
+                        Arrays.asList("Invalid Time Series Description",
+                                "is not a valid interval",
+                                "INVALID Time Series Identifier")))
+                .orElse(false);
+    }
+
+    static InvalidItemException buildInvalidTSIDIntervalException(RuntimeException input) {
+        Throwable cause = input.getCause();
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            String errorMessage = parts[0];
+            if (CURRENT_SCHEMA_VERSION <= SCHEMA_VERSION.V2025_07_01.numeric() && parts.length > 2) {
+                errorMessage = parts[1];
+            }
+            return new InvalidItemException(String.format("Invalid time series description: %s",
+                    errorMessage), cause);
+        }
+        return new InvalidItemException("Invalid time series description", cause);
     }
 
     public static boolean isInvalidItem(RuntimeException input) {
@@ -349,15 +540,51 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        NotFoundException exception = new NotFoundException(cause);
+        NotFoundException exception;
+        if (input.getMessage().contains("ASSIGN_LOC_GROUPS")) {
+            Map<String, Serializable> errorDetails = new HashMap<>();
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    localizedMessage = parts[0];
+                    if (localizedMessage.startsWith("ORA-")) {
+                        localizedMessage = localizedMessage
+                            .substring(localizedMessage.indexOf("LOCATION_ID_NOT_FOUND:") + 23);
+                    }
+                }
+            }
+            errorDetails.put("missing-locations", localizedMessage);
+            exception = new NotFoundException("Location group contains assigned locations that do not exist.",
+                errorDetails, cause);
+        } else if (input.getMessage().contains("ASSIGN_TS_GROUPS")) {
+            Map<String, Serializable> errorDetails = new HashMap<>();
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    localizedMessage = parts[0];
+                    if (localizedMessage.startsWith("ORA-")) {
+                        localizedMessage = localizedMessage
+                            .substring(localizedMessage.indexOf("TS_ID_NOT_FOUND:") + 17);
+                    }
+                }
+            }
+            errorDetails.put("missing-time-series", localizedMessage);
+            exception = new NotFoundException("Time series group contains assigned time series that do not exist.",
+                errorDetails, cause);
+        } else {
+            exception = new NotFoundException(cause);
 
-        String localizedMessage = cause.getLocalizedMessage();
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split("\n");
-            if (parts.length > 1) {
-                exception = new NotFoundException(parts[0], cause);
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    exception = new NotFoundException(parts[0], cause);
+                }
             }
         }
+
         return exception;
     }
 
@@ -388,7 +615,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         return new CwmsAuthException("User not authorized for this office.", cause,
-                                            HttpServletResponse.SC_UNAUTHORIZED, false);
+                HttpServletResponse.SC_UNAUTHORIZED);
     }
 
     public static boolean isAlreadyExists(RuntimeException input) {
@@ -402,6 +629,9 @@ public abstract class JooqDao<T> extends Dao<T> {
 
             retVal = hasCodeOrMessage(sqlException, codes, segments);
 
+        } else if (input instanceof AlreadyExists) {
+            // If the input is already an AlreadyExists exception, then we can just return true.
+            retVal = true;
         }
         return retVal;
     }
@@ -413,14 +643,18 @@ public abstract class JooqDao<T> extends Dao<T> {
             DataAccessException dae = (DataAccessException) input;
             cause = dae.getCause();
         }
+        AlreadyExists exception;
+        if (cause instanceof AlreadyExists) {
+            exception = (AlreadyExists) cause;
+        } else {
+            exception = new AlreadyExists(cause);
 
-        AlreadyExists exception = new AlreadyExists(cause);
-
-        String localizedMessage = cause.getLocalizedMessage();
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split("\n");
-            if (parts.length > 1) {
-                exception = new AlreadyExists(parts[0], cause);
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    exception = new AlreadyExists(parts[0], cause);
+                }
             }
         }
         return exception;
@@ -488,12 +722,21 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
             String message = sqlException.getLocalizedMessage();
-            int errorCode = sqlException.getErrorCode();
 
-            retVal = errorCode == 20998
-                    && message.contains("ORA-20102: The unit")
-                    && message.contains("is not a recognized CWMS Database unit for the")
-                ;
+            if (INVALID_UNIT.matcher(message).find()) {
+                retVal = true;
+            }
+
+            if (message != null) {
+                String[] parts = message.split("\n");
+                if (parts.length > 1) {
+                    message = parts[0];
+                }
+            }
+
+            if (CONVERSION_ERROR.matcher(message).matches()) {
+                retVal = true;
+            }
         }
         return retVal;
     }
@@ -507,6 +750,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         }
 
         String localizedMessage = cause.getLocalizedMessage();
+        boolean isConversionError = false;
         if (localizedMessage != null) {
             // skip ahead in localizedMessage to "ORA-20102:"
             String searchFor = "ORA-20102:";
@@ -517,10 +761,23 @@ public abstract class JooqDao<T> extends Dao<T> {
                 if (parts.length >= 1) {
                     localizedMessage = parts[0];
                 }
+            } else {
+                searchFor = "ORA-20998: ERROR: ";
+                start = localizedMessage.indexOf(searchFor);
+                if (start >= 0) {
+                    localizedMessage = localizedMessage.substring(start + searchFor.length());
+                    String[] parts = localizedMessage.split("\n");
+                    if (parts.length >= 1) {
+                        localizedMessage = parts[0];
+                    }
+                    isConversionError = true;
+                }
             }
         }
 
-        localizedMessage = sanitizeOrNull(localizedMessage);
+        if (!isConversionError) {
+            localizedMessage = sanitizeOrNull(localizedMessage);
+        }
 
         if (localizedMessage == null || localizedMessage.isEmpty()) {
             localizedMessage = "Invalid Units.";
@@ -529,23 +786,51 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException(localizedMessage, cause);
     }
 
+    private static FieldLengthExceededException buildFieldLengthExceededException(RuntimeException input) {
+        Throwable cause = input.getCause();
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            if (parts.length > 1) {
+                localizedMessage = parts[0];
+            }
+        }
+
+        if (localizedMessage != null) {
+            Matcher matcher = FIELD_LENGTH_EXCEEDED.matcher(localizedMessage);
+            if (matcher.find()) {
+                String parameter = matcher.group(1);
+                int actualLength = Integer.parseInt(matcher.group(2));
+                int maxLength = Integer.parseInt(matcher.group(3));
+                return new FieldLengthExceededException(parameter, actualLength, maxLength, cause, true);
+            }
+        }
+        return new FieldLengthExceededException(cause);
+    }
+
     private static InvalidItemException buildInvalidOffice(RuntimeException input) {
 
         Throwable cause = (input instanceof DataAccessException) ? input.getCause() : input;
         String localizedMessage = cause.getLocalizedMessage();
+        String sanitizedMessage = null;
         if (localizedMessage != null) {
             Matcher matcher = INVALID_OFFICE_ID.matcher(localizedMessage);
             if (matcher.find()) {
                 String office = sanitizeOrNull(matcher.group(1));
-                if(office != null) {
-                    localizedMessage = "\"" + office + "\" is not a valid CWMS office id";
+                if (office != null) {
+                    sanitizedMessage = "\"" + office + "\" is not a valid CWMS office id";
                 }
             }
         }
-        if (localizedMessage == null || localizedMessage.isEmpty()) {
-            localizedMessage = "Invalid Office.";
+        if (sanitizedMessage == null || sanitizedMessage.isEmpty()) {
+            sanitizedMessage = "Invalid Office.";
         }
-        return new InvalidItemException(localizedMessage, cause);
+        return new InvalidItemException(sanitizedMessage, cause);
     }
 
     public static boolean isUnsupportedOperationException(RuntimeException input) {
@@ -557,10 +842,38 @@ public abstract class JooqDao<T> extends Dao<T> {
             int errorCode = sqlException.getErrorCode();
             //procedure doesn't exist
             retVal = errorCode == 904
-                //Table or view does not exist
-                || errorCode == 942;
+                    //Table or view does not exist
+                    || errorCode == 942;
         }
         return retVal;
+    }
+
+    /**
+     * Returns true if:
+     * - PL/SQL procedure doesn't exist
+     * - or it exists but fails to bind (signature mismatch)
+     *
+     */
+    public static boolean isMissingOrBindFailure(Throwable t) {
+        Optional<SQLException> sqlExOpt = JooqDao.getSqlException(t);
+        if (sqlExOpt.isEmpty()) {
+            return false;
+        }
+
+        SQLException sqlEx = sqlExOpt.get();
+        String msg = sqlEx.getMessage();
+        if (msg == null) {
+            msg = "";
+        }
+        msg = msg.toUpperCase();
+
+        // Example:
+        //  - ORA-06550 ... PLS-00302: component 'DELETE_TS_GROUP_CASCADE' must be declared
+        return msg.contains("PLS-00302")
+                || msg.contains("PLS-00306")
+                || msg.contains("ORA-04043")
+                || msg.contains("ORA-06550")
+                || msg.contains("ORA-00904");
     }
 
 
@@ -573,7 +886,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new UnsupportedOperationException("CWMS currently does not support the requested operation", cause);
     }
 
-    private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
+    protected static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
         if (localizedMessage != null && !localizedMessage.isEmpty()) {
             int length = localizedMessage.length();
             PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
@@ -593,8 +906,9 @@ public abstract class JooqDao<T> extends Dao<T> {
     /**
      * JooqDao provides its own connection() which wraps throw exceptions
      * because the DSL.connection() method does not wrap exceptions.
+     *
      * @param dslContext the DSLContext to use
-     * @param cr the ConnectionRunnable to run with the connection
+     * @param cr         the ConnectionRunnable to run with the connection
      */
     protected static void connection(DSLContext dslContext, ConnectionRunnable cr) {
         try {
@@ -608,8 +922,9 @@ public abstract class JooqDao<T> extends Dao<T> {
      * Like DSL.connection the DSL.connectionResult method does not cause thrown
      * exceptions to be wrapped.  This method delegates to DSL.connectionResult
      * but will wrap exceptions into more specific exception types where possible.
+     *
      * @param dslContext the DSLContext to use
-     * @param var1 the ConnectionCallable to run with the connection
+     * @param var1       the ConnectionCallable to run with the connection
      */
     protected static <R> R connectionResult(DSLContext dslContext, ConnectionCallable<R> var1) {
         try {
@@ -617,14 +932,6 @@ public abstract class JooqDao<T> extends Dao<T> {
         } catch (RuntimeException e) {
             throw wrapException(e);
         }
-    }
-
-    public static String formatBool(Boolean tf) {
-        String parsed = null;
-        if (tf != null) {
-            parsed = tf ? "T" : "F";
-        }
-        return parsed;
     }
 
     public static boolean parseBool(String str) {
@@ -645,7 +952,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 } else {
                     if (logger.atFine().isEnabled()) {
                         logger.atWarning().withCause(e)
-                            .log("Location %s has an invalid location time zone: %s", locationId, zoneId);
+                                .log("Location %s has an invalid location time zone: %s", locationId, zoneId);
                     } else {
                         logger.atWarning().log("Location %s has an invalid location time zone: %s", locationId, zoneId);
                     }
@@ -657,10 +964,44 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     public static BigDecimal toBigDecimal(Number number) {
         return (number == null) ? null : BigDecimal.valueOf(
-            number.doubleValue());
+                number.doubleValue());
     }
 
     public static double buildDouble(BigDecimal bigDecimal) {
         return (bigDecimal == null) ? 0.0 : bigDecimal.doubleValue();
+    }
+
+    protected static void checkMetaData(ResultSetMetaData metaData, List<String> columnList,
+                                        String type) throws SQLException {
+        int columnCount = metaData.getColumnCount();
+        List<String> metadataColumns = new ArrayList<>();
+        logger.atFine().log("{0} column dump.", type);
+        for (int ii = 1; ii <= columnCount; ii++) {
+            String columnName = metaData.getColumnName(ii).toUpperCase();
+            metadataColumns.add(columnName);
+            logger.atFine().log("{0}: {1}", new Object[]{ii, columnName});
+        }
+        Collections.sort(metadataColumns);
+        if (!metadataColumns.containsAll(columnList)) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(type).append(" columns do not match expected names.\nExpected: ");
+            for (String s : columnList) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            sb.append(".\nReceived: ");
+            for (String s : metadataColumns) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            List<String> missing = new ArrayList<>(columnList);
+            missing.removeAll(metadataColumns);
+            sb.append(".\nMissing: ");
+            for (String s : missing) {
+                sb.append(s).append(", ");
+            }
+            sb.setLength(sb.length() - 2);
+            throw new SQLException(sb.toString());
+        }
     }
 }

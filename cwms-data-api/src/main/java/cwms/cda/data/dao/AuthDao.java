@@ -1,6 +1,8 @@
 package cwms.cda.data.dao;
 
 import com.google.common.flogger.FluentLogger;
+import com.password4j.Hash;
+import com.password4j.HashUpdate;
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
@@ -10,6 +12,7 @@ import cwms.cda.datasource.DirectUserPreparer;
 import cwms.cda.datasource.SessionOfficePreparer;
 import cwms.cda.datasource.SessionTimeZonePreparer;
 import cwms.cda.helpers.ResourceHelper;
+import cwms.cda.features.CdaFeatures;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
@@ -17,6 +20,9 @@ import cwms.cda.security.Role;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import org.togglz.core.context.FeatureContext;
+
+import com.password4j.Password;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.Connection;
@@ -24,7 +30,10 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -37,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -44,11 +54,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 
+import static cwms.cda.data.dao.JooqDao.connection;
+
 public class AuthDao extends Dao<DataApiPrincipal> {
-    public static final FluentLogger logger = FluentLogger.forEnclosingClass();
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String SCHEMA_TOO_OLD = "The CWMS-Data-API requires schema version "
                                              + "23.03.16 or later to handle authorization operations.";
     public static final String DATA_API_PRINCIPAL = "DataApiPrincipal";
+    public static final String AUTH_ERROR_MSG = "Authentication failed. The API Key may be invalid or no longer active.";
+    private static final String API_KEY_V1_PREFIX = "ak1_";
+    private static final int API_KEY_ID_LENGTH = 12;
+    private static final int API_KEY_SECRET_LENGTH = 256;
+    public static final int API_KEY_TOTAL_LENGTH = API_KEY_ID_LENGTH + API_KEY_SECRET_LENGTH;
     // At this level we just care that the user has permissions in *any* office
     private static final String RETRIEVE_GROUPS_OF_USER =
             ResourceHelper.getResourceAsString("/cwms/data/sql/user_groups.sql", AuthDao.class);
@@ -61,10 +78,18 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         + "cwms_env.set_session_user_direct(upper(?),upper(?)); end;";
 
     private static final String CHECK_API_KEY =
-        "select userid from cwms_20.at_api_keys where apikey = ?";
+        "select userid, apikey, key_name, expires from cwms_20.at_api_keys where (expires is null or expires >= systimestamp) " +
+            "and apikey like ?";
 
     private static final String USER_FOR_EDIPI =
         "select userid from cwms_20.at_sec_cwms_users where edipi = ?";
+
+    // NOTE: the column name *should* be principal_name. It was spelled incorrectly and never changed for the life of the schema.
+    private static final String USER_EXISTS =
+        "select userid from cwms_20.at_sec_cwms_users where principle_name = ?";
+
+    private static final String ADD_CWMS_USER = "CALL cwms_20.cwms_sec.create_user(?,?,?,?)";
+    private static final String UPDATE_INFO = "CALL cwms_20.cwms_upass.update_user_data(?,?,null,null,null,?,?)";
 
     public static final String CREATE_API_KEY = "insert into cwms_20.at_api_keys"
             + "(userid, key_name, apikey, created, expires) values(UPPER(?),?,?,?,?)";
@@ -89,7 +114,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
     private AuthDao(DSLContext dsl, String defaultOffice) {
         super(dsl);
-        if (getDbVersion() < Dao.CWMS_23_03_16) {
+        if (getDbVersion(dsl) < Dao.CWMS_23_03_16) {
             throw new RuntimeException(SCHEMA_TOO_OLD);
         }
 
@@ -138,10 +163,6 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         return getInstance(dsl, null);
     }
 
-    @Override
-    public List<DataApiPrincipal> getAll(String limitToOffice) {
-        throw new UnsupportedOperationException("Unimplemented method 'getAll'");
-    }
 
     /**
      * Reserved for future use, get user principal by presented unique name and office.
@@ -169,7 +190,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @param conn the connection to setup.
      * @throws SQLException if there is an issue setting up the session.
      */
-    private void setSessionForAuthCheck(Connection conn) throws SQLException {
+    static void setSessionForAuthCheck(Connection conn) throws SQLException {
         if (hasCwmsEnvMultiOfficeAuthFix) {
             try (PreparedStatement setApiUser = conn.prepareStatement(SET_API_USER_DIRECT_WITH_OFFICE)) {
                 setApiUser.setString(1,connectionUser);
@@ -184,30 +205,82 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         }
     }
 
+    private static String hashApiKey(String apiKey) {
+        return Password.hash(apiKey)
+            .withArgon2()
+            .getResult();
+    }
+
     private String checkKey(String key) throws CwmsAuthException {
         try {
             return dsl.connectionResult(c -> {
                 setSessionForAuthCheck(c);
-                try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY)) {
-                    checkForKey.setString(1,key);
-                    try (ResultSet rs = checkForKey.executeQuery()) {
-                        if (rs.next()) {
-                            return rs.getString(1);
-                        } else {
-                            throw new CwmsAuthException("No user for key");
+
+                boolean legacySupport = FeatureContext.getFeatureManager()
+                        .isActive(CdaFeatures.AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT);
+
+                if (key.startsWith(API_KEY_V1_PREFIX) && key.length() > API_KEY_ID_LENGTH) {
+                    try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY)) {
+                        String keyId = key.substring(0, API_KEY_ID_LENGTH);
+                        checkForKey.setString(1, keyId + "%");
+                        try (ResultSet rs = checkForKey.executeQuery()) {
+                            if (rs.next()) {
+                                String secretKey = key.substring(API_KEY_ID_LENGTH);
+                                String persistentHash = rs.getString(2).substring(API_KEY_ID_LENGTH);
+                                HashUpdate hashUpdate = checkKey(secretKey, persistentHash);
+                                if (hashUpdate.isVerified()) {
+                                    String userId = rs.getString(1);
+                                    if (hashUpdate.isUpdated()) {
+                                        Hash newHash = hashUpdate.getHash();
+                                        String newHashedApiKey = keyId + newHash.getResult();
+                                        String keyName = rs.getString(3);
+                                        Date expires = rs.getDate(4);
+                                        updateHash(c, userId, keyName, expires, newHashedApiKey);
+                                    }
+                                    return userId;
+                                }
+                            }
                         }
                     }
-                } catch (SQLException ex) {
-                    throw new CwmsAuthException("Failed API key check",ex);
+                } else if (legacySupport) {
+                    try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY)) {
+                        checkForKey.setString(1, key);
+                        try (ResultSet rs = checkForKey.executeQuery()) {
+                            if (rs.next()) {
+                                return rs.getString(1);
+                            }
+                        }
+                    }
                 }
+                throw new CwmsAuthException(AUTH_ERROR_MSG);
             });
-        } catch (DataAccessException ex) {
-            Throwable t = ex.getCause();
-            if (t instanceof CwmsAuthException) {
-                throw (CwmsAuthException)t;
-            } else {
-                throw ex;
-            }
+        } catch (RuntimeException ex) {
+            // Don't expose internal database errors
+            logger.atWarning().withCause(ex).log("Error verifying API key.");
+            throw new CwmsAuthException(AUTH_ERROR_MSG);
+        }
+    }
+
+    private static HashUpdate checkKey(String keyFromClient, String persistentHash) {
+        return Password.check(keyFromClient, persistentHash)
+            .andUpdate()
+            .withArgon2();
+    }
+
+    private void updateHash(Connection c, String userId, String keyName, Date expires, String apiKey)
+        throws SQLException {
+        //Schema does not allow for row updates. Delete + recreate
+        try (PreparedStatement deleteKey = c.prepareStatement(REMOVE_API_KEY)) {
+            deleteKey.setString(1, userId);
+            deleteKey.setString(2, keyName);
+            deleteKey.execute();
+        }
+        try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY)) {
+            createKey.setString(1, userId);
+            createKey.setString(2, keyName);
+            createKey.setString(3, apiKey);
+            createKey.setDate(4, expires);
+            createKey.execute();
         }
     }
 
@@ -240,6 +313,27 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             } else {
                 throw ex;
             }
+        }
+    }
+
+    private String userForPrincipal(String principal) throws CwmsAuthException {
+        try {
+            return dsl.connectionResult(c -> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement userForEdipi = c.prepareStatement(USER_EXISTS)) {
+                    userForEdipi.setString(1, principal);
+                    try (ResultSet rs = userForEdipi.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getString(1);
+                        } else {
+                            return null;
+                        }
+                    }
+                }
+            });
+        } catch (DataAccessException ex) {
+            logger.atInfo().withCause(ex).log("Unable to lookup user.");
+            throw new CwmsAuthException("Unable to lookup user.", ex);
         }
     }
 
@@ -316,19 +410,34 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @throws CwmsAuthException if the user is not authorized
      */
     public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles) throws CwmsAuthException {
+        isAuthorized(ctx, p, routeRoles, (principal, requiredRoles) ->
+                principal.getRoles().containsAll(requiredRoles));
+    }
+
+    /**
+     * logic to determine if a given principal can perform the desired operation based on a predicate.
+     * Throws exception if not valid, otherwise just returns.
+     * @param ctx the context to check
+     * @param p the principal to check
+     * @param routeRoles the route roles
+     * @param authorizer the authorizer logic for the route roles
+     * @throws CwmsAuthException if the user is not authorized
+     */
+    public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles,
+                                    BiPredicate<DataApiPrincipal, Set<RouteRole>> authorizer) throws CwmsAuthException {
         if (routeRoles == null || routeRoles.isEmpty()) {
             logger.atFinest().log("Passthrough, no required roles defined.");
             return;
-        } else if (p != null) {
-            Set<RouteRole> specifiedRoles = p.getRoles();
-            if (specifiedRoles.containsAll(routeRoles)) {
-                logger.atFinest().log("User has required roles.");
-                return;
+        }
+
+        if (p != null && authorizer.test(p, routeRoles)) {
+            logger.atFinest().log("User is authorized.");
+        } else {
+            if (p == null) {
+                throw new CwmsAuthException("No credentials provided.", 401);
             } else {
                 throw new MissingRolesException(getMissingRoles(ctx, routeRoles, p));
             }
-        } else {
-            throw new CwmsAuthException("No credentials provided.",401);
         }
     }
 
@@ -381,24 +490,22 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                 throw new CwmsAuthException(ONLY_OWN_KEY_MESSAGE, HttpCode.UNAUTHORIZED.getStatus());
             }
             SecureRandom randomSource = SecureRandom.getInstanceStrong();
-            String key = randomSource.ints((char)'0',(char)'z') // allow a-zA-Z0-9
-                                 .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)) // actually filter to above
-                                 .limit(256)
-                                 .collect(StringBuilder::new,StringBuilder::appendCodePoint, StringBuilder::append)
-                                 .toString();
+            String secretKey = generateSecretKey(randomSource);
+            String keyId = generateKeyId(randomSource);
+            String fullApiKey = keyId + secretKey;
             final ApiKey newKey = new ApiKey(
                     sourceData.getUserId().toUpperCase(),
                     sourceData.getKeyName(),
-                    key,
+                    fullApiKey,
                     ZonedDateTime.now(ZoneId.of("UTC")),
                     sourceData.getExpires()
             );
-            dsl.connection(c -> {
+             connection(dsl, c -> {
                 setSessionForAuthCheck(c);
                 try (PreparedStatement createKey = c.prepareStatement(CREATE_API_KEY)) {
                     createKey.setString(1, newKey.getUserId());
                     createKey.setString(2, newKey.getKeyName());
-                    createKey.setString(3, newKey.getApiKey());
+                    createKey.setString(3, keyId + hashApiKey(secretKey));
                     createKey.setDate(4, new Date(newKey.getCreated().toInstant().toEpochMilli()),
                             Calendar.getInstance(TimeZone.getTimeZone("UTC")));
                     if (newKey.getExpires() != null) {
@@ -408,6 +515,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                         createKey.setDate(5,null);
                     }
                     createKey.execute();
+                } catch (SQLException e) {
+                    DataAccessException re = new DataAccessException(e.getMessage(), e);
+                    throw JooqDao.wrapException(re);
                 }
             });
             return newKey;
@@ -417,6 +527,22 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         }
 
 
+    }
+
+    private static String generateSecretKey(SecureRandom randomSource) {
+        return randomSource.ints('0', 'z') // allow a-zA-Z0-9
+            .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)) // actually filter to above
+            .limit(API_KEY_SECRET_LENGTH)
+            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+            .toString();
+    }
+
+    private static String generateKeyId(SecureRandom randomSource) {
+        return API_KEY_V1_PREFIX + randomSource.ints('0', 'z') // allow a-zA-Z0-9
+            .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)) // actually filter to above
+            .limit(API_KEY_ID_LENGTH - API_KEY_V1_PREFIX.length())
+            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+            .toString();
     }
 
     /**
@@ -460,8 +586,15 @@ public class AuthDao extends Dao<DataApiPrincipal> {
     private static ApiKey rs2ApiKey(ResultSet rs) throws SQLException {
         String userId = rs.getString("userid");
         String keyName = rs.getString("key_name");
-        ZonedDateTime created = rs.getObject("created",ZonedDateTime.class);
-        ZonedDateTime expires = rs.getObject("expires",ZonedDateTime.class);
+
+        ZonedDateTime created = Optional.ofNullable(rs.getObject("created", Timestamp.class))
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(ZoneOffset.UTC))
+            .orElse(null);
+        ZonedDateTime expires = Optional.ofNullable(rs.getObject("expires", Timestamp.class))
+            .map(Timestamp::toInstant)
+            .map(i -> i.atZone(ZoneOffset.UTC))
+            .orElse(null);
         return new ApiKey(userId,keyName,null,created,expires);
     }
 
@@ -492,5 +625,60 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      */
     public void resetContext(DSLContext dslContext) {
         this.dsl = dslContext;
+    }
+
+    /**
+     * Returns a principal from user if that user exists. otherwise empty optional
+     *
+     * Uses the "principle" column directly with the provided value as-is.
+     *
+     * @param principal provider + subject principal to lookup.
+     * @return
+     * @throws CwmsAuthException if anything goes wrong with the database query.
+     */
+    public Optional<DataApiPrincipal> getPrincipalFromPrincipal(String principal) throws CwmsAuthException {
+        String user = userForPrincipal(principal);
+        if (user != null) {
+            Set<RouteRole> roles = this.getRolesForUser(user);
+            // In this case "cac_auth" just means the user is an actually user verify by some sort of
+            // identify management system. E.g. "not an apikey"
+            roles.add(new Role("cac_auth"));
+            return Optional.of(new DataApiPrincipal(user, roles));
+        } else {
+            return Optional.empty();
+        }
+    }
+
+
+    public DataApiPrincipal createUser(String username, String principal, String fullname, String email) throws CwmsAuthException {
+        try {
+            dsl.connection(c -> {
+                setSessionForAuthCheck(c);
+                try (PreparedStatement createUser = c.prepareStatement(ADD_CWMS_USER);
+                     PreparedStatement updateData = c.prepareStatement(UPDATE_INFO)) {
+                    createUser.setString(1, username);
+                    createUser.setNull(2, Types.VARCHAR);
+                    createUser.setNull(3, Types.ARRAY, "CWMS_T_CHAR_32_ARRAY");
+                    createUser.setNull(4, Types.VARCHAR);
+                    createUser.execute();
+
+                    updateData.setString(1, username);
+                    updateData.setString(2,fullname);
+                    updateData.setString(3, email);
+                    updateData.setString(4, principal);
+                    updateData.execute();
+                } 
+            });
+            logger.atInfo().log("Created user {} from principal {}", username, principal);
+            Optional<DataApiPrincipal> apiPrincipal = getPrincipalFromPrincipal(principal);
+            if (apiPrincipal.isPresent()) {
+                return apiPrincipal.get();
+            } else {
+                throw new CwmsAuthException("User " + username + " was created, however no principal object could be created.");
+            }
+        } catch (DataAccessException ex) {
+            logger.atInfo().withCause(ex).log("Unable to create user {}", username);
+            throw new CwmsAuthException("Unable to create user " + username, ex);
+        }
     }
 }

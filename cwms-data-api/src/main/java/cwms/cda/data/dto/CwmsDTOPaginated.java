@@ -1,12 +1,15 @@
 package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
-import java.util.logging.Logger;
+import com.google.common.flogger.FluentLogger;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -29,7 +32,7 @@ import kotlin.jvm.functions.Function1;
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
 @JsonPropertyOrder(alphabetic = true)
 public abstract class CwmsDTOPaginated extends CwmsDTOBase {
-    private static final Logger logger = Logger.getLogger(CwmsDTOPaginated.class.getName());
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     @Schema(
         description = "The cursor to the current page of data",
@@ -132,6 +135,21 @@ public abstract class CwmsDTOPaginated extends CwmsDTOBase {
         return new String[0];
     }
 
+    public static <T extends PageCursor> Optional<T> decodeCursor(String cursor, Class<T> clazz) {
+        return decodeCursor(cursor, CwmsDTOPaginated.delimiter, clazz);
+    }
+
+    public static <T extends PageCursor> Optional<T> decodeCursor(String cursor, String delimiter, Class<T> clazz) {
+        try {
+            T typed = clazz.getDeclaredConstructor().newInstance();
+            typed.decodeCursor(cursor, delimiter);
+            return Optional.of(typed);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            logger.atInfo().withCause(e).log("Failed to instantiate cursor class %s", clazz.getName());
+        }
+        return Optional.empty();
+    }
+
     public static String encodeCursor(String page, int pageSize) {
         return encodeCursor(CwmsDTOPaginated.delimiter, page, pageSize);
     }
@@ -150,11 +168,19 @@ public abstract class CwmsDTOPaginated extends CwmsDTOBase {
             encoder.encodeToString(Arrays.stream(parts).map(String::valueOf).collect(Collectors.joining(delimiter)).getBytes());
     }
 
+    public static String encodeCursor(PageCursor pageCursor) {
+        return encodeCursor(CwmsDTOPaginated.delimiter, pageCursor);
+    }
+
+    public static String encodeCursor(String delimiter, PageCursor cursor) {
+        return cursor.encode(encoder, delimiter);
+    }
+
     public static class CursorCheck implements Function1<String,Boolean> {
         private static Pattern base64 = Pattern.compile("^[-A-Za-z0-9+/]*={0,3}$");
         @Override
         public Boolean invoke(String cursor) {
-            logger.finest("checking");
+            logger.atFinest().log("checking");
             return base64.matcher(cursor).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 

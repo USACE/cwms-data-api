@@ -28,8 +28,9 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.security.KeyAccessManager.AUTH_HEADER;
+import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
@@ -50,6 +51,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -61,12 +63,17 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 
 @Tag("integration")
 class WaterUserControllerTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SWT";
     private static final WaterUser WATER_USER;
+    private static final String OFFICE_ID_TEXT = "office-id";
+    private static final String MESSAGE = "message";
+    private static final String IDENTIFIER = "identifier";
     static {
         try (InputStream userStream
                      = WaterUserContract.class.getResourceAsStream("/cwms/cda/api/wateruser.json")) {
@@ -112,7 +119,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             LocationsDaoImpl locationsDao = new LocationsDaoImpl(ctx);
             ProjectDao projectDao = new ProjectDao(ctx);
             try {
-                locationsDao.storeLocation(projectLocation);
+                locationsDao.storeLocation(projectLocation, false);
                 projectDao.store(project, true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -133,8 +140,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
-    @Test
-    void test_create_get_delete_WaterUser() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_create_get_delete_WaterUser(String format) throws Exception {
         // Test Structure
         // 1) Create a WaterUser
         // 2) Get the WaterUser, assert that it exists
@@ -148,7 +156,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .body(json)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
@@ -159,13 +167,16 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // get WaterUser, assert that it is correct
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
         .when()
@@ -198,14 +209,17 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // get water user and assert that it does not exist
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
         .when()
@@ -247,6 +261,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // Rename WaterUser
@@ -266,7 +283,10 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+                .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
+                .body(MESSAGE, equalTo("Water user successfully updated in CWMS."))
+                .body(IDENTIFIER, equalTo("NEW USER NAME"))
         ;
 
         // Get WaterUser, assert name has changed
@@ -320,13 +340,17 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
     }
 
-    @Test
-    void test_getAllWaterUsers() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_getAllWaterUsers(String format) throws Exception {
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
         String json = JsonV1.buildObjectMapper().writeValueAsString(WATER_USER);
 
@@ -339,7 +363,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .body(json)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -349,6 +373,9 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // Create WaterUser
@@ -356,7 +383,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
             .body(json2)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -366,12 +393,15 @@ class WaterUserControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user successfully stored to CWMS."))
+            .body(IDENTIFIER, equalTo(waterUser.getEntityName()))
         ;
 
         // get water users
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, TestAccounts.KeyUser.SWT_NORMAL.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -395,7 +425,7 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
             .queryParam(METHOD, DeleteMethod.DELETE_ALL)
@@ -407,14 +437,17 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(WATER_USER.getEntityName()))
         ;
 
         // delete WaterUser
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .contentType(Formats.JSONV1)
-            .accept(Formats.JSONV1)
+            .accept(format)
             .header(AUTH_HEADER, user.toHeaderValue())
             .queryParam(LOCATION_ID, WATER_USER.getProjectId().getName())
             .queryParam(METHOD, DeleteMethod.DELETE_ALL)
@@ -426,7 +459,43 @@ class WaterUserControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_NO_CONTENT))
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(OFFICE_ID_TEXT, equalTo(WATER_USER.getProjectId().getOfficeId()))
+            .body(MESSAGE, equalTo("Water user deleted successfully."))
+            .body(IDENTIFIER, equalTo(waterUser.getEntityName()))
+        ;
+    }
+
+    @Test
+    void test_create_values_too_long() throws Exception
+    {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+
+        String invalidEntityName = RandomStringUtils.randomAlphabetic(60);
+        String invalidWaterRight = RandomStringUtils.randomAlphabetic(260);
+
+        WaterUser invalidUser = new WaterUser.Builder().withEntityName(invalidEntityName)
+                .withProjectId(WATER_USER.getProjectId())
+                .withWaterRight(invalidWaterRight)
+                .build();
+
+        String json = JsonV1.buildObjectMapper().writeValueAsString(invalidUser);
+
+        // create WaterUser, assert that it fails with long values
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + WATER_USER.getProjectId().getName() + "/water-user")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body(containsString("One or more provided values exceeds the maximum length for the parameter."))
         ;
     }
 }

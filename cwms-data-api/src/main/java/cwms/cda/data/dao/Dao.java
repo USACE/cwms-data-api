@@ -31,8 +31,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTO;
 import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.jooq.DSLContext;
@@ -44,6 +42,7 @@ public abstract class Dao<T> {
     public static final int CWMS_18_1_8 = 180108;
     public static final int CWMS_21_1_1 = 210101;
     public static final int CWMS_23_03_16 = 230316;
+    public static final int CWMS_25_07_01 = 250701;
 
     public static final String PROP_BASE = "cwms.cda.data.dao.dao";
     public static final String VERSION_NAME = "version";
@@ -51,18 +50,24 @@ public abstract class Dao<T> {
             .maximumSize(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
                     + ".maxSize", 8))
             .expireAfterWrite(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
-                    + ".expireAfterSeconds", 300), TimeUnit.SECONDS)
+                    + ".expireAfterSeconds", 86400), TimeUnit.SECONDS)
             .build();
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+
+    protected static Integer CURRENT_SCHEMA_VERSION = null;
 
     @SuppressWarnings("unused")
     protected DSLContext dsl;
 
     protected Dao(DSLContext dsl) {
         this.dsl = dsl;
+        if (CURRENT_SCHEMA_VERSION == null)
+        {
+            CURRENT_SCHEMA_VERSION = getDbVersion(dsl);
+        }
     }
 
-    private static String getVersion(DSLContext dsl) {
+    public static String getVersion(DSLContext dsl) {
         return dsl.connectionResult(c -> DSL.using(c,SQLDialect.ORACLE18C)
                 .select(AV_DB_CHANGE_LOG.VERSION)
                 .from(AV_DB_CHANGE_LOG)
@@ -71,7 +76,7 @@ public abstract class Dao<T> {
                 .fetchOne().component1());
     }
 
-    public int getDbVersion() {
+    public int getDbVersion(DSLContext dsl) {
         Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
         if (cachedValue == null) {
             String version = getVersion(dsl);
@@ -85,7 +90,7 @@ public abstract class Dao<T> {
     }
 
     public static int versionAsInteger(String version) {
-        String[] parts = version.split("\\.");
+        String[] parts = version.split("[\\.-]");
 
         return Integer.parseInt(parts[0]) * 10000
                 + Integer.parseInt(parts[1]) * 100
@@ -97,18 +102,19 @@ public abstract class Dao<T> {
      * Sets session office on specific connection.
      * @param c opened connection
      * @param object Data containing a valid CWMS office
-     * @throws SQLException if the underlying database throws an exception
      */
-    protected void setOffice(Connection c, CwmsDTO object) throws SQLException {
-        this.setOffice(c,object.getOfficeId());
+    protected void setOffice(Connection c, CwmsDTO object) {
+        setOffice(c,object.getOfficeId());
     }
 
-    protected void setOffice(Connection c, String office) throws SQLException {
-        CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+    protected static void setOffice(Connection c, String office) {
+        //null office id is invalid for the session office, the client may send null if looking for data across all offices
+        //CWMS is not a valid session office id and maybe be parameterized from the client when
+        //searching for CWMS-owned data.
+        if(office != null && !"CWMS".equals(office)) {
+            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(DSL.using(c).configuration(), office);
+        }
     }
-
-
-    public abstract List<T> getAll(String office);
 
     public abstract Optional<T> getByUniqueName(String uniqueName, String office);
 
@@ -118,7 +124,7 @@ public abstract class Dao<T> {
      * @param tf
      * @return
      */
-    protected static String formatBool(Boolean tf)
+    public static String formatBool(Boolean tf)
     {
         String parsed = null;
         if(tf != null)
