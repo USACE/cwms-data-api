@@ -21,12 +21,15 @@ test("Test Stream Locations", async () => {
         firstLocation?.streamLocationNode?.id?.name &&
         firstLocation?.streamLocationNode?.streamNode?.streamId?.name
       ) {
-        const detail = await stream_locations_api.getStreamLocationsWithName({
+        // The server returns one object here, although the schema declares an
+        // array. Read the raw JSON until that response schema is corrected.
+        const response = await stream_locations_api.getStreamLocationsWithNameRaw({
           office: firstLocation.streamLocationNode.id.officeId,
           name: firstLocation.streamLocationNode.id.name,
           streamId: firstLocation.streamLocationNode.streamNode.streamId.name,
         });
-        expect(Array.isArray(detail)).toBe(true);
+        const detail = await response.raw.json();
+        expect(detail["stream-location-node"]).toBeDefined();
       }
 
       console.log(`Returned ${data.length} stream locations`);
