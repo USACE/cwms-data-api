@@ -6,6 +6,8 @@
 const fs = require("fs");
 const path = require("path");
 const prettier = require("prettier");
+const { exampleFiles, digest, root } = require('./exampleFiles');
+const testedExamples = JSON.parse(fs.readFileSync(path.join(root, 'build/tested-examples.json'), 'utf8'));
 
 const prettierOptions = {
   parser: "babel",
@@ -27,16 +29,12 @@ if (!fs.existsSync(outputDirectory)) {
   fs.mkdirSync(outputDirectory, { recursive: true });
 }
 function getFiles(directories) {
-  // Combine all the test files across directories we care about
-  let all_files = [];
-  directories.forEach((d) => {
-    all_files = fs
-      .readdirSync(d)
-      .filter((fileName) => fileName.endsWith(".test.js"))
-      .map((fileName) => path.join(d, fileName))
-      .concat(all_files);
+  return exampleFiles().map(file => {
+    if (testedExamples[file.replaceAll('\\', '/')] !== digest(file)) {
+      throw new Error(`Example changed since testing: ${file}. Run the documentation tests first.`);
+    }
+    return file;
   });
-  return all_files.sort();
 }
 // Read the HTML template
 fs.readFile(templatePath, "utf8", (err, template) => {
@@ -59,8 +57,7 @@ fs.readFile(templatePath, "utf8", (err, template) => {
         console.log(extractBlock[0]);
         // Strip out the bits we do not need from the file
         let block = extractBlock[1]
-          .replaceAll(/expect\((.*?)\)\.toBeDefined\(\)/g, "console.log($1)") // Convert expects to logs
-          .replaceAll("await ", "") // Let users decide when to add await
+          .replaceAll(/expect\((.*?)\)\.toBe(?:Defined\(\)|\(true\))/g, "console.log($1)")
           .trim();
 
         // Adjust indentation (simple left trim here, more sophisticated methods might be needed)
@@ -95,7 +92,7 @@ fs.readFile(templatePath, "utf8", (err, template) => {
 <b>To Install:</b>
 <code class="language-shell">npm install cwmsjs --save</code><br>
 <pre>
-<code class="language-javascript">${combinedImports}\n\n${formattedBlock}</code>
+<code class="language-javascript">${escapeHtml(combinedImports + "\n\n" + formattedBlock)}</code>
 </pre>
 <br />
 <hr />

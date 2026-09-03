@@ -72,10 +72,6 @@ function stripCwmsDataPrefix(spec) {
     paths[normalizedRoute] = routeConfig;
   }
   spec.paths = paths;
-  spec.servers = (spec.servers || []).map((server) => ({
-    ...server,
-    url: server.url.replace(/\/cwms-data\/?$/, ""),
-  }));
 }
 
 function normalizeOperationIds(spec) {
@@ -161,6 +157,13 @@ function main() {
 
   const cleaned = removeUniqueItems(spec);
   const normalized = normalizeStrings(cleaned);
+  // Operation names use TimeSeries, but CDA routes remain /timeseries.
+  normalized.paths = Object.fromEntries(
+    Object.entries(cleaned.paths).map(([route, item]) => [
+      route.replace(/\{([^}]+)\}/g, (_, parameter) => `{${replaceInString(parameter)}}`),
+      normalizeStrings(item),
+    ]),
+  );
   normalizeOperationIds(normalized);
   stripCwmsDataPrefix(normalized);
 
