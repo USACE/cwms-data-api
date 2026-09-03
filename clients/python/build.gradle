@@ -15,10 +15,14 @@ def venvDir = layout.buildDirectory.dir('venv')
 def windows = System.getProperty('os.name').toLowerCase().contains('windows')
 def python = providers.gradleProperty('pythonExecutable').getOrElse(windows ? 'python' : 'python3')
 def venvPython = venvDir.get().file(windows ? 'Scripts/python.exe' : 'bin/python').asFile.absolutePath
-// Keep the generator version separate from the CDA revision, as cwmsjs does.
-// PEP 440 local versions accept letters, numbers, and dot-separated segments.
-def cdaVersion = project.version.toString().toLowerCase().replaceAll('[^a-z0-9]+', '.').replaceAll('^\\.|\\.$', '')
-def clientVersion = "0.1.0+${cdaVersion}".toString()
+def clientVersion = providers.provider {
+    def output = new ByteArrayOutputStream()
+    exec {
+        commandLine python, 'scripts/package_version.py', project.version.toString()
+        standardOutput = output
+    }
+    output.toString('UTF-8').trim()
+}
 
 tasks.register('prepareOpenApiSpec', Exec) {
     group 'openapi'
@@ -48,11 +52,15 @@ tasks.register('generatePythonClient', GenerateTask) {
     outputDir = generatedClientDir.get().asFile.absolutePath
     configFile = layout.projectDirectory.file('openapi.config.json').asFile.absolutePath
     templateDir = layout.projectDirectory.dir('templates').asFile.absolutePath
-    additionalProperties.set([packageVersion: clientVersion])
+    inputs.property 'cdaVersion', project.version.toString()
+    inputs.file 'scripts/package_version.py'
+    additionalProperties.put('packageVersion', clientVersion)
     globalProperties.set([apiDocs: 'true', modelDocs: 'true', apiTests: 'false', modelTests: 'false'])
     inputs.file rootProject.file('LICENSE.md')
     // Remove obsolete generated modules when operations or schemas disappear.
-    doFirst { delete generatedClientDir }
+    doFirst {
+        delete generatedClientDir
+    }
     doLast {
         copy {
             from rootProject.file('LICENSE.md')
@@ -96,7 +104,17 @@ tasks.register('testPythonClient', Exec) {
     description 'Test the installed wheel against a local HTTP server; no CDA database is needed.'
     dependsOn installPythonClient
     commandLine venvPython, '-m', 'unittest', 'discover', '-s', 'tests', '-v'
+    environment 'CDA_VERSION', project.version.toString()
+}
+
+tasks.register('buildPythonDocs', Exec) {
+    group 'documentation'
+    description 'Build HTML reference and examples from the tested Python SDK.'
+    dependsOn testPythonClient
+    commandLine venvPython, 'scripts/build_docs.py'
+    environment 'CDA_VERSION', project.version.toString()
 }
 
 tasks.named('assemble') { dependsOn buildPythonClient }
 tasks.named('check') { dependsOn testPythonClient }
+tasks.named('build') { dependsOn buildPythonDocs }

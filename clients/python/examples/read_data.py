@@ -13,7 +13,7 @@ CDA_ROOT = "https://cwms-data.usace.army.mil/cwms-data"
 config = Configuration(host=CDA_ROOT)
 json_v2 = {"Accept": "application/json;version=2"}
 
-with ApiClient(config) as client:
+def get_time_series(client):
     series = TimeSeriesApi(client).get_timeseries(
         name="KEYS.Elev.Inst.1Hour.0.Ccp-Rev",
         office="SWT",
@@ -23,9 +23,11 @@ with ApiClient(config) as client:
         _headers=json_v2,
         _request_timeout=30.0,
     )
-    print("Time series:", series.name, series.units, series.interval)
-    print("First three rows [epoch milliseconds, value, quality]:", series.values[:3])
+    return series
 
+
+
+def get_level(client):
     level = LevelsApi(client).get_levels_with_level_id(
         level_id="KEYS.Elev.Inst.0.Top of Conservation",
         office="SWT",
@@ -36,12 +38,24 @@ with ApiClient(config) as client:
         _headers=json_v2,
         _request_timeout=30.0,
     )
-    print("Level:", level.to_dict())
+    return level
 
+
+
+def get_location(client):
     location = LocationsApi(client).get_locations_with_location_id(
         location_id="KEYS",
         office="SWT",
         unit="EN",
         _request_timeout=30.0,
     )
-    print("Location:", location.public_name, location.latitude, location.longitude)
+    return location
+
+
+if __name__ == "__main__":
+    with ApiClient(config) as client:
+        series = get_time_series(client)
+        print(series.name, series.units, series.interval, series.values[:3])
+        print(get_level(client).to_dict())
+        location = get_location(client)
+        print(location.public_name, location.latitude, location.longitude)

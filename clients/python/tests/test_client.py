@@ -3,6 +3,7 @@
 import importlib
 import importlib.metadata
 import json
+import os
 import pkgutil
 import threading
 import unittest
@@ -18,6 +19,8 @@ from cda.models.time_series import TimeSeries
 from cda.models.abstract_rating_metadata import AbstractRatingMetadata
 from cda.models.expression_rating import ExpressionRating
 from cda.models.location_level import LocationLevel
+from scripts.package_version import package_version
+from examples.read_data import get_time_series, get_level, get_location
 
 
 class ClientTest(unittest.TestCase):
@@ -63,7 +66,8 @@ class ClientTest(unittest.TestCase):
     def test_installed_distribution_and_all_modules(self):
         distribution = importlib.metadata.distribution("cda-python")
         self.assertEqual(distribution.metadata["Name"].replace("_", "-"), "cda-python")
-        self.assertTrue(distribution.version.startswith("0.1.0+"))
+        if os.environ.get("CDA_VERSION"):
+            self.assertEqual(distribution.version, package_version(os.environ["CDA_VERSION"]))
         self.assertIn("site-packages", cda.__file__)
         self.assertTrue(any(item.startswith("pydantic") for item in distribution.requires))
         for module in pkgutil.walk_packages(cda.__path__, "cda."):
@@ -121,6 +125,20 @@ class ClientTest(unittest.TestCase):
                 OfficesApi(client).get_offices()
         self.assertEqual(caught.exception.status, 403)
         self.assertEqual(json.loads(caught.exception.body)["message"], "Denied")
+
+    def test_documented_examples_use_the_installed_client(self):
+        cases = [
+            (get_time_series, {"name": "TEST", "units": "ft", "interval": "PT1H", "values": [[1, 2.0, 0]]}, "/cwms-data/timeseries"),
+            (get_level, {"office-id": "SWT", "location-level-id": "TEST", "constant-value": 723.0}, "/cwms-data/levels/KEYS.Elev.Inst.0.Top%20of%20Conservation"),
+            (get_location, {"office-id": "SWT", "name": "KEYS", "latitude": 36.15, "longitude": -96.25}, "/cwms-data/locations/KEYS"),
+        ]
+        with ApiClient(self.configuration) as client:
+            for example, body, path in cases:
+                with self.subTest(example=example.__name__):
+                    type(self).response_body = body
+                    result = example(client)
+                    self.assertIsNotNone(result)
+                    self.assertEqual(urlsplit(self.requests[-1][0]).path, path)
 
 
 if __name__ == "__main__":

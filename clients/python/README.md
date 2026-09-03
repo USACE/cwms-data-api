@@ -35,6 +35,7 @@ the generator never silently downloads a different API version.
 | --- | --- |
 | Generated project | `clients/python/build/cda-python/` |
 | API and model documentation | `clients/python/build/cda-python/docs/` |
+| HTML reference and tested examples | `clients/python/build/docs/html/` |
 | Wheel and source archive | `clients/python/build/dist/` |
 
 Use `:clients:python:generatePythonClient` to generate only the source and docs.
@@ -79,11 +80,32 @@ in the schema and the codes returned by `has-data=true` (for example, `DIS`).
 Time-series intervals use CDA's ISO 8601 duration strings, and level variants
 require their distinguishing value fields so responses deserialize unambiguously.
 
-The generator version is `0.1.0`. As with cwmsjs, the package also records the CDA
-revision. Python uses a PEP 440 local version, for example
-`0.1.0+2026.9.3` when built with `-PversionOverride=2026.09.03`.
-Development branch punctuation is normalized to dots. PyPI publishing and a
-public release-version policy remain follow-up work.
+## Versions and documentation publishing
+
+The package version follows CDA, with Python's PEP 440 spelling:
+
+| CDA version | Python package version |
+| --- | --- |
+| `2026.09.03` | `2026.9.3` |
+| `2026.09.03-deva` | `2026.9.3.dev1` |
+| `2026.09.03-testa` | `2026.9.3rc1` |
+| `2026.09.03-a` | `2026.9.3.post1` |
+| `2026.09.03-feature/python-sdk` | `2026.9.3.dev0+feature.python.sdk` |
+
+Unlettered `-dev` and `-test` use suffix number 0. Nightly builds use the build
+date and a development label. There is no separate generator-version prefix.
+PyPI publishing remains follow-up work; GitHub releases include the wheel and source archive.
+
+`buildPythonDocs` runs the SDK tests before building Sphinx HTML from the generated
+API/model Markdown and the same example functions executed by the tests. Warnings
+fail the documentation build. CI uploads the package and HTML for review.
+
+The companion SDK Pages workflow publishes the generated HTML at
+[CDA Python SDK documentation](https://usace.github.io/cwms-data-api/sdk/python/),
+alongside cwmsjs. That URL becomes available after both the Python SDK and shared
+Pages workflow changes are merged and deployed. Release-specific documentation is
+retained under `/cwms-data-api/releases/<CDA-version>/sdk/python/`; development docs
+live under `/cwms-data-api/development/sdk/python/`.
 
 ## Naming
 
