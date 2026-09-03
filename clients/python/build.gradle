@@ -1,0 +1,102 @@
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
+import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
+
+plugins {
+    id 'base'
+    id 'org.openapi.generator' version '7.15.0'
+}
+
+def specOverride = providers.gradleProperty('pythonOpenApiSpec')
+def specFile = specOverride.isPresent() ? file(specOverride.get()) : rootProject.file('cwms-data-api/build/openapi.json')
+def preparedSpec = layout.buildDirectory.file('openapi.json')
+def generatedClientDir = layout.buildDirectory.dir('cda-python')
+def distDir = layout.buildDirectory.dir('dist')
+def venvDir = layout.buildDirectory.dir('venv')
+def windows = System.getProperty('os.name').toLowerCase().contains('windows')
+def python = providers.gradleProperty('pythonExecutable').getOrElse(windows ? 'python' : 'python3')
+def venvPython = venvDir.get().file(windows ? 'Scripts/python.exe' : 'bin/python').asFile.absolutePath
+// Keep the generator version separate from the CDA revision, as cwmsjs does.
+// PEP 440 local versions accept letters, numbers, and dot-separated segments.
+def cdaVersion = project.version.toString().toLowerCase().replaceAll('[^a-z0-9]+', '.').replaceAll('^\\.|\\.$', '')
+def clientVersion = "0.1.0+${cdaVersion}".toString()
+
+tasks.register('prepareOpenApiSpec', Exec) {
+    group 'openapi'
+    description 'Prepare the CDA specification for the Python generator.'
+    if (!specOverride.isPresent()) {
+        dependsOn ':cwms-data-api:executeOpenAPIConversion'
+    }
+    commandLine python, 'scripts/prepare_spec.py', specFile.absolutePath, preparedSpec.get().asFile.absolutePath
+    inputs.file specFile
+    inputs.file 'scripts/prepare_spec.py'
+    outputs.file preparedSpec
+}
+
+tasks.register('validateOpenApiSpec', ValidateTask) {
+    group 'openapi'
+    description 'Validate the adjusted Python client OpenAPI specification.'
+    dependsOn prepareOpenApiSpec
+    inputSpec.set(preparedSpec.get().asFile.absolutePath)
+}
+
+tasks.register('generatePythonClient', GenerateTask) {
+    group 'openapi'
+    description 'Generate the cda-python SDK and API documentation.'
+    dependsOn validateOpenApiSpec
+    generatorName = 'python'
+    inputSpec = preparedSpec.get().asFile.absolutePath
+    outputDir = generatedClientDir.get().asFile.absolutePath
+    configFile = layout.projectDirectory.file('openapi.config.json').asFile.absolutePath
+    templateDir = layout.projectDirectory.dir('templates').asFile.absolutePath
+    additionalProperties.set([packageVersion: clientVersion])
+    globalProperties.set([apiDocs: 'true', modelDocs: 'true', apiTests: 'false', modelTests: 'false'])
+    inputs.file rootProject.file('LICENSE.md')
+    // Remove obsolete generated modules when operations or schemas disappear.
+    doFirst { delete generatedClientDir }
+    doLast {
+        copy {
+            from rootProject.file('LICENSE.md')
+            into generatedClientDir
+        }
+    }
+}
+
+tasks.register('createPythonEnvironment', Exec) {
+    group 'build'
+    description 'Create an isolated Python environment for building and testing the SDK.'
+    commandLine python, '-m', 'venv', venvDir.get().asFile.absolutePath
+    inputs.property 'pythonExecutable', python
+    outputs.file venvPython
+}
+
+tasks.register('installBuildDependencies', Exec) {
+    dependsOn createPythonEnvironment
+    commandLine venvPython, '-m', 'pip', 'install', '-r', file('requirements-build.txt')
+}
+
+tasks.register('buildPythonClient', Exec) {
+    group 'build'
+    description 'Build the cda-python wheel and source distribution without publishing.'
+    dependsOn generatePythonClient, installBuildDependencies
+    commandLine venvPython, '-m', 'build', '--outdir', distDir.get().asFile.absolutePath,
+            generatedClientDir.get().asFile.absolutePath
+    doFirst { delete distDir }
+}
+
+tasks.register('installPythonClient', Exec) {
+    dependsOn buildPythonClient
+    doFirst {
+        def wheel = fileTree(distDir).matching { include '*.whl' }.singleFile
+        commandLine venvPython, '-m', 'pip', 'install', '--force-reinstall', wheel.absolutePath
+    }
+}
+
+tasks.register('testPythonClient', Exec) {
+    group 'verification'
+    description 'Test the installed wheel against a local HTTP server; no CDA database is needed.'
+    dependsOn installPythonClient
+    commandLine venvPython, '-m', 'unittest', 'discover', '-s', 'tests', '-v'
+}
+
+tasks.named('assemble') { dependsOn buildPythonClient }
+tasks.named('check') { dependsOn testPythonClient }

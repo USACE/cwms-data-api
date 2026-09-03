@@ -74,6 +74,11 @@ End user documentation available here: [📕 Read the Docs](https://cwms-data-ap
 
 ## Development notes
 
+Generated SDKs live alongside the API source:
+
+- [cda-python](clients/python/README.md): Python SDK, built locally; not yet published on PyPI.
+- [cwmsjs](clients/typescript/README.md): TypeScript SDK.
+
 Development and runtime currently requires java 11. JDKs and JREs greater than 11 should work, please report if they don't.
 
 
