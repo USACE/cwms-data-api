@@ -36,6 +36,8 @@ class SpaErrorStatusFilterTest {
         "/filter-expressions",
         "/legacy-format",
         "/location-search",
+        "/quick-start",
+        "/quick-start/",
         "/regexp",
         "/swagger-ui",
         "/swagger-ui/",

@@ -25,6 +25,7 @@ public final class SpaErrorStatusFilter implements Filter {
         "/filter-expressions",
         "/legacy-format",
         "/location-search",
+        "/quick-start",
         "/regexp",
         "/swagger-ui",
         "/timestamps",

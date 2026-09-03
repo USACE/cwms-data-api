@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Pages
 import Home from "./pages/Home";
+import QuickStart from "./pages/quick-start";
 import NotFound from "./pages/NotFound";
 import SwaggerUI from "./pages/swagger-ui/index";
 import Regexp from "./pages/regexp/index";
@@ -30,6 +31,7 @@ import GlobalErrorBoundary from "./components/GlobalErrorBoundary.jsx";
 const queryClient = new QueryClient();
 const routeComponents = {
   home: Home,
+  "quick-start": QuickStart,
   "swagger-ui": SwaggerUI,
   "data-query": DataQuery,
   regexp: Regexp,

@@ -49,6 +49,11 @@ export default [
     href: "#",
     children: [
       {
+        id: "quick-start",
+        text: "Getting Started",
+        href: "/quick-start",
+      },
+      {
         id: "read-the-docs",
         text: "User Documentation",
         href: "https://cwms-data-api.readthedocs.io/latest",

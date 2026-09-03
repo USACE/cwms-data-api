@@ -1,0 +1,195 @@
+.quick-start {
+  max-width: 1120px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: #1f2937;
+  line-height: 1.7;
+}
+.quick-start h1 {
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0.6rem 0 1rem;
+}
+.quick-start h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+}
+.quick-start p {
+  margin: 1rem 0;
+}
+.quick-start a {
+  color: #075985;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.quick-start a:focus-visible,
+.quick-start summary:focus-visible {
+  outline: 3px solid #0369a1;
+  outline-offset: 4px;
+}
+.quick-start code {
+  overflow-wrap: anywhere;
+  font-size: 0.9em;
+}
+.quick-start ul,
+.quick-start ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+.quick-start ul {
+  list-style: disc;
+}
+.quick-start ol {
+  list-style: decimal;
+}
+.quick-start li {
+  margin: 0.6rem 0;
+}
+.quick-start section {
+  scroll-margin-top: 1rem;
+}
+.qs-intro {
+  border-left: 5px solid #b91c1c;
+  padding: 1rem 1.5rem;
+  background: #f1f5f9;
+}
+.qs-eyebrow {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.qs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0.5rem;
+}
+.qs-actions a {
+  border: 1px solid #075985;
+  border-radius: 4px;
+  padding: 0.55rem 1rem;
+  font-weight: 600;
+  background: white;
+}
+.qs-contents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 1.5rem 0 2rem;
+  padding: 1rem;
+  border: 1px solid #cbd5e1;
+}
+.qs-contents strong {
+  width: 100%;
+}
+.qs-request {
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  margin: 1rem 0;
+  padding: 0.8rem 1rem;
+  background: #f8fafc;
+}
+.qs-request summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: #075985;
+}
+.qs-request pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #172033;
+  color: #f8fafc;
+  padding: 1rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.qs-parameters > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) 3fr;
+  gap: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.35rem 0;
+}
+.qs-parameters dd {
+  min-width: 0;
+}
+.qs-table-wrap {
+  overflow-x: auto;
+}
+.quick-start table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  text-align: left;
+}
+.quick-start th,
+.quick-start td {
+  border: 1px solid #cbd5e1;
+  padding: 0.7rem;
+}
+.quick-start thead {
+  background: #f1f5f9;
+}
+.qs-figure {
+  margin: 1.5rem 0;
+}
+.qs-image {
+  position: relative;
+  border: 1px solid #cbd5e1;
+}
+.qs-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.qs-highlight {
+  position: absolute;
+  border: 3px solid #b91c1c;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px white;
+}
+.qs-highlight b {
+  position: absolute;
+  left: -1rem;
+  top: -1rem;
+  background: #b91c1c;
+  color: white;
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 1.65rem;
+  height: 1.65rem;
+  line-height: 1.4rem;
+  text-align: center;
+  font-size: 0.8rem;
+}
+.qs-figure figcaption {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 0.5rem;
+}
+@media (max-width: 600px) {
+  .quick-start {
+    padding: 0 0.5rem;
+  }
+  .qs-intro {
+    padding: 1rem;
+  }
+  .qs-parameters > div {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .qs-highlight {
+    border-width: 2px;
+  }
+  .qs-highlight b {
+    width: 1.2rem;
+    height: 1.2rem;
+    line-height: 1rem;
+    font-size: 0.65rem;
+    left: -0.7rem;
+    top: -0.7rem;
+  }
+}

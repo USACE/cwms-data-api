@@ -1,6 +1,11 @@
 // Routes are defined here to allow building a sitemap dynamically
 export const routePaths = [
   {
+    id: "quick-start",
+    path: "quick-start",
+    sitemapPath: "quick-start",
+  },
+  {
     id: "home",
     index: true,
     sitemapPath: "",
