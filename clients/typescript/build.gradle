@@ -149,7 +149,7 @@ tasks.register('buildTypeScriptDocs', NpmTask) {
     args = ['run', 'buildDocs']
     inputs.dir generatedClientDir.dir('src')
     inputs.dir 'tests'
-    inputs.files fileTree('scripts').include('buildTypedoc.js', 'tests2exampledocs.js', 'exampletemplate.html')
+    inputs.files fileTree('scripts').include('buildTypedoc.js', 'tests2exampledocs.js', 'exampleFiles.js', 'exampletemplate.html')
     outputs.dir generatedClientDir.dir('docs')
 }
 
