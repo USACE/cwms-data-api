@@ -32,6 +32,8 @@ class SpaErrorStatusFilterTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+        "/api-keys",
+        "/api-keys/",
         "/data-query",
         "/filter-expressions",
         "/legacy-format",

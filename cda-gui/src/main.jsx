@@ -23,6 +23,7 @@ import FilterExpressions from "./pages/rsql";
 import Timestamps from "./pages/timestamps";
 import LegacyFormat from "./pages/legacy-format/index.jsx";
 import UserLists from "./pages/user-lists/index.jsx";
+import ApiKeys from "./pages/api-keys/index.jsx";
 import { routePaths } from "./route-paths";
 import AppAuthProvider from "./components/AppAuthProvider.jsx";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary.jsx";
@@ -38,6 +39,7 @@ const routeComponents = {
   "legacy-format": LegacyFormat,
   "location-search": LocationSearch,
   "user-lists": UserLists,
+  "api-keys": ApiKeys,
 };
 
 const router = createBrowserRouter(

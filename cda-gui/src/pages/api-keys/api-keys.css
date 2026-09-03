@@ -1,0 +1,13 @@
+/* Keep the shared modal panel within narrow screens, including code examples. */
+.api-key-dialog [id^="headlessui-dialog-panel"] {
+  width: 100%;
+  min-width: 0;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+}
+
+@media (max-width: 639px) {
+  .api-key-dialog [id^="headlessui-dialog-panel"] {
+    padding: 1.5rem;
+  }
+}
