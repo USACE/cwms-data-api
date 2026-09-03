@@ -49,7 +49,25 @@ def prepare_spec(source):
             }
             child.setdefault("required", []).append(discriminator["propertyName"])
 
-    values = schemas.get("TimeSeries", {}).get("properties", {}).get("values", {})
+    time_series = schemas.get("TimeSeries", {}).get("properties", {})
+    if "interval" in time_series:
+        time_series["interval"] = {
+            "type": "string", "description": "Time-series interval as an ISO 8601 duration, such as PT1H.",
+            "readOnly": True,
+        }
+    # CDA identifies level variants by these mutually exclusive payload fields.
+    # Without them being required, a constant response matches several oneOf models.
+    for name, field in {
+        "ConstantLocationLevel": "constant-value",
+        "SeasonalLocationLevel": "seasonal-values",
+        "TimeSeriesLocationLevel": "seasonal-time-series-id",
+        "VirtualLocationLevel": "constituents",
+    }.items():
+        if name in schemas:
+            required = schemas[name].setdefault("required", [])
+            if field not in required:
+                required.append(field)
+    values = time_series.get("values", {})
     if values.get("items", {}).get("type") == "array":
         # CDA returns [epoch_millis, value_or_null, quality], not objects.
         values["items"]["items"] = {"type": "number", "nullable": True}

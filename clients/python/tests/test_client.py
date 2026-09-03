@@ -17,6 +17,7 @@ from cda.models.office import Office
 from cda.models.time_series import TimeSeries
 from cda.models.abstract_rating_metadata import AbstractRatingMetadata
 from cda.models.expression_rating import ExpressionRating
+from cda.models.location_level import LocationLevel
 
 
 class ClientTest(unittest.TestCase):
@@ -71,8 +72,21 @@ class ClientTest(unittest.TestCase):
 
     def test_time_series_numeric_rows_and_missing_values(self):
         values = [[1509654000000, 54.3, 0], [1509657600000, None, 5]]
-        series = TimeSeries.from_dict({"name": "TEST", "office-id": "SWT", "units": "ft", "values": values})
+        series = TimeSeries.from_dict({"name": "TEST", "office-id": "SWT", "units": "ft", "interval": "PT1H", "values": values})
         self.assertEqual(series.to_dict()["values"], values)
+        self.assertEqual(series.interval, "PT1H")
+
+    def test_location_level_variants_are_unambiguous(self):
+        for field, value, model in [
+            ("constant-value", 723.0, "ConstantLocationLevel"),
+            ("seasonal-values", [], "SeasonalLocationLevel"),
+            ("seasonal-time-series-id", "TEST.Elev.Inst.1Hour.0.Level", "TimeSeriesLocationLevel"),
+            ("constituents", [], "VirtualLocationLevel"),
+        ]:
+            with self.subTest(model=model):
+                level = LocationLevel.from_dict({"office-id": "SWT", "location-level-id": "TEST.Elev.Inst.0.Normal", field: value})
+                self.assertEqual(type(level.actual_instance).__name__, model)
+                self.assertEqual(level.to_dict()[field], value)
 
     def test_rating_discriminator_and_common_fields(self):
         rating = AbstractRatingMetadata.from_dict({

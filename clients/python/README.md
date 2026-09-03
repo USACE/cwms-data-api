@@ -63,6 +63,11 @@ For authenticated requests, configure `config.api_key["ApiKey"]` with your key
 and `config.api_key_prefix["ApiKey"] = "apikey"`. The host includes the deployment
 context, such as `/cwms-data`; generated operation paths omit that prefix.
 
+See [read_data.py](examples/read_data.py) for a complete time-series, level, and
+location example, including changing the CDA root. Run it with the interpreter
+where you installed the wheel. The sample requests one page of time-series data;
+use `series.next_page` as the next request's `page` argument for longer windows.
+
 ## Specification adjustments
 
 Python attributes use snake case while serialization preserves CDA's JSON keys.
@@ -71,6 +76,8 @@ avoid circular imports, preserves discriminator values, and describes time-serie
 rows as numeric arrays that can contain null values. These adaptations affect
 only the Python generator input. Office types accept both the descriptive labels
 in the schema and the codes returned by `has-data=true` (for example, `DIS`).
+Time-series intervals use CDA's ISO 8601 duration strings, and level variants
+require their distinguishing value fields so responses deserialize unambiguously.
 
 The generator version is `0.1.0`. As with cwmsjs, the package also records the CDA
 revision. Python uses a PEP 440 local version, for example
