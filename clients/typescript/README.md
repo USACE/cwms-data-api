@@ -68,6 +68,7 @@ In order to accommodate changes both to the generator and to CDA itself, cwmsjs 
 `[cwmsjs generator SemVer]-[CDA version/calver suffix]`
 
 The Gradle build passes the CDA project version into the client package step. When running the package update script directly, set `CDA_CLIENT_VERSION_SUFFIX` or pass `--version-suffix=<version>`.
+Zero-padded numeric CalVer identifiers are normalized for npm SemVer compatibility, so CDA release `2026.08.25` produces cwmsjs version `2.4.0-2026.8.25`.
 
 ## Building CWMSjs from source
 
