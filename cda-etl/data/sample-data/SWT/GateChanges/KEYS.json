@@ -1,0 +1,3113 @@
+[
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1782162000000,
+    "pool-elevation": 732.0099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 640.1926666666667,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1782230400000,
+    "pool-elevation": 732.5099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 644.7699999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1782241200000,
+    "pool-elevation": 732.5399999999998,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 647.0699999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1782399600000,
+    "pool-elevation": 734.68,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 649.4799999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1782579600000,
+    "pool-elevation": 738.43,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 649.1899999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1782666000000,
+    "pool-elevation": 739.05,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 650.4899999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1782853200000,
+    "pool-elevation": 740.5999999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 650.6099999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 3.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1783427400000,
+    "pool-elevation": 735.8999999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 648.6499999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 2.4999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 3.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1783526400000,
+    "pool-elevation": 734.1999999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 648.1399999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 1.5,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 1.9999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1783537200000,
+    "pool-elevation": 734.05,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 646.5,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1784145600000,
+    "pool-elevation": 731.0799999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 643.8499999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1784232000000,
+    "pool-elevation": 730.53,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "notes": "closed",
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 643.3999999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1784579400000,
+    "pool-elevation": 729.015,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "notes": "closed",
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 642.2499999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG9"
+        },
+        "opening": 0.9999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1784838600000,
+    "pool-elevation": 726.145,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "notes": "closed",
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 643.68,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG1"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG10"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG11"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG12"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG13"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG14"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG15"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG16"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG17"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG18"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG2"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG3"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG4"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG5"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG6"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG7"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      },
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "KEYS-TG8"
+        },
+        "opening": 0.49999999999999994,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "KEYS"
+    },
+    "change-date": 1785182400000,
+    "pool-elevation": 724.1399999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "notes": "closed",
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 642.3599999999999,
+    "elevation-units": "ft",
+    "settings": []
+  }
+]
