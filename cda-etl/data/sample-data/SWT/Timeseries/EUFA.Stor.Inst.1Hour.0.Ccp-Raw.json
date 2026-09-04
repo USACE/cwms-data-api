@@ -1,0 +1,31 @@
+{
+  "begin": "NaT",
+  "date-version-type": "UNVERSIONED",
+  "end": "NaT",
+  "interval": "PT1H",
+  "interval-offset": 2147483647,
+  "name": "EUFA.Stor.Inst.1Hour.0.Ccp-Raw",
+  "office-id": "SWT",
+  "page-size": 300000,
+  "time-zone": "US/Central",
+  "total": 0,
+  "units": "ac-ft",
+  "value-columns": [
+    {
+      "name": "date-time",
+      "ordinal": 1,
+      "datatype": "java.sql.Timestamp"
+    },
+    {
+      "name": "value",
+      "ordinal": 2,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "quality-code",
+      "ordinal": 3,
+      "datatype": "int"
+    }
+  ],
+  "values": []
+}

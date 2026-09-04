@@ -7,6 +7,12 @@ settings:
   path: "./stage"
 offices:
   - id: SWT
+    properties:
+      - categoryId: REGI
+        properties:
+          - id: SWT.GLOBAL.PROPERTY
+      - categoryId: REGI
+        all: true
     projects:
       - id: EUFA
         locations:
@@ -15,6 +21,19 @@ offices:
         timeseries:
           - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
           - id: EUFA.Flow.Inst.1Hour.0.Ccp-Rev
+        clobs:
+          - id: SWT.EUFA.PROJECT.NOTES
+        locationLevels:
+          - id: EUFA-Dam.Elev.Inst.0.Top of Flood
+            por: true
+        ratings:
+          - id: EUFA.Stage;Flow.Standard.Production
+            por: true
+        properties:
+          - categoryId: REGI
+            properties:
+              - id: EUFA.ETL.FLAG
+              - id: EUFA.ETL.ENABLED
       - id: BEND
         locations:
           - id: BEND-Outlet
@@ -22,6 +41,12 @@ offices:
         timeseries:
           - id: BEND.Elev.Inst.1Hour.0.Ccp-Rev
           - id: BEND.Flow.Inst.1Hour.0.Ccp-Rev
+        clobs: []
+        locationLevels: []
+        ratings: []
+        properties:
+          - categoryId: REGI
+            all: true
   - id: FWR
     projects:
       - id: RAYH
@@ -31,8 +56,16 @@ offices:
         timeseries:
           - id: RAYH.Elev.Inst.1Hour.0.Ccp-Rev
           - id: RAYH.Flow.Inst.1Hour.0.Ccp-Rev
+        clobs: []
+        locationLevels: []
+        ratings: []
+        properties: []
       - id: LEWN
         locations:
           - id: LEWN-Dam
         timeseries:
           - id: LEWN.Elev.Inst.1Hour.0.Ccp-Rev
+        clobs: []
+        locationLevels: []
+        ratings: []
+        properties: []
