@@ -22,23 +22,22 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api;
+package cwms.cda.api.texttimeseries;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.BaseHandler;
+import cwms.cda.api.RangeRequestUtil;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.StreamConsumer;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jooq.DSLContext;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 

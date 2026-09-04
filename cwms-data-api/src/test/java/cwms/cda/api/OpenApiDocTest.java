@@ -32,7 +32,6 @@ import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.resolution.Resolvable;
-import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
 import com.github.javaparser.resolution.types.ResolvedType;
 import com.google.common.flogger.FluentLogger;
@@ -115,13 +114,17 @@ class OpenApiDocTest {
         // `ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());`
         MethodDeclaration method = getMethodDeclaration(unit, testInfo.getMethod());
 
-        Optional<MethodCallExpr> statusCall = method.findAll(MethodCallExpr.class)
-                                                    .stream()
+        // An ignored method's own body is often just `super.getOne(ctx, templateId);`, delegating
+        // to the abstract base class's real `ctx.status(...).json(...)` implementation -- so the
+        // calls have to be collected the same way testMethod's parseParamInfo does (following
+        // super-delegation), not just read off this method's own body.
+        List<MethodCallExpr> methodCalls = collectMethodCallExprs(method, clazz, new HashSet<>());
+
+        Optional<MethodCallExpr> statusCall = methodCalls.stream()
                                                     .filter(exp -> exp.getNameAsString().equals("status"))
                                                     .findFirst();
 
-        Optional<MethodCallExpr> jsonCall = method.findAll(MethodCallExpr.class)
-                                                  .stream()
+        Optional<MethodCallExpr> jsonCall = methodCalls.stream()
                                                   .filter(exp -> exp.getNameAsString().equals("json"))
                                                   .findFirst();
 
@@ -283,7 +286,7 @@ class OpenApiDocTest {
         MethodDeclaration methodDeclaration = getMethodDeclaration(unit, method);
         String context = methodDeclaration.getParameter(0).getNameAsString();
 
-        List<MethodCallExpr> methodCalls = collectMethodCallExprs(methodDeclaration, new HashSet<>());
+        List<MethodCallExpr> methodCalls = collectMethodCallExprs(methodDeclaration, clazz, new HashSet<>());
         Set<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesSetFromCall(methodCalls, call -> readQueryParamAsClassFromCall(unit, context, clazz, call), "queryParamAsClass");
         Set<OpenApiParamUsageInfo> optionalDoubleQueryParams = readParamUsagesFromCall(methodCalls, call -> readUsageFromCall(unit, clazz, call, false), "queryParamAsDouble");
         Set<OpenApiParamUsageInfo> filteredTsParam = readParamUsagesFromCall(methodCalls, this::findTsParamsFromUsage, "from");
@@ -344,43 +347,62 @@ class OpenApiDocTest {
         return new OpenApiParamUsage(pathParams, queryParams, resourceId);
     }
 
-    private List<MethodCallExpr> collectMethodCallExprs(MethodDeclaration methodDeclaration, Set<String> visited) {
+    private List<MethodCallExpr> collectMethodCallExprs(MethodDeclaration methodDeclaration, Class<?> clazz, Set<String> visited) {
+        return collectMethodCallExprs(methodDeclaration, clazz, clazz, visited);
+    }
+
+    private List<MethodCallExpr> collectMethodCallExprs(MethodDeclaration methodDeclaration, Class<?> currentClass,
+                                                         Class<?> concreteClazz, Set<String> visited) {
         List<MethodCallExpr> calls = new ArrayList<>(methodDeclaration.findAll(MethodCallExpr.class));
 
         for (MethodCallExpr call : methodDeclaration.findAll(MethodCallExpr.class)) {
             boolean isSuperDelegation = call.getScope().filter(Expression::isSuperExpr).isPresent()
                     && call.getNameAsString().equals(methodDeclaration.getNameAsString());
-            if (!isSuperDelegation) {
+            if (isSuperDelegation) {
+                MethodDeclaration delegate = resolveSuperDelegate(call, currentClass, visited);
+                if (delegate != null) {
+                    calls.addAll(collectMethodCallExprs(delegate, currentClass.getSuperclass(), concreteClazz, visited));
+                }
                 continue;
             }
 
-            MethodDeclaration delegate = resolveSuperDelegate(call, visited);
-            if (delegate != null) {
-                calls.addAll(collectMethodCallExprs(delegate, visited));
+            // Not a super(...) delegation to this same method, but it could still be an
+            // unqualified (or this.-qualified) call to a template-method hook -- e.g. a
+            // controller's own getOffice(ctx), which a shared/base-class method calls to
+            // extract OFFICE, but which each concrete controller implements differently (path
+            // param vs. query param). Only those calls are worth resolving further; anything
+            // with an explicit scope (ctx.pathParam(...), Controllers.requiredParam(...), etc.)
+            // is already collected directly above and doesn't need to be followed.
+            boolean isUnqualifiedOrThisCall = !call.getScope().isPresent()
+                    || call.getScope().filter(Expression::isThisExpr).isPresent();
+            if (isUnqualifiedOrThisCall) {
+                MethodDeclaration override = resolveAbstractOverride(call, concreteClazz, visited);
+                if (override != null) {
+                    calls.addAll(collectMethodCallExprs(override, concreteClazz, concreteClazz, visited));
+                }
             }
         }
         return calls;
     }
 
-    private MethodDeclaration resolveSuperDelegate(MethodCallExpr superCall, Set<String> visited) {
+    private MethodDeclaration resolveSuperDelegate(MethodCallExpr superCall, Class<?> currentClass, Set<String> visited) {
         try {
-            ResolvedMethodDeclaration resolved = superCall.resolve();
-            String declaringClassName = resolved.declaringType().getQualifiedName();
-            String visitKey = declaringClassName + "#" + resolved.getName() + "/" + resolved.getNumberOfParams();
+
+            String methodName = superCall.getNameAsString();
+            int paramCount = superCall.getArguments().size();
+            Class<?> superclass = currentClass.getSuperclass();
+            if (superclass == null) {
+                return null;
+            }
+
+            String visitKey = superclass.getName() + "#" + methodName + "/" + paramCount;
             if (!visited.add(visitKey)) {
                 // Already followed this exact delegation once on this call chain; avoid looping forever
                 // if two classes ever end up delegating to each other.
                 return null;
             }
 
-            Class<?> declaringClass = Class.forName(declaringClassName);
-            CompilationUnit ancestorUnit = OpenApiTestHelper.readCompilationUnit(declaringClass);
-            return ancestorUnit.findAll(MethodDeclaration.class)
-                               .stream()
-                               .filter(m -> m.getNameAsString().equals(resolved.getName()))
-                               .filter(m -> m.getParameters().size() == resolved.getNumberOfParams())
-                               .findFirst()
-                               .orElse(null);
+            return findMethodInClass(superclass, methodName, paramCount);
         } catch (Exception ex) {
             LOGGER.atWarning().withCause(ex).log(
                     "Unable to resolve super delegation call '%s' while checking parameter usage; "
@@ -388,6 +410,55 @@ class OpenApiDocTest {
                     superCall);
             return null;
         }
+    }
+
+
+    private MethodDeclaration resolveAbstractOverride(MethodCallExpr call, Class<?> clazz, Set<String> visited) {
+        try {
+
+            String methodName = call.getNameAsString();
+            int paramCount = call.getArguments().size();
+
+            if (!declaresAbstractSomewhereInHierarchy(clazz, methodName, paramCount)) {
+                return null;
+            }
+
+            String visitKey = clazz.getName() + "#" + methodName + "/" + paramCount;
+            if (!visited.add(visitKey)) {
+                return null;
+            }
+            return findMethodInClass(clazz, methodName, paramCount);
+        } catch (Throwable t) {
+            LOGGER.atFine().withCause(t).log(
+                    "Unable to resolve call '%s' to an overriding implementation while checking "
+                            + "parameter usage; parameters only read by an overriding method will "
+                            + "not be detected.",
+                    call);
+            return null;
+        }
+    }
+
+    private boolean declaresAbstractSomewhereInHierarchy(Class<?> clazz, String methodName, int paramCount) {
+        for (Class<?> current = clazz; current != null; current = current.getSuperclass()) {
+            for (java.lang.reflect.Method m : current.getDeclaredMethods()) {
+                if (m.getName().equals(methodName) && m.getParameterCount() == paramCount
+                        && java.lang.reflect.Modifier.isAbstract(m.getModifiers())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private MethodDeclaration findMethodInClass(Class<?> declaringClass, String methodName, int paramCount)
+            throws IOException {
+        CompilationUnit unit = OpenApiTestHelper.readCompilationUnit(declaringClass);
+        return unit.findAll(MethodDeclaration.class)
+                   .stream()
+                   .filter(m -> m.getNameAsString().equals(methodName))
+                   .filter(m -> m.getParameters().size() == paramCount)
+                   .findFirst()
+                   .orElse(null);
     }
 
     private OpenApiParamUsageInfo findTsParamsFromUsage(MethodCallExpr call) {
