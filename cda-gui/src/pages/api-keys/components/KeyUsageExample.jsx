@@ -3,7 +3,7 @@ import { Strong, Text } from "@usace/groundwork";
 
 export default function KeyUsageExample({ office }) {
   const endpoint = new URL(
-    `${import.meta.env.VITE_CDA_API_ROOT.replace(/\/$/, "")}/timeseries`,
+    `${import.meta.env.BASE_URL.replace(/\/$/, "")}/timeseries`,
     window.location.origin,
   ).href;
   const example = [
@@ -11,7 +11,7 @@ export default function KeyUsageExample({ office }) {
     '  --header "Authorization: apikey $CWMS_API_KEY" \\',
     '  --header "Accept: application/json;version=2" \\',
     `  --data-urlencode "office=${office || "YOUR_OFFICE"}" \\`,
-    '  --data-urlencode "name=YOUR_TIMESERIES" \\',
+    '  --data-urlencode "name=KEYS.elev.inst.1hour.0.ccp-rev" \\',
     `  "${endpoint}"`,
   ].join("\n");
 
@@ -28,7 +28,6 @@ export default function KeyUsageExample({ office }) {
       </div>
       <Text>
         Load your saved key into the <code>CWMS_API_KEY</code> environment variable.
-        Replace <code>YOUR_TIMESERIES</code> with a valid time-series ID.
       </Text>
       <pre
         aria-label="curl example"

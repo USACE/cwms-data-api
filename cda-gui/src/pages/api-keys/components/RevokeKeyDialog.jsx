@@ -8,6 +8,7 @@ export default function RevokeKeyDialog({
   error,
   selected,
   revoke,
+  rotation = false,
 }) {
   return (
     <Modal
@@ -16,10 +17,18 @@ export default function RevokeKeyDialog({
       onClose={() => {
         if (!working) setRevokeOpen(false);
       }}
-      dialogTitle="Revoke API key?"
+      dialogTitle={
+        rotation ? "Finish rotation: revoke the old key?" : "Revoke API key?"
+      }
       size="md"
     >
       {error && <Notice kind="error">{error}</Notice>}
+      {rotation && (
+        <Text>
+          Your replacement has been created. Confirm only after you have saved its
+          secret and updated your application. Cancel to keep both keys for now.
+        </Text>
+      )}
       <Text>
         Revoke {selected?.["key-name"]}? Applications using this key will lose access.
         This cannot be undone.
@@ -41,6 +50,7 @@ export default function RevokeKeyDialog({
   );
 }
 RevokeKeyDialog.propTypes = {
+  rotation: PropTypes.bool,
   revokeOpen: PropTypes.bool.isRequired,
   working: PropTypes.bool.isRequired,
   setRevokeOpen: PropTypes.func.isRequired,

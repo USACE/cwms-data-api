@@ -9,6 +9,7 @@ import {
   Button,
 } from "@usace/groundwork";
 import { Notice } from "../../user-lists/components/StatusMessages";
+import ExpirationShortcuts from "./ExpirationShortcuts";
 export default function CreateKeyDialog({
   createOpen,
   working,
@@ -21,6 +22,7 @@ export default function CreateKeyDialog({
   expires,
   setExpires,
   keys,
+  rotationSource,
 }) {
   return (
     <Modal
@@ -29,11 +31,18 @@ export default function CreateKeyDialog({
       onClose={() => {
         if (!working) setCreateOpen(false);
       }}
-      dialogTitle="Create API key"
+      dialogTitle={rotationSource ? "Rotate API key" : "Create API key"}
       size="lg"
     >
       <form className="space-y-5" onSubmit={create}>
         {error && <Notice kind="error">{error}</Notice>}
+        {rotationSource && (
+          <Text>
+            Create a replacement for <strong>{rotationSource["key-name"]}</strong> with
+            a new name. The old key will not be revoked until you save the new secret
+            and confirm revocation. If creation fails, the old key is unchanged.
+          </Text>
+        )}
         <Text>
           This key belongs to {profile?.userName} and uses your permissions across
           offices. The generated secret will be shown once.
@@ -64,6 +73,7 @@ export default function CreateKeyDialog({
           <Description>
             Expires at the start of this date in UTC. Clear the date for no expiration.
           </Description>
+          <ExpirationShortcuts {...{ setExpires, working }} />
         </Field>
         <div className="flex justify-end gap-3">
           <Button
@@ -82,7 +92,11 @@ export default function CreateKeyDialog({
               keys.some((key) => key["key-name"] === name.trim())
             }
           >
-            {working ? "Creating…" : "Generate key"}
+            {working
+              ? "Creating…"
+              : rotationSource
+                ? "Generate replacement"
+                : "Generate key"}
           </Button>
         </div>
         {keys.some((key) => key["key-name"] === name.trim()) && (
@@ -93,6 +107,7 @@ export default function CreateKeyDialog({
   );
 }
 CreateKeyDialog.propTypes = {
+  rotationSource: PropTypes.object,
   createOpen: PropTypes.bool.isRequired,
   working: PropTypes.bool.isRequired,
   setCreateOpen: PropTypes.func.isRequired,

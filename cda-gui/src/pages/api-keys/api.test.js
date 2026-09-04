@@ -92,11 +92,34 @@ test("CDA timezone dates distinguish expired, active, missing and malformed expi
 });
 
 test("error messages explain auth failures without displaying response bodies", async () => {
-  for (const status of [401, 403, 404, 409, 500]) {
+  for (const status of [400, 401, 403, 404, 409, 422, 429, 500, 502, 503, 504, 418]) {
     const message = await keyError({
       response: new Response("secret-must-not-be-shown", { status }),
     });
     assert.ok(!message.includes("secret-must-not-be-shown"));
     assert.ok(message.length > 20);
+    assert.ok(!/\b[45]\d\d\b|HTTP|interactively/.test(message));
   }
+});
+
+test("all key operations catch generic server failures with a useful message", async () => {
+  const client = createApiKeyClient(
+    "https://example.test",
+    "test-token",
+    async () => new Response("Internal server error", { status: 500 }),
+  );
+  for (const request of [
+    () => client.list(),
+    () => client.get("test"),
+    () => client.create("TEST", "test", null),
+    () => client.revoke("test"),
+  ]) {
+    await assert.rejects(request, (asyncError) =>
+      Boolean(asyncError.response?.status === 500),
+    );
+  }
+  assert.match(
+    await keyError({ response: { status: 500 } }),
+    /Refresh your keys to check whether the change was saved/,
+  );
 });

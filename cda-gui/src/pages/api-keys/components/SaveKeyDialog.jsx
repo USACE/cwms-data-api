@@ -1,12 +1,13 @@
 import PropTypes from "prop-types";
 import { Modal, Text, Input, Button } from "@usace/groundwork";
+import { FaExclamationTriangle } from "react-icons/fa";
 import { Notice } from "../../user-lists/components/StatusMessages";
 export default function SaveKeyDialog({
   created,
   copySecret,
   message,
-  setCreated,
-  setMessage,
+  onSaved,
+  rotationSource,
 }) {
   return (
     <Modal
@@ -17,10 +18,19 @@ export default function SaveKeyDialog({
       size="lg"
     >
       <div className="space-y-4">
-        <Text>
-          Copy this secret now and save it securely. You cannot retrieve it after
-          closing this dialog.
-        </Text>
+        <div className="flex gap-3 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-950">
+          <FaExclamationTriangle
+            aria-hidden="true"
+            className="mt-1 h-6 w-6 shrink-0 text-amber-600"
+          />
+          <div>
+            <p className="text-lg font-bold">Save this key now</p>
+            <p className="mt-1">
+              Copy the key and store it securely. This is the only time you can see it.
+              After you close this dialog, you cannot retrieve it.
+            </p>
+          </div>
+        </div>
         {created?.["api-key"] ? (
           <>
             <Input
@@ -40,14 +50,15 @@ export default function SaveKeyDialog({
           </Notice>
         )}
         {message && <Text role="status">{message}</Text>}
-        <Button
-          type="button"
-          onClick={() => {
-            setCreated(null);
-            setMessage("");
-          }}
-        >
-          I have saved the key — close
+        {rotationSource && (
+          <Text>
+            The old key <strong>{rotationSource["key-name"]}</strong> has not been
+            revoked. Save this replacement and update your application before revoking
+            the old key.
+          </Text>
+        )}
+        <Button type="button" onClick={onSaved}>
+          Close
         </Button>
       </div>
     </Modal>
@@ -57,6 +68,6 @@ SaveKeyDialog.propTypes = {
   created: PropTypes.object,
   copySecret: PropTypes.func.isRequired,
   message: PropTypes.string.isRequired,
-  setCreated: PropTypes.func.isRequired,
-  setMessage: PropTypes.func.isRequired,
+  onSaved: PropTypes.func.isRequired,
+  rotationSource: PropTypes.object,
 };

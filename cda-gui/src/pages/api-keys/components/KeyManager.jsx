@@ -32,6 +32,8 @@ export default function KeyManager({ token }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [revokeOpen, setRevokeOpen] = useState(false);
   const [created, setCreated] = useState(null);
+  const [rotationSource, setRotationSource] = useState(null);
+  const [now, setNow] = useState(Date.now);
   const [name, setName] = useState("");
   const [expires, setExpires] = useState(() =>
     new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
@@ -41,6 +43,49 @@ export default function KeyManager({ token }) {
   const visibleKeys = keys.filter((key) =>
     key["key-name"].toLowerCase().includes(search.toLowerCase()),
   );
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  function changeCreateOpen(open) {
+    setRotationSource(null);
+    setCreateOpen(open);
+  }
+
+  function rotate() {
+    if (!selected || working) return;
+    const base = `${selected["key-name"]}-replacement`;
+    let candidate = base;
+    let suffix = 2;
+    while (keys.some((key) => key["key-name"] === candidate))
+      candidate = `${base}-${suffix++}`;
+    setName(candidate);
+    setExpires(new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10));
+    setRotationSource(selected);
+    setError("");
+    setMessage("");
+    setCreateOpen(true);
+  }
+
+  function saved() {
+    const canFinish = rotationSource && created?.["api-key"];
+    setCreated(null);
+    setMessage("");
+    if (canFinish) setRevokeOpen(true);
+    else setRotationSource(null);
+  }
+
+  function changeRevokeOpen(open) {
+    setRevokeOpen(open);
+    if (!open && rotationSource) {
+      setMessage(
+        `Replacement created. The old key ${rotationSource["key-name"]} has not been revoked. Revoke it after updating your application.`,
+      );
+      setRotationSource(null);
+    }
+  }
 
   useEffect(() => {
     const current = new AbortController();
@@ -114,19 +159,23 @@ export default function KeyManager({ token }) {
   }
 
   async function revoke() {
-    if (!selected || working) return;
+    const target = rotationSource ?? selected;
+    if (!target || working) return;
     setWorking(true);
     setError("");
     setMessage("");
     try {
-      await api.revoke(selected["key-name"], controller.current.signal);
+      await api.revoke(target["key-name"], controller.current.signal);
       setKeys((current) =>
-        current.filter((key) => key["key-name"] !== selected["key-name"]),
+        current.filter((key) => key["key-name"] !== target["key-name"]),
       );
       setMessage(
-        `Revoked ${selected["key-name"]}. Applications using it must switch to another key.`,
+        rotationSource
+          ? `Rotation complete. Revoked ${target["key-name"]}; use the replacement key in your application.`
+          : `Revoked ${target["key-name"]}. Applications using it must switch to another key.`,
       );
-      setSelected(null);
+      if (!rotationSource) setSelected(null);
+      setRotationSource(null);
       setRevokeOpen(false);
     } catch (cause) {
       setError(await keyError(cause));
@@ -148,7 +197,10 @@ export default function KeyManager({ token }) {
 
   return (
     <section className="pb-12">
-      <KeyHeader {...{ profile, working, loading, office, setError, setCreateOpen }} />
+      <KeyHeader
+        {...{ profile, working, loading, office, setError }}
+        setCreateOpen={changeCreateOpen}
+      />
       {error && !createOpen && !revokeOpen && <Notice kind="error">{error}</Notice>}
       {!profile && (
         <Notice kind="error">
@@ -179,15 +231,18 @@ export default function KeyManager({ token }) {
             visibleKeys,
             selected,
             view,
+            now,
           }}
         />
-        <KeyDetails {...{ selected, working, setError, setRevokeOpen }} />
+        <KeyDetails
+          {...{ selected, working, setError, rotate, now }}
+          setRevokeOpen={changeRevokeOpen}
+        />
       </div>
       <CreateKeyDialog
         {...{
           createOpen,
           working,
-          setCreateOpen,
           create,
           error,
           profile,
@@ -196,11 +251,19 @@ export default function KeyManager({ token }) {
           expires,
           setExpires,
           keys,
+          rotationSource,
         }}
+        setCreateOpen={changeCreateOpen}
       />
-      <SaveKeyDialog {...{ created, copySecret, message, setCreated, setMessage }} />
+      <SaveKeyDialog
+        {...{ created, copySecret, message, rotationSource }}
+        onSaved={saved}
+      />
       <RevokeKeyDialog
-        {...{ revokeOpen, working, setRevokeOpen, error, selected, revoke }}
+        {...{ revokeOpen, working, error, revoke }}
+        selected={rotationSource ?? selected}
+        rotation={Boolean(rotationSource)}
+        setRevokeOpen={changeRevokeOpen}
       />
     </section>
   );

@@ -1,8 +1,9 @@
 import PropTypes from "prop-types";
 import { Card, H2, Badge, Button, Input, Skeleton } from "@usace/groundwork";
-import { FaKey } from "react-icons/fa";
+import { FaFilter, FaKey } from "react-icons/fa";
 import { EmptyState } from "../../user-lists/components/StatusMessages";
 import { keyStatus } from "../api";
+import KeyStatusBadge from "./KeyStatusBadge";
 export default function KeyList({
   keys,
   loading,
@@ -13,6 +14,7 @@ export default function KeyList({
   visibleKeys,
   selected,
   view,
+  now,
 }) {
   return (
     <Card className="p-5">
@@ -29,14 +31,21 @@ export default function KeyList({
           Refresh
         </Button>
       </div>
-      <Input
-        aria-label="Filter keys"
-        placeholder="Filter by key name"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-      />
+      <div className="relative mb-5">
+        <FaFilter
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-3 text-zinc-500"
+        />
+        <Input
+          aria-label="Filter keys"
+          className="pl-9"
+          placeholder="Filter by key name"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+        />
+      </div>
       {loading ? (
-        <Skeleton className="mt-4 h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
       ) : visibleKeys.length === 0 ? (
         <EmptyState
           icon={FaKey}
@@ -45,7 +54,7 @@ export default function KeyList({
           Create a key to connect a script or application.
         </EmptyState>
       ) : (
-        <ul className="mt-4 max-h-[32rem] space-y-2 overflow-y-auto">
+        <ul className="max-h-[32rem] space-y-2 overflow-y-auto">
           {visibleKeys.map((key) => (
             <li key={key["key-name"]}>
               <button
@@ -53,10 +62,12 @@ export default function KeyList({
                 disabled={working}
                 aria-pressed={selected?.["key-name"] === key["key-name"]}
                 onClick={() => view(key["key-name"])}
-                className={`w-full rounded-lg border p-4 text-left focus-visible:ring-2 focus-visible:ring-blue-600 ${selected?.["key-name"] === key["key-name"] ? "border-blue-500 bg-blue-50" : "border-zinc-200 hover:bg-zinc-50"}`}
+                className={`w-full rounded-lg border p-4 text-left focus-visible:ring-2 focus-visible:ring-blue-600 ${keyStatus(key, now) === "Expired" ? "border-red-300 bg-red-50" : selected?.["key-name"] === key["key-name"] ? "border-blue-500 bg-blue-50" : "border-zinc-200 hover:bg-zinc-50"} ${selected?.["key-name"] === key["key-name"] ? "ring-2 ring-blue-500" : ""}`}
               >
                 <span className="block break-all font-semibold">{key["key-name"]}</span>
-                <span className="text-sm text-zinc-600">{keyStatus(key)}</span>
+                <span className="mt-2 block">
+                  <KeyStatusBadge apiKey={key} now={now} />
+                </span>
               </button>
             </li>
           ))}
@@ -66,6 +77,7 @@ export default function KeyList({
   );
 }
 KeyList.propTypes = {
+  now: PropTypes.number.isRequired,
   keys: PropTypes.array.isRequired,
   loading: PropTypes.bool.isRequired,
   working: PropTypes.bool.isRequired,

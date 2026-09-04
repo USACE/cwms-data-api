@@ -31,7 +31,9 @@ export default function OfficeContext({ profile, office, offices, setOfficeChoic
                 ]}
           </select>
           <Description>
-            Sets the example office; your key list stays the same.
+            Your keys use your permissions for this office, shown below. Keys belong to
+            your user account and can also access other offices where you have
+            permission.
           </Description>
         </Field>
       </div>

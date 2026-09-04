@@ -1,5 +1,5 @@
 import PropTypes from "prop-types";
-import { Badge, Button, H1, Text } from "@usace/groundwork";
+import { Button, Text, UsaceBox } from "@usace/groundwork";
 import { FaKey } from "react-icons/fa";
 export default function KeyHeader({
   profile,
@@ -10,13 +10,8 @@ export default function KeyHeader({
   setCreateOpen,
 }) {
   return (
-    <div className="mb-6 border-b border-zinc-200 pb-6">
-      <div className="mb-2 flex flex-wrap gap-2">
-        <Badge color="blue">CDA</Badge>
-        <Badge color="green">Personal keys</Badge>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <H1>API Keys</H1>
+    <UsaceBox title="API Keys" className="mb-6">
+      <div className="flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap gap-2">
           <Button
             color="light"
@@ -46,7 +41,7 @@ export default function KeyHeader({
         are not shared office credentials or restricted to the office selected below.
         You can manage only your own keys.
       </Text>
-    </div>
+    </UsaceBox>
   );
 }
 KeyHeader.propTypes = {

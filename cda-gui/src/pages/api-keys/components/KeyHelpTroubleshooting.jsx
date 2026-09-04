@@ -7,7 +7,7 @@ export default function KeyHelpTroubleshooting() {
       <dl className="space-y-4">
         <div>
           <dt>
-            <Strong>401 — Check the credential</Strong>
+            <Strong>Your sign-in could not be verified</Strong>
           </dt>
           <dd>
             <Text>
@@ -18,7 +18,7 @@ export default function KeyHelpTroubleshooting() {
         </div>
         <div>
           <dt>
-            <Strong>403 — Check your access</Strong>
+            <Strong>Access was denied</Strong>
           </dt>
           <dd>
             <Text>
@@ -32,12 +32,17 @@ export default function KeyHelpTroubleshooting() {
             <Strong>Cannot manage keys?</Strong>
           </dt>
           <dd>
-            <Text>
-              Sign in interactively. An API key cannot create, list, or revoke keys.
-            </Text>
+            <Text>Sign in. An API key cannot create, list, or revoke keys.</Text>
           </dd>
         </div>
       </dl>
+      <div className="mt-4">
+        <Strong>CDA could not complete the request</Strong>
+        <Text>
+          Refresh your keys to check whether the change was saved before trying again.
+          Contact your office administrator if the problem continues.
+        </Text>
+      </div>
     </Card>
   );
 }
