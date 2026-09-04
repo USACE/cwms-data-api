@@ -8,7 +8,7 @@
     "build": "vite build --mode production && node scripts/generate-sitemap.mjs",
     "build:development": "vite build --mode development && node scripts/generate-sitemap.mjs",
     "build:test": "vite build --mode test && node scripts/generate-sitemap.mjs",
-    "test": "node --test src/utils/auth-config.test.js",
+    "test": "node --test src/utils/auth-config.test.js src/utils/location-catalog.test.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "prepare": "cd .. && husky cda-gui/.husky",
