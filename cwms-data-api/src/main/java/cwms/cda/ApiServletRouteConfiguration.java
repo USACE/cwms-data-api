@@ -55,8 +55,9 @@ import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
-import cwms.cda.api.TextTimeSeriesController;
-import cwms.cda.api.TextTimeSeriesValueController;
+import cwms.cda.api.texttimeseries.TextTimeSeriesControllerV1;
+import cwms.cda.api.texttimeseries.TextTimeSeriesControllerV2;
+import cwms.cda.api.texttimeseries.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesFilteredController;
@@ -236,8 +237,11 @@ public final class ApiServletRouteConfiguration {
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
-        String textTsPath = format("/timeseries/text/{%s}", NAME);
-        cdaCrudCache(textTsPath, new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String textTsPathTemplate = "/timeseries/text/{%s}";
+        String textTsPath = format(textTsPathTemplate, NAME);
+        cdaCrudCache(textTsPath, new TextTimeSeriesControllerV1(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(formatV2(textTsPathTemplate, NAME),
+                new TextTimeSeriesControllerV2(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         String textValuePath = textTsPath + "/value";
         get(textValuePath, new TextTimeSeriesValueController(metrics));
         addCacheControl(textValuePath, 1, TimeUnit.DAYS);

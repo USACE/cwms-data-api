@@ -20,7 +20,7 @@ Opinion 1
 Summary
 ~~~~~~~
 
-PATCH requests should represent partial updates only. Resource identifiers belong in the request path, while the request body contains only the properties to be modified. To preserve the distinction between omitted properties and properties explicitly set to ``null``, PATCH operations will retrieve the existing resource and apply the incoming JSON onto that object using Jackson's update capabilities.
+PATCH requests should represent both partial and total updates. Resource identifiers belong in the request path, while the request body contains only the properties to be modified. To preserve the distinction between omitted properties and properties explicitly set to ``null``, PATCH operations will retrieve the existing resource and apply the incoming JSON onto that object using Jackson's update capabilities.
 
 Key points
 ~~~~~~~~~~

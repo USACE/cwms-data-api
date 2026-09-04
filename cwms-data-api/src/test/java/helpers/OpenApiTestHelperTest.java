@@ -2,7 +2,7 @@ package helpers;
 
 import cwms.cda.api.Controllers;
 import cwms.cda.api.OfficeController;
-import cwms.cda.api.TextTimeSeriesValueController;
+import cwms.cda.api.texttimeseries.TextTimeSeriesValueController;
 import cwms.cda.api.auth.users.UsersController;
 import cwms.cda.api.auth.users.roles.AddRoleController;
 import cwms.cda.api.rating.RatingController;

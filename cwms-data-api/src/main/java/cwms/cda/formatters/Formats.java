@@ -24,12 +24,17 @@
 
 package cwms.cda.formatters;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -193,6 +198,70 @@ public class Formats {
             String message = String.format("No Format for this content-type and data type : (%s, %s)",
                 type.toString(), rootType.getName());
             throw new UnsupportedFormatException(message);
+        }
+    }
+
+    public static <T extends CwmsDTOBase> T parsePatchContent(ContentType contentType, T existing, String body, Class<T> rootType) {
+        return formats.applyJsonMergePatch(contentType, existing, rootType, om -> om.readTree(body));
+    }
+
+    public static <T extends CwmsDTOBase> T parsePatchContent(ContentType contentType, T existing, InputStream body,
+            Class<T> rootType) {
+        return formats.applyJsonMergePatch(contentType, existing, rootType, om -> om.readTree(body));
+    }
+
+    private <T extends CwmsDTOBase> T applyJsonMergePatch(ContentType contentType, T existing, Class<T> rootType,
+            ThrowingFunction<ObjectMapper, JsonNode> patchTreeReader) {
+        try {
+            OutputFormatter formatter = getOutputFormatter(contentType, rootType);
+            if (!(formatter instanceof ObjectMapperFormatter)) {
+                throw new FormattingException("Unable to apply PATCH content to existing "
+                        + rootType.getSimpleName() + " because the formatter is not an ObjectMapperFormatter");
+            }
+            ObjectMapper om = ((ObjectMapperFormatter) formatter).getObjectMapper();
+
+            JsonNode patchTree = patchTreeReader.apply(om);
+            JsonNode existingTree = om.valueToTree(existing);
+            clearReplacedArrays(existingTree, patchTree);
+
+            JsonNode merged = om.readerForUpdating(existingTree).readValue(patchTree.traverse(om));
+            T result = om.treeToValue(merged, rootType);
+            result.validate();
+            return result;
+        } catch (IOException e) {
+            throw new FormattingException("Unable to apply PATCH content to existing " + rootType.getSimpleName(), e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface ThrowingFunction<T, R> {
+        R apply(T t) throws IOException;
+    }
+
+    /**
+     * Removes any field from {@code existingNode} that is an array in both {@code existingNode}
+     * and {@code patchNode}, recursing into fields that are objects on both sides. This
+     * is necessary to PATCH arrays as a collection, allowing the replace-all behavior to dictate that the array should be replaced rather than merged
+     * after this merge step.
+     */
+    private static void clearReplacedArrays(JsonNode existingNode, JsonNode patchNode) {
+        if (!(existingNode instanceof ObjectNode) || !patchNode.isObject()) {
+            return;
+        }
+        ObjectNode existingObject = (ObjectNode) existingNode;
+        Iterator<Map.Entry<String, JsonNode>> fields = patchNode.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            JsonNode existingValue = existingObject.get(entry.getKey());
+            JsonNode patchValue = entry.getValue();
+            if (existingValue == null) {
+                continue;
+            }
+            if (existingValue.isArray() && patchValue.isArray()) {
+                existingObject.remove(entry.getKey());
+            } else if (existingValue.isObject() && patchValue.isObject()) {
+                clearReplacedArrays(existingValue, patchValue);
+            }
         }
     }
 

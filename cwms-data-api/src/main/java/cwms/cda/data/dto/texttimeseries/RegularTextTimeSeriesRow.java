@@ -1,18 +1,21 @@
 package cwms.cda.data.dto.texttimeseries;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import cwms.cda.data.dto.CwmsDTOBase;
 import java.time.Instant;
 import java.util.Objects;
 
 @JsonDeserialize(builder = RegularTextTimeSeriesRow.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public class RegularTextTimeSeriesRow implements TextTimeSeriesRow {
+public class RegularTextTimeSeriesRow extends CwmsDTOBase implements TextTimeSeriesRow {
 
+    @JsonProperty(required = true)
     private final Instant dateTime;
     private final Instant dataEntryDate;
     private final String textValue;

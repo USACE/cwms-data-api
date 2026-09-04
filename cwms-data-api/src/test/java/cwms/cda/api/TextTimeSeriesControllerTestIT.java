@@ -88,7 +88,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
     // store_reg_text_timeseries.sql
 
     private static final String locationId = "TsTextTestLoc";
-    private static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
+    protected static final String tsId = locationId + ".Flow.Inst.1Hour.0.raw";
 
     public static final String AUTHORIZATION = "Authorization";
     private static String LARGE_STRING;
@@ -374,84 +374,6 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK));
 
     }
-
-    @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
-    void test_update_regular(String format) throws Exception {
-        // The basic structure of the test is to:
-        // 1)retrieve and verify
-        // 2)update
-        // 3)retrieve and verify
-        String startStr = "2005-01-01T03:00:00Z";
-        String endStr = "2005-01-01T07:00:00Z";
-
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.NAME, tsId)
-            .queryParam(Controllers.BEGIN,startStr)
-            .queryParam(Controllers.END,endStr)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/timeseries/text")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-        .assertThat()
-            .body("standard-text-catalog", nullValue())
-            .body("standard-text-values", nullValue())
-            .body("regular-text-values", notNullValue())
-            .body("regular-text-values.size()", equalTo(5))
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-
-        //2) update
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/api/spk/text_ts_update_reg.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        assertNotNull(tsData);
-        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .queryParam(TextTimeSeriesController.REPLACE_ALL, "true")
-            .contentType(Formats.JSONV2)
-            .body(tsData)
-            .header(AUTHORIZATION, user.toHeaderValue())
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .patch("/timeseries/text/" + tsId)
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        //3)retrieve and verify
-        given()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .accept(format)
-            .queryParam(Controllers.OFFICE, OFFICE)
-            .queryParam(Controllers.NAME, tsId)
-            .queryParam(Controllers.BEGIN,startStr)
-            .queryParam(Controllers.END,endStr)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get("/timeseries/text")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
-            .body("standard-text-catalog", nullValue())
-            .body("standard-text-values", nullValue())
-            .body("regular-text-values", notNullValue())
-            .body("regular-text-values.size()", equalTo(5))
-            .body("regular-text-values[0].text-value", equalTo("still great"))
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-    }
-
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
