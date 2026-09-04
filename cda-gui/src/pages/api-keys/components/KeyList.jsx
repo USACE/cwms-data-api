@@ -34,11 +34,11 @@ export default function KeyList({
       <div className="relative mb-5">
         <FaFilter
           aria-hidden="true"
-          className="pointer-events-none absolute left-3 top-3 text-zinc-500"
+          className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-500"
         />
         <Input
           aria-label="Filter keys"
-          className="pl-9"
+          className="[&_input]:!pl-9"
           placeholder="Filter by key name"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
