@@ -350,7 +350,11 @@ public class TimeSeriesGroupController implements CrudHandler {
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
             TimeSeriesGroup existingGroup = timeSeriesGroupDao.getTimeSeriesGroup(office, null,
                 null, group.getTimeSeriesCategory().getId(), oldGroupId);
-            if (!existingGroup.getDescription().equalsIgnoreCase(group.getDescription())) {
+            String existingDesc = existingGroup.getDescription();
+            String newDesc = group.getDescription();
+            if ((existingDesc == null && newDesc != null)
+                || ((existingDesc != null && newDesc != null)
+                    && !existingGroup.getDescription().equalsIgnoreCase(group.getDescription()))) {
                 existingGroup = updateClearedFields(group, existingGroup);
                 timeSeriesGroupDao.create(existingGroup, false, false);
             }
