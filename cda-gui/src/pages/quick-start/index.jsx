@@ -157,18 +157,12 @@ export default function QuickStart() {
             that every value has been verified.
           </p>
           <p>
-            Use these data for general information. Obtain and verify critical data with
-            the responsible USACE office before using it in studies, designs, or other
-            technical applications. The United States Government assumes no liability
-            for completeness or accuracy. Read the existing{" "}
-            <a href="https://www.mvp-wc.usace.army.mil/Disclaimer.html">
-              USACE water-data disclaimer
-            </a>{" "}
-            and the{" "}
-            <a href="https://www.usace.army.mil/LinkDisclaimer.aspx">
-              external link disclaimer
-            </a>
-            .
+            These preliminary data are for general information only and shall not be
+            used in studies, designs, or other technical applications. Obtain and verify
+            critical data with the responsible USACE office. The United States
+            Government assumes no liability for completeness or accuracy. Read the{" "}
+            <Link to="/disclaimer">USACE water-data disclaimer</Link> and the{" "}
+            <Link to="/disclaimer#external-links">external link disclaimer</Link>.
           </p>
           <p>
             For a chart or table, start with <Link to="/data-query">Data Query</Link>.

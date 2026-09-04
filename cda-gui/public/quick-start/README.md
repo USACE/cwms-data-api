@@ -17,6 +17,5 @@ and update the image dimensions, numbered highlight coordinates, and captions in
 `src/pages/quick-start/index.jsx`. Do not replace a public screenshot with a local
 preview without updating its provenance label. No authenticated data is shown.
 
-The data-use notice links to the existing USACE water-data disclaimer at
-https://www.mvp-wc.usace.army.mil/Disclaimer.html. The footer's external-link
-disclaimer describes external links rather than data accuracy.
+The data-use notice and footer link to the local CDA disclaimer page, which
+contains the USACE water-data notice and external-link disclaimer.

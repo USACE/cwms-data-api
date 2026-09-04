@@ -54,6 +54,11 @@ export default [
         href: "/quick-start",
       },
       {
+        id: "disclaimer",
+        text: "Data Disclaimer",
+        href: "/disclaimer",
+      },
+      {
         id: "read-the-docs",
         text: "User Documentation",
         href: "https://cwms-data-api.readthedocs.io/latest",
