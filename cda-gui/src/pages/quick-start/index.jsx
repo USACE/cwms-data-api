@@ -159,8 +159,10 @@ export default function QuickStart() {
             <Link to="/disclaimer#external-links">external link disclaimer</Link>.
           </p>
           <p>
-            For a chart or table, start with <Link to="/data-query">Data Query</Link>.
-            To find a site by its name or description, use{" "}
+            To explore USACE water data on a map, visit{" "}
+            <a href="https://water.usace.army.mil/">water.usace.army.mil</a>. For a
+            chart or table, start with <Link to="/data-query">Data Query</Link>. To find
+            a site by its name or description, use{" "}
             <Link to="/location-search">Location Search</Link>.{" "}
             <Link to="/swagger-ui">Swagger UI</Link> is intended for developers: it
             documents endpoint parameters, response formats, and API operations. You do
