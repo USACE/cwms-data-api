@@ -50,8 +50,6 @@ const screenshots = {
     width: 1265,
     height: 712,
     alt: "Public CDA home page. Highlight 1 marks Data Query Tool under Quick Links. Highlight 2 marks API Docs for developers.",
-    caption:
-      "Public CDA home, captured September 3, 2026. 1: Data Query Tool. 2: API Docs / Swagger for developers.",
     marks: [
       [48, 359, 126, 28, "1"],
       [162, 37, 86, 38, "2"],
@@ -62,8 +60,6 @@ const screenshots = {
     width: 1265,
     height: 1000,
     alt: "Public Data Query with SWT selected. Numbered highlights identify the office, time series, date range, and results.",
-    caption:
-      "Public CDA Data Query, captured September 3, 2026, using SWT / Keystone Lake. See the numbered steps above.",
     marks: [
       [136, 286, 164, 40, "1"],
       [171, 344, 544, 56, "2"],
@@ -76,8 +72,6 @@ const screenshots = {
     width: 1536,
     height: 850,
     alt: "Local preview using public SWT data. Highlights mark the office, the exact KEYS location ID filter, and Search.",
-    caption:
-      "Local preview using public SWT data, September 3, 2026. 1: Select Office. 2: Exact location ID filter. 3: Search. Location Search was not yet available on public CDA; this preview uses the ID filter supported by that API.",
     marks: [
       [30, 257, 162, 46, "1"],
       [30, 307, 736, 48, "2"],
@@ -114,7 +108,7 @@ function Screenshot({ name }) {
           </span>
         ))}
       </div>
-      <figcaption>{shot.caption}</figcaption>
+      <figcaption>{shot.alt}</figcaption>
     </figure>
   );
 }
