@@ -6,6 +6,10 @@ import sys
 
 
 def package_version(value):
+    # Detached shallow CI checkouts have no release tag; Gradle uses the SHA.
+    # Keep these artifacts identifiable without inventing a CDA release version.
+    if re.fullmatch(r"[0-9a-fA-F]{7,40}", value):
+        return f"0.dev0+g{value.lower()}"
     if re.fullmatch(r"[a-zA-Z0-9._/-]+-nightly", value):
         value = f"{date.today():%Y.%m.%d}-{value}"
     match = re.fullmatch(r"(\d{4})\.(\d{2})\.(\d{2})(?:-(.+))?", value)

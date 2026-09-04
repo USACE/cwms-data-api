@@ -4,10 +4,6 @@ Python SDK generated from the CWMS Data API (CDA) OpenAPI specification. Install
 the `cda-python` distribution and import `cda`. The SDK provides generated
 API methods and models; higher-level workflows can wrap it separately.
 
-This follows the [cwmsjs generator](../typescript): Gradle exports the local CDA
-specification, validates it, and runs OpenAPI Generator 7.15.0. Generated Python
-source and API/model documentation stay under `build/` and are not committed.
-
 ## Build and test
 
 Use Python 3.10 or newer, the repository's Java/Node build prerequisites, and a
@@ -91,9 +87,12 @@ The package version follows CDA, with Python's PEP 440 spelling:
 | `2026.09.03-testa` | `2026.9.3rc1` |
 | `2026.09.03-a` | `2026.9.3.post1` |
 | `2026.09.03-feature/python-sdk` | `2026.9.3.dev0+feature.python.sdk` |
+| Untagged CI commit `7098006` | `0.dev0+g7098006` |
 
 Unlettered `-dev` and `-test` use suffix number 0. Nightly builds use the build
 date and a development label. There is no separate generator-version prefix.
+Detached CI checkouts without a release tag use a development version containing
+the commit hash; these artifacts are not published as CDA releases.
 PyPI publishing remains follow-up work; GitHub releases include the wheel and source archive.
 
 `buildPythonDocs` runs the SDK tests before building Sphinx HTML from the generated
