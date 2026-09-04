@@ -51,6 +51,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class ApiKeyController implements CrudHandler {
+    private static final String KEY_MANAGEMENT_HELP = " Manage your own keys in the "
+            + "<a href=\"/cwms-data/api-keys\">API Keys page</a> (sign-in required). "
+            + "Keys belong to the current user and use that user's office permissions; "
+            + "they are not office-owned or limited to one office. "
+            + "The secret is returned only when created. Save it securely.";
     public final MetricRegistry metrics;
 
 
@@ -72,7 +77,7 @@ public class ApiKeyController implements CrudHandler {
                     status = STATUS_201
         ),
         description = "Create a new API Key for user. The randomly generated key is returned "
-                + "to the caller. A provided key will be ignored.",
+                + "to the caller. A provided key will be ignored." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"}
     )
     @Override
@@ -108,7 +113,7 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_201
         ),
-        description = "Delete API key for a user",
+        description = "Delete API key for a user." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"}
     )
     @Override
@@ -131,7 +136,7 @@ public class ApiKeyController implements CrudHandler {
         security = {
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
-        description = "View all keys for the current user",
+        description = "View all keys for the current user." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"}
     )
     public void getAll(Context ctx) {
@@ -159,7 +164,7 @@ public class ApiKeyController implements CrudHandler {
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
-        description = "View specific key",
+        description = "View specific key metadata. The secret cannot be retrieved." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"}
     )
     @Override

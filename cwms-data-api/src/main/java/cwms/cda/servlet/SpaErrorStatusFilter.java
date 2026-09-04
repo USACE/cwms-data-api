@@ -21,6 +21,8 @@ public final class SpaErrorStatusFilter implements Filter {
 
     // Keep these paths synchronized with cda-gui/src/route-paths.js.
     private static final Set<String> SPA_ROUTES = Set.of(
+        "/api-keys",
+        "/api-keys/help",
         "/data-query",
         "/filter-expressions",
         "/legacy-format",
