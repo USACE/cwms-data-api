@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -350,7 +351,7 @@ public class TimeSeriesGroupController implements CrudHandler {
             TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
             TimeSeriesGroup existingGroup = timeSeriesGroupDao.getTimeSeriesGroup(office, null,
                 null, group.getTimeSeriesCategory().getId(), oldGroupId);
-            if (!existingGroup.getDescription().equalsIgnoreCase(group.getDescription())) {
+            if (!Strings.CI.equals(existingGroup.getDescription(), group.getDescription())) {
                 existingGroup = updateClearedFields(group, existingGroup);
                 timeSeriesGroupDao.create(existingGroup, false, false);
             }
