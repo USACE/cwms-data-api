@@ -44,11 +44,24 @@ jobs:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
           cache: 'gradle'
+      - name: setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
       - name: build and test
         id: thebuild
         run: ./gradlew clean build --info --init-script init.gradle
       - name: integration tests
         run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
+      - name: Upload Python SDK and documentation
+        if: matrix.schema.env == 'latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cda-python
+          path: |
+            clients/python/build/dist/
+            clients/python/build/docs/html/
+          if-no-files-found: error
       - name: Create matrix job badge
         if: success() || failure() # always run even if the previous step fails
         uses: ./.github/actions/badge

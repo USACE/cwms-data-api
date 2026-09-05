@@ -66,6 +66,10 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
           cache: 'gradle'
+      - name: setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
       - name: Set version
         id: version
         env:
@@ -93,6 +97,8 @@ jobs:
       - name: show version
         run: echo ${{ steps.version.outputs.version }}
       - name: build war
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: ./gradlew build --info --init-script init.gradle -PversionOverride=$VERSION
       - name: Create GitHub Release
         id: create_release
@@ -100,7 +106,10 @@ jobs:
         if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/develop' || startsWith(github.event.ref, 'refs/tags'))
         uses: softprops/action-gh-release@v2.6.1
         with:
-          files: cwms-data-api/build/libs/cwms-data-api-${{steps.version.outputs.version}}.war
+          files: |
+            cwms-data-api/build/libs/cwms-data-api-${{steps.version.outputs.version}}.war
+            clients/python/build/dist/*.whl
+            clients/python/build/dist/*.tar.gz
           tag_name: ${{steps.version.outputs.version}}
           generate_release_notes: true
           prerelease: ${{steps.version.outputs.prerelease}}
