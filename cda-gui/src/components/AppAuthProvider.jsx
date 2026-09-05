@@ -111,7 +111,9 @@ export default function AppAuthProvider({ children }) {
 
   return (
     <AuthConfigurationContext.Provider value={{ error: state.error }}>
-      <AuthProvider method={state.method}>{children}</AuthProvider>
+      <AuthProvider method={state.method} cdaUrl={import.meta.env.VITE_CDA_API_ROOT}>
+        {children}
+      </AuthProvider>
     </AuthConfigurationContext.Provider>
   );
 }
