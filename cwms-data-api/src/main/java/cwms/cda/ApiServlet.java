@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
+import cwms.cda.api.auth.userlists.UserListController;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
@@ -341,6 +342,7 @@ public class ApiServlet extends HttpServlet {
                 schemeProcessor.apply(ctx, api);
                 api.getPaths().forEach((key,path) -> {
                     setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
+                    setUserListTags(key, path);
                     // yeah, we really need to figure out how to update everything, 
                     // this is supported as an annotation in newer versions.
                     if (key.startsWith("/rss")) {
@@ -423,6 +425,13 @@ public class ApiServlet extends HttpServlet {
         setSecurity(path.getPost(), secReqs);
         setSecurity(path.getPut(), secReqs);
         setSecurity(path.getPatch(),secReqs);
+    }
+
+    static void setUserListTags(String key, PathItem path) {
+        if (key.startsWith("/user/list")) {
+            path.readOperations().forEach(operation ->
+                    operation.setTags(List.of(UserListController.TAG)));
+        }
     }
 
     private static void setSecurity(Operation op,List<SecurityRequirement> reqs) {

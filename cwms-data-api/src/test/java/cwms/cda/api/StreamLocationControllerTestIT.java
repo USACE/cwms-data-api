@@ -38,14 +38,21 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.stream.Bank;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
+import cwms.cda.data.dto.stream.StreamLocationNode;
+import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -356,5 +363,117 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
                 .body(OFFICE_ID_TEXT, equalTo(OFFICE_ID))
                 .body(MESSAGE, equalTo("Stream Location successfully deleted from CWMS."))
                 .body(IDENTIFIER, equalTo(streamLocation.getStreamId().getName()));
+    }
+
+    /**
+     * A brand new CWMS location is always created with a location kind of SITE, regardless of
+     * what kind is requested at creation time. Storing a StreamLocation against an existing SITE
+     * location is what actually converts its kind in place. This test exercises that conversion
+     * through the REST API: create a plain SITE location, confirm its
+     * kind, then create a StreamLocation against that same location and confirm the kind changed
+     * to STREAM_LOCATION.
+     */
+    @Test
+    void test_site_location_converts_to_stream_location() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+        String streamId = "ImOnThisStream2"; // stream created in setup()
+        String locId = "SiteConvStreamLoc321";
+
+        Location location = new Location.Builder(locId, "SITE", ZoneId.of("UTC"),
+                38.5613824, -121.7298432, "WGS84", OFFICE_ID)
+                .withActive(true)
+                .build();
+        String locationJson = JsonV1.buildObjectMapper().registerModule(new Jdk8Module())
+                .writeValueAsString(location);
+
+        // Create a plain location - the database always stores it with kind SITE
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSON)
+                .body(locationJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/locations")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Confirm it starts out as SITE
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE_ID)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/locations/" + locId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("location-kind", equalTo("SITE"));
+
+        StreamLocation streamLocation = new StreamLocation.Builder()
+                .withStreamLocationNode(new StreamLocationNode.Builder()
+                        .withId(new CwmsId.Builder().withName(locId).withOfficeId(OFFICE_ID).build())
+                        .withStreamNode(new StreamNode.Builder()
+                                .withStreamId(new CwmsId.Builder().withName(streamId).withOfficeId(OFFICE_ID).build())
+                                .withStation(10.0)
+                                .withBank(Bank.LEFT)
+                                .withStationUnits("km")
+                                .build())
+                        .build())
+                .build();
+        String streamLocationJson = Formats.format(Formats.parseHeader(Formats.JSON, StreamLocation.class), streamLocation);
+
+        // Store a StreamLocation against that same, existing SITE location
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSON)
+                .queryParam(FAIL_IF_EXISTS, false)
+                .body(streamLocationJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/stream-locations/")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Confirm the location's kind was converted to STREAM_LOCATION
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE_ID)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/locations/" + locId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("location-kind", equalTo("STREAM_LOCATION"));
+
+        // Cleanup
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+                .queryParam(STREAM_ID, streamId)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/stream-locations/" + locId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
     }
 }

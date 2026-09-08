@@ -37,7 +37,6 @@ import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -82,7 +81,7 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase {
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
             WaterUser user = Formats.parseContent(contentType, ctx.body(), WaterUser.class);
-            boolean failIfExists = Boolean.parseBoolean(ctx.queryParam(FAIL_IF_EXISTS));
+            boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterUser(user, failIfExists);
             StatusResponse re = new StatusResponse(user.getProjectId().getOfficeId(),
