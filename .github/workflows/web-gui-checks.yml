@@ -4,10 +4,14 @@ on:
   push:
     branches:
       - develop
-    pull_request:
-      branches:
-        - develop
     # Run the audit and browser tests when the GUI or this workflow changes.
+    paths:
+      - "cda-gui/**"
+      - ".github/workflows/web-gui-*.yml"
+
+  pull_request:
+    branches:
+      - develop
     paths:
       - "cda-gui/**"
       - ".github/workflows/web-gui-*.yml"
