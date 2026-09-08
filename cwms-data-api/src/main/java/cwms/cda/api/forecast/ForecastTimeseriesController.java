@@ -1,34 +1,22 @@
-package cwms.cda.api;
+package cwms.cda.api.forecast;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.TimeSeries;
-import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
+
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.FORECAST_DATE;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.ISSUE_DATE;
-import static cwms.cda.api.Controllers.LOCATION_ID;
-import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
-import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.TIMESERIES_ID;
 
 public class ForecastTimeseriesController implements CrudHandler {
 

@@ -22,7 +22,6 @@ package cwms.cda.data.dao.location.kind;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -46,7 +45,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag("integration")
 class OutletDaoChangeIT extends BaseOutletDaoIT {
@@ -148,7 +147,7 @@ class OutletDaoChangeIT extends BaseOutletDaoIT {
             assertContainsAll(changes, modifiedChange, CHANGE_2);
 
             dao.deleteOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true);
-            assertThrows(NotFoundException.class, () -> dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, UnitSystem.EN, 3));
+            assertTrue(dao.retrieveOperationalChanges(PROJECT_1_ID, JAN_FIRST, JAN_SECOND, true, true, UnitSystem.EN, 3).isEmpty());
         }, CwmsDataApiSetupCallback.getWebUser());
     }
 
