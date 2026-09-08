@@ -1,4 +1,4 @@
-name: CDA Web GUI NPM Audit (CVE)
+name: CDA Web GUI Checks
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     pull_request:
       branches:
         - develop
-    # Only run when relevant files change (i.e. packages are bumped into new NPM versions)
+    # Run the audit and browser tests when the GUI or this workflow changes.
     paths:
       - "cda-gui/**"
       - ".github/workflows/web-gui-*.yml"
@@ -25,8 +25,8 @@ jobs:
       - name: install node for cda-gui audit
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: cda-gui/package-lock.json
 
       - name: run cda-gui audit for critical CVE
@@ -35,3 +35,11 @@ jobs:
         run: |
           HUSKY=0 npm ci
           npm audit --audit-level=critical
+
+      - name: install Chromium for UI tests
+        working-directory: ./cda-gui
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: run Storybook UI tests
+        working-directory: ./cda-gui
+        run: npm run test-storybook -- --run
