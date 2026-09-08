@@ -126,16 +126,19 @@ public final class WaterSupplyUtils {
         if (contract.getWS_CONTRACT_EXPIRATION_DATE() != null) {
             expirationDate = contract.getWS_CONTRACT_EXPIRATION_DATE().toInstant();
         }
+        String officeId = contract.getWATER_USER_CONTRACT_REF()
+              .getWATER_USER()
+              .getPROJECT_LOCATION_REF()
+              .getOFFICE_ID();
         return new WaterUserContract.Builder().withContractedStorage(contract.getCONTRACTED_STORAGE())
                 .withTotalAllocPercentActivated(contract.getTOTAL_ALLOC_PERCENT_ACTIVATED())
                 .withContractType(LocationUtil.getLookupType(contract.getWATER_SUPPLY_CONTRACT_TYPE()))
                 .withContractEffectiveDate(effectiveDate)
-                .withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE().getOFFICE_ID())
+                .withOfficeId(officeId)
                 .withStorageUnitsId(contract.getSTORAGE_UNITS_ID())
                 .withContractExpirationDate(expirationDate)
                 .withWaterUser(toWaterUser(contract.getWATER_USER_CONTRACT_REF().getWATER_USER()))
-                .withContractId(new CwmsId.Builder().withOfficeId(contract.getWATER_SUPPLY_CONTRACT_TYPE()
-                                .getOFFICE_ID()).withName(contract.getWATER_USER_CONTRACT_REF()
+                .withContractId(new CwmsId.Builder().withOfficeId(officeId).withName(contract.getWATER_USER_CONTRACT_REF()
                         .getCONTRACT_NAME()).build())
                 .withFutureUseAllocation(contract.getFUTURE_USE_ALLOCATION())
                 .withFutureUsePercentActivated(contract.getFUTURE_USE_PERCENT_ACTIVATED())
@@ -154,11 +157,15 @@ public final class WaterSupplyUtils {
     }
 
     static WaterUser toWaterUser(WATER_USER_OBJ_T waterUserTabT) {
-        return new WaterUser.Builder().withEntityName(waterUserTabT.getENTITY_NAME())
-                .withProjectId(new CwmsId.Builder().withName(waterUserTabT.getPROJECT_LOCATION_REF()
-                        .call_GET_LOCATION_ID()).withOfficeId(waterUserTabT.getPROJECT_LOCATION_REF()
-                        .getOFFICE_ID()).build())
-                .withWaterRight(waterUserTabT.getWATER_RIGHT()).build();
+        LOCATION_REF_T projectLocationRef = waterUserTabT.getPROJECT_LOCATION_REF();
+        return new WaterUser.Builder()
+              .withEntityName(waterUserTabT.getENTITY_NAME())
+              .withProjectId(new CwmsId.Builder()
+                    .withName(LocationUtil.getLocationId(projectLocationRef))
+                    .withOfficeId(projectLocationRef.getOFFICE_ID())
+                    .build())
+              .withWaterRight(waterUserTabT.getWATER_RIGHT())
+              .build();
     }
 
     static WATER_USER_OBJ_T toWaterUserObjT(WaterUser waterUser) {
