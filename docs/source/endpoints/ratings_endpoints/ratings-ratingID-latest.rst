@@ -1,4 +1,4 @@
-TimeSeries — GET /ratings/{rating-id}/latest
+Ratings — GET /ratings/{rating-id}/latest
 ===================================
 
 What it does
@@ -20,7 +20,7 @@ When to use
 
 Examples
 --------
-1. | The user wants to retrieve the all available rating data for all effective dates of the rating ID
+1. | The user wants to retrieve the latest available rating data for the rating ID
    | `KEYS.Elev;Area.Linear.Production`:
    | (**rating-id**) :code:`KEYS.Elev;Area.Linear.Production`
    |
