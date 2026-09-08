@@ -19,6 +19,10 @@ export const LandingPage = {
     ).toBeVisible();
     await expect(canvas.getAllByRole("link", { name: "Swagger UI" })[0]).toBeVisible();
     await expect(canvas.getByRole("link", { name: "Data Query Tool" })).toBeVisible();
+    await expect(canvas.getByRole("link", { name: "Data Query Tool" })).toHaveAttribute(
+      "href",
+      "/data-query",
+    );
     await expect(
       canvas.getByRole("link", { name: "Regular Expressions" }),
     ).toBeVisible();
