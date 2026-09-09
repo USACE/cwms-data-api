@@ -219,27 +219,12 @@ public abstract class TimeSeriesGroupController extends BaseCrudHandler {
         }
     }
 
-    /**
-     * Persists a new description for a group, if the description has changed. Preserves the
-     * group's existing assigned time series.
-     *
-     * @param dao The dao to use to persist the change.
-     * @param existingGroup The group as currently stored.
-     * @param newDescription The description provided in the request. If null, no update occurs.
-     * @return The group reflecting the persisted description (or the unmodified existing group if
-     *      no update was necessary).
-     */
-    protected TimeSeriesGroup updateDescriptionIfChanged(TimeSeriesGroupDao dao, TimeSeriesGroup existingGroup,
-            String newDescription) {
-        if (newDescription != null && !newDescription.equalsIgnoreCase(existingGroup.getDescription())) {
-            TimeSeriesGroup updated = new TimeSeriesGroup(new TimeSeriesGroup(existingGroup.getTimeSeriesCategory(),
-                    existingGroup.getOfficeId(), existingGroup.getId(), newDescription,
-                    existingGroup.getSharedAliasId(), existingGroup.getSharedRefTsId()),
-                    existingGroup.getAssignedTimeSeries());
-            dao.create(updated, false, false);
-            return updated;
-        }
-        return existingGroup;
+    protected TimeSeriesGroup updateClearedFields(TimeSeriesGroup groupBody,
+                                                TimeSeriesGroup existingTimeSeriesGroup) {
+        return new TimeSeriesGroup(new TimeSeriesGroup(existingTimeSeriesGroup.getTimeSeriesCategory(),
+                existingTimeSeriesGroup.getOfficeId(), existingTimeSeriesGroup.getId(), groupBody.getDescription(),
+                existingTimeSeriesGroup.getSharedAliasId(), existingTimeSeriesGroup.getSharedRefTsId()),
+                existingTimeSeriesGroup.getAssignedTimeSeries());
     }
 
     /**
