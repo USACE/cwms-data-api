@@ -1,6 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createApiKeyClient, keyDate, keyError, keyStatus } from "./api.js";
+import {
+  createApiKeyClient,
+  keyAccessDenied,
+  keyDate,
+  keyError,
+  keyStatus,
+} from "./api.js";
+
+test("access denial only exposes recognized missing roles and tolerates proxy errors", async () => {
+  for (const roles of [["CWMS Users"], ["cac_auth"], ["CWMS Users", "cac_auth"]]) {
+    const response = new Response(
+      JSON.stringify({
+        message: `Missing roles {${roles.map((role) => `Role{name='${role}'}`).join(",")}}`,
+        details: "secret",
+      }),
+      { status: 403 },
+    );
+    assert.deepEqual(await keyAccessDenied({ response }), { missingRoles: roles });
+    assert.equal(response.bodyUsed, false);
+  }
+  assert.deepEqual(
+    await keyAccessDenied({
+      response: new Response("proxy denial secret", { status: 403 }),
+    }),
+    { missingRoles: [] },
+  );
+  assert.equal(
+    await keyAccessDenied({ response: new Response(null, { status: 401 }) }),
+    null,
+  );
+});
 
 test("cwmsjs sends bearer auth, encodes names, and preserves CDA dates", async () => {
   const calls = [];

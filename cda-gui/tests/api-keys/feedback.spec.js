@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import process from "node:process";
 
 const original = {
   "user-id": "TEST",
@@ -7,8 +8,8 @@ const original = {
   expires: null,
 };
 
-async function setup(page) {
-  const state = { keys: [{ ...original }], failure: null, requests: [] };
+async function setup(page, failure = null) {
+  const state = { keys: [{ ...original }], failure, requests: [] };
   await page.route("**/protocol/openid-connect/token", (route) =>
     route.fulfill({ json: { access_token: "test-token" } }),
   );
@@ -52,6 +53,7 @@ async function setup(page) {
   await page.goto("/cwms-data/");
   await page.getByRole("button", { name: /login|sign in/i }).click();
   await page.getByRole("link", { name: "API Keys", exact: true }).click();
+  if (failure?.status === 403) return state;
   await expect(
     page.getByRole("button", { name: "Create key", exact: true }),
   ).toBeEnabled();
@@ -59,6 +61,73 @@ async function setup(page) {
 }
 
 const toast = (page) => page.locator(".api-key-toast:visible");
+
+for (const roles of [["CWMS Users"], ["cac_auth"], ["CWMS Users", "cac_auth"]]) {
+  test(`missing ${roles.join(" and ")} shows the permission page and recovers`, async ({
+    page,
+  }) => {
+    const state = await setup(page, {
+      method: "GET",
+      status: 403,
+      message: `Missing roles {${roles.map((role) => `Role{name='${role}'}`).join(",")}}`,
+    });
+    await expect(
+      page.getByRole("heading", { name: "API key access required" }),
+    ).toBeVisible();
+    await expect(page.getByRole("alert")).toContainText("Reach out to your CWMS Admin");
+    for (const role of roles)
+      await expect(page.getByRole("listitem").filter({ hasText: role })).toContainText(
+        "missing from your current",
+      );
+    await expect(
+      page.getByRole("button", { name: "Create key", exact: true }),
+    ).toHaveCount(0);
+    expect(state.requests).toEqual(["GET"]);
+    if (process.env.API_KEYS_SCREENSHOT_DIR && roles.length === 2) {
+      await page.screenshot({
+        path: `${process.env.API_KEYS_SCREENSHOT_DIR}/api-keys-permissions.png`,
+        fullPage: true,
+      });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect(page.getByRole("alert")).toBeVisible();
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(390);
+      await page.screenshot({
+        path: `${process.env.API_KEYS_SCREENSHOT_DIR}/api-keys-permissions-mobile.png`,
+        fullPage: true,
+      });
+    }
+    state.failure = { method: "GET", status: 503 };
+    await page.getByRole("button", { name: "Check access again" }).click();
+    await expect(toast(page)).toContainText("CDA could not complete");
+    await expect(
+      page.getByRole("heading", { name: "API key access required" }),
+    ).toBeVisible();
+    state.failure = null;
+    await page.getByRole("button", { name: "Check access again" }).click();
+    await expect(
+      page.getByRole("button", { name: "Create key", exact: true }),
+    ).toBeEnabled();
+  });
+}
+
+test("permission loss during creation replaces the dialog with the warning page", async ({
+  page,
+}) => {
+  const state = await setup(page);
+  state.failure = { method: "POST", status: 403 };
+  await create(page);
+  await expect(
+    page.getByRole("heading", { name: "API key access required" }),
+  ).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Create key", exact: true }),
+  ).toHaveCount(0);
+  expect(state.keys).toHaveLength(1);
+});
+
 const dialog = (page) => page.getByRole("dialog");
 async function create(page, name = "new-report") {
   await page.getByRole("button", { name: "Create key", exact: true }).click();
@@ -161,10 +230,12 @@ test("list errors recover, vanished keys are cleared and expired keys warn", asy
   const state = await setup(page);
   state.failure = { method: "GET", status: 403 };
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(toast(page)).toContainText("CDA denied access");
+  await expect(
+    page.getByRole("heading", { name: "API key access required" }),
+  ).toBeVisible();
   state.failure = null;
   state.keys[0].expires = "2020-01-01T00:00:00+0000[Z]";
-  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await page.getByRole("button", { name: "Check access again", exact: true }).click();
   await expect(toast(page)).toContainText("up to date");
   await page.getByRole("button", { name: /daily-report.*Expired/ }).click();
   await expect(toast(page)).toContainText("has expired");

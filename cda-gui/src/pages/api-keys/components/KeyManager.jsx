@@ -5,7 +5,13 @@ import { useAuth } from "@usace-watermanagement/groundwork-water";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@usace/groundwork";
 import { Notice } from "../../user-lists/components/StatusMessages";
-import { createApiKeyClient, keyDate, keyError, keyStatus } from "../api";
+import {
+  createApiKeyClient,
+  keyAccessDenied,
+  keyDate,
+  keyError,
+  keyStatus,
+} from "../api";
 import "../api-keys.css";
 import KeyHeader from "./KeyHeader";
 import OfficeContext from "./OfficeContext";
@@ -15,6 +21,7 @@ import CreateKeyDialog from "./CreateKeyDialog";
 import SaveKeyDialog from "./SaveKeyDialog";
 import RevokeKeyDialog from "./RevokeKeyDialog";
 import KeyFeedback from "./KeyFeedback";
+import KeyAccessWarning from "./KeyAccessWarning";
 const cdaUrl = import.meta.env.VITE_CDA_API_ROOT;
 export default function KeyManager({ token }) {
   const [params] = useSearchParams();
@@ -26,6 +33,7 @@ export default function KeyManager({ token }) {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState("");
+  const [accessDenied, setAccessDenied] = useState(null);
   const [notification, setNotification] = useState(null);
   const notificationId = useRef(0);
   const notify = useCallback((kind, message) => {
@@ -98,32 +106,41 @@ export default function KeyManager({ token }) {
     }
   }
 
+  const showError = useCallback(
+    async (cause, signal) => {
+      const denied = await keyAccessDenied(cause);
+      const message = denied ? null : await keyError(cause);
+      if (signal.aborted) return;
+      if (denied) {
+        setAccessDenied(denied);
+        setCreateOpen(false);
+        setRevokeOpen(false);
+        setCreated(null);
+        setRotationSource(null);
+        setSelected(null);
+        setKeys([]);
+        setError("");
+        dismiss();
+      } else {
+        setError(message);
+        notify("error", message);
+      }
+    },
+    [dismiss, notify],
+  );
+
   useEffect(() => {
     const current = new AbortController();
     controller.current = current;
     api
       .list(current.signal)
       .then(setKeys)
-      .catch(async (cause) => {
-        const message = await keyError(cause);
-        if (!current.signal.aborted) {
-          setError(message);
-          notify("error", message);
-        }
-      })
+      .catch((cause) => showError(cause, current.signal))
       .finally(() => {
         if (!current.signal.aborted) setLoading(false);
       });
     return () => current.abort();
-  }, [api, notify]);
-
-  async function showError(cause, signal) {
-    const message = await keyError(cause);
-    if (!signal.aborted) {
-      setError(message);
-      notify("error", message);
-    }
-  }
+  }, [api, showError]);
 
   async function refresh() {
     const signal = controller.current.signal;
@@ -133,6 +150,7 @@ export default function KeyManager({ token }) {
       const current = await api.list(signal);
       if (signal.aborted) return;
       setKeys(current);
+      setAccessDenied(null);
       setSelected(
         (previous) =>
           current.find((key) => key["key-name"] === previous?.["key-name"]) ?? null,
@@ -263,6 +281,17 @@ export default function KeyManager({ token }) {
         "Clipboard access is unavailable. Select and copy the key manually.",
       );
     }
+  }
+
+  if (accessDenied) {
+    return (
+      <KeyAccessWarning
+        missingRoles={accessDenied.missingRoles}
+        loading={loading}
+        retry={refresh}
+        feedback={<KeyFeedback {...{ notification }} onDismiss={dismiss} />}
+      />
+    );
   }
 
   return (

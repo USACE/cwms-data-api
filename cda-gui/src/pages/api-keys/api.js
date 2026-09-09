@@ -55,6 +55,22 @@ export function createApiKeyClient(basePath, token, fetchApi = fetch) {
   };
 }
 
+export async function keyAccessDenied(error) {
+  if (error?.response?.status !== 403) return null;
+  const missingRoles = [];
+  try {
+    const { message } = await error.response.clone().json();
+    if (typeof message === "string" && message.startsWith("Missing roles {")) {
+      for (const role of ["CWMS Users", "cac_auth"]) {
+        if (message.includes(`Role{name='${role}'}`)) missingRoles.push(role);
+      }
+    }
+  } catch {
+    // Proxies may omit CDA's role details. Still explain the route requirements.
+  }
+  return { missingRoles };
+}
+
 export async function keyError(error) {
   if (error instanceof KeyInputError) return error.message;
   const status = error?.response?.status;

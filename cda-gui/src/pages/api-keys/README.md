@@ -53,6 +53,12 @@ return actionable conflict feedback. Creation rejects invalid local dates before
 sending a request, and replacement names stay within the 64-character limit.
 Refreshing clears details for keys that no longer exist.
 
+A 403 from any key operation replaces management controls with a warning page
+explaining the required `CWMS Users` permission and signed-in `cac_auth` session.
+It directs users to their CWMS Admin and offers an access retry. Recognized missing
+roles are highlighted without displaying arbitrary server error details. The
+endpoint decides access; office profile roles are not used to infer authorization.
+
 The adapter uses `cwmsjs` raw responses because CDA's bracketed timezone dates
 are not parsed by the generated model and DELETE returns an empty 204 body.
 The client still handles request serialization and URL encoding.
