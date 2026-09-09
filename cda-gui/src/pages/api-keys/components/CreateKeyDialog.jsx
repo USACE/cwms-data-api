@@ -8,7 +8,6 @@ import {
   Description,
   Button,
 } from "@usace/groundwork";
-import { Notice } from "../../user-lists/components/StatusMessages";
 import ExpirationShortcuts from "./ExpirationShortcuts";
 export default function CreateKeyDialog({
   createOpen,
@@ -23,6 +22,7 @@ export default function CreateKeyDialog({
   setExpires,
   keys,
   rotationSource,
+  feedback,
 }) {
   return (
     <Modal
@@ -34,8 +34,9 @@ export default function CreateKeyDialog({
       dialogTitle={rotationSource ? "Rotate API key" : "Create API key"}
       size="lg"
     >
+      {feedback}
       <form className="space-y-5" onSubmit={create}>
-        {error && <Notice kind="error">{error}</Notice>}
+        {error && <p className="text-red-700">{error}</p>}
         {rotationSource && (
           <Text>
             Create a replacement for <strong>{rotationSource["key-name"]}</strong> with
@@ -52,6 +53,7 @@ export default function CreateKeyDialog({
           <Input
             autoFocus
             required
+            maxLength={64}
             aria-label="Key name"
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -108,6 +110,7 @@ export default function CreateKeyDialog({
 }
 CreateKeyDialog.propTypes = {
   rotationSource: PropTypes.object,
+  feedback: PropTypes.node,
   createOpen: PropTypes.bool.isRequired,
   working: PropTypes.bool.isRequired,
   setCreateOpen: PropTypes.func.isRequired,

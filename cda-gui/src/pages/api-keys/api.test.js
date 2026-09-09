@@ -123,3 +123,69 @@ test("all key operations catch generic server failures with a useful message", a
     /Refresh your keys to check whether the change was saved/,
   );
 });
+
+test("new CDA validation responses produce specific, safe guidance", async () => {
+  const cases = [
+    [
+      "expires must be a valid date/time string, for example 2030-01-01T00:00:00Z.",
+      /valid expiration date/,
+    ],
+    ["user-id and key-name are required and must not be blank.", /Enter a key name/],
+    [
+      "Request body must be a valid API key JSON object.",
+      /could not read the key details/,
+    ],
+    [
+      "One or more provided values exceeds the maximum length for the parameter. The field KEY_NAME with provided length of 65 has a maximum length of 64 characters.",
+      /64 characters/,
+    ],
+  ];
+  for (const [message, expected] of cases) {
+    const response = new Response(
+      JSON.stringify({
+        message,
+        details: { stackTraceLines: ["secret-must-not-be-shown"] },
+      }),
+      { status: 400 },
+    );
+    assert.match(await keyError({ response }), expected);
+    assert.equal(response.bodyUsed, false);
+  }
+  assert.match(
+    await keyError({
+      response: new Response(
+        JSON.stringify({
+          message: "secret-must-not-be-shown",
+          details: { message: "secret-must-not-be-shown" },
+        }),
+        { status: 400 },
+      ),
+    }),
+    /Check the name and expiration/,
+  );
+});
+
+test("invalid local dates are reported before sending a request", async () => {
+  const client = createApiKeyClient("https://example.test", "test-token", async () =>
+    assert.fail("No request should be sent"),
+  );
+  let failure;
+  await assert.rejects(
+    () => client.create("TEST", "report", "invalid-date"),
+    (error) => {
+      failure = error;
+      return true;
+    },
+  );
+  assert.match(await keyError(failure), /valid expiration date/);
+});
+
+test("timestamps with UTC and fixed-offset suffixes preserve their instant", () => {
+  for (const value of [
+    "2030-01-01T17:30:45+0000[Z]",
+    "2030-01-01T12:30:45-0500[-05:00]",
+  ]) {
+    assert.equal(keyDate(value).toISOString(), "2030-01-01T17:30:45.000Z");
+  }
+  assert.equal(keyDate({}), null);
+});

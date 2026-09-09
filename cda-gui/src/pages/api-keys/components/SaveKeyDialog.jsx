@@ -5,7 +5,7 @@ import { Notice } from "../../user-lists/components/StatusMessages";
 export default function SaveKeyDialog({
   created,
   copySecret,
-  message,
+  feedback,
   onSaved,
   rotationSource,
 }) {
@@ -17,6 +17,7 @@ export default function SaveKeyDialog({
       dialogTitle="Save your new API key"
       size="lg"
     >
+      {feedback}
       <div className="space-y-4">
         <div className="flex gap-3 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-950">
           <FaExclamationTriangle
@@ -49,7 +50,6 @@ export default function SaveKeyDialog({
             CDA did not return a secret. Revoke this key and create a replacement.
           </Notice>
         )}
-        {message && <Text role="status">{message}</Text>}
         {rotationSource && (
           <Text>
             The old key <strong>{rotationSource["key-name"]}</strong> has not been
@@ -67,7 +67,7 @@ export default function SaveKeyDialog({
 SaveKeyDialog.propTypes = {
   created: PropTypes.object,
   copySecret: PropTypes.func.isRequired,
-  message: PropTypes.string.isRequired,
+  feedback: PropTypes.node,
   onSaved: PropTypes.func.isRequired,
   rotationSource: PropTypes.object,
 };

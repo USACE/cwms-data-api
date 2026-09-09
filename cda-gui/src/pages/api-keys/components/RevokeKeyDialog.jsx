@@ -1,6 +1,5 @@
 import PropTypes from "prop-types";
 import { Modal, Text, Button } from "@usace/groundwork";
-import { Notice } from "../../user-lists/components/StatusMessages";
 export default function RevokeKeyDialog({
   revokeOpen,
   working,
@@ -9,6 +8,7 @@ export default function RevokeKeyDialog({
   selected,
   revoke,
   rotation = false,
+  feedback,
 }) {
   return (
     <Modal
@@ -22,7 +22,8 @@ export default function RevokeKeyDialog({
       }
       size="md"
     >
-      {error && <Notice kind="error">{error}</Notice>}
+      {feedback}
+      {error && <p className="text-red-700">{error}</p>}
       {rotation && (
         <Text>
           Your replacement has been created. Confirm only after you have saved its
@@ -51,6 +52,7 @@ export default function RevokeKeyDialog({
 }
 RevokeKeyDialog.propTypes = {
   rotation: PropTypes.bool,
+  feedback: PropTypes.node,
   revokeOpen: PropTypes.bool.isRequired,
   working: PropTypes.bool.isRequired,
   setRevokeOpen: PropTypes.func.isRequired,
