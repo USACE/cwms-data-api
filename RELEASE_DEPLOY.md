@@ -40,7 +40,9 @@ portions):
 
 The actual release will consist of the following elements:
 
-1. A war file available under the (releases)[https://github.com/usace/cwms-data-api/releases] page
+1. Two WAR files available under the [releases](https://github.com/usace/cwms-data-api/releases) page:
+    1. `cwms-data-api-<version>.war`, deployed as `cwms-data.war`, provides the API at `/cwms-data`.
+    2. `cwms-data-ui-<version>.war`, deployed as `ROOT.war`, provides the UI at `/`.
 2. OCI container images available at `docker pull ghcr.io/usace/cwms-data-api:<tag>`
     1. Note that there may be multiple tags for the same image, use what is appropriate to your current operation.
 

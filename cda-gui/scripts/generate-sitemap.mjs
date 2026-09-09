@@ -12,7 +12,7 @@ const outputPath = path.join(projectDir, "dist", "sitemap.xml");
 const siteOrigin = (
   process.env.SITE_ORIGIN ?? "https://cwms-data.usace.army.mil"
 ).replace(/\/+$/, "");
-const siteBasePath = (process.env.SITE_BASE_PATH ?? "/cwms-data").replace(/\/+$/, "");
+const siteBasePath = (process.env.SITE_BASE_PATH ?? "").replace(/\/+$/, "");
 
 const urls = sitemapPaths.map((routePath) => {
   const normalizedPath = routePath ? `/${routePath}` : "";

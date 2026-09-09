@@ -2,7 +2,9 @@ import com.github.gradle.node.npm.task.NpmTask
 import com.github.gradle.node.npm.task.NpxTask
 
 plugins {
-    id 'java'
+    id 'cda.deps-conventions'
+    id 'cda.java-conventions'
+    id 'war'
     id 'com.github.node-gradle.node' version '7.1.0'
 }
 
@@ -19,6 +21,13 @@ tasks.withType(NpxTask).configureEach {
 def cdaGuiViteMode = providers.gradleProperty('cdaGuiMode')
         .orElse(providers.environmentVariable('CDA_GUI_MODE'))
         .orElse('production')
+
+dependencies {
+    compileOnly(libs.javaee.web.api)
+    testImplementation(libs.javaee.web.api)
+    testImplementation(libs.bundles.junit)
+    testImplementation(libs.mockito.core)
+}
 
 task buildGuiVite(type:NpxTask) {
     dependsOn npmInstall
@@ -62,16 +71,8 @@ task runGuiDev(type: Exec) {
     workingDir project.layout.projectDirectory
 }
 
-sourceSets {
-    java {
-        main {
-            resources {
-                srcDir(project.layout.projectDirectory.dir('dist'))
-            }
-        }
-    }
-}
-
-tasks.named('processResources') {
+war {
     dependsOn buildGui
+    archiveBaseName = 'cwms-data-ui'
+    from(project.layout.projectDirectory.dir('dist'))
 }

@@ -114,7 +114,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.data-api.rule=PathPrefix(`/cwms-data`)"
+      - "traefik.http.routers.data-api.service=data-api"
       - "traefik.http.routers.data-api.entryPoints=web"
+      - "traefik.http.routers.data-ui.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.data-ui.service=data-api"
+      - "traefik.http.routers.data-ui.entryPoints=web"
       - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 
   auth:

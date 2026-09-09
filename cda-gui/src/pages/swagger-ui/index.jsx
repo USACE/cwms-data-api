@@ -39,7 +39,7 @@ export default function SwaggerUI() {
   const cwmsAuthMethod = useMemo(() => {
     const basePath = getBasePath();
     return createCwmsLoginAuthMethod({
-      authUrl: `${window.location.origin}/CWMSLogin`,
+      authUrl: `${basePath}/CWMSLogin`,
       authCheckUrl: `${basePath}/auth/keys`,
     });
   }, []);
@@ -265,14 +265,12 @@ export default function SwaggerUI() {
     let mounted = true;
     setAuthStatus("checking");
     setAuthError(null);
-    appAuth
-      .login()
-      .catch((error) => {
-        if (mounted) {
-          setAuthError(error?.message ?? "Automatic local sign-in failed.");
-          setAuthStatus("anonymous");
-        }
-      });
+    appAuth.login().catch((error) => {
+      if (mounted) {
+        setAuthError(error?.message ?? "Automatic local sign-in failed.");
+        setAuthStatus("anonymous");
+      }
+    });
 
     return () => {
       mounted = false;
@@ -326,8 +324,7 @@ export default function SwaggerUI() {
     customAuthType === "openid" ? appAuth.isLoading : authStatus === "checking";
   const unavailableMessage = getUnavailableMessage();
   const showAuthBar = authUiMode !== "hidden";
-  const showUnavailableMessage =
-    showAuthBar && !hasAuthMethod && !isCheckingAuth;
+  const showUnavailableMessage = showAuthBar && !hasAuthMethod && !isCheckingAuth;
 
   return (
     <>

@@ -38,7 +38,7 @@ The following users and permissions are available:
 |----------------------------------------------|-----------|----------------|-----------------------------------------|-----------------------|
 | [traefik]()                                  | 8081      | 8081           | entry point - web traffic               | http://localhost:8081 |
 | db                                           |           | 1521           | oracle database                         |                       |
-| [api](./cwms-data-api/src/docker/Dockerfile) |           | 7000           | tomcat CWMS Data API                    |                       |
+| [api](./Dockerfile)                          |           | 7000           | Tomcat hosting the UI at `/` and API at `/cwms-data` as separate WARs | http://localhost:8081/ |
 | [auth](./compose_files/keycloak/Dockerfile)  |           | 8080           | authentication-token service (keycloak) |                       |
 | db_install                                   |           |                | connects to db and installs CWMS schema |                       |
 | db_webuser_ permissions                      |           |                | connects to db and sets permissions     |                       |
