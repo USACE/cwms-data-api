@@ -1,6 +1,5 @@
 import { Tabs, Skeleton } from "@usace/groundwork";
-import CWMSPlot from "./CWMSPlot";
-import DataQueryTable from "./DataQueryTable";
+import { CWMSTable, CWMSPlot } from "@usace-watermanagement/groundwork-water";
 import MetaDataTab from "./MetaDataTab";
 import PropTypes from "prop-types";
 
@@ -32,12 +31,14 @@ export default function DataTabs({
               className="relative z-10 bg-white"
             >
               {timeseriesParams.length > 0 && (
-                <DataQueryTable
+                <CWMSTable
                   timeseriesParams={timeseriesParams}
                   dateFormat="YYYY-MM-DD HH:mm:ss"
+                  interval={null}
+                  inputTSValues={timeseriesData?.raw}
                   missingString="---"
+                  office={primaryOffice}
                   sortAscending={sortAscending}
-                  rawSeries={timeseriesData?.raw}
                 />
               )}
             </div>
