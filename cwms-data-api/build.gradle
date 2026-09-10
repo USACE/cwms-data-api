@@ -309,6 +309,7 @@ task integrationTests(type: Test) {
 //    dependsOn test
     dependsOn generateConfig
     dependsOn war
+    jvmArgs += "-Duser.timezone=UTC"
 
     useJUnitPlatform() {
         includeTags "integration"

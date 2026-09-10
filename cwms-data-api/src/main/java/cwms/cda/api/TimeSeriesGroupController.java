@@ -84,6 +84,7 @@ import org.jooq.DSLContext;
 public class TimeSeriesGroupController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "Timeseries Groups";
+    private static final String UNIT_SYSTEM = "unit-system";
 
     private final MetricRegistry metrics;
 
@@ -102,6 +103,8 @@ public class TimeSeriesGroupController implements CrudHandler {
 
     @OpenApi(
             queryParams = {
+                @OpenApiParam(name = UNIT_SYSTEM, description = "Display unit system: EN (default) or SI. "
+                    + "Assigned time series include units only when a persistent override differs from the default."),
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
                         + "timeseries assigned to the group(s) whose data is to be included in the response. If this "
                         + "field is not specified, group information for all assigned TS offices shall be returned."),
@@ -131,7 +134,7 @@ public class TimeSeriesGroupController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
-            TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
+            TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl, ctx.queryParam(UNIT_SYSTEM));
             String tsOffice = ctx.queryParam(OFFICE);
             String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
             String categoryOffice = ctx.queryParam(CATEGORY_OFFICE_ID);
@@ -179,6 +182,8 @@ public class TimeSeriesGroupController implements CrudHandler {
                         + "the timeseries group whose data is to be included in the response")
             },
             queryParams = {
+                @OpenApiParam(name = UNIT_SYSTEM, description = "Display unit system: EN (default) or SI. "
+                    + "Assigned time series include units only when a persistent override differs from the default."),
                 @OpenApiParam(name = OFFICE, description = "Specifies the "
                         + "owning office of the timeseries assigned to the group whose data is to be included"
                         + " in the response. This will limit the assigned timeseries returned to only those"
@@ -202,7 +207,7 @@ public class TimeSeriesGroupController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
+            TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl, ctx.queryParam(UNIT_SYSTEM));
             String tsOffice = ctx.queryParam(OFFICE);
             String categoryId = ctx.queryParam(CATEGORY_ID);
 
@@ -239,7 +244,9 @@ public class TimeSeriesGroupController implements CrudHandler {
     }
 
     @OpenApi(
-        description = "Create new TimeSeriesGroup",
+        description = "Create new TimeSeriesGroup. Assigned time series may specify optional units and unit-system "
+            + "(EN by default). The display preference belongs to the time series and applies across groups. "
+            + "Omitting units preserves the preference; explicit null clears the override.",
         requestBody = @OpenApiRequestBody(
             content = {
                 @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON)
@@ -341,49 +348,54 @@ public class TimeSeriesGroupController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
-            String body = ctx.body();
-            String office = requiredParam(ctx, OFFICE);
-            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
-            TimeSeriesGroup group = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
-            boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
-                .getOrDefault(false);
-            TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
-            TimeSeriesGroup existingGroup = timeSeriesGroupDao.getTimeSeriesGroup(office, null,
-                null, group.getTimeSeriesCategory().getId(), oldGroupId);
-            if (!Strings.CI.equals(existingGroup.getDescription(), group.getDescription())) {
-                existingGroup = updateClearedFields(group, existingGroup);
-                timeSeriesGroupDao.create(existingGroup, false, false);
+            dsl.transaction(config -> update(ctx, oldGroupId, config.dsl()));
+        }
+    }
+
+    private void update(Context ctx, String oldGroupId, DSLContext dsl) {
+        String formatHeader = ctx.req.getContentType();
+        String body = ctx.body();
+        String office = requiredParam(ctx, OFFICE);
+        ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
+        TimeSeriesGroup group = Formats.parseContent(contentType, body, TimeSeriesGroup.class);
+        boolean replaceAssignedTs = ctx.queryParamAsClass(REPLACE_ASSIGNED_TS, Boolean.class)
+            .getOrDefault(false);
+        TimeSeriesGroupDao timeSeriesGroupDao = new TimeSeriesGroupDao(dsl);
+        timeSeriesGroupDao.validateDisplayUnits(group);
+        TimeSeriesGroup existingGroup = timeSeriesGroupDao.getTimeSeriesGroup(office, null,
+            null, group.getTimeSeriesCategory().getId(), oldGroupId);
+        if (!Strings.CI.equals(existingGroup.getDescription(), group.getDescription())) {
+            existingGroup = updateClearedFields(group, existingGroup);
+            timeSeriesGroupDao.create(existingGroup, false, false);
+        }
+        if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(group.getId())) {
+            timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, group);
+        }
+        if (replaceAssignedTs) {
+            timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(),
+                group.getOfficeId(), office);
+        }
+        boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
+        List<CwmsId> missingTimeSeries = timeSeriesGroupDao.assignTs(group, office, ignoreMissing);
+        if (missingTimeSeries.isEmpty()) {
+            ctx.status(HttpServletResponse.SC_OK);
+        } else {
+            Map<String, String> detailsMap = new HashMap<>();
+            StringBuilder sb = new StringBuilder();
+            for (CwmsId cwmsId : missingTimeSeries) {
+                sb.append(cwmsId.getName());
+                sb.append(", ");
             }
-            if (!office.equalsIgnoreCase(CWMS_OFFICE) && !oldGroupId.equals(group.getId())) {
-                timeSeriesGroupDao.renameTimeSeriesGroup(oldGroupId, group);
-            }
-            if (replaceAssignedTs) {
-                timeSeriesGroupDao.unassignForOffice(group.getTimeSeriesCategory().getId(), group.getId(),
-                    group.getOfficeId(), office);
-            }
-            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
-            List<CwmsId> missingTimeSeries = timeSeriesGroupDao.assignTs(group, office, ignoreMissing);
-            if (missingTimeSeries.isEmpty()) {
-                ctx.status(HttpServletResponse.SC_OK);
+            sb.delete(sb.length() - 2, sb.length());
+            detailsMap.put("missing-timeseries", sb.toString());
+            if (ignoreMissing) {
+                ctx.status(HttpCode.MULTI_STATUS);
             } else {
-                Map<String, String> detailsMap = new HashMap<>();
-                StringBuilder sb = new StringBuilder();
-                for (CwmsId cwmsId : missingTimeSeries) {
-                    sb.append(cwmsId.getName());
-                    sb.append(", ");
-                }
-                sb.delete(sb.length() - 2, sb.length());
-                detailsMap.put("missing-timeseries", sb.toString());
-                if (ignoreMissing) {
-                    ctx.status(HttpCode.MULTI_STATUS);
-                } else {
-                    ctx.status(HttpServletResponse.SC_BAD_REQUEST);
-                    detailsMap.put("message",
-                        "One or more time series were not found and could not be assigned to the group");
-                }
-                ctx.json(detailsMap);
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                detailsMap.put("message",
+                    "One or more time series were not found and could not be assigned to the group");
             }
+            ctx.json(detailsMap);
         }
     }
 
