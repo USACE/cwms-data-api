@@ -1,0 +1,20 @@
+[project]
+name = "cda-python"
+version = "{{packageVersion}}"
+description = "Generated Python SDK for the CWMS Data API"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE.md"}
+authors = [{name = "US Army Corps of Engineers"}]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[project.urls]
+Repository = "https://github.com/USACE/cwms-data-api"
+Documentation = "https://github.com/USACE/cwms-data-api/tree/develop/clients/python"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
