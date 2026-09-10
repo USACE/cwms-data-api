@@ -104,6 +104,15 @@ tasks.register('modPackage', NpxTask) {
     outputs.file generatedClientDir.file('package.json')
 }
 
+tasks.register('testPackageMetadata', NpmTask) {
+    group 'verification'
+    description 'Test cwmsjs package metadata and version generation.'
+    dependsOn npmInstall
+    npmCommand = ['run', 'test:package']
+    inputs.files 'package.json', 'scripts/package-updates/modPackage.js',
+            'scripts/package-updates/modPackage.test.js'
+}
+
 tasks.register('postGenerate', NpxTask) {
     group 'openapi'
     description 'Apply source patches required after OpenAPI generation.'
@@ -154,4 +163,8 @@ tasks.register('buildTypeScriptDocs', NpxTask) {
 tasks.named('build') {
     dependsOn buildTypeScriptClient
     dependsOn buildTypeScriptDocs
+}
+
+tasks.named('check') {
+    dependsOn testPackageMetadata
 }
