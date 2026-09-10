@@ -8,17 +8,18 @@ test("Test Timeseries V2", async () => {
   // If you want to change the server or any other base level configuration default items you can use
   // Configuration
   const v2_config = new Configuration({
-    basePath: "https://water.usace.army.mil/cwms-data",
+    basePath: "https://cwms-data.usace.army.mil/cwms-data",
     headers: {
       accept: "application/json;version=2",
     },
   });
   const ts_api = new TimeSeriesApi(v2_config);
   await ts_api
-    .getDataTimeseries({
+    .getTimeSeriesRaw({
       office: "SWT",
       name: "KEYS.Elev.Inst.1Hour.0.Ccp-Rev",
     })
+    .then(response => response.raw.json())
     .then((data) => {
       expect(data?.values).toBeDefined();
     })

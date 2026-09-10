@@ -1,3 +1,4 @@
+//!ignore Requires a private authenticated district deployment; not a runnable public example.
 import { Configuration, AuthorizationApi } from "cwmsjs";
 import fetch from "node-fetch";
 global.fetch = fetch;
