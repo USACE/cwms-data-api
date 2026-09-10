@@ -46,11 +46,11 @@ public class LocationCleanup implements TestExecutionListener {
 
     @Override
     public void testPlanExecutionFinished(TestPlan testPlan) {
-        try {
-            cleanupLocations();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+//        try {
+//            cleanupLocations();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     /**
