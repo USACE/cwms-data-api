@@ -33,3 +33,4 @@ Some decisions may also be a proposal and marked appropriately.
     Data Event Message Formats - Forecasts <./0014-queue-messages-forecast.rst>
     Data Event Message Formats - Ratings <./0015-queue-messages-rating.rst>
     Data Event Message Formats - Levels <./0016-queue-messages-levels.rst>
+    Generated SDK Lifecycle <./0017-generated-sdk-lifecycle.rst>
