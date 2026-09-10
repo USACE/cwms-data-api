@@ -8,10 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import cwms.cda.api.Controllers;
 import cwms.cda.formatters.Formats;
 import fixtures.users.UserSpecSource;
+import fixtures.CwmsDataApiSetupCallback;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -38,6 +42,68 @@ public class UserManagementTestIT extends DataApiTestIT {
     private static final String MISSING_USER = "DOES_NOT_EXIST";
     private static final String SWT = "SWT";
     private static final String SPK = "SPK";
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_contact_fields_in_list_detail_and_profile(String authType, TestAccounts.KeyUser theUser,
+            RequestSpecification authSpec) throws Exception {
+        String[] original = CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            try (PreparedStatement stmt = c.prepareStatement(
+                    "select fullname, email, principle_name from cwms_20.at_sec_cwms_users where userid = upper(?)")) {
+                stmt.setString(1, theUser.getName());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    assertTrue(rs.next());
+                    return new String[]{rs.getString(1), rs.getString(2), rs.getString(3)};
+                }
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to read synthetic user contact details", ex);
+            }
+        }, "cwms_20");
+        try {
+            for (boolean populated : new boolean[]{true, false}) {
+                setContactDetails(theUser.getName(), populated ? "Alex Example" : null,
+                        populated ? "alex.example@example.com" : null, "test-contact-principal");
+                for (String path : new String[]{"/users/" + theUser.getName(), "/users/test-contact-principal",
+                        "/user/profile", "/users"}) {
+                    String prefix = path.equals("/users") ? "users[0]." : "";
+                    given().spec(authSpec).accept(Formats.JSON)
+                            .queryParam(Controllers.USERNAME_LIKE, "^" + theUser.getName() + "$")
+                            .queryParam("page-size", 1)
+                    .when().get(path)
+                    .then().log().ifValidationFails(LogDetail.ALL, true)
+                            .statusCode(HttpCode.OK.getStatus())
+                            .body(prefix + "user-name", equalToIgnoringCase(theUser.getName()))
+                            .body(prefix + "principal", equalTo("test-contact-principal"))
+                            .body(prefix + "first-name", populated ? equalTo("Alex") : nullValue())
+                            .body(prefix + "last-name", populated ? equalTo("Example") : nullValue())
+                            .body(prefix + "email", populated ? equalTo("alex.example@example.com") : nullValue());
+                }
+            }
+        } finally {
+            setContactDetails(theUser.getName(), original[0], original[1], original[2]);
+        }
+    }
+
+    private static void setContactDetails(String userName, String fullName, String email, String principal)
+            throws Exception {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            try (PreparedStatement stmt = c.prepareStatement(
+                    "update cwms_20.at_sec_cwms_users set fullname = ?, email = ?, principle_name = ? "
+                            + "where userid = upper(?)")) {
+                stmt.setString(1, fullName);
+                stmt.setString(2, email);
+                stmt.setString(3, principal);
+                stmt.setString(4, userName);
+                assertEquals(1, stmt.executeUpdate());
+                if (!c.getAutoCommit()) {
+                    c.commit();
+                }
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unable to update synthetic user contact details", ex);
+            }
+        }, "cwms_20");
+    }
 
     @BeforeAll
     public static void setupLocations() throws Exception {
