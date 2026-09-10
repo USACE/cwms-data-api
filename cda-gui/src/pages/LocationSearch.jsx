@@ -26,6 +26,7 @@ import { UsaceBox, Button, Input, H3 } from "@usace/groundwork";
 import { useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Configuration, OfficesApi, CatalogApi } from "cwmsjs";
+import { getLocationCatalog } from "../utils/location-catalog";
 
 const offices_api = new OfficesApi(
   new Configuration({
@@ -100,7 +101,7 @@ export default function LocationSearch() {
       locationTypeLike,
     ],
     queryFn: ({ pageParam }) =>
-      catalog_api.getCatalogWithDataset(buildCatalogParams(pageParam)),
+      getLocationCatalog(catalog_api, buildCatalogParams(pageParam)),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) => lastPage.nextPage || undefined,
     enabled: triggerSearch && !!office && searchCount > 0,
@@ -205,8 +206,11 @@ export default function LocationSearch() {
               />
             </div>
             <div className="mb-4">
+              <label htmlFor="location-search-text" className="text-sm font-medium">
+                Search Text
+              </label>
               <Input
-                label="Search Text"
+                id="location-search-text"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
                 placeholder="Enter text to search in location metadata"

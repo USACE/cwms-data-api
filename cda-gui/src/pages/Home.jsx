@@ -11,16 +11,28 @@ function Home() {
       <UsaceBox title="Quick Links">
         <ul className="ms-5 pl-5 list-disc list-outside [&_ul]:list-[revert]">
           <li>
+            <Link className="underline" to="/quick-start">
+              Getting Started
+            </Link>{" "}
+            - Find an office, discover locations, and download time series and levels.
+          </li>
+          <li>
             <Link className="underline" to="/swagger-ui">
               Swagger UI
             </Link>{" "}
-            - Interactive API documentation
+            - Interactive API documentation for developers.
           </li>
           <li>
             <Link className="underline" to="/data-query">
               Data Query Tool
             </Link>{" "}
             - A tool for querying and retrieving data from the API.
+          </li>
+          <li>
+            <Link className="underline" to="/location-search">
+              Location Search
+            </Link>{" "}
+            - Find sites by office, name, or description.
           </li>
           <li>
             <Link className="underline" to="/regexp">

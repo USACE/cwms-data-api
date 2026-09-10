@@ -7,7 +7,7 @@ const externalLinks = [
   {
     id: "FOIA",
     text: "FOIA",
-    href: "https://www.swt.usace.army.mil/Business-With-Us/FOIA/",
+    href: "https://www.usace.army.mil/Resources/FOIA/",
   },
   {
     id: "ISALUTE",

@@ -16,8 +16,8 @@ const footerLinks = [
   },
   {
     id: "link-disclaimer",
-    text: "Link Disclaimer",
-    href: "https://www.usace.army.mil/LinkDisclaimer.aspx",
+    text: "Data & Link Disclaimer",
+    href: "/cwms-data/disclaimer",
   },
   {
     id: "no-fear-act",
@@ -32,7 +32,7 @@ const footerLinks = [
   {
     id: "site-map",
     text: "Site Map",
-    href: "https://www.swt.usace.army.mil/SiteMap.aspx",
+    href: "/cwms-data/site-map",
   },
   {
     id: "usa-gov",
