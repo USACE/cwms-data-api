@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
@@ -54,13 +57,129 @@ public class JsonRatingUtils {
         ObjectMapper om = new ObjectMapper();
 
         JsonNode jsonNode = om.readTree(json);
-
+        ObjectWriter writer;
         XmlMapper mapper = new XmlMapper();
-        ObjectWriter writer = mapper.writer()
-                .withRootName("ratings");
+        JsonNode ratings = jsonNode.findPath("ratings");
+        writer = mapper.writer()
+            .withRootName("ratings");
+        if (!ratings.isEmpty()) {
+            jsonNode = transformJsonStructure(ratings);
+        }
         String xml = writer.writeValueAsString(jsonNode);
 
         return cleanupXml(xml);
+    }
+
+    private static JsonNode transformJsonStructure(JsonNode ratingInput) {
+        String ratingSpecs = "rating-specs";
+        String simpleRating = "simple-rating";
+        String ratingTemplates = "rating-templates";
+        String ratings = "ratings";
+        String name = "name";
+        String parametersString = "parameters-string";
+        String depParameter = "dep-parameter";
+        String indParameter = "ind-parameters";
+        String rounding = "rounding";
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode transformed = mapper.createObjectNode();
+        JsonNode templateId = mapper.createObjectNode();
+
+        if (ratingInput.has(ratingTemplates)) {
+            JsonNode ratingTemplate = ratingInput.get(ratingTemplates).get(0);
+            ObjectNode temp = mapper.createObjectNode();
+            ratingTemplate.forEachEntry(temp::set);
+            if (temp.has(parametersString)) {
+                temp.set("parameters-id", temp.get(parametersString));
+                temp.remove(parametersString);
+            }
+            if (temp.has(name)) {
+                temp.set("template-id", temp.get(name));
+                templateId = temp.get(name);
+                temp.remove(name);
+            }
+            transformed.set("rating-template", temp);
+        }
+        if (ratingInput.has(ratingSpecs)) {
+            JsonNode ratingSpec = ratingInput.get(ratingSpecs).get(0);
+            ObjectNode temp = mapper.createObjectNode();
+            ratingSpec.forEachEntry(temp::set);
+            if (temp.has("name")) {
+                temp.set("rating-spec-id", temp.get("name"));
+                temp.remove("name");
+            }
+            temp.set("template-id", templateId);
+            temp.set("location-id", temp.get("location"));
+            temp.set("in-range-method", temp.get("time-lookup-in-range"));
+            temp.set("out-range-low-method", temp.get("time-lookup-before-first"));
+            temp.set("out-range-high-method", temp.get("time-lookup-after-last"));
+            temp.set("auto-update", JsonNodeFactory.instance.booleanNode(false));
+            temp.set("auto-activate", JsonNodeFactory.instance.booleanNode(false));
+            temp.set("auto-migrate-extension", JsonNodeFactory.instance.booleanNode(false));
+            if (temp.has(rounding)) {
+                if (temp.get(rounding).has(depParameter)) {
+                    temp.set("dep-rounding-spec", temp.get(rounding).get(depParameter));
+
+                }
+                if (temp.get(rounding).has(indParameter)) {
+                    temp.set("ind-rounding-specs", temp.get(rounding).get(indParameter));
+                }
+                temp.remove(rounding);
+            }
+            temp.remove("location");
+            temp.remove("time-lookup-in-range");
+            temp.remove("time-lookup-after-last");
+            temp.remove("time-lookup-before-first");
+            temp.set("active", JsonNodeFactory.instance.booleanNode(true));
+            transformed.set("rating-spec", temp);
+        }
+        if (ratingInput.has(ratings) && ratingInput.get(ratings).get(0).has(simpleRating)) {
+            JsonNode rating = ratingInput.get(ratings).get(0).get(simpleRating);
+            ObjectNode temp = mapper.createObjectNode();
+            rating.forEachEntry(temp::set);
+            if (temp.has(name)) {
+                temp.set("rating-spec-id", temp.get(name));
+                temp.remove(name);
+            }
+            if (temp.has(depParameter) && temp.has(indParameter)) {
+                StringBuilder units = new StringBuilder();
+                String depParam = temp.get(depParameter).asText();
+                JsonNode indParams = temp.get(indParameter);
+                for (JsonNode indParam : indParams) {
+                    String param = indParam.asText();
+                    if (param.contains("(")) {
+                        if (units.length() > 0) {
+                            units.append(";");
+                        }
+                        units.append(param, param.indexOf("(") + 1, param.indexOf(")"));
+                    }
+                }
+                if (depParam.contains("(")) {
+                    if (units.length() > 0) {
+                        units.append(";");
+                    }
+                    units.append(depParam, depParam.indexOf("(") + 1, depParam.indexOf(")"));
+                }
+                temp.set("units-id", JsonNodeFactory.instance.textNode(units.toString()));
+                temp.remove(depParameter);
+                temp.remove(indParameter);
+            }
+            if (temp.has("values")) {
+                JsonNode values = temp.get("values");
+                ArrayNode value = mapper.createArrayNode();
+                for (JsonNode valueNode : values) {
+                    ObjectNode pointNode = mapper.createObjectNode();
+                    ObjectNode valuesNode = mapper.createObjectNode();
+                    valuesNode.set("ind", valueNode.get(0));
+                    valuesNode.set("dep", valueNode.get(1));
+                    pointNode.set("point", valuesNode);
+                    value.add(pointNode);
+                }
+                temp.set("values", value);
+            }
+            temp.set("active", JsonNodeFactory.instance.booleanNode(true));
+            transformed.set(simpleRating, temp);
+        }
+        return transformed;
     }
 
     private static String cleanupXml(String xml) throws TransformerException {
@@ -80,6 +199,7 @@ public class JsonRatingUtils {
 
         for (String attributeName : additionalAttributes) {
             String template = officeXsl.replace("office-id", attributeName);
+            template = template.replace("office", attributeName);
             xml = applyTransform(xml, new StreamSource(new StringReader(template)));
         }
 

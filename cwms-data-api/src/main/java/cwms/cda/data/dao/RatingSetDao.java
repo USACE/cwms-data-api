@@ -28,7 +28,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import cwms.cda.data.dto.VerticalDatumInfo;
-import cwms.cda.data.dto.rating.RatingSpec;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.sql.Connection;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
-
 import mil.army.usace.hec.cwms.rating.io.jdbc.ConnectionProvider;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import org.jetbrains.annotations.Nullable;
@@ -66,6 +64,12 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
         if (!values.isEmpty()) {
             //Getting the last instance since the order is template, spec, rating
             office = values.get(values.size() - 1).textValue();
+        } else {
+            values = node.findValues("office");
+            if (!values.isEmpty()) {
+                //Getting the last instance since the order is template, spec, rating
+                office = values.get(values.size() - 1).textValue();
+            }
         }
         return office;
     }

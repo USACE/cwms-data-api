@@ -1,0 +1,126 @@
+{
+  "ratings": {
+    "query-info": {
+      "time-of-query": "2026-06-01T16:52:08Z",
+      "process-query": "PT3.394S",
+      "format-output": "PT3.050S",
+      "requested-format": "JSON",
+      "requested-office-id": "SPK",
+      "requested-start-time": "2026-05-31T16:52:08Z",
+      "requested-end-time": "2026-06-01T16:52:08Z",
+      "requested-items": [
+        {
+          "name": "FSMI.Stage;Flow.EXSA.PRODUCTION",
+          "unit": "NATIVE",
+          "datum": "NATIVE"
+        }
+      ],
+      "templates-retrieved": 1,
+      "total-specifications-retrieved": 1,
+      "unique-specifications-retrieved": 1,
+      "total-ratings-retrieved": 1,
+      "unique-ratings-retrieved": 1
+    },
+    "rating-templates": [
+      {
+        "office": "SPK",
+        "name": "Stage;Flow.EXSA",
+        "parameters-string": "Stage;Flow",
+        "version": "EXSA",
+        "ind-parameters": [
+          {
+            "name": "Stage",
+            "value-lookup-in-range": "LINEAR",
+            "value-lookup-below-range": "NEAREST",
+            "value-lookup-above-range": "NEAREST"
+          }
+        ],
+        "dep-parameter": "Flow",
+        "description": null
+      }
+    ],
+    "rating-specs": [
+      {
+        "office": "SPK",
+        "name": "FSMI.Stage;Flow.EXSA.PRODUCTION",
+        "location": "FSMI",
+        "version": "PRODUCTION",
+        "source-agency": null,
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": [
+            "2223456784"
+          ],
+          "dep-parameter": "2223456784"
+        },
+        "description": "FSMI Expanded, Shift-Adjusted PRODUCTION Stream Rating"
+      }
+    ],
+    "ratings": [
+      {
+        "simple-rating": {
+          "office": "SPK",
+          "name": "FSMI.Stage;Flow.EXSA.PRODUCTION",
+          "ind-parameters": [
+            "Stage (ft)"
+          ],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2007-07-11T20:38:00Z",
+          "description": null,
+          "values": [
+            [
+              17,
+              114000
+            ],
+            [
+              18.75,
+              140000
+            ],
+            [
+              20.47,
+              165558
+            ],
+            [
+              30,
+              313800
+            ],
+            [
+              30.4,
+              320500
+            ],
+            [
+              30.84,
+              328800
+            ],
+            [
+              31,
+              332200
+            ],
+            [
+              31.29,
+              339300
+            ],
+            [
+              31.4,
+              342500
+            ],
+            [
+              31.62,
+              349500
+            ],
+            [
+              32.26,
+              372000
+            ],
+            [
+              36,
+              520000
+            ]
+          ]
+        }
+      }
+    ]
+  }
+}
