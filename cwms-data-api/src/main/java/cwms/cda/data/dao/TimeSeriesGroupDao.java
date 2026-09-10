@@ -40,12 +40,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record5;
+import org.jooq.Record6;
 import org.jooq.Record8;
 import org.jooq.Record9;
 import org.jooq.RecordMapper;
@@ -65,6 +67,7 @@ import usace.cwms.db.jooq.codegen_latest.udt.records.TS_ALIAS_TAB_T;
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String CWMS = "CWMS";
+    private final String unitSystem;
 
     private enum DeleteTsGroupCascadeMode {
         UNKNOWN,
@@ -75,7 +78,51 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     private static volatile DeleteTsGroupCascadeMode deleteTsGroupCascadeMode = DeleteTsGroupCascadeMode.UNKNOWN;
 
     public TimeSeriesGroupDao(DSLContext dsl) {
+        this(dsl, "EN");
+    }
+
+    public TimeSeriesGroupDao(DSLContext dsl, String unitSystem) {
         super(dsl);
+        this.unitSystem = validateUnitSystem(unitSystem);
+    }
+
+    static String validateUnitSystem(String unitSystem) {
+        String result = unitSystem == null ? "EN" : unitSystem.toUpperCase(java.util.Locale.ROOT);
+        if (!"EN".equals(result) && !"SI".equals(result)) {
+            throw new IllegalArgumentException("unit-system must be EN or SI");
+        }
+        return result;
+    }
+
+    static boolean supportsDisplayUnits(Configuration configuration) {
+        return configuration.dsl().select(DSL.countDistinct(DSL.field("procedure_name", String.class)))
+            .from("all_procedures")
+            .where(DSL.field("object_name", String.class).eq("CWMS_TS"))
+            .and(DSL.field("owner", String.class).eq("CWMS_20"))
+            .and(DSL.field("procedure_name", String.class).in("SET_TS_DISPLAY_UNITS", "GET_TS_DISPLAY_UNITS"))
+            .fetchOne(0, Integer.class) == 2;
+    }
+
+    private static void validateDisplayUnits(Configuration configuration, TimeSeriesGroup group) {
+        if (group.getAssignedTimeSeries() != null) {
+            boolean hasUnits = group.getAssignedTimeSeries().stream().anyMatch(AssignedTimeSeries::isUnitsSpecified);
+            if (hasUnits && !supportsDisplayUnits(configuration)) {
+                throw new UnsupportedOperationException("This CWMS database does not support persistent "
+                    + "time-series display units; install the database display-units update first");
+            }
+            for (AssignedTimeSeries assigned : group.getAssignedTimeSeries()) {
+                validateUnitSystem(assigned.getUnitSystem());
+                if (assigned.isUnitsSpecified()) {
+                    if (assigned.getUnits() != null && assigned.getUnits().trim().isEmpty()) {
+                        throw new IllegalArgumentException("units must not be blank");
+                    }
+                }
+            }
+        }
+    }
+
+    public void validateDisplayUnits(TimeSeriesGroup group) {
+        validateDisplayUnits(dsl.configuration(), group);
     }
 
     public List<TimeSeriesGroup> getTimeSeriesGroups() {
@@ -168,6 +215,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                                                            String categoryOfficeId) {
         AV_TS_CAT_GRP catGrp = AV_TS_CAT_GRP.AV_TS_CAT_GRP;
         AV_TS_GRP_ASSGN grpAssgn = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
+        Field<String> displayUnits = supportsDisplayUnits(dslContext.configuration())
+            ? DSL.field("cwms_ts.get_ts_display_units({0}, {1}, {2}, {3})", String.class,
+                grpAssgn.TS_ID, DSL.val(unitSystem), grpAssgn.DB_OFFICE_ID, DSL.val("F"))
+            : DSL.val(null, String.class);
 
         Condition whereCondGrpCat = DSL.noCondition();
         if (categoryOfficeId != null) {
@@ -201,7 +252,8 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                             grpAssgn.DB_OFFICE_ID,
                             grpAssgn.ATTRIBUTE,
                             grpAssgn.ALIAS_ID,
-                            grpAssgn.REF_TS_ID
+                            grpAssgn.REF_TS_ID,
+                            displayUnits
                         )
                         .from(grpAssgn)
                         .where(joinCond)
@@ -260,7 +312,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         return query.fetch((RecordMapper<org.jooq.Record, TimeSeriesGroup>) this::buildTimeSeriesGroup);
     }
 
-    private AssignedTimeSeries buildAssignedTimeSeries(Record5<String, String, BigDecimal, String, String> multisetRecord) {
+    private AssignedTimeSeries buildAssignedTimeSeries(Record6<String, String, BigDecimal, String, String, String> multisetRecord) {
         AssignedTimeSeries retval = null;
 
         if (multisetRecord != null) {
@@ -275,7 +327,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 attr = attrBD.intValue();
             }
 
-            retval = new AssignedTimeSeries(officeId, timeseriesId, aliasId, refTsId, attr);
+            String units = multisetRecord.value6();
+            retval = new AssignedTimeSeries(officeId, timeseriesId, aliasId, refTsId, attr,
+                units, units == null ? null : unitSystem);
         }
 
         return retval;
@@ -462,15 +516,18 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls, boolean ignoreMissing) {
         return connectionResult(dsl, c -> {
             Configuration configuration = getDslContext(c, group.getOfficeId()).configuration();
+            validateDisplayUnits(configuration, group);
             String categoryId = group.getTimeSeriesCategory().getId();
             DSLContext dslContext = getDslContext(c, group.getOfficeId());
-            return dslContext.transactionResult((Configuration trx) -> {
-                CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
+            Function<Configuration, List<CwmsId>> store = trx -> {
+                CWMS_TS_PACKAGE.call_STORE_TS_GROUP(trx, categoryId,
                     group.getId(), group.getDescription(), formatBool(failIfExists),
                     formatBool(ignoreNulls), group.getSharedAliasId(),
                     group.getSharedRefTsId(), group.getOfficeId());
-                return assignTs(configuration, group, group.getOfficeId(), ignoreNulls, ignoreMissing);
-            });
+                return assignTs(trx, group, group.getOfficeId(), ignoreNulls, ignoreMissing);
+            };
+            // Preserve a caller's transaction when this connection is already enlisted.
+            return c.getAutoCommit() ? dslContext.transactionResult(store::apply) : store.apply(configuration);
         });
     }
 
@@ -483,6 +540,7 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             String office, boolean ignoreNulls, boolean ignoreMissing) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
         List<CwmsId> missingTimeSeries = new ArrayList<>();
+        validateDisplayUnits(configuration, group);
 
         if (!ignoreNulls && (assignedTimeSeries == null || assignedTimeSeries.isEmpty())) {
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(configuration,
@@ -517,6 +575,18 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                 }
             }
         }
+        if (assignedTimeSeries != null) {
+            for (AssignedTimeSeries assigned : assignedTimeSeries) {
+                boolean missing = missingTimeSeries.stream()
+                    .anyMatch(id -> id.getName().equalsIgnoreCase(assigned.getTimeseriesId()));
+                if (assigned.isUnitsSpecified() && !missing) {
+                    configuration.dsl().execute("begin cwms_ts.set_ts_display_units("
+                            + "p_ts_id => ?, p_units => ?, p_unit_system => ?, p_office_id => ?); end;",
+                        assigned.getTimeseriesId(), assigned.getUnits(),
+                        validateUnitSystem(assigned.getUnitSystem()), office);
+                }
+            }
+        }
         return missingTimeSeries;
     }
 
@@ -531,11 +601,17 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public List<CwmsId> assignTs(TimeSeriesGroup group, String office, boolean ignoreMissing) {
-        return connectionResult(dsl, c -> assignTs(getDslContext(c, office).configuration(),group, office, true, ignoreMissing));
+        return connectionResult(dsl, c -> {
+            DSLContext context = getDslContext(c, office);
+            Function<Configuration, List<CwmsId>> assign =
+                config -> assignTs(config, group, office, true, ignoreMissing);
+            return c.getAutoCommit()
+                ? context.transactionResult(assign::apply) : assign.apply(context.configuration());
+        });
     }
 
     public void assignTs(TimeSeriesGroup group, String office) {
-        connection(dsl, c -> assignTs(getDslContext(c, office).configuration(),group, office, true));
+        assignTs(group, office, false);
     }
 
     private static TS_ALIAS_T convertToTsAliasType(AssignedTimeSeries assignedTimeSeries) {

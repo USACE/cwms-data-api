@@ -8,11 +8,38 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TimeSeriesGroupTest
 {
+    @Test
+    void displayUnitsRoundTrip() {
+        AssignedTimeSeries assigned = new AssignedTimeSeries("SPK", "Cedar.Solar.Inst.1Hour.0.Test",
+            null, null, 1, "W/m2", "EN");
+        TimeSeriesGroup group = new TimeSeriesGroup(buildTimeSeriesGroup(), List.of(assigned));
+        ContentType type = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
+        String json = Formats.format(type, group);
+        assertTrue(json.contains("\"units\":\"W/m2\""));
+        assertTrue(json.contains("\"unit-system\":\"EN\""));
+        TimeSeriesGroup parsed = Formats.parseContent(type, json, TimeSeriesGroup.class);
+        assertEquals("W/m2", parsed.getAssignedTimeSeries().get(0).getUnits());
+        assertEquals("EN", parsed.getAssignedTimeSeries().get(0).getUnitSystem());
+    }
+
+    @Test
+    void omittedUnitsPreservePreferenceAndExplicitNullClearsIt() {
+        ContentType type = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
+        TimeSeriesGroup group = new TimeSeriesGroup(buildTimeSeriesGroup(), List.of(new AssignedTimeSeries(
+            "SPK", "Cedar.Stage.Inst.1Hour.0.Test", null, null, 1)));
+        String omitted = Formats.format(type, group);
+        TimeSeriesGroup preserve = Formats.parseContent(type, omitted, TimeSeriesGroup.class);
+        assertFalse(preserve.getAssignedTimeSeries().get(0).isUnitsSpecified());
+        String explicitNull = omitted.replace("\"timeseries-id\"", "\"units\":null,\"timeseries-id\"");
+        TimeSeriesGroup clear = Formats.parseContent(type, explicitNull, TimeSeriesGroup.class);
+        assertTrue(clear.getAssignedTimeSeries().get(0).isUnitsSpecified());
+    }
 
 	@Test
 	void test_serialize_json(){
@@ -57,6 +84,8 @@ class TimeSeriesGroupTest
         assertTrue(result.contains("grpSharedRefTsId"));
 
         assertFalse(result.contains("null"));
+        assertFalse(result.contains("\"units\""));
+        assertFalse(result.contains("unit-system"));
     }
 
 

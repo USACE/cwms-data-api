@@ -566,17 +566,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 DSL.val(BigInteger.valueOf(2L)), DSL.val("."),
                 DSL.val(BigInteger.valueOf(6L))));
 
-        // possibly call another procedure to get the units
-        Field<String> unit = units.compareToIgnoreCase("SI") == 0
-                ||
-                units.compareToIgnoreCase("EN") == 0
-                ?
-                CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode),
-                        DSL.val(units, String.class)
-                )
-                :
-                DSL.val(units, String.class);
+        Field<String> unit = resolveDisplayUnits(dsl, units, tsId, tsCode, officeId);
 
         // another call to get the interval
         Field<BigDecimal> ival = CWMS_TS_PACKAGE.call_GET_TS_INTERVAL__2(validTs.field("tsid", String.class));
@@ -1008,12 +998,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         officeId.as("office_id"))
                         .asTable("validts");
 
-        Field<String> unit = units.compareToIgnoreCase("SI") == 0
-                || units.compareToIgnoreCase("EN") == 0
-                ? CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
-                        CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode),
-                        DSL.val(units, String.class))
-                : DSL.val(units, String.class);
+        Field<String> unit = resolveDisplayUnits(metadataDsl, units, tsId, tsCode, officeId);
 
         Field<BigDecimal> interval = CWMS_TS_PACKAGE.call_GET_TS_INTERVAL__2(validTs.field("tsid", String.class));
 
@@ -1065,6 +1050,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         ? UTC
                         : record.getValue("time_zone_id", String.class),
                 record.getValue("version_flag", String.class)));
+    }
+
+    private Field<String> resolveDisplayUnits(DSLContext context, String units, Field<String> tsId,
+                                             Field<BigDecimal> tsCode, Field<String> officeId) {
+        if (!"EN".equalsIgnoreCase(units) && !"SI".equalsIgnoreCase(units)) {
+            return DSL.val(units, String.class);
+        }
+        if (TimeSeriesGroupDao.supportsDisplayUnits(context.configuration())) {
+            return DSL.field("cwms_ts.get_ts_display_units({0}, {1}, {2})", String.class,
+                tsId, DSL.val(units), officeId);
+        }
+        return CWMS_UTIL_PACKAGE.call_GET_DEFAULT_UNITS(
+            CWMS_TS_PACKAGE.call_GET_BASE_PARAMETER_ID(tsCode), DSL.val(units, String.class));
     }
 
     private void validateUnits(String units, Field<BigDecimal> tsCode, Field<String> officeId, String name) {

@@ -109,6 +109,128 @@ final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
     TestAccounts.KeyUser user2 = TestAccounts.KeyUser.SWT_NORMAL;
 
+    @Test
+    void unsupportedDisplayUnitsDoNotCreateGroup() throws Exception {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c ->
+            org.junit.jupiter.api.Assumptions.assumeFalse(DSL.using(c).fetchExists(
+                DSL.selectOne().from("all_procedures")
+                    .where("owner = 'CWMS_20' and object_name = 'CWMS_TS' "
+                        + "and procedure_name = 'SET_TS_DISPLAY_UNITS'")),
+                "Requires a database without the display-units update"));
+        String office = user.getOperatingOffice();
+        TimeSeriesCategory category = new TimeSeriesCategory(office, "Unsupported Units", "Compatibility test");
+        categoriesToCleanup.add(category);
+        ContentType type = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
+        given().contentType(Formats.JSON).body(Formats.format(type, category))
+            .header("Authorization", user.toHeaderValue()).queryParam(OFFICE, office)
+            .post("/timeseries/category").then().statusCode(201);
+        TimeSeriesGroup group = new TimeSeriesGroup(category, office, "River Levels", "Compatibility test", null, null);
+        group.getAssignedTimeSeries().add(new AssignedTimeSeries(office,
+            "Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda", null, null, 1, "cm", "EN"));
+        groupsToCleanup.add(group);
+        given().contentType(Formats.JSON).body(Formats.format(type, group))
+            .header("Authorization", user.toHeaderValue()).post("/timeseries/group")
+            .then().log().ifValidationFails().statusCode(501);
+        given().accept(Formats.JSON).queryParam(OFFICE, office).queryParam(CATEGORY_ID, category.getId())
+            .get("/timeseries/group/River Levels").then().statusCode(404);
+    }
+
+    @Test
+    void persistentDisplayUnitsAreSharedAcrossGroups() throws Exception {
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c ->
+            org.junit.jupiter.api.Assumptions.assumeTrue(DSL.using(c).fetchExists(
+                DSL.selectOne().from("all_procedures")
+                    .where("object_name = 'CWMS_TS' and procedure_name = 'SET_TS_DISPLAY_UNITS'")),
+                "Requires the database time-series display-units update"));
+        String office = user.getOperatingOffice();
+        String tsId = "Cedar Display.Stage.Inst.1Hour.0.Observed";
+        createLocation("Cedar Display", true, office);
+        createTimeseries(office, tsId);
+        TimeSeriesCategory category = new TimeSeriesCategory(office, "Display Units", "Display preferences");
+        categoriesToCleanup.add(category);
+        ContentType type = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
+        given().contentType(Formats.JSON).body(Formats.format(type, category))
+            .header("Authorization", user.toHeaderValue()).queryParam(OFFICE, office)
+            .post("/timeseries/category").then().statusCode(201);
+        for (String groupId : List.of("River Levels", "Operations Levels")) {
+            TimeSeriesGroup group = new TimeSeriesGroup(category, office, groupId, "Display preferences", null, null);
+            group.getAssignedTimeSeries().add(new AssignedTimeSeries(office, tsId, null, null, 1,
+                "River Levels".equals(groupId) ? "cm" : null, null));
+            groupsToCleanup.add(group);
+            given().contentType(Formats.JSON).body(Formats.format(type, group))
+                .header("Authorization", user.toHeaderValue())
+                .post("/timeseries/group").then().log().ifValidationFails().statusCode(201);
+            given().accept(Formats.JSON).queryParam(OFFICE, office).queryParam(CATEGORY_ID, category.getId())
+                .get("/timeseries/group/" + groupId).then().log().ifValidationFails().statusCode(200)
+                .body("assigned-time-series[0].units", equalTo("cm"))
+                .body("assigned-time-series[0].unit-system", equalTo("EN"));
+        }
+        java.time.ZonedDateTime sampleTime = java.time.ZonedDateTime.parse("2025-01-01T00:00:00Z");
+        TimeSeries samples = new TimeSeries(null, -1, 1, tsId, office, sampleTime, sampleTime.plusHours(1),
+            "m", java.time.Duration.ofHours(1));
+        samples.addValue(java.sql.Timestamp.from(sampleTime.toInstant()), 1.0, 0);
+        String values = Formats.format(Formats.parseHeader(Formats.JSONV2, TimeSeries.class), samples);
+        given().contentType(Formats.JSONV2).body(values).header("Authorization", user.toHeaderValue())
+            .post("/timeseries").then().log().ifValidationFails().statusCode(200);
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            int count = DSL.using(c).fetchOne("select count(*) from av_tsv "
+                + "where ts_code = cwms_ts.get_ts_code(?, ?)", tsId, office).get(0, Integer.class);
+            org.junit.jupiter.api.Assertions.assertEquals(1, count, "The sample must be committed before retrieval");
+            String storedTime = DSL.using(c).fetchOne("select to_char(date_time, 'YYYY-MM-DD HH24:MI:SS') "
+                + "from av_tsv where ts_code = cwms_ts.get_ts_code(?, ?)", tsId, office).get(0, String.class);
+            org.junit.jupiter.api.Assertions.assertEquals("2025-01-01 00:00:00", storedTime,
+                "The sample must be stored in UTC");
+        }, "cwms_20");
+        for (String units : List.of("m", "SI", "EN")) {
+            given().accept(Formats.JSONV2).queryParam(OFFICE, office).queryParam("name", tsId)
+                .queryParam("unit", units).queryParam(BEGIN, "2024-12-31T23:00:00Z")
+                .queryParam(END, "2025-01-01T01:00:00Z").get("/timeseries")
+                .then().log().ifValidationFails().statusCode(200)
+                .body("units", equalTo("EN".equals(units) ? "cm" : "m"))
+                .body("values[0][1]", equalTo("EN".equals(units) ? 100.0f : 1.0f));
+        }
+        given().accept(Formats.JSON).queryParam(OFFICE, office).queryParam(CATEGORY_ID, category.getId())
+            .queryParam("unit-system", "SI").get("/timeseries/group/River Levels")
+            .then().statusCode(200).body("assigned-time-series[0].units", nullValue());
+        for (String invalidUnits : List.of("cfs", "no-such-unit")) {
+            TimeSeriesGroup invalid = new TimeSeriesGroup(category, office, "Renamed Levels", "Changed", null, null);
+            invalid.getAssignedTimeSeries().add(new AssignedTimeSeries(office, tsId, null, null, 1, invalidUnits, "EN"));
+            groupsToCleanup.add(invalid);
+            given().contentType(Formats.JSON).body(Formats.format(type, invalid))
+                .header("Authorization", user.toHeaderValue()).post("/timeseries/group")
+                .then().log().ifValidationFails().statusCode(400);
+            given().accept(Formats.JSON).queryParam(OFFICE, office).queryParam(CATEGORY_ID, category.getId())
+                .get("/timeseries/group/Renamed Levels").then().statusCode(404);
+            given().contentType(Formats.JSON).body(Formats.format(type, invalid))
+                .header("Authorization", user.toHeaderValue()).queryParam(OFFICE, office)
+                .patch("/timeseries/group/River Levels").then().log().ifValidationFails().statusCode(400);
+            given().accept(Formats.JSON).queryParam(OFFICE, office).queryParam(CATEGORY_ID, category.getId())
+                .get("/timeseries/group/River Levels").then().statusCode(200)
+                .body("description", equalTo("Display preferences"))
+                .body("assigned-time-series[0].units", equalTo("cm"));
+        }
+        TimeSeriesGroup reset = new TimeSeriesGroup(category, office, "River Levels", "Display preferences", null, null);
+        reset.getAssignedTimeSeries().add(new AssignedTimeSeries(office, tsId, null, null, 1, "ft", "EN"));
+        given().contentType(Formats.JSON).body(Formats.format(type, reset))
+            .header("Authorization", user.toHeaderValue()).queryParam(OFFICE, office)
+            .patch("/timeseries/group/River Levels").then().log().ifValidationFails().statusCode(200);
+        given().accept(Formats.JSON).queryParam(OFFICE, office).queryParam(CATEGORY_ID, category.getId())
+            .get("/timeseries/group/Operations Levels").then().statusCode(200)
+            .body("assigned-time-series[0].units", nullValue())
+            .body("assigned-time-series[0].unit-system", nullValue());
+        String explicitNull = Formats.format(type, reset).replace("\"units\":\"ft\"", "\"units\":null");
+        String reapplyOverride = Formats.format(type, reset).replace("\"units\":\"ft\"", "\"units\":\"cm\"");
+        given().contentType(Formats.JSON).body(reapplyOverride)
+            .header("Authorization", user.toHeaderValue()).queryParam(OFFICE, office)
+            .patch("/timeseries/group/River Levels").then().log().ifValidationFails().statusCode(200);
+        given().contentType(Formats.JSON).body(explicitNull)
+            .header("Authorization", user.toHeaderValue()).queryParam(OFFICE, office)
+            .patch("/timeseries/group/River Levels").then().log().ifValidationFails().statusCode(200);
+        given().accept(Formats.JSON).queryParam(OFFICE, office).queryParam(CATEGORY_ID, category.getId())
+            .get("/timeseries/group/Operations Levels").then().statusCode(200)
+            .body("assigned-time-series[0].units", nullValue());
+    }
+
     @BeforeAll
     static void load_data() throws Exception {
         createLocation("Alder Springs",true,"SPK");
