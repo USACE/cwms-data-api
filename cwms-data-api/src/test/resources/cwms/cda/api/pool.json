@@ -1,0 +1,13 @@
+{
+  "project-id": "PROJ_POOL",
+  "pool-name": {
+   "pool-name" : "Normal2",
+    "office-id" : "SWT"
+  },
+  "bottom-level-id" : "Elev.Inst.0.Bottom Of Normal2",
+  "top-level-id" : "Elev.Inst.0.Top Of Normal2",
+  "attribute" : 0,
+  "description" : "Normal Pool Integration Test",
+  "clob-text" : "Normal Pool Integration Test Notes",
+  "implicit" : true
+}

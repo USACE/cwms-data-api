@@ -47,6 +47,7 @@ import java.io.IOException;
 
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -307,35 +308,36 @@ class RatingsControllerTestIT extends DataApiTestIT
 	@EnumSource(GetAllLegacyTest.class)
 	void test_getAll_legacy(GetAllLegacyTest test) {
 		given()
-				.log().ifValidationFails(LogDetail.ALL,true)
-				.queryParam(FORMAT, test.queryParam)
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .queryParam(FORMAT, test.queryParam)
 		.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.get("/ratings")
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings")
 		.then()
 		.assertThat()
-				.log().ifValidationFails(LogDetail.ALL,true)
-				.statusCode(is(HttpServletResponse.SC_OK))
-				.contentType(is(test.expectedContentType));
-
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("message", equalTo("Bad Request"))
+            .body("source", equalTo("User Input"))
+            .body("details.message", equalTo("Invalid format. V1 formats no longer supported: " + test.queryParam));
 	}
 
 	@ParameterizedTest
 	@EnumSource(GetAllTest.class)
 	void test_getAll(GetAllTest test) {
 		given()
-				.log().ifValidationFails(LogDetail.ALL,true)
-				.accept(test.accept)
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(test.accept)
 		.when()
-				.redirects().follow(true)
-				.redirects().max(3)
-				.get("/ratings")
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings")
 		.then()
 		.assertThat()
-				.log().ifValidationFails(LogDetail.ALL,true)
-				.statusCode(is(HttpServletResponse.SC_OK))
-				.contentType(is(test.expectedContentType));
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .contentType(is(test.expectedContentType));
 	}
 
 	@ParameterizedTest
@@ -445,9 +447,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 	enum GetOneTest
 	{
 		DEFAULT(Formats.DEFAULT, Formats.XMLV2),
-		XML(Formats.XML, Formats.XMLV2),
 		XMLV2(Formats.XMLV2, Formats.XMLV2),
-		JSON(Formats.JSON, Formats.JSONV2),
 		JSONV2(Formats.JSONV2, Formats.JSONV2),
 		;
 
@@ -480,11 +480,7 @@ class RatingsControllerTestIT extends DataApiTestIT
 	enum GetAllTest
 	{
 		DEFAULT(Formats.DEFAULT, Formats.XMLV2),
-		XML(Formats.XML, Formats.XMLV2),
-		XMLV1(Formats.XMLV1, Formats.XMLV1),
 		XMLV2(Formats.XMLV2, Formats.XMLV2),
-		JSON(Formats.JSON, Formats.JSONV2),
-		JSONV1(Formats.JSONV1, Formats.JSONV1),
 		JSONV2(Formats.JSONV2, Formats.JSONV2),
 		;
 

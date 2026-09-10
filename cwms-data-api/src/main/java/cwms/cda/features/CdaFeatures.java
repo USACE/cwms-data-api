@@ -9,7 +9,9 @@ public enum CdaFeatures implements Feature {
 
     @Label("Re-enable non-hash key support")
     AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT,
-
     @Label("Include stack traces in JSON error responses for authorized debug requests")
-    INCLUDE_ERROR_STACK_TRACES
+    INCLUDE_ERROR_STACK_TRACES,
+
+    @Label("Enable office-scoped reusable user lists")
+    USER_LISTS
 }

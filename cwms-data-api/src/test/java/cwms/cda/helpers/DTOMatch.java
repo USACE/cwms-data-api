@@ -29,6 +29,7 @@ import cwms.cda.data.dto.Entity;
 import cwms.cda.data.dto.ParameterLegacy;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesVersions;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.LocationToPublishedData;
@@ -51,6 +52,8 @@ import cwms.cda.data.dto.measurement.UsgsMeasurement;
 import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.stream.StreamLocationNode;
+import cwms.cda.data.dto.forecast.ForecastLocation;
+import cwms.cda.data.dto.forecast.ForecastSpecV2;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -95,6 +98,10 @@ public final class DTOMatch {
     }
 
     public static void assertMatch(CwmsId first, CwmsId second, String variableName) {
+        if (first == null || second == null) {
+            Assertions.assertEquals(first, second, variableName + " null mismatch");
+            return;
+        }
         assertAll(
             () -> Assertions.assertEquals(first.getOfficeId(), second.getOfficeId(),variableName + " is not the same. Office ID differs"),
             () -> Assertions.assertEquals(first.getName(), second.getName(),variableName + " is not the same. Name differs")
@@ -522,7 +529,7 @@ public final class DTOMatch {
                 () -> assertEquals(first.getParty(), second.getParty(), "Party does not match"),
                 () -> assertEquals(first.getWmComments(), second.getWmComments(), "WM Comments do not match"),
                 () -> assertEquals(first.getInstant(), second.getInstant(), "Instant does not match"),
-                () -> assertEquals(first.getNumber(), second.getNumber(), "Number does not match"),
+                () -> assertEquals(first.getMeasurementId(), second.getMeasurementId(), "Number does not match"),
                 () -> assertMatch(first.getStreamflowMeasurement(), second.getStreamflowMeasurement()),
                 () -> assertMatch(first.getSupplementalStreamflowMeasurement(), second.getSupplementalStreamflowMeasurement()),
                 () -> assertMatch(first.getUsgsMeasurement(), second.getUsgsMeasurement())
@@ -651,6 +658,13 @@ public final class DTOMatch {
         );
     }
 
+    public static void assertMatch(TimeSeriesVersions first, TimeSeriesVersions second) {
+        assertAll(
+            () -> assertMatch(first.getTsId(), second.getTsId()),
+            () -> assertMatch(first.getVersions(), second.getVersions(), DTOMatch::assertMatch)
+        );
+    }
+
     public static void assertMatch(TimeExtents first, TimeExtents second) {
         assertAll(
             () -> assertEquals(first.getEarliestTime(), second.getEarliestTime(), "Start time does not match"),
@@ -743,6 +757,37 @@ public final class DTOMatch {
                     assertNotNull(found, "Time series identifiers were expected but not found for locationId: " + tsIdsForLocation.getLocationId().getName());
                     assertMatch(tsIdsForLocation, found);
                 })
+        );
+    }
+
+    public static void assertMatch(ForecastLocation first, ForecastLocation second) {
+        if (first == null || second == null) {
+            assertEquals(first, second, "ForecastLocation null mismatch");
+            return;
+        }
+        assertAll(
+            () -> assertEquals(first.getLocationId(), second.getLocationId(), "Location ID does not match"),
+            () -> assertEquals(first.getSortOrder(), second.getSortOrder(), "Sort order does not match"),
+            () -> assertEquals(first.isPrimary(), second.isPrimary(), "Primary flag does not match")
+        );
+    }
+
+    public static void assertMatch(ForecastSpecV2 first, ForecastSpecV2 second) {
+        if (first == null || second == null) {
+            assertEquals(first, second, "ForecastSpecV2 null mismatch");
+            return;
+        }
+        assertAll(
+            () -> assertMatch(first.getSpecId(), second.getSpecId()),
+            () -> assertEquals(first.getDesignator(), second.getDesignator(), "Designator does not match"),
+            () -> assertEquals(first.getSourceEntityId(), second.getSourceEntityId(), "Source entity ID does not match"),
+            () -> assertEquals(first.getDescription(), second.getDescription(), "Description does not match"),
+            () -> {
+                if (first.getLocationIds() != null || second.getLocationIds() != null) {
+                    assertMatch(first.getLocationIds(), second.getLocationIds(), DTOMatch::assertMatch);
+                }
+            },
+            () -> assertEquals(first.getTimeSeriesIds(), second.getTimeSeriesIds(), "Time series IDs do not match")
         );
     }
 

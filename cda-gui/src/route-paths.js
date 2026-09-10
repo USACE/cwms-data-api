@@ -31,6 +31,11 @@ export const routePaths = [
     sitemapPath: "timestamps",
   },
   {
+    id: "user-lists",
+    path: "user-lists",
+    sitemapPath: "user-lists",
+  },
+  {
     id: "legacy-format",
     path: "legacy-format",
     sitemapPath: "legacy-format",

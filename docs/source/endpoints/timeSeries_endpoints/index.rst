@@ -27,3 +27,4 @@ Browse Time Series GET Endpoints:
     /timeseries/profile-parser/{location-id}/{parameter-id} <timeSeries-profile-parser-byID>
     /timeseries/profile-instance <timeSeries-profile-instance>
     /timeseries/profile-instance/{location-id}/{parameter-id}/{version} <timeSeries-profile-instance-byID>
+    /timeseries/versions <timeSeries-versions>

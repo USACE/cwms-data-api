@@ -2,6 +2,8 @@
 jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
 jooq-codegen = "26.02.17-RC01-oracle19c"
+codegen-latest = "latest-dev_sha256_e7740339fdf4-oracle19c"
+codegen-legacy = "24.12.04-2025.01.21"
 jooq = "3.18.7-jdk11"
 slf4j = "2.0.17"
 hec-monolith = "3.3.20"
@@ -12,9 +14,9 @@ google-findbugs = "3.0.2"
 error_prone_annotations = "2.15.0"
 cwms-ratings = "4.2.3"
 javalin = "4.6.8"
-tomcat = "9.0.118"
+tomcat = "9.0.121"
 swagger-core = "2.2.23"
-jackson = "2.22.0"
+jackson = "2.22.2"
 geojson-jackson = "1.14"
 dropwizard = "4.2.12"
 prometheus_client = "1.6.1"
@@ -56,8 +58,8 @@ jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "jooq-codegen" }
-cwms-db-jooq-codegen-legacy = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version = "24.12.04-2025.01.21" }
-cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version = "latest-dev_sha256_f1-oracle19c" }
+cwms-db-jooq-codegen-legacy = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "codegen-legacy" }
+cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "codegen-latest" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
 slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }

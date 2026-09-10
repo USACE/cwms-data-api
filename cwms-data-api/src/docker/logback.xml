@@ -4,26 +4,32 @@
     <import class="ch.qos.logback.classic.encoder.JsonEncoder"/>
     <import class="ch.qos.logback.core.ConsoleAppender"/>
 
+
     <variable name="LOG_LEVEL" value="${LOG_LEVEL:-INFO}"/>
     <contextName>CWMS-Data-API</contextName>
     <appender name="STDERR" class="ConsoleAppender">
         <encoder class="JsonEncoder"/>
         <target>System.err</target>
-    </appender>    
+    </appender>
+
+    <appender name="OTEL-STDERR" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+        <appender-ref ref="STDERR"/>
+    </appender>
+
 
     <logger name="cwms.cda" level="${LOG_LEVEL}"/>
     <logger name="org.apache" level="ERROR"/>
 
     <logger name="org.apache.catalina" level="INFO" additivity="false">
-        <appender-ref ref="STDERR" />
+        <appender-ref ref="OTEL-STDERR" />
     </logger>
 
     <logger name="org.apache.catalina.core.ContainerBase.[Catalina]" level="INFO" additivity="false">
-        <appender-ref ref="STDERR" />
+        <appender-ref ref="OTEL-STDERR" />
     </logger>
-    
+
 
     <root level="INFO">
-        <appender-ref ref="STDERR"/>
-    </root>   
+        <appender-ref ref="OTEL-STDERR"/>
+    </root>
 </configuration>

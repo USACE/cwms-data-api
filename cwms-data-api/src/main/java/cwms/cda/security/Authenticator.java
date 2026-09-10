@@ -1,27 +1,34 @@
 package cwms.cda.security;
 
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.spi.CdaIdentityProviders;
+import cwms.cda.spi.IdentityProvider;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.google.common.flogger.FluentLogger;
-
-import cwms.cda.spi.CdaIdentityProviders;
-import cwms.cda.spi.IdentityProvider;
-import io.javalin.http.Context;
-import io.javalin.http.Handler;
-
 public final class Authenticator implements Handler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final ArrayList<IdentityProvider> providers = new ArrayList<>();
 
+    /**
+     * Create a new authenticator instance.
+     */
     public Authenticator() {
+        var surpressed = System.getenv("cwms.dataapi.access.providers.surpress");
+        final var supressedList = surpressed == null ? List.of() : List.of(surpressed.split(","));
+
         CdaIdentityProviders.providers().forEachRemaining(provider -> {
-            if (provider.getScheme() != null) {
+            // only exclude if supressed, inactive providers will return a null scheme.
+            if (!supressedList.contains(provider.getName())) {
                 providers.add(provider);
             } else {
-                logger.atSevere().log("Unable to add Identity Provider %s. See earlier logs for specific error message.", provider.getName());
+                logger.atSevere()
+                      .log("Unable to add Identity Provider %s. See earlier logs for specific error message.",
+                            provider.getName());
             }
         });
     }
@@ -36,7 +43,7 @@ public final class Authenticator implements Handler {
             }
         }
     }
- 
+
     public List<IdentityProvider> getActiveProviders() {
         return Collections.unmodifiableList(providers);
     }

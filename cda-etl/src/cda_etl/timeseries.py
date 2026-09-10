@@ -16,110 +16,129 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 import logging
-import location
+from datetime import datetime
+from typing import Iterable
+
 import utils.threading_util as threading_util
-import utils.cache_util as cache_util
+import utils.filesystem_store as filesystem_store
 import cwms
+from config import TimeseriesConfig
 
 logger = logging.getLogger(__name__)
 DATE_TIME_FORMAT = "%Y-%m-%d %H.%M.%S"
+TIMESERIES_FOLDER = "Timeseries"
 
 
-def cache_timeseries(timeseries, begin, end):
-    locations, ts_info = _validate_and_split_timeseries(timeseries, begin, end)
-
-    # Make sure we have project locations downloaded
-    location.cache_locations(locations)
-
-    # Retrieval of Identifier
-    threading_util.execute_tasks(_retrieve_one_ts_identifier, ts_info)
-
-    # Retrieval of Data
-    threading_util.execute_tasks(_retrieve_one_ts_data, ts_info)
-
-
-def store_cached_timeseries(timeseries, begin, end):
-    locations, ts_info = _validate_and_split_timeseries(timeseries, begin, end)
-    location.store_cached_locations(locations)
-
-    # Storage of Identifier
-    threading_util.execute_tasks(_store_one_ts_id, ts_info)
-
-    # Storage of Data
-    threading_util.execute_tasks(_store_one_ts_data, ts_info)
-
-
-def _retrieve_one_ts_identifier(ts_info):
-    office_id = ts_info[0]
-    ts_id = ts_info[1]
-
-    cache_data = cache_util.get_from_cache(office_id, "Timeseries Identifiers", ts_id, "id")
-    if cache_data:
-        logger.debug(f"Cached Timeseries Identifier for {office_id}.{ts_id}")
-    else:
-        logger.debug(f"Fetching Timeseries Identifier for {office_id}.{ts_id}")
-        data = cwms.get_timeseries_identifier(ts_id, office_id).json
-        cache_util.put_in_cache(data, office_id, "Timeseries Identifiers", ts_id, "id")
-
-
-def _retrieve_one_ts_data(ts_info):
-    office_id = ts_info[0]
-    ts_id = ts_info[1]
-    begin = ts_info[2]
-    end = ts_info[3]
-    begin_str = begin.strftime(DATE_TIME_FORMAT)
-    end_str = end.strftime(DATE_TIME_FORMAT)
-
-    cache_data = cache_util.get_from_cache(office_id, "Timeseries", ts_id, begin_str, end_str, "data")
-    if cache_data:
-        logger.debug(f"Cached Timeseries Data for {office_id}.{ts_id} from {begin_str} to {end_str}")
-    else:
-        logger.debug(f"Fetching Timeseries Data for {office_id}.{ts_id} from {begin_str} to {end_str}")
-        data = cwms.get_timeseries(ts_id, office_id, begin=begin, end=end).json
-        cache_util.put_in_cache(data, office_id, "Timeseries", ts_id, begin_str, end_str, "data")
-
-
-def _store_one_ts_id(ts_info):
-
-    office_id = ts_info[0]
-    ts_id = ts_info[1]
-
-    cache_data = cache_util.get_from_cache(office_id, "Timeseries Identifiers", ts_id, "id")
-    cwms.store_timeseries_identifier(cache_data)
-
-def _store_one_ts_data(ts_info):
-    office_id = ts_info[0]
-    ts_id = ts_info[1]
-    begin = ts_info[2]
-    end = ts_info[3]
-    begin_str = begin.strftime(DATE_TIME_FORMAT)
-    end_str = end.strftime(DATE_TIME_FORMAT)
-
-    cache_data = cache_util.get_from_cache(office_id, "Timeseries", ts_id, begin_str, end_str, "data")
-    cwms.store_timeseries(cache_data)
-
-
-def _validate_and_split_timeseries(timeseries, begin, end):
-    # Validation
-    invalid_ts = []
-    ts_ids_to_split = {}
-    for ts in timeseries:
-        splits = ts.split(".")
-        if len(splits) != 7:
-            logger.warning(f"Invalid time series identifier '{ts}' encountered.  Expected format is '[office_id].[location].[parameter].[parameter_type].[interval].[duration].[version]'")
-            invalid_ts.append(ts)
-        else:
-            logger.debug(f"Valid time series identifier '{ts}'")
-            ts_ids_to_split[f"{splits[1]}.{splits[2]}.{splits[3]}.{splits[4]}.{splits[5]}.{splits[6]}"] = splits
-
-    if not ts_ids_to_split:
-        logger.warning("No valid time series identifiers found for processing")
+def stage_timeseries(
+    office_id: str,
+    timeseries: Iterable[TimeseriesConfig],
+    default_start: str | None,
+    default_end: str | None,
+) -> None:
+    ts_info = _build_timeseries_work_items(office_id, timeseries, default_start, default_end)
+    if not ts_info:
+        logger.warning(f"No valid time series items found for office {office_id}")
         return
 
-    locations = []
-    ts_info = []
-    for id, splits in ts_ids_to_split.items():
-        locations.append(f"{splits[0]}.{splits[1]}")
-        ts_info.append([splits[0], id, begin, end])
+    logger.info("Staging %d timeseries data item(s) for office %s", len(ts_info), office_id)
+    threading_util.execute_tasks(_download_one_ts_data, ts_info)
+    logger.info("Completed staging timeseries data for office %s", office_id)
 
-    return locations, ts_info
+
+def publish_staged_timeseries(
+    office_id: str,
+    timeseries: Iterable[TimeseriesConfig],
+    default_start: str | None,
+    default_end: str | None,
+) -> None:
+    ts_info = _build_timeseries_work_items(office_id, timeseries, default_start, default_end)
+    if not ts_info:
+        logger.warning(f"No valid time series items found for office {office_id}")
+        return
+
+    logger.info("Publishing %d staged timeseries item(s) for office %s", len(ts_info), office_id)
+    threading_util.execute_tasks(_upload_one_ts_data, ts_info)
+    logger.info("Completed publishing timeseries data for office %s", office_id)
+
+
+def _download_one_ts_data(ts_info):
+    office_id = ts_info[0]
+    ts_id = ts_info[1]
+    begin = ts_info[2]
+    end = ts_info[3]
+    begin_str = begin.strftime(DATE_TIME_FORMAT)
+    end_str = end.strftime(DATE_TIME_FORMAT)
+    logger.info("Refreshing staged timeseries %s for office %s from %s to %s", ts_id, office_id, begin_str, end_str)
+    data = cwms.get_timeseries(ts_id, office_id, begin=begin, end=end).json
+    filesystem_store.write_json(data, office_id, TIMESERIES_FOLDER, ts_id, begin_str, end_str, "data")
+
+
+def _upload_one_ts_data(ts_info):
+    office_id = ts_info[0]
+    ts_id = ts_info[1]
+    begin = ts_info[2]
+    end = ts_info[3]
+    begin_str = begin.strftime(DATE_TIME_FORMAT)
+    end_str = end.strftime(DATE_TIME_FORMAT)
+    logger.info("Publishing timeseries %s for office %s from %s to %s", ts_id, office_id, begin_str, end_str)
+
+    staged_data = filesystem_store.read_json(office_id, TIMESERIES_FOLDER, ts_id, begin_str, end_str, "data")
+    if staged_data is None:
+        raise FileNotFoundError(
+            f"No staged timeseries data found for {office_id}.{ts_id} "
+            f"for window {begin_str} to {end_str}. Timeseries data publish skipped for this item."
+        )
+
+    cwms.store_timeseries(staged_data)
+
+
+def _build_timeseries_work_items(
+    office_id: str,
+    timeseries_items: Iterable[TimeseriesConfig],
+    default_start: str | None,
+    default_end: str | None,
+) -> list[list[object]]:
+    work_items: list[list[object]] = []
+
+    for timeseries in timeseries_items:
+        ts_id = _normalize_timeseries_id(office_id, timeseries.id)
+        if ts_id is None:
+            continue
+
+        begin = _parse_timestamp(timeseries.start_time or default_start, "start")
+        end = _parse_timestamp(timeseries.end_time or default_end, "end")
+        work_items.append([office_id, ts_id, begin, end])
+
+    return work_items
+
+
+def _normalize_timeseries_id(office_id: str, configured_id: str) -> str | None:
+    if configured_id.startswith(f"{office_id}."):
+        configured_id = configured_id[len(office_id) + 1 :]
+
+    if len(configured_id.split(".")) != 6:
+        logger.warning(
+            "Invalid time series id '%s'. Expected '[location].[parameter].[parameter_type].[interval].[duration].[version]' or office-prefixed equivalent.",
+            configured_id,
+        )
+        return None
+
+    return configured_id
+
+
+def _parse_timestamp(value: str | None, label: str) -> datetime:
+    if value is None:
+        raise ValueError(f"Missing {label} time for timeseries processing.")
+
+    normalized = value.strip()
+    if normalized.lower() == "now":
+        return datetime.now()
+
+    try:
+        return datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        try:
+            return datetime.strptime(normalized, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(f"Invalid {label} time '{value}'. Use ISO-8601 or YYYY-MM-DD.") from exc
+__all__ = ["publish_staged_timeseries", "stage_timeseries"]

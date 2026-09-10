@@ -774,12 +774,15 @@ export default function DataQuery() {
     // Build table params from timeseriesData
     if (!timeseriesData) return [];
     return timeseriesData.tsids
-      .map((series) => ({
-        tsid: series.name,
-        header: `${series.name.split(".")[1]} (${series.units})`,
-        rounding: getPrecision(series.units),
-        units: series.units,
-      }))
+      .map((series) => {
+        const [location, parameter] = series.name.split(".");
+        return {
+          tsid: series.name,
+          header: `${location} ${parameter} (${series.units})`,
+          rounding: getPrecision(series.units),
+          units: series.units,
+        };
+      })
       .filter((p) => visibleTSIDs.includes(p.tsid));
   }, [timeseriesData, visibleTSIDs]);
   const visibleLoadedTsids = useMemo(

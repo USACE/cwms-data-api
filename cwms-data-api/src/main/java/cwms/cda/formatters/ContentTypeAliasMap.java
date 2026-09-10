@@ -24,7 +24,7 @@ final class ContentTypeAliasMap {
         FormattableWith[] formats = dtoClass.getAnnotationsByType(FormattableWith.class);
         for (FormattableWith format : formats) {
             ContentType type = new ContentType(format.contentType());
-
+            contentTypeMap.put(type, type); // we can always map to our self.
             for (String alias : format.aliases()) {
                 contentTypeMap.put(new ContentType(alias), type);
             }

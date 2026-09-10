@@ -32,13 +32,17 @@ import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.Controllers;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
+import cwms.cda.datasource.LrtsSessionPreparer;
+import cwms.cda.datasource.SessionOfficePreparer;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSetMetaData;
@@ -139,15 +143,37 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @return A DSLContext for the current request.
      */
     public static DSLContext getDslContext(Context ctx) {
+        return getDslContext(ctx, null);
+    }
+
+    /**
+     * Creates a DSL context whose checked-out connections use the supplied CWMS
+     * session office. Callers should only supply an office when the endpoint's
+     * database behavior requires it; setting it globally changes legacy access
+     * checks for unrelated endpoints.
+     *
+     * @param ctx The current request context.
+     * @param office The session office to prepare, or null to leave it unchanged.
+     * @return A DSLContext for the current request.
+     */
+    public static DSLContext getDslContext(Context ctx, String office) {
         DSLContext retVal;
 
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
         final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null
             && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
 
+        // Snapshot client-info and the requested office up front so the per-checkout
+        // preparer lambdas don't capture the Javalin Context — async work (e.g. the
+        // total-count future in TimeSeriesDaoImpl) can outlive the request facade.
+        final String module = (ctx.handlerType() == HandlerType.BEFORE)
+                ? "BEFORE-HANDLER" : ctx.endpointHandlerPath();
+        final String action = ctx.method();
+        final String clientId = ctx.url().replace(ctx.path(), "") + ctx.contextPath();
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
-                connection -> setClientInfo(ctx, connection),
-                new cwms.cda.datasource.LrtsSessionPreparer(isNewLRTS));
+                connection -> setClientInfo(connection, module, action, clientId),
+                new LrtsSessionPreparer(isNewLRTS),
+                new SessionOfficePreparer(office));
         DataSource wrappedDataSource = new ConnectionPreparingDataSource(preparer, dataSource);
         retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE18C);
 
@@ -155,7 +181,6 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         return retVal;
     }
-
 
     protected static Timestamp buildTimestamp(Instant date) {
         return date != null ? Timestamp.from(date) : null;
@@ -176,19 +201,15 @@ public abstract class JooqDao<T> extends Dao<T> {
         return dsl;
     }
 
-    private static Connection setClientInfo(Context ctx, Connection connection) {
+    private static Connection setClientInfo(Connection connection, String module, String action, String clientId) {
         try {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
                     ApiServlet.APPLICATION_TITLE + " "
                             + apiVersion.substring(0, Math.min(ORACLE_ECID_MAX_LENGTH, apiVersion.length())));
-            if (ctx.handlerType() == HandlerType.BEFORE) {
-                connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
-            } else {
-                connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
-            }
-            connection.setClientInfo("OCSID.ACTION", ctx.method());
-            connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
+            connection.setClientInfo("OCSID.MODULE", module);
+            connection.setClientInfo("OCSID.ACTION", action);
+            connection.setClientInfo("OCSID.CLIENTID", clientId);
         } catch (SQLClientInfoException ex) {
             logger.atFinest() // this is usually useless information
                     .withCause(ex)
@@ -521,7 +542,37 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         NotFoundException exception;
         if (input.getMessage().contains("ASSIGN_LOC_GROUPS")) {
-            exception = new NotFoundException("Location group contains assigned locations that do not exist.", cause);
+            Map<String, Serializable> errorDetails = new HashMap<>();
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    localizedMessage = parts[0];
+                    if (localizedMessage.startsWith("ORA-")) {
+                        localizedMessage = localizedMessage
+                            .substring(localizedMessage.indexOf("LOCATION_ID_NOT_FOUND:") + 23);
+                    }
+                }
+            }
+            errorDetails.put("missing-locations", localizedMessage);
+            exception = new NotFoundException("Location group contains assigned locations that do not exist.",
+                errorDetails, cause);
+        } else if (input.getMessage().contains("ASSIGN_TS_GROUPS")) {
+            Map<String, Serializable> errorDetails = new HashMap<>();
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    localizedMessage = parts[0];
+                    if (localizedMessage.startsWith("ORA-")) {
+                        localizedMessage = localizedMessage
+                            .substring(localizedMessage.indexOf("TS_ID_NOT_FOUND:") + 17);
+                    }
+                }
+            }
+            errorDetails.put("missing-time-series", localizedMessage);
+            exception = new NotFoundException("Time series group contains assigned time series that do not exist.",
+                errorDetails, cause);
         } else {
             exception = new NotFoundException(cause);
 

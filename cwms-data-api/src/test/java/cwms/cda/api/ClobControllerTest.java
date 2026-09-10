@@ -16,6 +16,7 @@ import cwms.cda.formatters.FormattingException;
 import fixtures.TestServletInputStream;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.ContextResolver;
 import io.javalin.http.HandlerType;
 import io.javalin.http.util.ContextUtil;
 import io.javalin.plugin.json.JavalinJackson;
@@ -39,8 +40,15 @@ public class ClobControllerTest extends ControllerTest {
         HashMap<String, Object> attributes = new HashMap<>();
         attributes.put(ContextUtil.maxRequestSizeKey, Integer.MAX_VALUE);
         attributes.put(JsonMapperKt.JSON_MAPPER_KEY, new JavalinJackson());
+        // JooqDao.getDslContext uses ctx.url() which delegates through ContextResolver
+        attributes.put("contextResolver", new ContextResolver());
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
+        // JooqDao.getDslContext snapshots client-info from the request for connection preparers
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getRequestURI()).thenReturn("/cwms-data/clobs");
+        when(request.getRequestURL()).thenReturn(new StringBuffer("http://localhost:7000/cwms-data/clobs"));
+        when(request.getContextPath()).thenReturn("/cwms-data");
 
         Context context = ContextUtil.init(request, response, "*", new HashMap<>(),
                 HandlerType.GET, attributes);

@@ -67,6 +67,7 @@ import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.rating.Ratings;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -77,6 +78,7 @@ import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -87,6 +89,8 @@ import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
@@ -181,7 +185,7 @@ public class RatingController extends BaseCrudHandler {
         String formatHeader = ctx.req.getContentType();
         //Using placeholder CwmsDTOBase.class since we do not have a RatingSet DTO
         //The contentType will match against the standard listing of Formats constants
-        ContentType contentType = Formats.parseHeader(formatHeader, CwmsDTOBase.class);
+        ContentType contentType = Formats.parseHeader(formatHeader, Ratings.class);
         String body = ctx.body();
         return deserializeRatingSet(body, contentType.getType(), storeTemplate);
     }
@@ -296,12 +300,12 @@ public class RatingController extends BaseCrudHandler {
                 + "field for this URI are:"
                 + "\n* `tab`"
                 + "\n* `csv`"
-                + "\n* `xml`"
-                + "\n* `json` (default)")},
+                + "\n* `xml` (default)"
+                + "\n* `json`")},
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(type = Formats.JSON),
-                    @OpenApiContent(type = Formats.XML),
+                    @OpenApiContent(type = Formats.JSONV2),
+                    @OpenApiContent(type = Formats.XMLV2),
                     @OpenApiContent(type = Formats.TAB),
                     @OpenApiContent(type = Formats.CSV)
                 }),
@@ -327,6 +331,11 @@ public class RatingController extends BaseCrudHandler {
             String timezone = ctx.queryParamAsClass(TIMEZONE, String.class).getOrDefault("UTC");
 
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
+            if (!format.isEmpty() && !format.contains("version=2")) {
+                Map<String, String> details = new HashMap<>();
+                details.put("message", String.format("Invalid format. V1 formats no longer supported: %s", format));
+                throw new BadRequestResponse("", details);
+            }
             String header = ctx.header(Header.ACCEPT);
 
             ContentType contentType = Formats.parseHeaderAndQueryParm(header, format, RatingAliasMarker.class);

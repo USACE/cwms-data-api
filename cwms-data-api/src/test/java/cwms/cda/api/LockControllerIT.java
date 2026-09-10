@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.Nation;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
@@ -45,10 +46,10 @@ import cwms.cda.data.dao.location.kind.LocationUtil;
 import cwms.cda.data.dao.location.kind.LockDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
-import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
-import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
+import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
+import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
@@ -65,7 +66,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
@@ -1049,28 +1049,28 @@ final class LockControllerIT extends DataApiTestIT {
 
     private List<LocationLevel> createLocationLevelList(Lock lock) {
         List<LocationLevel> retVal = new ArrayList<>();
-        var lowLowerLevel = new ConstantLocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
+        var lowLowerLevel = new ConstantLocationLevel.Builder(lock.getLowWaterLowerPoolLocationLevel().getLevelId(), LocationLevel.truncateDate(ZonedDateTime.now()).toInstant())
                 .withLevelUnitsId(lock.getElevationUnits())
                 .withOfficeId(lock.getLowWaterLowerPoolLocationLevel().getOfficeId())
                 .withSpecifiedLevelId(lock.getLowWaterLowerPoolLocationLevel().getSpecifiedLevelId())
                 .withConstantValue(lock.getLowWaterLowerPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(lowLowerLevel);
-        var lowUpperLevel = new ConstantLocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
+        var lowUpperLevel = new ConstantLocationLevel.Builder(lock.getLowWaterUpperPoolLocationLevel().getLevelId(), LocationLevel.truncateDate(ZonedDateTime.now()).toInstant())
                 .withLevelUnitsId(lock.getElevationUnits())
                 .withOfficeId(lock.getLowWaterUpperPoolLocationLevel().getOfficeId())
                 .withSpecifiedLevelId(lock.getLowWaterUpperPoolLocationLevel().getSpecifiedLevelId())
                 .withConstantValue(lock.getLowWaterUpperPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(lowUpperLevel);
-        var highLowerLevel = new ConstantLocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
+        var highLowerLevel = new ConstantLocationLevel.Builder(lock.getHighWaterLowerPoolLocationLevel().getLevelId(), LocationLevel.truncateDate(ZonedDateTime.now()).toInstant())
                 .withLevelUnitsId(lock.getElevationUnits())
                 .withOfficeId(lock.getHighWaterLowerPoolLocationLevel().getOfficeId())
                 .withSpecifiedLevelId(lock.getHighWaterLowerPoolLocationLevel().getSpecifiedLevelId())
                 .withConstantValue(lock.getHighWaterLowerPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(highLowerLevel);
-        var highUpperLevel = new ConstantLocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), ZonedDateTime.now().toInstant())
+        var highUpperLevel = new ConstantLocationLevel.Builder(lock.getHighWaterUpperPoolLocationLevel().getLevelId(), LocationLevel.truncateDate(ZonedDateTime.now()).toInstant())
                 .withLevelUnitsId(lock.getElevationUnits())
 
                 .withOfficeId(lock.getHighWaterUpperPoolLocationLevel().getOfficeId())
@@ -1078,7 +1078,7 @@ final class LockControllerIT extends DataApiTestIT {
                 .withConstantValue(lock.getHighWaterUpperPoolLocationLevel().getLevelValue())
                 .build();
         retVal.add(highUpperLevel);
-        var warningBuffer = new ConstantLocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), ZonedDateTime.now().toInstant())
+        var warningBuffer = new ConstantLocationLevel.Builder(String.format("%s.Elev-Closure.Inst.0.Warning Buffer", lock.getLocation().getName()), LocationLevel.truncateDate(ZonedDateTime.now()).toInstant())
                 .withLevelUnitsId(lock.getElevationUnits())
                 .withOfficeId(lock.getLocation().getOfficeId())
                 .withSpecifiedLevelId("Warning Buffer")

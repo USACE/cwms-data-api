@@ -25,23 +25,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.CASCADE_DELETE;
-import static cwms.cda.api.Controllers.CATEGORY_ID;
-import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.CWMS_OFFICE;
-import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.GET_ONE;
-import static cwms.cda.api.Controllers.GROUP_ID;
-import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
-import static cwms.cda.api.Controllers.INCLUDE_ASSIGNED;
-import static cwms.cda.api.Controllers.LOCATION_CATEGORY_LIKE;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_LOCS;
-import static cwms.cda.api.Controllers.RESULTS;
-import static cwms.cda.api.Controllers.SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.*;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -54,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.LocationGroupDao;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -61,6 +46,7 @@ import cwms.cda.formatters.csv.CsvV1LocationGroup;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -68,7 +54,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
@@ -260,6 +248,10 @@ public class LocationGroupController implements CrudHandler {
                 @OpenApiContent(from = LocationGroup.class, type = Formats.JSON)
             },
             required = true),
+        queryParams = {
+            @OpenApiParam(name = IGNORE_MISSING, description = "Specifies whether to fail when attempting "
+                + "to assign a location that does not exist. Default is false.", type = Boolean.class)
+        },
         method = HttpMethod.POST,
         tags = {TAG}
     )
@@ -272,6 +264,7 @@ public class LocationGroupController implements CrudHandler {
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
+            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
 
             if (!deserialize.getLocationCategory().getOfficeId().equalsIgnoreCase(CWMS_OFFICE)
                     && (!deserialize.getOfficeId().equalsIgnoreCase(deserialize.getLocationCategory().getOfficeId())
@@ -281,8 +274,26 @@ public class LocationGroupController implements CrudHandler {
             }
 
             LocationGroupDao dao = new LocationGroupDao(dsl);
-            dao.create(deserialize);
-            ctx.status(HttpServletResponse.SC_CREATED);
+            List<CwmsId> missingLocations = dao.create(deserialize, ignoreMissing);
+            if (missingLocations.isEmpty()) {
+                ctx.status(HttpServletResponse.SC_CREATED);
+            } else {
+                Map<String, String> details = new HashMap<>();
+                StringBuilder sb = new StringBuilder();
+                for (CwmsId missingLocation : missingLocations) {
+                    sb.append(missingLocation.getName());
+                    sb.append(", ");
+                }
+                sb.delete(sb.length() - 2, sb.length());
+                details.put("missing-locations", sb.toString());
+                if (ignoreMissing) {
+                    ctx.status(HttpCode.MULTI_STATUS);
+                } else {
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                    details.put("message", "One or more locations could not be assigned to the location group.");
+                }
+                ctx.json(details);
+            }
         }
     }
 
@@ -306,6 +317,8 @@ public class LocationGroupController implements CrudHandler {
                 + "office of the user making the request. This is the office that the location, group, and category "
                 + "belong to. If the group and/or category belong to the CWMS office, "
                 + "this only identifies the location."),
+            @OpenApiParam(name = IGNORE_MISSING, description = "Specifies whether to fail when attempting "
+                + "to assign a location that does not exist. Default is false.", type = Boolean.class)
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
@@ -322,6 +335,7 @@ public class LocationGroupController implements CrudHandler {
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
+            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !groupId.equals(deserialize.getId())) {
                 locationGroupDao.renameLocationGroup(groupId, deserialize);
@@ -329,8 +343,20 @@ public class LocationGroupController implements CrudHandler {
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);
             }
-            locationGroupDao.assignLocs(deserialize, office);
-            ctx.status(HttpServletResponse.SC_OK);
+            List<CwmsId> missingLocations = locationGroupDao.assignLocs(deserialize, office, ignoreMissing);
+            if (missingLocations.isEmpty()) {
+                ctx.status(HttpServletResponse.SC_OK);
+            } else {
+                Map<String, String> details = new HashMap<>();
+                details.put("missing_locations", Formats.format(contentType, missingLocations, CwmsId.class));
+                if (ignoreMissing) {
+                    ctx.status(HttpCode.MULTI_STATUS);
+                } else {
+                    ctx.status(HttpServletResponse.SC_BAD_REQUEST);
+                    details.put("message", "One or more locations could not be assigned to the location group.");
+                }
+                ctx.json(details);
+            }
         }
     }
 

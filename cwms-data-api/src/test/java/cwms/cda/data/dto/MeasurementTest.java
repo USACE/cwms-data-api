@@ -39,6 +39,7 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -99,7 +100,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas)
                 .withUsgsMeasurement(usgsMeas)
@@ -115,7 +116,7 @@ final class MeasurementTest {
                 () -> assertEquals("Survey Party", item.getParty(), "Party"),
                 () -> assertEquals("Measurement made during normal flow conditions.", item.getWmComments(), "Comments"),
                 () -> assertNotNull(item.getInstant(), "Instant"),
-                () -> assertEquals("123456", item.getNumber(), "Measurement number"),
+                () -> assertEquals("123456", item.getMeasurementId(), "Measurement number"),
                 () -> DTOMatch.assertMatch(cwmsId, item.getId()),
                 () -> DTOMatch.assertMatch(sfm, item.getStreamflowMeasurement()),
                 () -> DTOMatch.assertMatch(supplementalStreamflowMeas, item.getSupplementalStreamflowMeasurement()),
@@ -129,7 +130,7 @@ final class MeasurementTest {
             Measurement item = new Measurement.Builder()
                     .withHeightUnit("ft")
                     .withFlowUnit("cfs")
-                    .withNumber("123456")
+                    .withMeasurementId("123456")
                     .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
                     .build();
 
@@ -202,7 +203,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas)
                 .withUsgsMeasurement(usgsMeas)
@@ -269,16 +270,85 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas)
                 .withUsgsMeasurement(usgsMeas)
                 .build();
 
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/measurement.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/measurement_with_number.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
+        Measurement deserialized = Formats.parseContent(contentType, json, Measurement.class);
+
+        DTOMatch.assertMatch(expectedMeasurement, deserialized);
+    }
+
+    @Test
+    void createMeasurement_deserialize_meas_id() throws Exception {
+        CwmsId cwmsId = new CwmsId.Builder()
+                .withName("Buckhorn")
+                .withOfficeId("SPK")
+                .build();
+
+        StreamflowMeasurement sfm = new StreamflowMeasurement.Builder()
+                .withGageHeight(5.5)
+                .withFlow(250.0)
+                .withQuality("Good")
+                .build();
+
+        SupplementalStreamflowMeasurement supplementalStreamflowMeas = new SupplementalStreamflowMeasurement.Builder()
+                .withChannelFlow(300.0)
+                .withOverbankFlow(50.0)
+                .withOverbankMaxDepth(5.0)
+                .withChannelMaxDepth(10.0)
+                .withAvgVelocity(1.5)
+                .withSurfaceVelocity(2.0)
+                .withMaxVelocity(3.0)
+                .withEffectiveFlowArea(200.0)
+                .withCrossSectionalArea(250.0)
+                .withMeanGage(20.0)
+                .withTopWidth(30.0)
+                .withMainChannelArea(150.0)
+                .withOverbankArea(80.0)
+                .build();
+
+        UsgsMeasurement usgsMeas = new UsgsMeasurement.Builder()
+                .withRemarks("Remarks")
+                .withCurrentRating("Rating")
+                .withControlCondition("Condition")
+                .withFlowAdjustment("Adjustment")
+                .withShiftUsed(0.1)
+                .withPercentDifference(5.0)
+                .withDeltaHeight(0.05)
+                .withDeltaTime(10.0)
+                .withAirTemp(20.0)
+                .withWaterTemp(15.0)
+                .build();
+
+        Measurement expectedMeasurement = new Measurement.Builder()
+                .withId(cwmsId)
+                .withHeightUnit("ft")
+                .withFlowUnit("cfs")
+                .withTempUnit("F")
+                .withVelocityUnit("ft/s")
+                .withAreaUnit("sq ft")
+                .withUsed(true)
+                .withAgency("USGS")
+                .withParty("Survey Party")
+                .withWmComments("Measurement made during normal flow conditions.")
+                .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
+                .withMeasurementId("123456")
+                .withStreamflowMeasurement(sfm)
+                .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas)
+                .withUsgsMeasurement(usgsMeas)
+                .build();
+
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/measurement_with_meas_id.json");
+        assertNotNull(resource);
+        String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        ContentType contentType = new ContentType(Formats.JSONV2);
         Measurement deserialized = Formats.parseContent(contentType, json, Measurement.class);
 
         DTOMatch.assertMatch(expectedMeasurement, deserialized);
@@ -338,7 +408,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm1)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas1)
                 .withUsgsMeasurement(usgsMeas1)
@@ -397,14 +467,14 @@ final class MeasurementTest {
                 .withParty("Second Survey Party")
                 .withWmComments("Measurement made after recent rainfall.")
                 .withInstant(Instant.parse("2024-09-17T12:00:00Z"))
-                .withNumber("654321")
+                .withMeasurementId("654321")
                 .withStreamflowMeasurement(sfm2)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas2)
                 .withUsgsMeasurement(usgsMeas2)
                 .build();
 
         // Reading and Deserializing the JSON
-        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/measurements.json");
+        InputStream resource = this.getClass().getResourceAsStream("/cwms/cda/data/dto/measurements_with_number.json");
         assertNotNull(resource);
         String json = IOUtils.toString(resource, StandardCharsets.UTF_8);
         ContentType contentType = new ContentType(Formats.JSON);
@@ -417,7 +487,7 @@ final class MeasurementTest {
     }
 
     @Test
-    void testRoundTripMultiple()
+    void testRoundTripMultiple_v1_and_v2()
     {
         CwmsId cwmsId1 = new CwmsId.Builder()
                 .withName("Buckhorn")
@@ -471,7 +541,7 @@ final class MeasurementTest {
                 .withParty("Survey Party")
                 .withWmComments("Measurement made during normal flow conditions.")
                 .withInstant(Instant.parse("2024-09-16T00:00:00Z"))
-                .withNumber("123456")
+                .withMeasurementId("123456")
                 .withStreamflowMeasurement(sfm1)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas1)
                 .withUsgsMeasurement(usgsMeas1)
@@ -530,7 +600,7 @@ final class MeasurementTest {
                 .withParty("Second Survey Party")
                 .withWmComments("Measurement made after recent rainfall.")
                 .withInstant(Instant.parse("2024-09-17T12:00:00Z"))
-                .withNumber("654321")
+                .withMeasurementId("654321")
                 .withStreamflowMeasurement(sfm2)
                 .withSupplementalStreamflowMeasurement(supplementalStreamflowMeas2)
                 .withUsgsMeasurement(usgsMeas2)
@@ -540,9 +610,20 @@ final class MeasurementTest {
         measurements.add(expectedMeasurement1);
         measurements.add(expectedMeasurement2);
 
-        ContentType contentType = new ContentType(Formats.JSON);
+        ContentType contentType = new ContentType(Formats.JSONV1);
         String serialized = Formats.format(contentType, measurements, Measurement.class);
+        assertTrue(serialized.contains("number"));
         List<Measurement> deserialized = Formats.parseContentList(contentType, serialized, Measurement.class);
+
+        assertEquals(2, deserialized.size(), "Expected 2 measurements");
+        DTOMatch.assertMatch(expectedMeasurement1, deserialized.get(0));
+        DTOMatch.assertMatch(expectedMeasurement2, deserialized.get(1));
+
+        contentType = new ContentType(Formats.JSONV2);
+        serialized = Formats.format(contentType, measurements, Measurement.class);
+        assertFalse(serialized.contains("number"));
+        assertTrue(serialized.contains("measurement-id"));
+        deserialized = Formats.parseContentList(contentType, serialized, Measurement.class);
 
         assertEquals(2, deserialized.size(), "Expected 2 measurements");
         DTOMatch.assertMatch(expectedMeasurement1, deserialized.get(0));

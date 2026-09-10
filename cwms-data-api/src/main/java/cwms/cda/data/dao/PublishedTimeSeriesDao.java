@@ -31,7 +31,6 @@ import cwms.cda.data.dto.PublishedTimeSeriesData;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +63,11 @@ public final class PublishedTimeSeriesDao extends JooqDao<TimeSeriesProfile> {
         String cursorLocId = null;
 
         Condition officeCondition = caseInsensitiveLikeRegexNullTrue(AV_A2W_TS_CODES_BY_LOC2.DB_OFFICE_ID, retrievalParameters.getOfficeId().orElse("*"));
-        Condition locationCondition = caseInsensitiveLikeRegexNullTrue(AV_A2W_TS_CODES_BY_LOC2.LOCATION_ID, retrievalParameters.getLocationId().orElse("*"));
+        Condition locationCondition = noCondition();
+        List<String> locationIds = retrievalParameters.getLocationIds();
+        if (locationIds != null && !locationIds.isEmpty()) {
+            locationCondition = upper(AV_A2W_TS_CODES_BY_LOC2.LOCATION_ID).in(locationIds.stream().map(String::toUpperCase).collect(toList()));
+        }
 
         Condition whereClause = locationCondition.and(officeCondition);
 

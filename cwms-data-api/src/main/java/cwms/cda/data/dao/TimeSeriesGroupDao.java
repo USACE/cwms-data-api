@@ -26,10 +26,13 @@ package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
 import static java.util.stream.Collectors.toList;
+import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.timeseriesgroup.DELETE_TS_GROUP_CASCADE;
 import cwms.cda.data.dto.AssignedTimeSeries;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.TimeSeriesGroup;
 import java.math.BigDecimal;
@@ -41,10 +44,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.Condition;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
+import org.jooq.Record1;
 import org.jooq.Record5;
 import org.jooq.Record8;
 import org.jooq.Record9;
 import org.jooq.RecordMapper;
+import org.jooq.Result;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStep4;
 import org.jooq.conf.ParamType;
@@ -53,8 +58,8 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_CAT_GRP;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
-import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T;
-import usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T;
+import usace.cwms.db.jooq.codegen_latest.udt.records.TS_ALIAS_T;
+import usace.cwms.db.jooq.codegen_latest.udt.records.TS_ALIAS_TAB_T;
 
 
 public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
@@ -450,21 +455,34 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         p.execute(configuration);
     }
 
+    public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls) {
+        return create(group, failIfExists, ignoreNulls, false);
+    }
 
-    public void create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls) {
-        connection(dsl, c -> {
+    public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls, boolean ignoreMissing) {
+        return connectionResult(dsl, c -> {
             Configuration configuration = getDslContext(c, group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
-            CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
-                group.getId(), group.getDescription(), formatBool(failIfExists),
+            DSLContext dslContext = getDslContext(c, group.getOfficeId());
+            return dslContext.transactionResult((Configuration trx) -> {
+                CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
+                    group.getId(), group.getDescription(), formatBool(failIfExists),
                     formatBool(ignoreNulls), group.getSharedAliasId(),
-                group.getSharedRefTsId(), group.getOfficeId());
-            assignTs(configuration, group, group.getOfficeId(), ignoreNulls);
+                    group.getSharedRefTsId(), group.getOfficeId());
+                return assignTs(configuration, group, group.getOfficeId(), ignoreNulls, ignoreMissing);
+            });
         });
     }
 
-    private void assignTs(Configuration configuration, TimeSeriesGroup group, String office, boolean ignoreNulls) {
+    private List<CwmsId> assignTs(Configuration configuration, TimeSeriesGroup group,
+            String office, boolean ignoreNulls) {
+        return assignTs(configuration, group, office, ignoreNulls, false);
+    }
+
+    private List<CwmsId> assignTs(Configuration configuration, TimeSeriesGroup group,
+            String office, boolean ignoreNulls, boolean ignoreMissing) {
         List<AssignedTimeSeries> assignedTimeSeries = group.getAssignedTimeSeries();
+        List<CwmsId> missingTimeSeries = new ArrayList<>();
 
         if (!ignoreNulls && (assignedTimeSeries == null || assignedTimeSeries.isEmpty())) {
             CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(configuration,
@@ -473,14 +491,47 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
 
         } else {
             if (assignedTimeSeries != null) {
-                List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
+                if (supportsMissing(configuration)) {
+                    List<TS_ALIAS_T> collect = assignedTimeSeries.stream()
                         .map(TimeSeriesGroupDao::convertToTsAliasType)
                         .collect(toList());
-                TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
-                CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
+                    TS_ALIAS_TAB_T assignedLocs = new TS_ALIAS_TAB_T(collect);
+                    TS_ALIAS_TAB_T missingTs =
+                        usace.cwms.db.jooq.codegen_latest.packages.CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS_SUPPORT_MISSING(
+                            configuration,
+                            group.getTimeSeriesCategory().getId(), group.getId(), assignedLocs, office,
+                            formatBool(ignoreMissing));
+                    if (!missingTs.isEmpty()) {
+                        for (TS_ALIAS_T missing : missingTs) {
+                            missingTimeSeries.add(CwmsId.buildCwmsId(office, missing.getTS_ID()));
+                        }
+                    }
+                } else {
+                    List<usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T> collect = assignedTimeSeries.stream()
+                        .map(TimeSeriesGroupDao::convertToLegacyTsAliasType)
+                        .collect(toList());
+                    usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T assignedLocs
+                        = new usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_TAB_T(collect);
+                    CWMS_TS_PACKAGE.call_ASSIGN_TS_GROUPS(configuration, group.getTimeSeriesCategory().getId(),
                         group.getId(), assignedLocs, office);
+                }
             }
         }
+        return missingTimeSeries;
+    }
+
+    private boolean supportsMissing(Configuration config) {
+        Result<Record1<Integer>> support = config.dsl()
+            .select(count(asterisk()))
+            .from("all_procedures")
+            .where("procedure_name = 'ASSIGN_TS_GROUPS_SUPPORT_MISSING'")
+            .fetch();
+        int supportCount = support.get(0).value1();
+        return supportCount > 0;
+    }
+
+    public List<CwmsId> assignTs(TimeSeriesGroup group, String office, boolean ignoreMissing) {
+        return connectionResult(dsl, c -> assignTs(getDslContext(c, office).configuration(),group, office, true, ignoreMissing));
     }
 
     public void assignTs(TimeSeriesGroup group, String office) {
@@ -493,6 +544,13 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
             assignedTimeSeries.getAliasId(), assignedTimeSeries.getRefTsId());
     }
 
+    @Deprecated
+    private static usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T convertToLegacyTsAliasType(AssignedTimeSeries assignedTimeSeries) {
+        BigDecimal attribute = toBigDecimal(assignedTimeSeries.getAttribute());
+        return new usace.cwms.db.jooq.codegen.udt.records.TS_ALIAS_T(assignedTimeSeries.getTimeseriesId(), attribute,
+            assignedTimeSeries.getAliasId(), assignedTimeSeries.getRefTsId());
+    }
+
     public void renameTimeSeriesGroup(String oldGroupId, TimeSeriesGroup group) {
         connection(dsl, c ->
             CWMS_TS_PACKAGE.call_RENAME_TS_GROUP(
@@ -502,24 +560,21 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
         );
     }
 
-
     public void unassignAllTs(TimeSeriesGroup group, String officeId) {
-
         connection(dsl, c ->
             // For Default/Default if officeId is 'CWMS' this seems to not unassign
-                // the assigned timeseries where the office id of the timeseries is SPK.
-                // Is this a bug?
-                {
-                    DSLContext dslContext = getDslContext(c, officeId);
+            // the assigned timeseries where the office id of the timeseries is SPK.
+            // Is this a bug?
+            {
+                DSLContext dslContext = getDslContext(c, officeId);
 
-                    // UNASSIGN_TS_GROUP apparently only unassigns the assignments that are in the
-                    // P_DB_OFFICE_ID  ( last parameter)
-                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
-                        dslContext.configuration(),
-                        group.getTimeSeriesCategory().getId(), group.getId(),
-                        null, "T", group.getOfficeId());
-                }
+                // UNASSIGN_TS_GROUP apparently only unassigns the assignments that are in the
+                // P_DB_OFFICE_ID  ( last parameter)
+                CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(
+                    dslContext.configuration(),
+                    group.getTimeSeriesCategory().getId(), group.getId(),
+                    null, "T", group.getOfficeId());
+            }
         );
     }
-
 }

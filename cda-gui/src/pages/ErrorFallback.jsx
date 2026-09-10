@@ -1,9 +1,9 @@
 import { Button } from "@usace/groundwork";
-import PropTypes from "prop-types";
 import { FaArrowLeft } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useRouteError } from "react-router-dom";
 
-export default function ErrorFallback({ error }) {
+export default function ErrorFallback() {
+  const error = useRouteError();
   return (
     <div className="p-6">
       <h2 className="text-lg font-semibold text-red-600">Something went wrong</h2>
@@ -24,9 +24,3 @@ export default function ErrorFallback({ error }) {
     </div>
   );
 }
-
-ErrorFallback.propTypes = {
-  error: PropTypes.shape({
-    message: PropTypes.string,
-  }),
-};

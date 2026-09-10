@@ -19,6 +19,7 @@ begin
    cwms_sec.add_cwms_user('m5hectest', null, 'SWT');
    cwms_sec.add_user_to_group('m5hectest', 'All Users', 'SWT');
    cwms_sec.add_user_to_group('m5hectest', 'CWMS Users', 'SWT');
+   cwms_sec.add_user_to_group('m5hectest', 'CWMS User Admins', 'SWT');
    cwms_sec.add_user_to_group('m5hectest', 'TS ID Creator', 'SWT');
    cwms_sec.add_cwms_user('q0hectest', null, 'SWT');
    cwms_sec.add_user_to_group('q0hectest', 'All Users', 'SWT');
@@ -40,6 +41,7 @@ begin
     cwms_sec.add_cwms_user('m5hectest',NULL,'SWT');
     cwms_sec.add_user_to_group('m5hectest','All Users', 'SWT');
     cwms_sec.add_user_to_group('m5hectest','CWMS Users', 'SWT');
+    cwms_sec.add_user_to_group('m5hectest','CWMS User Admins', 'SWT');
     cwms_sec.add_user_to_group('m5hectest','TS ID Creator', 'SWT');
     execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
 
@@ -49,6 +51,9 @@ begin
     cwms_sec.add_user_to_group('m5testadmin','CWMS Users', 'LRL');
     cwms_sec.add_user_to_group('m5testadmin','CWMS User Admins', 'LRL');
     cwms_sec.add_user_to_group('m5testadmin','SHOW STACK TRACE', 'LRL');
+
+    execute immediate 'grant insert, update, delete on cwms_20.at_user_lists to web_user';
+    execute immediate 'grant insert, update, delete on cwms_20.at_user_list_members to web_user';
 
 end;
 /

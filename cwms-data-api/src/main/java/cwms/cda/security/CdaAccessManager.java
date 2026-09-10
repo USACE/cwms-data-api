@@ -1,14 +1,6 @@
 package cwms.cda.security;
 
 import com.google.common.flogger.FluentLogger;
-import io.javalin.http.HttpResponseException;
-import io.javalin.http.util.NaiveRateLimit;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import cwms.cda.ApiServlet;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
@@ -17,8 +9,15 @@ import io.javalin.core.security.AccessManager;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import java.util.function.BiPredicate;
+import io.javalin.http.HttpResponseException;
+import io.javalin.http.util.NaiveRateLimit;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 
 public final class CdaAccessManager implements AccessManager {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();

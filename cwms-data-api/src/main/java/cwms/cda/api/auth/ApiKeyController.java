@@ -24,15 +24,23 @@
 
 package cwms.cda.api.auth;
 
+import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_201;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_400;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectReader;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
 import io.javalin.apibuilder.CrudHandler;
@@ -51,6 +59,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class ApiKeyController implements CrudHandler {
+    private static final ObjectReader KEY_READER = JsonV1.buildObjectMapper().readerFor(ApiKey.class)
+            .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     public final MetricRegistry metrics;
 
 
@@ -61,33 +71,52 @@ public class ApiKeyController implements CrudHandler {
 
     @OpenApi(
         requestBody = @OpenApiRequestBody(
+                    required = true,
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
                     }
         ),
-        responses = @OpenApiResponse(
+        responses = {@OpenApiResponse(
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
                     },
                     status = STATUS_201
         ),
+            @OpenApiResponse(status = STATUS_400, content = @OpenApiContent(from = CdaError.class),
+                    description = "Invalid JSON, required fields, or expiration date."),
+            @OpenApiResponse(status = "409", content = @OpenApiContent(from = CdaError.class),
+                    description = "An API key with this name already exists for this user.")
+        },
         description = "Create a new API Key for user. The randomly generated key is returned "
                 + "to the caller. A provided key will be ignored.",
         tags = {"Authorization"}
     )
     @Override
     public void create(Context ctx) {
+        ApiKey sourceData;
+        try {
+            sourceData = KEY_READER.readValue(ctx.body());
+        } catch (JsonProcessingException ex) {
+            String message = "Request body must be a valid API key JSON object.";
+            if (ex instanceof JsonMappingException && ((JsonMappingException) ex).getPath().stream()
+                    .anyMatch(ref -> "expires".equals(ref.getFieldName()))) {
+                message = "expires must be a valid date/time string, for example 2030-01-01T00:00:00Z.";
+            }
+            ctx.json(new CdaError(message, true)).status(HttpCode.BAD_REQUEST);
+            return;
+        }
+        if (sourceData == null || sourceData.getUserId() == null || sourceData.getUserId().isBlank()
+                || sourceData.getKeyName() == null || sourceData.getKeyName().isBlank()) {
+            ctx.json(new CdaError("user-id and key-name are required and must not be blank.", true))
+                    .status(HttpCode.BAD_REQUEST);
+            return;
+        }
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         try {
             DSLContext dsl = getDslContext(ctx);
             AuthDao auth = AuthDao.getInstance(dsl);
-            ApiKey sourceData = ctx.bodyAsClass(ApiKey.class);
             ApiKey key = auth.createApiKey(p, sourceData);
-            if (key == null) {
-                ctx.status(HttpCode.BAD_REQUEST);
-            } else {
-                ctx.json(key).status(HttpCode.CREATED);
-            }
+            ctx.json(key).status(HttpCode.CREATED);
         } catch (CwmsAuthException ex) {
             if (ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
                 ctx.json(new CdaError(ex.getMessage(), true)).status(ex.getAuthFailCode());
@@ -102,12 +131,7 @@ public class ApiKeyController implements CrudHandler {
                 @OpenApiParam(name = "key-name", required = true,
                         description = "Name of the specific key to get more information for. NOTE: Case-sensitive.")
         },
-        responses = @OpenApiResponse(
-                    content = {
-                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
-                    },
-                    status = STATUS_201
-        ),
+        responses = @OpenApiResponse(status = STATUS_204),
         description = "Delete API key for a user",
         tags = {"Authorization"}
     )
@@ -126,7 +150,7 @@ public class ApiKeyController implements CrudHandler {
                     content = {
                         @OpenApiContent(from = ApiKey[].class, type = Formats.JSON)
                     },
-                    status = STATUS_201
+                    status = STATUS_200
         ),
         security = {
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
@@ -154,7 +178,7 @@ public class ApiKeyController implements CrudHandler {
                     content = {
                         @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
                     },
-                    status = STATUS_201
+                    status = STATUS_200
         ),
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")

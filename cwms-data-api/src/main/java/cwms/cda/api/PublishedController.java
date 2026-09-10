@@ -56,6 +56,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Arrays;
+import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -64,7 +66,7 @@ public final class PublishedController implements CrudHandler {
     private static final String TAG = "Published";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
-    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int DEFAULT_PAGE_SIZE = 500;
 
     public PublishedController(MetricRegistry metrics) {
         this.metrics = metrics;
@@ -95,7 +97,8 @@ public final class PublishedController implements CrudHandler {
     @OpenApi(
             queryParams = {
                     @OpenApiParam(name = OFFICE_MASK, description = "Office Id used to filter the results."),
-                    @OpenApiParam(name = LOCATION_MASK, description = "Location Id used to filter the results."),
+                    @OpenApiParam(name = LOCATION_MASK, description = "A pipe-separated list of Location IDs used to filter the results. "
+                            + "For example, 'AARK|ADDI'."),
                     @OpenApiParam(name = PAGE,
                             description = "This end point can return a lot of data, this "
                                     + "identifies where in the request you are. This is an opaque "
@@ -131,7 +134,8 @@ public final class PublishedController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             PublishedTimeSeriesDao dao = new PublishedTimeSeriesDao(dsl);
-            PublishedRetrievalParameters retrievalParams = new PublishedRetrievalParameters(locationIdMask, officeIdMask);
+            List<String> locationIds = locationIdMask != null ? Arrays.asList(locationIdMask.split("\\|")) : null;
+            PublishedRetrievalParameters retrievalParams = new PublishedRetrievalParameters(locationIds, officeIdMask);
             LocationToPublishedDataList result = dao.retrievePublishedTimeSeriesIds(retrievalParams, cursor, pageSize);
 
             String formatHeader = ctx.header(Header.ACCEPT);

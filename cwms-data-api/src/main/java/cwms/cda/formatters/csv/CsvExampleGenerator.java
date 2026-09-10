@@ -10,8 +10,17 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CsvExampleGenerator {
+public final class CsvExampleGenerator {
 
+    private CsvExampleGenerator() {
+        /* utility class */
+    }
+
+    /**
+     * Retrieve example string for the given DTO Type.
+     * @param dtoClass Cwms DTO type class
+     * @return example data.
+     */
     public static String getExample(Class<? extends CwmsCsvDTO<?>> dtoClass) {
         try {
             CwmsCsvDTO<?> dto = createDummyInstance(dtoClass);
@@ -22,11 +31,21 @@ public class CsvExampleGenerator {
                     .build());
         } catch (Exception e) {
             //don't want to stop the world if we can't generate an example, but log the error for debugging
-            FluentLogger.forEnclosingClass().atInfo().withCause(e).log("Failed to create csv example for " + dtoClass.getName() + ": ", e);
+            FluentLogger.forEnclosingClass()
+                        .atInfo()
+                        .withCause(e)
+                        .log("Failed to create csv example for " + dtoClass.getName() + ": ", e);
         }
         return "Could not generate example for " + dtoClass.getName();
     }
 
+    /**
+     * Create a temp instance of type T.
+     * @param <T> CwmsCsvDTO  type to create
+     * @param dtoClass Class&gt;T&lt; for dealing with type system.
+     * @return Instance, may or may not be usable
+     * @throws Exception any issues creating an instance
+     */
     private static <T extends CwmsCsvDTO<?>> T createDummyInstance(Class<T> dtoClass) throws Exception {
         Class<?> builderClass = null;
         for (Class<?> inner : dtoClass.getDeclaredClasses()) {
@@ -60,6 +79,7 @@ public class CsvExampleGenerator {
                         m2.setAccessible(true);
                         m2.invoke(builder, val);
                     } catch (NoSuchMethodException ignored2) {
+                        // intentionally ignored
                     }
                 }
             }
@@ -122,6 +142,7 @@ public class CsvExampleGenerator {
                         m2.setAccessible(true);
                         m2.invoke(builder, val);
                     } catch (NoSuchMethodException ignored2) {
+                        // intentionally ignored
                     }
                 }
             }
@@ -131,6 +152,7 @@ public class CsvExampleGenerator {
         return buildMethod.invoke(builder);
     }
 
+    @SuppressWarnings({"checkstyle:needbraces"})
     private static Object getDummyValueSimple(Class<?> type) {
         if (type == String.class) return "string";
         if (type == Instant.class) return Instant.now();

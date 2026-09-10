@@ -314,7 +314,8 @@ public class Formats {
      * @throws FormattingException if neither header nor queryParam can be parsed into a supported content type
      * @throws UnsupportedFormatException if preconditions aren't met or format is not supported.
      */
-    public static ContentType parseHeaderAndQueryParm(String header, String queryParam, Class<? extends CwmsDTOBase> klass) {
+    public static ContentType parseHeaderAndQueryParm(String header, String queryParam, 
+                                                      Class<? extends CwmsDTOBase> klass) {
         // If a query parameter is provided, it overrides the header.
         if (queryParam != null && !queryParam.isEmpty()) {
             ContentType ct = parseQueryParam(queryParam, klass);
@@ -412,14 +413,6 @@ public class Formats {
             if (aliasType != null) {
                 logger.atFinest().log("%s converted to %s", ct, aliasType);
                 contentTypes.add(aliasType);
-            } else {
-                //If the DTO parameter is null, alias map is empty. Compare against well-known types
-                //Only use the ContentType classes initialized in contentTypeList rather than
-                //the client headers itself
-                ContentType type = new ContentType(ct);
-                if (contentTypeList.contains(type)) {
-                    contentTypes.add(type);
-                }
             }
         }
         logger.atFinest().log("have %d", contentTypes.size());

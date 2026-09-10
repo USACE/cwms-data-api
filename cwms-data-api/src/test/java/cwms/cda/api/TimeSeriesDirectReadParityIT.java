@@ -1,5 +1,7 @@
 package cwms.cda.api;
 
+import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
+import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -8,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cwms.cda.ApiServlet;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
@@ -25,8 +28,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -43,6 +44,7 @@ import org.jooq.impl.DSL;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
+import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 
 @Tag("integration")
 final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
@@ -160,6 +162,32 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     }
 
     @Test
+    void pseudoIrregularReadWithLrtsHeaderMatchesRetrieveTs() throws Exception {
+        String seriesId = "ITPARPIRR.Flow.Inst.~15Minutes.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-05T12:00:00Z");
+        Instant endTime = Instant.parse("2024-01-05T13:00:00Z");
+        List<SeedRow> rows = List.of(
+            row("2024-01-05T12:00:00Z", 10.0, 0, "2024-01-06T00:00:00Z", null),
+            row("2024-01-05T12:17:00Z", 20.0, 0, "2024-01-06T00:01:00Z", null),
+            row("2024-01-05T12:45:00Z", 30.0, 0, "2024-01-06T00:02:00Z", null)
+        );
+        seedTimeSeries("ITPARPIRR", seriesId, rows, false, null);
+
+        List<TimeSeries.Record> expectedRows = fetchOracleRows(seriesId, "cfs", beginTime, endTime,
+            false, null);
+        TimeSeries actualResponse = fetchCdaRowsWithPageSize(seriesId, "cfs", beginTime, endTime,
+            1000, false, null, true, true);
+
+        assertEquals(expectedRows.size(), actualResponse.getTotal(), "total");
+        assertEquals(expectedRows.size(), actualResponse.getValues().size(), "values size");
+        assertEquals(Duration.ZERO, actualResponse.getInterval(), "interval");
+        assertEquals((long) Integer.MIN_VALUE, actualResponse.getIntervalOffset(), "interval offset");
+        for (int index = 0; index < expectedRows.size(); index++) {
+            assertRecordsEqual(expectedRows.get(index), actualResponse.getValues().get(index), index);
+        }
+    }
+
+    @Test
     void dstWindowRegularReadMatchesRetrieveTs() throws Exception {
         Instant dstStart = Instant.parse("2024-03-09T00:00:00Z");
         assertDirectReadMatchesOracle(
@@ -184,20 +212,34 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             "ITPARLCL",
             "ITPARLCL.Flow.Inst.~1Day.0.BENCH",
             "cfs",
-            Instant.parse("2024-01-01T00:00:00Z"),
-            Instant.parse("2024-01-05T00:00:00Z"),
-            List.of(
-                row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-06T00:00:00Z", null),
-                row("2024-01-02T00:00:00Z", 2.0, 0, "2024-01-06T00:00:00Z", null),
-                row("2024-01-04T00:00:00Z", 4.0, 0, "2024-01-06T00:00:00Z", null),
-                row("2024-01-05T00:00:00Z", 5.0, 0, "2024-01-06T00:00:00Z", null)
-            ),
+            Instant.parse("2024-01-01T06:00:00Z"),
+            Instant.parse("2024-01-05T06:00:00Z"),
+            localRegularGapRows(),
             false,
             false,
             VersionType.UNVERSIONED,
             Duration.ofDays(1),
             0L,
             null
+        );
+    }
+
+    @Test
+    void localRegularGapReadWithNewLrtsIntervalMatchesRetrieveTs() throws Exception {
+        assertDirectReadMatchesOracle(
+            "ITPARLCLNEW",
+            "ITPARLCLNEW.Flow.Inst.1DayLocal.0.BENCH",
+            "cfs",
+            Instant.parse("2024-01-01T06:00:00Z"),
+            Instant.parse("2024-01-05T06:00:00Z"),
+            localRegularGapRows(),
+            false,
+            false,
+            VersionType.UNVERSIONED,
+            Duration.ofDays(1),
+            0L,
+            null,
+            true
         );
     }
 
@@ -270,8 +312,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
         assertNotNull(response.getBegin(), "begin");
         assertNotNull(response.getEnd(), "end");
-        assertEquals(Instant.parse("2024-01-01T00:00:00Z"), response.getBegin().toInstant(), "begin");
-        assertEquals(Instant.parse("2024-01-01T00:09:00Z"), response.getEnd().toInstant(), "end");
+        assertEquals(response.getValues().get(0).getDateTime().toInstant(), response.getBegin().toInstant(), "begin");
+        assertEquals(response.getValues().get(response.getValues().size() - 1).getDateTime().toInstant(),
+            response.getEnd().toInstant(), "end");
     }
 
     private static void assertDirectReadMatchesOracle(String locationId, String seriesId, String units,
@@ -280,12 +323,23 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                                                       VersionType expectedDateVersionType,
                                                       Duration expectedInterval, long expectedIntervalOffset,
                                                       Instant versionDate) throws Exception {
-        seedTimeSeries(locationId, seriesId, rows, versioned);
+        assertDirectReadMatchesOracle(locationId, seriesId, units, beginTime, endTime, rows, versioned,
+            includeEntryDate, expectedDateVersionType, expectedInterval, expectedIntervalOffset, versionDate, false);
+    }
+
+    private static void assertDirectReadMatchesOracle(String locationId, String seriesId, String units,
+                                                      Instant beginTime, Instant endTime, List<SeedRow> rows,
+                                                      boolean versioned, boolean includeEntryDate,
+                                                      VersionType expectedDateVersionType,
+                                                      Duration expectedInterval, long expectedIntervalOffset,
+                                                      Instant versionDate, boolean useNewLrtsInterval)
+            throws Exception {
+        seedTimeSeries(locationId, seriesId, rows, versioned, useNewLrtsInterval);
 
         List<TimeSeries.Record> expectedRows = fetchOracleRows(seriesId, units, beginTime, endTime,
-            includeEntryDate, versionDate);
+            includeEntryDate, versionDate, useNewLrtsInterval);
         TimeSeries actualResponse = fetchCdaRows(seriesId, units, beginTime, endTime, rows.size(),
-            includeEntryDate, versionDate);
+            includeEntryDate, versionDate, useNewLrtsInterval ? Boolean.TRUE : null);
         String mismatchSummary = buildMismatchSummary(expectedRows, actualResponse);
 
         assertNotNull(actualResponse.getTotal(), "Reported total " + mismatchSummary);
@@ -316,6 +370,15 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             row("2024-01-01T00:03:00Z", 4.0, 0, "2024-01-02T00:03:00Z", null),
             row("2024-01-01T00:04:00Z", 5.0, 0, "2024-01-02T00:04:00Z", null),
             row("2024-01-01T00:05:00Z", 6.0, 0, "2024-01-02T00:05:00Z", null)
+        );
+    }
+
+    private static List<SeedRow> localRegularGapRows() {
+        return List.of(
+            row("2024-01-01T06:00:00Z", 1.0, 0, "2024-01-06T00:00:00Z", null),
+            row("2024-01-02T06:00:00Z", 2.0, 0, "2024-01-06T00:00:00Z", null),
+            row("2024-01-04T06:00:00Z", 4.0, 0, "2024-01-06T00:00:00Z", null),
+            row("2024-01-05T06:00:00Z", 5.0, 0, "2024-01-06T00:00:00Z", null)
         );
     }
 
@@ -420,12 +483,38 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
     private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
                                        boolean versioned) throws SQLException {
+        seedTimeSeries(locationId, seriesId, rows, versioned, false);
+    }
+
+    private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
+                                       boolean versioned, boolean useNewLrtsInterval) throws SQLException {
+        seedTimeSeries(locationId, seriesId, rows, versioned, 0, useNewLrtsInterval);
+    }
+
+    private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
+                                       boolean versioned, Integer intervalOffset) throws SQLException {
+        seedTimeSeries(locationId, seriesId, rows, versioned, intervalOffset, false);
+    }
+
+    private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
+                                       boolean versioned, Integer intervalOffset,
+                                       boolean useNewLrtsInterval) throws SQLException {
         createLocation(locationId, true, OFFICE);
-        createTimeseries(OFFICE, seriesId, 0);
+        if (useNewLrtsInterval) {
+            createTimeseriesWithNewLRTSInterval(OFFICE, seriesId, intervalOffset != null ? intervalOffset : 0);
+        } else if (intervalOffset != null) {
+            createTimeseries(OFFICE, seriesId, intervalOffset);
+        } else {
+            createTimeseries(OFFICE, seriesId);
+        }
 
         CwmsDatabaseContainer<?> database = CwmsDataApiSetupCallback.getDatabaseLink();
         database.connection(connection -> {
             try {
+                if (useNewLrtsInterval) {
+                    useNewLrtsIdFormat(connection);
+                }
+
                 if (versioned) {
                     CWMS_TS_PACKAGE.call_SET_TSID_VERSIONED(DSL.using(connection).configuration(),
                         seriesId,
@@ -433,9 +522,11 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                         OFFICE);
                 }
 
-                long tsCode = findTsCode(connection, seriesId);
+                long tsCode = useNewLrtsInterval
+                    ? findTsCode(connection, seriesId, toLegacyLrtsId(seriesId))
+                    : findTsCode(connection, seriesId);
                 List<Integer> years = rows.stream()
-                    .map(seedRow -> OffsetDateTime.ofInstant(seedRow.dateTime, ZoneOffset.UTC).getYear())
+                    .map(seedRow -> storageYear(seedRow.dateTime))
                     .distinct()
                     .collect(Collectors.toList());
 
@@ -449,17 +540,47 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     }
 
     private static long findTsCode(Connection connection, String seriesId) throws SQLException {
+        return findTsCode(connection, seriesId, seriesId);
+    }
+
+    private static long findTsCode(Connection connection, String seriesId, String fallbackSeriesId)
+            throws SQLException {
+        Long tsCode = fetchTsCode(connection, seriesId);
+        if (tsCode == null && !seriesId.equals(fallbackSeriesId)) {
+            tsCode = fetchTsCode(connection, fallbackSeriesId);
+        }
+        if (tsCode == null) {
+            throw new IllegalStateException("Unable to find ts_code for " + seriesId);
+        }
+        return tsCode;
+    }
+
+    private static Long fetchTsCode(Connection connection, String seriesId) throws SQLException {
         String sql = "select ts_code from at_cwms_ts_id where db_office_id = ? and cwms_ts_id = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, OFFICE);
             statement.setString(2, seriesId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (!resultSet.next()) {
-                    throw new IllegalStateException("Unable to find ts_code for " + seriesId);
+                    return null;
                 }
                 return resultSet.getLong(1);
             }
         }
+    }
+
+    private static String toLegacyLrtsId(String seriesId) {
+        String[] parts = seriesId.split("\\.", -1);
+        String interval = parts[3];
+        if (interval.endsWith("Local")) {
+            parts[3] = "~" + interval.substring(0, interval.length() - "Local".length());
+        }
+        return String.join(".", parts);
+    }
+
+    private static void useNewLrtsIdFormat(Connection connection) {
+        CWMS_UTIL_PACKAGE.call_SET_SESSION_INFO(DSL.using(connection).configuration(),
+            SESSION_USE_LRTS_ID_FORMAT, "T", REQUIRE_NEW_LRTS_ID_FORMAT);
     }
 
     private static void clearScenarioRows(Connection connection, long tsCode, List<Integer> years) throws SQLException {
@@ -485,7 +606,7 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
         Map<Integer, List<SeedRow>> rowsByYear = new LinkedHashMap<>();
         for (SeedRow row: sortedRows) {
-            int year = OffsetDateTime.ofInstant(row.dateTime, ZoneOffset.UTC).getYear();
+            int year = storageYear(row.dateTime);
             rowsByYear.computeIfAbsent(year, ignored -> new ArrayList<>()).add(row);
         }
 
@@ -528,6 +649,10 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         statement.setInt(6, row.qualityCode);
     }
 
+    private static int storageYear(Instant instant) {
+        return Timestamp.from(instant).toLocalDateTime().getYear();
+    }
+
     private static void updateScenarioExtents(Connection connection, long tsCode, List<SeedRow> rows)
         throws SQLException {
         Set<Instant> distinctVersionDates = rows.stream()
@@ -558,9 +683,20 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     private static List<TimeSeries.Record> fetchOracleRows(String seriesId, String units, Instant beginTime,
                                                            Instant endTime, boolean includeEntryDate,
                                                            Instant versionDate) throws SQLException {
+        return fetchOracleRows(seriesId, units, beginTime, endTime, includeEntryDate, versionDate, false);
+    }
+
+    private static List<TimeSeries.Record> fetchOracleRows(String seriesId, String units, Instant beginTime,
+                                                           Instant endTime, boolean includeEntryDate,
+                                                           Instant versionDate, boolean useNewLrtsInterval)
+            throws SQLException {
         CwmsDatabaseContainer<?> database = CwmsDataApiSetupCallback.getDatabaseLink();
         return database.connection(connection -> {
             try {
+                if (useNewLrtsInterval) {
+                    useNewLrtsIdFormat(connection);
+                }
+
                 String functionName = includeEntryDate
                     ? "cwms_20.cwms_ts.retrieve_ts_entry_out_tab"
                     : "cwms_20.cwms_ts.retrieve_ts_out_tab";
@@ -641,14 +777,29 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     private static TimeSeries fetchCdaRows(String seriesId, String units, Instant beginTime, Instant endTime,
                                            int seedRowCount, boolean includeEntryDate, Instant versionDate)
         throws Exception {
+        return fetchCdaRows(seriesId, units, beginTime, endTime, seedRowCount, includeEntryDate, versionDate, null);
+    }
+
+    private static TimeSeries fetchCdaRows(String seriesId, String units, Instant beginTime, Instant endTime,
+                                           int seedRowCount, boolean includeEntryDate, Instant versionDate,
+                                           Boolean lrtsFormatting)
+        throws Exception {
         int pageSize = Math.max(1000, seedRowCount * 2);
         return fetchCdaRowsWithPageSize(seriesId, units, beginTime, endTime, pageSize, includeEntryDate,
-            versionDate, true);
+            versionDate, true, lrtsFormatting);
     }
 
     private static TimeSeries fetchCdaRowsWithPageSize(String seriesId, String units, Instant beginTime,
                                                        Instant endTime, int pageSize, boolean includeEntryDate,
                                                        Instant versionDate, boolean trim)
+        throws Exception {
+        return fetchCdaRowsWithPageSize(seriesId, units, beginTime, endTime, pageSize, includeEntryDate,
+            versionDate, trim, null);
+    }
+
+    private static TimeSeries fetchCdaRowsWithPageSize(String seriesId, String units, Instant beginTime,
+                                                       Instant endTime, int pageSize, boolean includeEntryDate,
+                                                       Instant versionDate, boolean trim, Boolean lrtsFormatting)
         throws Exception {
         RequestSpecification request = given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -661,6 +812,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             .queryParam(Controllers.PAGE_SIZE, pageSize)
             .queryParam(Controllers.TRIM, trim)
             .queryParam(Controllers.INCLUDE_ENTRY_DATE, includeEntryDate);
+        if (lrtsFormatting != null) {
+            request = request.header(ApiServlet.IS_NEW_LRTS, lrtsFormatting);
+        }
         if (versionDate != null) {
             request = request.queryParam(Controllers.VERSION_DATE, versionDate.toString());
         }

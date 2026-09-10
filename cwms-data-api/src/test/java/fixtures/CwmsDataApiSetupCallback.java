@@ -28,10 +28,11 @@ import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.security.OpenIdConnectIdentitityProvider;
+import cwms.cda.security.OpenIdConnectIdentityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
+import io.restassured.config.EncoderConfig;
 import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
@@ -115,6 +116,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     public static int getSchemaVersion() {
+        if (cwmsDb == null) {
+            // Class-level execution conditions run before the database container starts.
+            return VERSION_INT;
+        }
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         try {
             return db.connection((c) -> {
@@ -160,10 +165,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
             // OIDC properties
             System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
-            System.setProperty(OpenIdConnectIdentitityProvider.CREATE_USERS_KEY,"true");
-            System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
-            System.setProperty(OpenIdConnectIdentitityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
-
+            System.setProperty(OpenIdConnectIdentityProvider.CREATE_USERS_KEY,"true");
+            System.setProperty(OpenIdConnectIdentityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
+            System.setProperty(OpenIdConnectIdentityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
+            System.setProperty(OpenIdConnectIdentityProvider.TIMEOUT_PROPERTY, "1"); // to force a reload at least once.
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
             cdaInstance = new TomcatServer("build/tomcat",
@@ -175,11 +180,24 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = System.getProperty("warContext");
-            // we only use doubles
-            RestAssured.config()
-                       .jsonConfig(
-                            JsonConfig.jsonConfig()
-                                      .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
+            // actually assign the new config to the global configuration. just running this here without
+            // the assignment apparently does nothing.
+            RestAssured.config = RestAssured.config()
+                        // we only use doubles (NOTE: this is commend out because this config was
+                        // never originally active and will be addressed in a followup)
+                    //    .jsonConfig(
+                    //         JsonConfig.jsonConfig()
+                    //                   .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))
+                        // our content type processing is a bit more picky now.
+                        // I also don't recal seeing any default COntent-Type or Accept header
+                        // defaults from browsers that include this much.
+                        // if we start seeing it we need to add explicity @FormattableWith annotations
+                        // per character as that is a distinct content-type.
+                       .encoderConfig(
+                            EncoderConfig.encoderConfig()
+                                         .appendDefaultContentCharsetToContentTypeIfUndefined(
+                                            false
+                                         ));
             healthCheck();
         }
     }
