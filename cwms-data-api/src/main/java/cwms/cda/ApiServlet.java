@@ -343,7 +343,7 @@ public class ApiServlet extends HttpServlet {
                 api.getPaths().forEach((key,path) -> {
                     setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
                     setUserListTags(key, path);
-                    // yeah, we really need to figure out how to update everything, 
+                    // yeah, we really need to figure out how to update everything,
                     // this is supported as an annotation in newer versions.
                     if (key.startsWith("/rss")) {
                         path.getGet().getResponses().forEach((p, r) -> {
