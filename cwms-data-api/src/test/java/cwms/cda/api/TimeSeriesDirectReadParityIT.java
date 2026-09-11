@@ -71,6 +71,24 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     }
 
     @Test
+    void convertedUnitReadMatchesRetrieveTs() throws Exception {
+        assertDirectReadMatchesOracle(
+            "ITPARUNIT",
+            "ITPARUNIT.Stage.Inst.1Minute.0.BENCH",
+            "m",
+            Instant.parse("2024-01-01T00:00:00Z"),
+            Instant.parse("2024-01-01T00:05:00Z"),
+            denseRows(),
+            false,
+            false,
+            VersionType.UNVERSIONED,
+            Duration.ofMinutes(1),
+            0L,
+            null
+        );
+    }
+
+    @Test
     void denseRegularEntryDateReadMatchesRetrieveTs() throws Exception {
         assertDirectReadMatchesOracle(
             "ITPARREG",
