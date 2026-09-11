@@ -24,12 +24,26 @@
 
 package cwms.cda.formatters;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.BeanDescription;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.introspect.AnnotatedMember;
+import com.fasterxml.jackson.databind.introspect.BeanPropertyDefinition;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.enums.CollectionPatchStrategy;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.annotations.Identifier;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,6 +208,236 @@ public class Formats {
                 type.toString(), rootType.getName());
             throw new UnsupportedFormatException(message);
         }
+    }
+
+    public static <T extends CwmsDTOBase> T parsePatchContent(ContentType contentType, T existing, String body, Class<T> rootType) {
+        return parsePatchContent(contentType, existing, body, rootType, CollectionPatchStrategy.MERGE);
+    }
+
+    public static <T extends CwmsDTOBase> T parsePatchContent(ContentType contentType, T existing, String body,
+            Class<T> rootType, CollectionPatchStrategy strategy) {
+        return formats.applyJsonMergePatch(contentType, existing, rootType, strategy, om -> om.readTree(body));
+    }
+
+    public static <T extends CwmsDTOBase> T parsePatchContent(ContentType contentType, T existing, InputStream body,
+            Class<T> rootType) {
+        return parsePatchContent(contentType, existing, body, rootType, CollectionPatchStrategy.MERGE);
+    }
+
+    public static <T extends CwmsDTOBase> T parsePatchContent(ContentType contentType, T existing, InputStream body,
+            Class<T> rootType, CollectionPatchStrategy strategy) {
+        return formats.applyJsonMergePatch(contentType, existing, rootType, strategy, om -> om.readTree(body));
+    }
+
+    private <T extends CwmsDTOBase> T applyJsonMergePatch(ContentType contentType, T existing, Class<T> rootType,
+                                                          CollectionPatchStrategy strategy, ThrowingFunction<ObjectMapper, JsonNode> patchTreeReader) {
+        try {
+            OutputFormatter formatter = getOutputFormatter(contentType, rootType);
+            if (!(formatter instanceof ObjectMapperFormatter)) {
+                throw new FormattingException("Unable to apply PATCH content to existing "
+                        + rootType.getSimpleName() + " because the formatter is not an ObjectMapperFormatter");
+            }
+            ObjectMapper om = ((ObjectMapperFormatter) formatter).getObjectMapper();
+
+            JsonNode patchTree = patchTreeReader.apply(om);
+            JsonNode existingTree = om.valueToTree(existing);
+            prepareCollectionsForMerge(om.constructType(rootType), existingTree, patchTree, strategy, om);
+
+            JsonNode merged = om.readerForUpdating(existingTree).readValue(patchTree.traverse(om));
+            T result = om.treeToValue(merged, rootType);
+            result.validate();
+            return result;
+        } catch (IOException e) {
+            throw new FormattingException("Unable to apply PATCH content to existing " + rootType.getSimpleName(), e);
+        }
+    }
+
+    @FunctionalInterface
+    private interface ThrowingFunction<T, R> {
+        R apply(T t) throws IOException;
+    }
+
+    private static void prepareCollectionsForMerge(JavaType nodeType, JsonNode existingNode, JsonNode patchNode,
+                                                   CollectionPatchStrategy strategy, ObjectMapper om) {
+        if (!(existingNode instanceof ObjectNode) || !patchNode.isObject()) {
+            return;
+        }
+        ObjectNode existingObject = (ObjectNode) existingNode;
+        ObjectNode patchObject = (ObjectNode) patchNode;
+        Map<String, JavaType> propertyTypes = propertyTypesByName(nodeType, om);
+
+        // Snapshot the key names: the MERGE branch below removes entries from
+        // patchObject as it goes, which would otherwise disturb an in-progress field iterator.
+        List<String> patchFieldNames = new ArrayList<>();
+        patchNode.fieldNames().forEachRemaining(patchFieldNames::add);
+
+        for (String key : patchFieldNames) {
+            JsonNode existingValue = existingObject.get(key);
+            JsonNode patchValue = patchObject.get(key);
+            if (existingValue == null || patchValue == null || patchValue.isEmpty()) {
+                continue;
+            }
+            JavaType propertyType = propertyTypes.get(key);
+            if (existingValue.isArray() && patchValue.isArray()) {
+                switch (strategy) {
+                    case OVERWRITE:
+                        existingObject.remove(key);
+                        break;
+                    case MERGE:
+                        JavaType elementType = propertyType == null ? null : propertyType.getContentType();
+                        ArrayNode merged = mergeArrayByIdentity((ArrayNode) existingValue, (ArrayNode) patchValue,
+                                elementType, om);
+                        existingObject.set(key, merged);
+                        patchObject.remove(key);
+                        break;
+                    default:
+                        throw new FormattingException("Unsupported CollectionPatchStrategy: " + strategy);
+                }
+            } else if (existingValue.isObject() && patchValue.isObject()) {
+                prepareCollectionsForMerge(propertyType, existingValue, patchValue, strategy, om);
+            }
+        }
+    }
+
+    private static ArrayNode mergeArrayByIdentity(ArrayNode existingArray, ArrayNode patchArray,
+            JavaType elementType, ObjectMapper om) {
+        Map<String, JavaType> identityFields = elementType == null ? Collections.emptyMap()
+                : findIdentityFieldTypes(elementType, om);
+        if (identityFields.isEmpty()) {
+            throw new FormattingException("Cannot apply MERGE to a collection of "
+                    + (elementType == null ? "an unknown type" : elementType.getRawClass().getSimpleName())
+                    + " because it has no @" + Identifier.class.getSimpleName()
+                    + " or @JsonProperty(required = true) field to match elements by");
+        }
+
+        ArrayNode result = om.createArrayNode();
+        List<JsonNode> remainingExisting = new ArrayList<>();
+        existingArray.forEach(remainingExisting::add);
+
+        for (JsonNode patchItem : patchArray) {
+            JsonNode matched = null;
+            Iterator<JsonNode> remaining = remainingExisting.iterator();
+            while (remaining.hasNext()) {
+                JsonNode candidate = remaining.next();
+                if (matchesIdentity(candidate, patchItem, identityFields, om)) {
+                    matched = candidate;
+                    remaining.remove();
+                    break;
+                }
+            }
+            if (matched != null) {
+                result.add(mergeItemFields(matched, patchItem));
+            } else {
+                result.add(patchItem);
+            }
+        }
+        for (JsonNode untouched : remainingExisting) {
+            result.add(untouched);
+        }
+        return result;
+    }
+
+    private static JsonNode mergeItemFields(JsonNode existingItem, JsonNode patchItem) {
+        if (!existingItem.isObject() || !patchItem.isObject()) {
+            return patchItem;
+        }
+        ObjectNode result = existingItem.deepCopy();
+        Iterator<Map.Entry<String, JsonNode>> fields = patchItem.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            String fieldName = entry.getKey();
+            JsonNode patchFieldValue = entry.getValue();
+            JsonNode existingFieldValue = result.get(fieldName);
+            if (existingFieldValue != null && existingFieldValue.isObject() && patchFieldValue.isObject()) {
+                result.set(fieldName, mergeItemFields(existingFieldValue, patchFieldValue));
+            } else {
+                result.set(fieldName, patchFieldValue);
+            }
+        }
+        return result;
+    }
+
+    private static boolean matchesIdentity(JsonNode existingItem, JsonNode patchItem,
+            Map<String, JavaType> identityFields, ObjectMapper om) {
+        for (Map.Entry<String, JavaType> field : identityFields.entrySet()) {
+            JsonNode existingValue = existingItem.get(field.getKey());
+            JsonNode patchValue = patchItem.get(field.getKey());
+            if (existingValue == null || existingValue.isNull() || patchValue == null || patchValue.isNull()) {
+                return false;
+            }
+            Object existingConverted;
+            Object patchConverted;
+            try {
+                existingConverted = om.convertValue(existingValue, field.getValue());
+                patchConverted = om.convertValue(patchValue, field.getValue());
+            } catch (IllegalArgumentException e) {
+                // Couldn't convert one side to the declared type -- fall back to a direct
+                // JsonNode comparison rather than treating this as an unconditional non-match.
+                if (!existingValue.equals(patchValue)) {
+                    return false;
+                }
+                continue;
+            }
+            if (!Objects.equals(existingConverted, patchConverted)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private static Map<String, JavaType> findIdentityFieldTypes(JavaType elementType, ObjectMapper om) {
+        // Fields explicitly marked @Identifier take priority as a composite identity (every
+        // marked field must match, together) -- see Identifier's own javadoc for why an
+        // element type might need more than one field to be uniquely identified (e.g. a
+        // text-timeseries row, where date-time alone isn't enough). Only when a type has none of
+        // its own do we fall back to whichever field(s) are @JsonProperty(required = true), which
+        // is how MERGE identified elements before @Identifier existed.
+        Map<String, JavaType> explicitIdentity = new LinkedHashMap<>();
+        Map<String, JavaType> requiredFieldFallback = new LinkedHashMap<>();
+        try {
+            BeanDescription beanDescription = om.getSerializationConfig().introspect(elementType);
+            for (BeanPropertyDefinition prop : beanDescription.findProperties()) {
+                AnnotatedMember member = prop.getField();
+                if (member == null) {
+                    member = prop.getPrimaryMember();
+                }
+                if (member == null) {
+                    continue;
+                }
+                if (member.hasAnnotation(Identifier.class)) {
+                    explicitIdentity.put(prop.getName(), member.getType());
+                }
+                JsonProperty jsonProperty = member.getAnnotation(JsonProperty.class);
+                if (jsonProperty != null && jsonProperty.required()) {
+                    requiredFieldFallback.put(prop.getName(), member.getType());
+                }
+            }
+        } catch (Exception e) {
+            logger.atFine().withCause(e).log("Unable to introspect %s for PATCH identity fields", elementType);
+        }
+        return explicitIdentity.isEmpty() ? requiredFieldFallback : explicitIdentity;
+    }
+
+
+    private static Map<String, JavaType> propertyTypesByName(JavaType nodeType, ObjectMapper om) {
+        Map<String, JavaType> types = new HashMap<>();
+        if (nodeType == null || nodeType.isCollectionLikeType() || nodeType.isArrayType()
+                || nodeType.isMapLikeType() || nodeType.isPrimitive()) {
+            return types;
+        }
+        try {
+            BeanDescription beanDescription = om.getSerializationConfig().introspect(nodeType);
+            for (BeanPropertyDefinition prop : beanDescription.findProperties()) {
+                AnnotatedMember member = prop.getPrimaryMember();
+                if (member != null) {
+                    types.put(prop.getName(), member.getType());
+                }
+            }
+        } catch (Exception e) {
+            logger.atFine().withCause(e).log("Unable to introspect %s for PATCH collection merge", nodeType);
+        }
+        return types;
     }
 
     private OutputFormatter getOutputFormatterInternal(ContentType type,
