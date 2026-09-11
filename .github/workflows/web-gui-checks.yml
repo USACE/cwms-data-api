@@ -47,3 +47,9 @@ jobs:
       - name: run Storybook UI tests
         working-directory: ./cda-gui
         run: npm run test-storybook -- --run
+
+      - name: run API key unit and browser tests
+        working-directory: ./cda-gui
+        run: |
+          npm run test:unit
+          npm run test:api-keys

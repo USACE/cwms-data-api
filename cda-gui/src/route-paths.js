@@ -1,5 +1,7 @@
 // Routes are defined here to allow building a sitemap dynamically
 export const routePaths = [
+  { id: "api-keys", path: "api-keys" },
+  { id: "api-key-help", path: "api-keys/help" },
   {
     id: "home",
     index: true,
@@ -47,4 +49,6 @@ export const routePaths = [
   },
 ];
 
-export const sitemapPaths = routePaths.map(({ sitemapPath }) => sitemapPath);
+export const sitemapPaths = routePaths
+  .filter(({ sitemapPath }) => sitemapPath !== undefined)
+  .map(({ sitemapPath }) => sitemapPath);
