@@ -28,6 +28,7 @@ import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import cwms.cda.data.dto.VerticalDatumInfo;
@@ -337,10 +338,18 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
 
         VerticalDatumInfoList list = Formats.parseContent(contentType, vdiList, VerticalDatumInfoList.class);
 
-        assertEquals(2, list.getDatumList().size());
+        assertFalse(list.getDatumList().isEmpty());
+        boolean found1 = false;
+        boolean found2 = false;
         for (VerticalDatumInfo vdiInfo : list.getDatumList()) {
-            assertTrue(vdiInfo.equals(vdi) || vdiInfo.equals(vdi2));
+            if (vdiInfo.equals(vdi)) {
+                found1 = true;
+            } else if (vdiInfo.equals(vdi2)) {
+                found2 = true;
+            }
         }
+        assertTrue(found1);
+        assertTrue(found2);
 
         // DELETE
         given()

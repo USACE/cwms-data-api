@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package cwms.cda.data.dao;
 
 import cwms.cda.api.errors.AlreadyExists;
@@ -64,9 +65,11 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
             CLOB_TAB_T datumInfo = usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE
                 .call_GET_VERTICAL_DATUM_INFO_LIST(ctx.configuration(), officeId, mask, units);
             for (Object info : datumInfo) {
-                Clob clob = (Clob) info;
-                VerticalDatumInfo vdi = new XMLv1().parseContent(clob.getAsciiStream(), VerticalDatumInfo.class);
-                resultList.add(vdi);
+                if (info != null) {
+                    Clob clob = (Clob) info;
+                    VerticalDatumInfo vdi = new XMLv1().parseContent(clob.getAsciiStream(), VerticalDatumInfo.class);
+                    resultList.add(vdi);
+                }
             }
         });
         return new VerticalDatumInfoList(resultList);
