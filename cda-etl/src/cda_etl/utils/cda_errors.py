@@ -22,6 +22,8 @@ import threading
 from contextlib import contextmanager
 from typing import Iterator
 
+import requests
+
 logger = logging.getLogger(__name__)
 
 # "May be the result of an empty query." comes from cwms.api.ApiError.hint(),
@@ -65,6 +67,18 @@ def is_ambiguous_rating_failure(error: BaseException) -> bool:
     )
 
 
+def is_connection_failure(error: BaseException) -> bool:
+    """
+    True when the destination itself could not be reached - refused, DNS
+    failure, no route - as opposed to a rejection it sent back for one item.
+
+    Every other item queued behind this one will fail the identical way, so a
+    caller looping over a batch should stop and report once rather than repeat
+    the same "connection refused" for each remaining item.
+    """
+    return isinstance(error, requests.exceptions.ConnectionError)
+
+
 _local = threading.local()
 
 
@@ -89,6 +103,7 @@ def in_ratings_request() -> bool:
 __all__ = [
     "in_ratings_request",
     "is_ambiguous_rating_failure",
+    "is_connection_failure",
     "is_no_data",
     "ratings_request",
     "status_code_of",

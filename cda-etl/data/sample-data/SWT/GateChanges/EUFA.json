@@ -1,0 +1,112 @@
+[
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "EUFA"
+    },
+    "change-date": 1784207160000,
+    "pool-elevation": 586.481,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 488.5698333333333,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "EUFA-SG1"
+        },
+        "opening": 0.1,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "EUFA"
+    },
+    "change-date": 1784721600000,
+    "pool-elevation": 586.0899999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "notes": "closed",
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 484.11999999999995,
+    "elevation-units": "ft",
+    "settings": []
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "EUFA"
+    },
+    "change-date": 1784733420000,
+    "pool-elevation": 586.0899999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "notes": "closed",
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 483.18,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "EUFA-SG1"
+        },
+        "opening": 0.1,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  }
+]

@@ -1,0 +1,37 @@
+{
+  "project-id": {
+    "office-id": "SWT",
+    "name": "KEYS"
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "KEYS-TG16",
+    "latitude": 36.1506361111111,
+    "longitude": -96.2525083333333,
+    "active": true,
+    "public-name": "1G16",
+    "long-name": "1G16",
+    "timezone-name": "US/Central",
+    "location-kind": "OUTLET",
+    "nation": "US",
+    "state-initial": "OK",
+    "county-name": "Tulsa",
+    "nearest-city": "Sand Springs, OK",
+    "horizontal-datum": "NAD83",
+    "published-longitude": -96.2516666666667,
+    "published-latitude": 36.1516666666667,
+    "vertical-datum": "NGVD29",
+    "elevation": 0.0,
+    "bounding-office-id": "SWT",
+    "elevation-units": "m"
+  },
+  "rating-group-id": {
+    "office-id": "SWT",
+    "name": "KEYS-Tainter Gates"
+  },
+  "rating-spec-id": "KEYS.Opening-Spillway_Gates,Elev;Flow-Spillway_Gates.Standard.Production",
+  "rating-category-id": {
+    "office-id": "SWT",
+    "name": "Rating"
+  }
+}

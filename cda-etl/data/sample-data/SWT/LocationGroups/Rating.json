@@ -1,0 +1,223 @@
+[
+  {
+    "office-id": "SWT",
+    "id": "EUFA-SluiceGate",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "EUFA.Opening-Sluice_Gates,Elev;Flow-Sluice_Gates.Standard.Production",
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-SG1",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "EUFA-TainterGate",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "EUFA.Opening-Spillway_Gates,Elev;Flow-Spillway_Gates.Standard.Production",
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-TG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG11",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG9",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG10",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG8",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "KEYS-LOW flow pipes",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "KEYS.Opening-Sluice_Gates,Elev;Flow-Sluice_Gates.Standard.Production",
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-LF1",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "KEYS-Sluice Gates",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "KEYS.Opening-Sluice_Gates,Elev;Flow-Sluice_Gates.Standard.Production",
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-SG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG9",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG8",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "KEYS-Tainter Gates",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "KEYS.Opening-Spillway_Gates,Elev;Flow-Spillway_Gates.Standard.Production",
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-TG16",
+        "office-id": "SWT",
+        "alias-id": "KEYS-TG16"
+      },
+      {
+        "location-id": "KEYS-TG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG10",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG11",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG12",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG13",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG14",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG15",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG17",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG18",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG8",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG9",
+        "office-id": "SWT"
+      }
+    ]
+  }
+]

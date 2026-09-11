@@ -143,3 +143,18 @@ def test_rating_semicolons_survive(tmp_path):
     filesystem_store.write_json({}, "SWT", "Ratings", "EUFA.Elev;Area.Linear.Production")
 
     assert filesystem_store.read_json("SWT", "Ratings", "EUFA.Elev;Area.Linear.Production") == {}
+
+
+def test_rating_xml_uses_rating_id_filename_without_por_suffix(tmp_path):
+    filesystem_store.set_storage_root(tmp_path)
+
+    filesystem_store.write_xml(
+        "<ratings/>",
+        "SWT",
+        "Ratings",
+        "EUFA.Elev;Area.Linear.Production",
+    )
+
+    path = tmp_path / "SWT" / "Ratings" / "EUFA.Elev;Area.Linear.Production.xml"
+    assert path.exists()
+    assert filesystem_store.read_xml("SWT", "Ratings", "EUFA.Elev;Area.Linear.Production") == "<ratings/>"
