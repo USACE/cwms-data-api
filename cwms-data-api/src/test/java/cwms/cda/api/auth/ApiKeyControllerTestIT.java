@@ -100,7 +100,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             given().spec(authSpec)
                 .when().get("/auth/keys/{key-name}", name)
                 .then().log().ifValidationFails().statusCode(200)
-                .body("key-name", is(name)).body("api-key", nullValue());
+                .body("key-name", is(name)).body("$", not(hasKey("api-key")));
             given().header("Authorization", "apikey " + secret)
                 .when().get("/offices/SPK")
                 .then().statusCode(200);
@@ -249,6 +249,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpCode.OK.getStatus()))
+                .body("$", everyItem(not(hasKey("api-key"))))
             .extract()
                 .body()
                 .jsonPath()
@@ -267,7 +268,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .when()
             .get("/auth/keys/{key-name}",KEY_NAME)
         .then()
-            .statusCode(HttpCode.OK.getStatus());
+            .statusCode(HttpCode.OK.getStatus())
+            .body("$", not(hasKey("api-key")));
     }
 
 
