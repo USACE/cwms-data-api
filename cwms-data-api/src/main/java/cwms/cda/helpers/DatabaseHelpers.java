@@ -5,6 +5,7 @@ public class DatabaseHelpers {
 
     public static final int LATEST_SCHEMA = 999999;
     
+    @SuppressWarnings({"checkstyle:typename","checkstyle:abbreviationaswordinname"})
     public enum SCHEMA_VERSION {
         V2025_07_01(250701, "25.07.01"),
         V2026_02_17(260217, "26.02.17"),

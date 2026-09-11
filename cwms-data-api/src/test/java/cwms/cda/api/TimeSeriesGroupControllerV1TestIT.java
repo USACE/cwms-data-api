@@ -63,7 +63,7 @@ import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
-import cwms.cda.data.dto.TimeSeriesGroup;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
@@ -98,7 +98,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
-final class TimeSeriesGroupControllerTestIT extends DataApiTestIT {
+final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
 
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     private final List<TimeSeriesCategory> categoriesToCleanup = new ArrayList<>();

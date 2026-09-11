@@ -314,7 +314,8 @@ public class Formats {
      * @throws FormattingException if neither header nor queryParam can be parsed into a supported content type
      * @throws UnsupportedFormatException if preconditions aren't met or format is not supported.
      */
-    public static ContentType parseHeaderAndQueryParm(String header, String queryParam, Class<? extends CwmsDTOBase> klass) {
+    public static ContentType parseHeaderAndQueryParm(String header, String queryParam, 
+                                                      Class<? extends CwmsDTOBase> klass) {
         // If a query parameter is provided, it overrides the header.
         if (queryParam != null && !queryParam.isEmpty()) {
             ContentType ct = parseQueryParam(queryParam, klass);

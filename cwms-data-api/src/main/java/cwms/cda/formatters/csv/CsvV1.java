@@ -23,9 +23,9 @@ public class CsvV1 implements CsvFormatter {
     @Override
     public String format(CwmsDTOBase dto) {
         try {
-            if (dto instanceof Office ) {
+            if (dto instanceof Office) {
                 return new CsvV1Office().format(dto);
-            } else if (dto instanceof LocationGroup ) {
+            } else if (dto instanceof LocationGroup) {
                 return new CsvV1LocationGroup().format(dto);
             } else if (dto instanceof CwmsCsvDTO) {
                 return format((CwmsCsvDTO<?>) dto, new CsvConfiguration.Builder().build());

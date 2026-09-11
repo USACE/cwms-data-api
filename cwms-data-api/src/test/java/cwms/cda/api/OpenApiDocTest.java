@@ -32,6 +32,7 @@ import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.resolution.Resolvable;
+import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedValueDeclaration;
 import com.github.javaparser.resolution.types.ResolvedType;
 import com.google.common.flogger.FluentLogger;
@@ -47,6 +48,7 @@ import io.javalin.http.Handler;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -281,7 +283,7 @@ class OpenApiDocTest {
         MethodDeclaration methodDeclaration = getMethodDeclaration(unit, method);
         String context = methodDeclaration.getParameter(0).getNameAsString();
 
-        List<MethodCallExpr> methodCalls = methodDeclaration.findAll(MethodCallExpr.class);
+        List<MethodCallExpr> methodCalls = collectMethodCallExprs(methodDeclaration, new HashSet<>());
         Set<OpenApiParamUsageInfo> optionalTypedQueryParams = readParamUsagesSetFromCall(methodCalls, call -> readQueryParamAsClassFromCall(unit, context, clazz, call), "queryParamAsClass");
         Set<OpenApiParamUsageInfo> optionalDoubleQueryParams = readParamUsagesFromCall(methodCalls, call -> readUsageFromCall(unit, clazz, call, false), "queryParamAsDouble");
         Set<OpenApiParamUsageInfo> filteredTsParam = readParamUsagesFromCall(methodCalls, this::findTsParamsFromUsage, "from");
@@ -340,6 +342,52 @@ class OpenApiDocTest {
         }
 
         return new OpenApiParamUsage(pathParams, queryParams, resourceId);
+    }
+
+    private List<MethodCallExpr> collectMethodCallExprs(MethodDeclaration methodDeclaration, Set<String> visited) {
+        List<MethodCallExpr> calls = new ArrayList<>(methodDeclaration.findAll(MethodCallExpr.class));
+
+        for (MethodCallExpr call : methodDeclaration.findAll(MethodCallExpr.class)) {
+            boolean isSuperDelegation = call.getScope().filter(Expression::isSuperExpr).isPresent()
+                    && call.getNameAsString().equals(methodDeclaration.getNameAsString());
+            if (!isSuperDelegation) {
+                continue;
+            }
+
+            MethodDeclaration delegate = resolveSuperDelegate(call, visited);
+            if (delegate != null) {
+                calls.addAll(collectMethodCallExprs(delegate, visited));
+            }
+        }
+        return calls;
+    }
+
+    private MethodDeclaration resolveSuperDelegate(MethodCallExpr superCall, Set<String> visited) {
+        try {
+            ResolvedMethodDeclaration resolved = superCall.resolve();
+            String declaringClassName = resolved.declaringType().getQualifiedName();
+            String visitKey = declaringClassName + "#" + resolved.getName() + "/" + resolved.getNumberOfParams();
+            if (!visited.add(visitKey)) {
+                // Already followed this exact delegation once on this call chain; avoid looping forever
+                // if two classes ever end up delegating to each other.
+                return null;
+            }
+
+            Class<?> declaringClass = Class.forName(declaringClassName);
+            CompilationUnit ancestorUnit = OpenApiTestHelper.readCompilationUnit(declaringClass);
+            return ancestorUnit.findAll(MethodDeclaration.class)
+                               .stream()
+                               .filter(m -> m.getNameAsString().equals(resolved.getName()))
+                               .filter(m -> m.getParameters().size() == resolved.getNumberOfParams())
+                               .findFirst()
+                               .orElse(null);
+        } catch (Exception ex) {
+            LOGGER.atWarning().withCause(ex).log(
+                    "Unable to resolve super delegation call '%s' while checking parameter usage; "
+                            + "parameters only read by the delegated-to method will not be detected.",
+                    superCall);
+            return null;
+        }
     }
 
     private OpenApiParamUsageInfo findTsParamsFromUsage(MethodCallExpr call) {

@@ -4,6 +4,7 @@ import com.google.common.flogger.FluentLogger;
 import com.password4j.Hash;
 import com.password4j.HashUpdate;
 import cwms.cda.ApiServlet;
+import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
@@ -516,6 +517,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     }
                     createKey.execute();
                 } catch (SQLException e) {
+                    if (e.getErrorCode() == 1) {
+                        throw new AlreadyExists("An API key with this name already exists for this user.", e);
+                    }
                     DataAccessException re = new DataAccessException(e.getMessage(), e);
                     throw JooqDao.wrapException(re);
                 }
@@ -587,11 +591,13 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         String userId = rs.getString("userid");
         String keyName = rs.getString("key_name");
 
-        ZonedDateTime created = Optional.ofNullable(rs.getObject("created", Timestamp.class))
+        // Oracle DATE has no timezone; key timestamps are stored in UTC.
+        Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        ZonedDateTime created = Optional.ofNullable(rs.getTimestamp("created", utc))
             .map(Timestamp::toInstant)
             .map(i -> i.atZone(ZoneOffset.UTC))
             .orElse(null);
-        ZonedDateTime expires = Optional.ofNullable(rs.getObject("expires", Timestamp.class))
+        ZonedDateTime expires = Optional.ofNullable(rs.getTimestamp("expires", utc))
             .map(Timestamp::toInstant)
             .map(i -> i.atZone(ZoneOffset.UTC))
             .orElse(null);

@@ -2,6 +2,8 @@ package cwms.cda.data.dto;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import org.junit.jupiter.api.Test;
 
 import cwms.cda.formatters.ContentType;

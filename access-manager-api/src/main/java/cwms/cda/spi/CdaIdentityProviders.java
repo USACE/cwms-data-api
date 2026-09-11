@@ -13,6 +13,11 @@ public class CdaIdentityProviders {
         /* Factory class */
     }
 
+    /**
+     * Retrieve iterator of providers, optionally reloading from the class path.
+     * @param refresh whether to reload from the class path
+     * @return known identity providers
+     */
     public static Iterator<IdentityProvider> providers(boolean refresh) {
         if (refresh) {
             loader.reload();
@@ -20,6 +25,10 @@ public class CdaIdentityProviders {
         return loader.iterator();
     }
 
+    /**
+     * Retrieve loaded providers.
+     * @return known identity providers
+     */
     public static Iterator<IdentityProvider> providers() {
         return providers(false);
     }

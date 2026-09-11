@@ -31,6 +31,7 @@ public interface OutputFormatter {
      * Used where more advanced handling is required.
      * DUMMY
      */
+    @SuppressWarnings("checkstyle:AbbreviationAsWordInName") // DUMMY.class is used as a constant
     public class DUMMY implements OutputFormatter {
 
         @Override
