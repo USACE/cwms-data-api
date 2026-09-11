@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { filterUsers, paginateUsers, rolesForOffice, sameRoles } from "./role-state.js";
+import {
+  filterUsers,
+  paginateUsers,
+  rolesForOffice,
+  sameRoles,
+  usersForOffice,
+} from "./role-state.js";
 
 const users = [
   {
@@ -17,6 +23,19 @@ const users = [
     roles: { SWT: ["CCP Mgr"] },
   },
 ];
+
+test("office users include baseline-only members and exclude other offices", () => {
+  const newUser = { "user-name": "NEW", roles: { HQ: ["All Users"] } };
+  const assignedUser = {
+    "user-name": "ASSIGNED",
+    roles: { HQ: ["All Users"], SWT: ["All Users"] },
+  };
+  assert.deepEqual(usersForOffice([...users, newUser, assignedUser], "SWT"), [
+    ...users,
+    assignedUser,
+  ]);
+  assert.deepEqual(usersForOffice([newUser, assignedUser], "SPK"), []);
+});
 
 test("rolesForOffice returns a sorted office-scoped copy", () => {
   assert.deepEqual(rolesForOffice(users[0], "SWT"), ["CWMS Users", "TS ID Creator"]);

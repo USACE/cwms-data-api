@@ -4,6 +4,10 @@ export function rolesForOffice(user, office) {
   );
 }
 
+export function usersForOffice(users, office) {
+  return users.filter((user) => rolesForOffice(user, office).length > 0);
+}
+
 export function sameRoles(left, right) {
   if (left.length !== right.length) return false;
   const selected = new Set(right);

@@ -30,8 +30,15 @@ import {
 } from "react-icons/fa";
 
 import { HelpTip } from "../../components/HelpTip";
+import { AssignOfficeDialog } from "./AssignOfficeDialog";
 import { EmptyState, Notice } from "../user-lists/components/StatusMessages";
-import { filterUsers, paginateUsers, rolesForOffice, sameRoles } from "./role-state";
+import {
+  filterUsers,
+  paginateUsers,
+  rolesForOffice,
+  sameRoles,
+  usersForOffice,
+} from "./role-state";
 
 const cdaUrl = import.meta.env.VITE_CDA_API_ROOT;
 const cliRoleDocsUrl =
@@ -65,6 +72,8 @@ export default function UserRoles() {
   const [roleMode, setRoleMode] = useState("custom");
   const [message, setMessage] = useState("");
   const [mutationError, setMutationError] = useState("");
+  const [assignOfficeOpened, setAssignOfficeOpened] = useState(false);
+  const [pendingSelection, setPendingSelection] = useState(null);
 
   const adminOffices = useMemo(
     () =>
@@ -92,8 +101,11 @@ export default function UserRoles() {
   });
   const updateRoles = useUpdateCdaUserRoles({ cdaUrl, token: auth.token });
 
-  const users = useMemo(() => usersQuery.data?.users ?? [], [usersQuery.data]);
-  const userTotal = usersQuery.data?.total ?? users.length;
+  const users = useMemo(
+    () => usersForOffice(usersQuery.data?.users ?? [], office),
+    [usersQuery.data, office],
+  );
+  const userTotal = users.length;
   const selectedUser = users.find((user) => user["user-name"] === selectedUserName);
   const currentRoles = useMemo(
     () => rolesForOffice(selectedUser, office),
@@ -118,10 +130,17 @@ export default function UserRoles() {
   );
 
   useEffect(() => {
+    if (pendingSelection?.office === office) {
+      if (users.some((user) => user["user-name"] === pendingSelection.userName)) {
+        setSelectedUserName(pendingSelection.userName);
+        setPendingSelection(null);
+      }
+      return;
+    }
     if (!users.some((user) => user["user-name"] === selectedUserName)) {
       setSelectedUserName(users[0]?.["user-name"] ?? "");
     }
-  }, [selectedUserName, users]);
+  }, [selectedUserName, users, office, pendingSelection]);
 
   useEffect(() => {
     if (pagination.currentPage !== userPage) setUserPage(pagination.currentPage);
@@ -263,7 +282,7 @@ export default function UserRoles() {
       {message && <Notice kind="success">{message}</Notice>}
 
       <Card className="mb-6 p-5">
-        <div className="grid gap-5 md:grid-cols-[minmax(18rem,24rem)_1fr] md:items-center">
+        <div className="grid gap-5 md:grid-cols-[minmax(18rem,24rem)_1fr_auto] md:items-center">
           <div>
             <Strong>Office</Strong>
             <Text className="mt-1">
@@ -290,12 +309,36 @@ export default function UserRoles() {
               office.
             </Text>
           )}
+          {adminOffices.length > 0 && (
+            <Button type="button" onClick={() => setAssignOfficeOpened(true)}>
+              <FaUsers aria-hidden="true" /> Assign office
+            </Button>
+          )}
         </div>
       </Card>
 
+      {assignOfficeOpened && (
+        <AssignOfficeDialog
+          cdaUrl={cdaUrl}
+          token={auth.token}
+          adminOffices={adminOffices}
+          initialOffice={office}
+          onClose={() => setAssignOfficeOpened(false)}
+          onAssigned={async (userName, assignedOffice) => {
+            changeOffice(assignedOffice);
+            setPendingSelection({ userName, office: assignedOffice });
+            setSelectedUserName(userName);
+            setMessage(
+              `Assigned ${userName} to ${assignedOffice}. Choose their roles below.`,
+            );
+            setAssignOfficeOpened(false);
+          }}
+        />
+      )}
+
       {adminOffices.length > 0 && (
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(19rem,0.8fr)_minmax(0,1.4fr)]">
-          <Card className="p-0">
+          <Card className="min-w-0 p-0">
             <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-4">
               <div>
                 <H2 className="text-xl">Office users</H2>
@@ -417,14 +460,14 @@ export default function UserRoles() {
             </div>
           </Card>
 
-          <Card className="p-0">
+          <Card className="min-w-0 p-0">
             <div className="border-b border-zinc-200 px-5 py-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <H2 className="text-xl">
+                <div className="min-w-0">
+                  <H2 className="break-words text-xl">
                     {selectedUser?.["user-name"] ?? "Role assignment"}
                   </H2>
-                  <Text>
+                  <Text className="break-all">
                     {selectedUser
                       ? selectedUser.email || selectedUser.principal
                       : "Choose an office user to manage."}
