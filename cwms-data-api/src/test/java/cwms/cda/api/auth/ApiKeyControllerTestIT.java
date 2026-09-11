@@ -31,6 +31,7 @@ import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -54,6 +55,60 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
 
     private static final List<ApiKey> realKeys = new ArrayList<>();
     private static final List<ApiKey> firstReturnedKeys = new ArrayList<>();
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    void test_invalid_key_payloads(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) {
+        String fields = "\"user-id\":\"" + user.getName() + "\",\"key-name\":\"invalid-payload\"";
+        List<String> bodies = List.of(
+            "", "{", "null", "[]", "{}", "{\"key-name\":\"missing-user\"}",
+            "{\"user-id\":null,\"key-name\":\"missing-user\"}",
+            "{\"user-id\":\"  \",\"key-name\":\"blank-user\"}",
+            "{\"user-id\":\"" + user.getName() + "\"}",
+            "{\"user-id\":\"" + user.getName() + "\",\"key-name\":null}",
+            "{\"user-id\":\"" + user.getName() + "\",\"key-name\":\"\"}",
+            "{\"user-id\":\"" + user.getName() + "\",\"key-name\":\"   \"}",
+            "{" + fields + ",\"expires\":\"not-a-date\"}",
+            "{" + fields + ",\"expires\":{}}",
+            "{" + fields + ",\"expires\":[]}",
+            "{" + fields + "} {}"
+        );
+        assertAll(bodies.stream().map(body -> () ->
+            given().spec(authSpec).contentType(Formats.JSON).body(body)
+                .when().post("/auth/keys")
+                .then().log().ifValidationFails()
+                .statusCode(400).body("message", not(isEmptyOrNullString()))
+        ));
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL)
+    void test_duplicate_key_name(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) {
+        String name = "duplicate-key-cleanup";
+        ApiKey key = new ApiKey(user.getName(), name);
+        try {
+            String secret = given().spec(authSpec).contentType(Formats.JSON).body(key)
+                .when().post("/auth/keys")
+                .then().log().ifValidationFails().statusCode(201)
+                .extract().path("api-key");
+            given().spec(authSpec).contentType(Formats.JSON).body(key)
+                .when().post("/auth/keys")
+                .then().log().ifValidationFails().statusCode(409)
+                .body("details.message", is("An API key with this name already exists for this user."));
+            given().spec(authSpec)
+                .when().get("/auth/keys/{key-name}", name)
+                .then().log().ifValidationFails().statusCode(200)
+                .body("key-name", is(name)).body("api-key", nullValue());
+            given().header("Authorization", "apikey " + secret)
+                .when().get("/offices/SPK")
+                .then().statusCode(200);
+        } finally {
+            given().spec(authSpec).when().delete("/auth/keys/{key-name}", name)
+                .then().statusCode(204);
+        }
+    }
 
     // Create API key, no expiration
     @Order(1)
