@@ -20,6 +20,7 @@ import cwms.cda.formatters.xml.XMLv2;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -139,6 +140,24 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             }
         }
         return newOffsets.toArray(new VerticalDatumInfo.Offset[]{});
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        VerticalDatumInfo that = (VerticalDatumInfo) o;
+        return Objects.equals(office, that.office) && Objects.equals(unit, that.unit)
+            && Objects.equals(location, that.location) && Objects.equals(nativeDatum, that.nativeDatum)
+            && Objects.equals(elevation, that.elevation)
+            && Objects.equals(localDatumName, that.localDatumName)
+            && Objects.deepEquals(offsets, that.offsets);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(office, unit, location, nativeDatum, elevation, localDatumName, Arrays.hashCode(offsets));
     }
 
     @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
