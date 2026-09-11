@@ -2,17 +2,13 @@ import PropTypes from "prop-types";
 import { Strong, Text } from "@usace/groundwork";
 
 export default function KeyUsageExample({ office }) {
-  const endpoint = new URL(
-    `${import.meta.env.BASE_URL.replace(/\/$/, "")}/timeseries`,
-    window.location.origin,
-  ).href;
   const example = [
     "curl --get \\",
     '  --header "Authorization: apikey $CWMS_API_KEY" \\',
     '  --header "Accept: application/json;version=2" \\',
     `  --data-urlencode "office=${office || "YOUR_OFFICE"}" \\`,
     '  --data-urlencode "name=KEYS.elev.inst.1hour.0.ccp-rev" \\',
-    `  "${endpoint}"`,
+    '  "${CDA_API_ROOT%/}/timeseries"',
   ].join("\n");
 
   return (
@@ -27,7 +23,8 @@ export default function KeyUsageExample({ office }) {
         <Strong>Try a request (Bash / curl)</Strong>
       </div>
       <Text>
-        Load your saved key into the <code>CWMS_API_KEY</code> environment variable.
+        The example assumes <code>CDA_API_ROOT</code> is set to your CDA base URL. Load
+        your saved key into the <code>CWMS_API_KEY</code> environment variable.
       </Text>
       <pre
         aria-label="curl example"
