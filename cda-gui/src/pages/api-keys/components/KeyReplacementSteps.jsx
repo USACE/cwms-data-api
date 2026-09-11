@@ -13,7 +13,10 @@ export default function KeyReplacementSteps() {
             Choose a new name and expiration date, then select{" "}
             <strong>Generate replacement</strong>.
           </li>
-          <li>Copy the new key and save it securely. You can only see it once.</li>
+          <li>
+            Copy the new key and save it securely.{" "}
+            <strong>You can only see it once. CDA cannot show it again.</strong>
+          </li>
           <li>
             Update your application to use the new key and check that its requests work.
           </li>

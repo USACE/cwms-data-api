@@ -50,7 +50,10 @@ export default function KeyHelpGuide() {
         <KeyHelpStep number={2} title="Save the secret once">
           <Text>
             Copy the generated key into your application&apos;s secure secret store
-            before closing the dialog. CDA cannot show it again.
+            before closing the dialog.{" "}
+            <strong>
+              The key is shown only when it is created. CDA cannot show it again.
+            </strong>
           </Text>
           <ul className="list-disc space-y-2 pl-5 text-zinc-700">
             <li>

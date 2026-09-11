@@ -46,7 +46,11 @@ export default function CreateKeyDialog({
         )}
         <Text>
           This key belongs to {profile?.userName} and uses your permissions across
-          offices. The generated secret will be shown once.
+          offices.{" "}
+          <strong>
+            Save the key when it is created. You will not be able to see it again after
+            closing the save dialog.
+          </strong>
         </Text>
         <Field>
           <Label>Key name</Label>

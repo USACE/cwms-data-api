@@ -27,8 +27,11 @@ export default function SaveKeyDialog({
           <div>
             <p className="text-lg font-bold">Save this key now</p>
             <p className="mt-1">
-              Copy the key and store it securely. This is the only time you can see it.
-              After you close this dialog, you cannot retrieve it.
+              Copy the key and store it securely.{" "}
+              <strong>
+                This is the only time you can see it. After you close this dialog, you
+                cannot retrieve it.
+              </strong>
             </p>
           </div>
         </div>
