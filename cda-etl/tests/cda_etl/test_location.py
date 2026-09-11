@@ -15,6 +15,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
+from unittest.mock import ANY
 from unittest.mock import MagicMock
 
 import location
@@ -26,7 +27,7 @@ def test_stage_locations(mocker):
 
     location.stage_locations("SWT", locations)
 
-    mock_execute.assert_called_once_with(location._download_one_location, [["SWT", "TestLoc"]])
+    mock_execute.assert_called_once_with(location._download_one_location, [["SWT", "TestLoc"]], label=ANY, tally=ANY)
 
 
 def test_publish_staged_locations(mocker):
@@ -35,7 +36,7 @@ def test_publish_staged_locations(mocker):
 
     location.publish_staged_locations("SWT", locations)
 
-    mock_execute.assert_called_once_with(location._upload_one_location, [["SWT", "TestLoc"]])
+    mock_execute.assert_called_once_with(location._upload_one_location, [["SWT", "TestLoc"]], label=ANY, tally=ANY)
 
 def test_retrieve_one_location_invalid_format(mocker):
     mock_warning = mocker.patch.object(location.logger, "warning")
