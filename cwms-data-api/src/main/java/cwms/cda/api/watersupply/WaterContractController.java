@@ -87,7 +87,7 @@ public final class WaterContractController extends WaterSupplyControllerBase {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "Return a specified water contract",
-        path = "/projects/{office}/{project-id}/water-users/{water-user}/contracts/{contract-name}",
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-name}",
         method = HttpMethod.GET,
         tags = {TAG}
     )
