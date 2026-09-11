@@ -4,15 +4,19 @@ import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.*;
 
 import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeSet;
 
+import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.data.dto.auth.users.UsersPageCursor;
 import org.jooq.CommonTableExpression;
 import org.jooq.Condition;
@@ -91,6 +95,7 @@ public class UserDao extends JooqDao<User> {
     public void addRoles(DataApiPrincipal p, String user, String office, String[] roles) {
         dsl.connection(c -> {
             setOffice(c, office);
+            validateRoles(c, office, roles);
             try (CallableStatement addUser = c.prepareCall("call cwms_20.cwms_sec.add_user_to_group(?,?,?)")) {
                 for (String role: roles) {
                     addUser.setString(1, user);
@@ -102,6 +107,31 @@ public class UserDao extends JooqDao<User> {
             }
         });
         logger.atInfo().log("Roles '%s' added for user '%s' and office '%s'", String.join(",", roles), user, office);
+    }
+
+    private void validateRoles(Connection connection, String office, String[] roles) throws SQLException {
+        // The package commits each grant, so reject missing roles before executing any of them.
+        TreeSet<String> availableRoles = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        try (PreparedStatement statement = connection.prepareStatement(
+                "select user_group_id from cwms_20.at_sec_user_groups "
+                    + "where db_office_code = cwms_20.cwms_util.get_db_office_code(?)")) {
+            statement.setString(1, office);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    availableRoles.add(result.getString(1));
+                }
+            }
+        }
+        List<String> missingRoles = new ArrayList<>();
+        for (String role : roles) {
+            if (role == null || !availableRoles.contains(role)) {
+                missingRoles.add(String.valueOf(role));
+            }
+        }
+        if (!missingRoles.isEmpty()) {
+            throw new InvalidItemException("Roles do not exist for office " + office + ": "
+                + String.join(", ", missingRoles), null);
+        }
     }
 
     public void deleteRoles(DataApiPrincipal p, String user, String office, String[] roles) {
