@@ -3,8 +3,7 @@ repositories {
     maven {
         url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
         content {
-            includeGroup("mil.army.usace.hec")
-            includeGroup("mil.army.usace.hec.cwms.auth")
+            includeGroupAndSubgroups("mil.army.usace.hec")
             includeGroup("org.jooq.pro-java-11")
             
         }
