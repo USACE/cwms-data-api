@@ -24,6 +24,9 @@ public class ApiKey {
     @JsonProperty(required = true)
     private String keyName;
 
+    @Schema(accessMode = AccessMode.READ_ONLY,
+        description = "**Returned only once when created with POST /auth/keys. Save it securely; "
+            + "it cannot be retrieved again.**")
     private String apiKey;
 
     @JsonFormat(shape = Shape.STRING, pattern = TimeSeries.ZONED_DATE_TIME_FORMAT)

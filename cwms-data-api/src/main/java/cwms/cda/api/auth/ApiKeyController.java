@@ -39,6 +39,7 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.auth.ApiKey;
+import cwms.cda.data.dto.auth.ApiKeyMetadata;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.security.CwmsAuthException;
@@ -59,6 +60,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class ApiKeyController implements CrudHandler {
+    private static final String ONE_TIME_KEY_NOTICE = "\n\n**Save your API key securely when you create it. "
+            + "The secret is returned only once, in the POST /auth/keys response. "
+            + "It cannot be retrieved again. GET responses contain key information only, without api-key.**";
     private static final ObjectReader KEY_READER = JsonV1.buildObjectMapper().readerFor(ApiKey.class)
             .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     public final MetricRegistry metrics;
@@ -88,7 +92,7 @@ public class ApiKeyController implements CrudHandler {
                     description = "An API key with this name already exists for this user.")
         },
         description = "Create a new API Key for user. The randomly generated key is returned "
-                + "to the caller. A provided key will be ignored.",
+                + "to the caller. A provided key will be ignored." + ONE_TIME_KEY_NOTICE,
         tags = {"Authorization"}
     )
     @Override
@@ -148,14 +152,14 @@ public class ApiKeyController implements CrudHandler {
     @OpenApi(
         responses = @OpenApiResponse(
                     content = {
-                        @OpenApiContent(from = ApiKey[].class, type = Formats.JSON)
+                        @OpenApiContent(from = ApiKeyMetadata[].class, type = Formats.JSON)
                     },
                     status = STATUS_200
         ),
         security = {
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
-        description = "View all keys for the current user",
+        description = "View all keys for the current user." + ONE_TIME_KEY_NOTICE,
         tags = {"Authorization"}
     )
     public void getAll(Context ctx) {
@@ -164,7 +168,7 @@ public class ApiKeyController implements CrudHandler {
         DSLContext dsl = getDslContext(ctx);
 
         AuthDao auth = AuthDao.getInstance(dsl);
-        List<ApiKey> keys = auth.apiKeysForUser(p);
+        List<ApiKeyMetadata> keys = auth.apiKeysForUser(p);
         ctx.json(keys).status(HttpCode.OK);
 
     }
@@ -176,14 +180,14 @@ public class ApiKeyController implements CrudHandler {
         },
         responses = @OpenApiResponse(
                     content = {
-                        @OpenApiContent(from = ApiKey.class, type = Formats.JSON)
+                        @OpenApiContent(from = ApiKeyMetadata.class, type = Formats.JSON)
                     },
                     status = STATUS_200
         ),
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
-        description = "View specific key",
+        description = "View specific key information." + ONE_TIME_KEY_NOTICE,
         tags = {"Authorization"}
     )
     @Override
@@ -191,7 +195,7 @@ public class ApiKeyController implements CrudHandler {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         DSLContext dsl = getDslContext(ctx);
         AuthDao auth = AuthDao.getInstance(dsl);
-        ApiKey key = auth.apiKeyForUser(p, keyName);
+        ApiKeyMetadata key = auth.apiKeyForUser(p, keyName);
         if (key != null) {
             ctx.json(key).status(HttpCode.OK);
         } else {
