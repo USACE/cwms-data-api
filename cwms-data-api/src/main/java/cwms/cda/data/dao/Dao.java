@@ -63,7 +63,9 @@ public abstract class Dao<T> {
         this.dsl = dsl;
         if (CURRENT_SCHEMA_VERSION == null)
         {
-            CURRENT_SCHEMA_VERSION = getDbVersion(dsl);
+            synchronized (this) {
+                CURRENT_SCHEMA_VERSION = getDbVersion(dsl);
+            }
         }
     }
 
