@@ -55,7 +55,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -169,8 +168,8 @@ public class ApiKeyController implements CrudHandler {
         DSLContext dsl = getDslContext(ctx);
 
         AuthDao auth = AuthDao.getInstance(dsl);
-        List<ApiKey> keys = auth.apiKeysForUser(p);
-        ctx.json(keys.stream().map(ApiKeyMetadata::new).collect(Collectors.toList())).status(HttpCode.OK);
+        List<ApiKeyMetadata> keys = auth.apiKeysForUser(p);
+        ctx.json(keys).status(HttpCode.OK);
 
     }
 
@@ -196,9 +195,9 @@ public class ApiKeyController implements CrudHandler {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         DSLContext dsl = getDslContext(ctx);
         AuthDao auth = AuthDao.getInstance(dsl);
-        ApiKey key = auth.apiKeyForUser(p, keyName);
+        ApiKeyMetadata key = auth.apiKeyForUser(p, keyName);
         if (key != null) {
-            ctx.json(new ApiKeyMetadata(key)).status(HttpCode.OK);
+            ctx.json(key).status(HttpCode.OK);
         } else {
             CdaError msg = new CdaError(
                     "Requested Key was not found. NOTE: api key names are case-sensitive.",

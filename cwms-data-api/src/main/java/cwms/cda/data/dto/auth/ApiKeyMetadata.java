@@ -16,14 +16,17 @@ public final class ApiKeyMetadata {
     private final ZonedDateTime expires;
 
     /**
-     * Copy key information without retaining the secret.
-     * @param key key returned by the DAO
+     * Create key metadata without a secret.
+     * @param userId key owner
+     * @param keyName key name
+     * @param created creation time
+     * @param expires expiration time, or null if the key does not expire
      */
-    public ApiKeyMetadata(ApiKey key) {
-        userId = key.getUserId();
-        keyName = key.getKeyName();
-        created = key.getCreated();
-        expires = key.getExpires();
+    public ApiKeyMetadata(String userId, String keyName, ZonedDateTime created, ZonedDateTime expires) {
+        this.userId = userId;
+        this.keyName = keyName;
+        this.created = created;
+        this.expires = expires;
     }
 
     @Schema(required = true)
