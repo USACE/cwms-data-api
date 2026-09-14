@@ -19,8 +19,9 @@ class ApiKeyMetadataTest {
     void retrievalOmitsSecretAndPreservesMetadata() throws Exception {
         ApiKey key = new ApiKey("user", "script", "creation-only-secret",
                 ZonedDateTime.parse("2026-09-11T12:00:00Z"), null);
+        ApiKeyMetadata metadata = new ApiKeyMetadata("user", "script", key.getCreated(), null);
         JsonNode created = mapper.readTree(json.toJsonString(key));
-        JsonNode retrieved = mapper.readTree(json.toJsonString(new ApiKeyMetadata(key)));
+        JsonNode retrieved = mapper.readTree(json.toJsonString(metadata));
         assertEquals("creation-only-secret", created.get("api-key").asText());
         assertFalse(retrieved.has("api-key"));
         assertEquals(4, retrieved.size());
@@ -28,7 +29,7 @@ class ApiKeyMetadataTest {
             assertEquals(created.get(field), retrieved.get(field), field);
         }
         assertTrue(retrieved.get("expires").isNull());
-        JsonNode listed = mapper.readTree(json.toJsonString(List.of(new ApiKeyMetadata(key))));
+        JsonNode listed = mapper.readTree(json.toJsonString(List.of(metadata)));
         assertEquals(retrieved, listed.get(0));
     }
 
@@ -37,7 +38,8 @@ class ApiKeyMetadataTest {
         ZonedDateTime expires = ZonedDateTime.parse("2026-12-11T12:00:00Z");
         ApiKey key = new ApiKey("user", "script", null, expires.minusDays(90), expires);
         JsonNode original = mapper.readTree(json.toJsonString(key));
-        JsonNode retrieved = mapper.readTree(json.toJsonString(new ApiKeyMetadata(key)));
+        ApiKeyMetadata metadata = new ApiKeyMetadata("user", "script", expires.minusDays(90), expires);
+        JsonNode retrieved = mapper.readTree(json.toJsonString(metadata));
         assertFalse(retrieved.has("api-key"));
         assertEquals(original.get("expires"), retrieved.get("expires"));
     }
