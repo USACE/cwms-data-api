@@ -4,8 +4,7 @@ repositories {
         url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
         content {
             includeGroupAndSubgroups("mil.army.usace.hec")
-            includeGroup("org.jooq.pro-java-11")
-            
+            includeGroup("org.jooq.pro-java-11")   
         }
     }
 
@@ -23,6 +22,7 @@ repositories {
 
 configurations.all {
     exclude group: "org.python", module: "jython-standalone"
+    exclude group: "com.mrsid"
 
     resolutionStrategy {
         // javalin 4.6.8 pulls in the vulnerable kotlin-stdlib 1.5.32
