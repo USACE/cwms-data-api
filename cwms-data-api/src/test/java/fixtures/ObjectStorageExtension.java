@@ -1,10 +1,10 @@
 package fixtures;
 
+import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
+
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.junit.jupiter.Container;
-
-import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 
 /**
  * Sets up a KeyCloak instance to use for testing.
@@ -12,7 +12,7 @@ import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 public final class ObjectStorageExtension implements BeforeAllCallback {
     public static final String OBJECT_STORAGE_USER = "cda_user";
     public static final String OBJECT_STORAGE_USER_SECRET = "cda_password";
-    public static final String IMAGE_VERSION = "5.2.2";
+    public static final String IMAGE_VERSION = "4.12.4";
     public static final int PORT = 9090;
 
     public static final String BUCKET = "cwms-test";
