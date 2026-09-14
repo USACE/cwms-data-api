@@ -65,7 +65,10 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '11'
-          cache: 'gradle'
+      - name: Setup Gradle
+        uses: actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: wrapper
       - name: Set version
         id: version
         env:
