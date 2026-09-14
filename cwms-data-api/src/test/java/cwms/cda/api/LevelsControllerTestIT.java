@@ -2575,13 +2575,14 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         String levelId = String.format("%s.Stage.Ave.1Month.CoordinatedStatistics", locName);
         ZonedDateTime time = ZonedDateTime.ofInstant(Instant.parse("2025-06-27T21:00:00Z"), ZoneId.of("UTC"));
         List<SeasonalValueBean> seasonalValues = new ArrayList<>();
-        for (int i = 0; i < 12; i++) {
+        for (int i = 0; i < 11; i++) {
             seasonalValues.add(new SeasonalValueBean.Builder().withValue(601.51 * 1.01).withOffsetMonths(i + 1).build());
         }
 
         SeasonalLocationLevel level = new SeasonalLocationLevel.Builder(levelId, time.toInstant())
             .withOfficeId(OFFICE)
             .withLevelUnitsId("ft")
+            .withIntervalOrigin(Instant.parse("1900-01-31T17:00:00Z"))
             .withInterpolateString("F")
             .withIntervalMonths(12)
             .withSeasonalValues(seasonalValues)
