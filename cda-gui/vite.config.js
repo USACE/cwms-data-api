@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
-        "^/(auth|CWMSLogin|cwms-data/(?!$|swagger-ui(?:/|$)|data-query(?:/|$)|regexp(?:/|$)|filter-expressions(?:/|$)|timestamps(?:/|$)|user-lists(?:/|$)|legacy-format(?:/|$)|location-search(?:/|$)|assets/|src/|node_modules/|@).*)":
+        "^/(auth|CWMSLogin|cwms-data/(?!$|swagger-ui(?:/|$)|data-query(?:/|$)|regexp(?:/|$)|filter-expressions(?:/|$)|timestamps(?:/|$)|user-lists(?:/|$)|legacy-format(?:/|$)|location-search(?:/|$)|quick-start(?:/|$)|disclaimer(?:/|$)|site-map(?:/|$)|assets/|src/|node_modules/|@).*)":
           {
             target: cdaApiRoot,
             changeOrigin: true,
