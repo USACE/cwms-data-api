@@ -1,10 +1,7 @@
 volumes:
   oracle_data_1:
   auth_data:
-  minio_data:
-    driver: local
-  minio_config:
-    driver: local
+  s3_data:
 
 services:
   db:
@@ -59,10 +56,8 @@ services:
         condition: service_completed_successfully
       traefik:
         condition: service_healthy
-      minio:
+      object-storage:
         condition: service_healthy
-      minio-setup:
-        condition: service_completed_successfully
     image: cwms-rest-api:local-dev
     build:
       target: api
@@ -97,7 +92,7 @@ services:
       - cwms.dataapi.access.openid.clientId=cwms
       # values are not actually used in the local keycloak, however it doesn't fail and leaves them in place for various testing.
       - cwms.dataapi.access.openid.idpHint=federation-eams,login.gov
-      - blob.store.endpoint=http://minio:9000
+      - blob.store.endpoint=http://object-storage:9090
       - blob.store.region=docker
       - blob.store.bucket=cwms-test
       - blob.store.accessKey=cda_user
@@ -176,25 +171,18 @@ services:
       - "traefik.http.routers.traefik.rule=PathPrefix(`/traefik`)"
       - "traefik.http.routers.traefik.service=api@internal"
 
-  minio:
-    container_name: minio_server
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    volumes:
-      - minio_data:/data
-      - minio_config:/root/.minio
+  object-storage:
+    image: adobe/s3mock:latest
     ports:
-      - '${FORWARD_MINIO_API_PORT0:-9000}:9000'
-      - '${FORWARD_MINIO_PORT:-9001}:9001'
-      - '${FORWARD_MINIO_API_PORT2:-9002}:9002'
+      - '${FORWARD_S3_API_PORT0:-9090}:9090'
     environment:
-      MINIO_ROOT_USER: minio_admin
-      MINIO_ROOT_PASSWORD: saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE
-    command: server /data --console-address ":9001"
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: cwms-test
+    volumes:
+      - s3_data:/s3mockroot
     healthcheck:
-      test: [ "CMD", "mc", "ready", "local" ]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/favicon.ico"]
       interval: 5s
-      timeout: 5s
-      retries: 5
+      retries: 3
     restart: unless-stopped
     deploy:
       resources:
@@ -204,21 +192,6 @@ services:
         limits:
           cpus: "1.0"
           memory: 2G
-
-  minio-setup:
-    image: minio/mc:latest
-    restart: "no"
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 minio_admin saersdbewadfqewrbwreq12rfgweqrffw52354ec@%fwewEFFWSE;
-      /usr/bin/mc admin user add myminio cda_user cda_password;
-      /usr/bin/mc mb --ignore-existing myminio/cwms-test;
-      /usr/bin/mc admin policy attach myminio readwrite --user cda_user;
-      exit 0;
-      "
   cda-etl:
     build:
       context: ./cda-etl
