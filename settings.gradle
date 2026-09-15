@@ -16,4 +16,5 @@ include ":cda-gui"
 include ":docs"
 project(":docs").projectDir = file("docs")
 include ":clients:typescript"
+include ":clients:python"
 include ":cda-etl"
