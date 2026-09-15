@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
     "test-storybook": "vitest --project=storybook",
+    "test:auth": "playwright test --config playwright.auth.config.js",
     "build-storybook": "storybook build",
     "prepare": "cd .. && husky cda-gui/.husky",
     "format:check": "prettier --check ."
