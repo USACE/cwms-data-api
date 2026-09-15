@@ -1,0 +1,148 @@
+name: SDK documentation
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'clients/**'
+      - 'cwms-data-api/src/**'
+      - 'scripts/sdk-docs/**'
+      - '*.gradle'
+      - '.github/workflows/sdk-docs.yml'
+      - '.github/workflows/release.yml'
+  push:
+    branches: [develop]
+    paths:
+      - 'clients/**'
+      - 'cwms-data-api/src/**'
+      - 'scripts/sdk-docs/**'
+      - '*.gradle'
+      - '.github/workflows/sdk-docs.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        type: string
+        required: true
+      cda-version:
+        type: string
+        required: true
+      release:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+      - name: Select documentation version
+        id: version
+        env:
+          CDA_VERSION: ${{ inputs.cda-version }}
+        run: |
+          if [ -z "$CDA_VERSION" ]; then
+            CDA_VERSION="$(date -u +%Y.%m.%d)-snapshot"
+          fi
+          echo "value=$CDA_VERSION" >> "$GITHUB_OUTPUT"
+      - name: Test site assembly
+        run: python -m unittest discover -s scripts/sdk-docs/tests -v
+      - name: Build and test JavaScript SDK documentation
+        env:
+          CDA_VERSION: ${{ steps.version.outputs.value }}
+        run: ./gradlew :clients:typescript:build --init-script init.gradle "-PversionOverride=$CDA_VERSION"
+      - name: Build and test Python SDK documentation when present
+        env:
+          CDA_VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          if [ -f clients/python/build.gradle ]; then
+            ./gradlew :clients:python:build --init-script init.gradle "-PversionOverride=$CDA_VERSION"
+          fi
+      - name: Assemble SDK documentation
+        env:
+          CDA_VERSION: ${{ steps.version.outputs.value }}
+        run: python scripts/sdk-docs/site.py stage . build/sdk-docs "$CDA_VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdk-docs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/sdk-docs
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    if: github.event_name != 'pull_request' && github.repository == 'USACE/cwms-data-api'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: sdk-pages
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdk-docs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/sdk-docs
+      - name: Restore documentation history
+        run: |
+          if git ls-remote --exit-code --heads origin sdk-pages; then
+            git fetch origin sdk-pages --depth=1
+            git worktree add site FETCH_HEAD
+          else
+            mkdir site
+            git -C site init
+            git -C site switch --orphan sdk-pages
+            git -C site config include.path "$GITHUB_WORKSPACE/.git/config"
+          fi
+      - name: Update documentation site
+        env:
+          CDA_VERSION: ${{ needs.build.outputs.version }}
+          IS_RELEASE: ${{ inputs.release }}
+        run: |
+          args=()
+          if [ "$IS_RELEASE" = true ]; then args+=(--release); fi
+          python scripts/sdk-docs/site.py publish build/sdk-docs site "$CDA_VERSION" "${args[@]}"
+      - name: Save documentation history
+        run: |
+          git -C site config user.name github-actions[bot]
+          git -C site config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git -C site add .
+          if ! git -C site diff --cached --quiet; then
+            git -C site commit -m "Update SDK documentation"
+            git -C site push origin HEAD:refs/heads/sdk-pages
+          fi
+      - uses: actions/configure-pages@v5
+      - name: Prepare Pages artifact
+        run: |
+          mkdir build/pages
+          rsync -a --exclude=.git site/ build/pages/
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/pages
+      - uses: actions/deploy-pages@v4
+        id: deployment

@@ -1,5 +1,4 @@
 import com.github.gradle.node.npm.task.NpmTask
-import com.github.gradle.node.npm.task.NpxTask
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
 
@@ -13,18 +12,24 @@ def npmCacheDir = layout.buildDirectory.dir("npm-cache")
 def rawSpecFile = layout.projectDirectory.file("cwms-swagger-raw.json")
 def modifiedSpecFile = layout.projectDirectory.file("cwms-swagger-mod.json")
 def generatedClientDir = layout.projectDirectory.dir("cwmsjs")
+def specOverride = providers.gradleProperty('typescriptOpenApiSpec')
+def sourceSpec = specOverride.isPresent() ? file(specOverride.get()) : rootProject.file('cwms-data-api/build/openapi.json')
 
 node {
     nodeProjectDir = projectDir
 }
 
-tasks.withType(NpmTask).configureEach {
-    environment.put("npm_config_cache", npmCacheDir.get().asFile.absolutePath)
+tasks.named('npmInstall') {
+    // The generator uses the JS scripts directly; legacy node-jq install hooks
+    // are unnecessary here. Generated package installation still runs scripts.
+    args = ['--ignore-scripts', '--no-audit']
 }
 
-tasks.withType(NpxTask).configureEach {
+tasks.withType(NpmTask).configureEach {
     environment.put("npm_config_cache", npmCacheDir.get().asFile.absolutePath)
+    environment.put("npm_config_audit", "false")
 }
+
 
 tasks.register('cleanGeneration', Delete) {
     delete project.layout.projectDirectory.dir('build')
@@ -40,23 +45,25 @@ clean.dependsOn cleanGeneration
 tasks.register('copyOpenApiSpec') {
     group 'openapi'
     description 'Copy the locally generated CDA OpenAPI spec into the TypeScript client workspace.'
-    dependsOn ':cwms-data-api:executeOpenAPIConversion'
+    if (!specOverride.isPresent()) {
+        dependsOn ':cwms-data-api:executeOpenAPIConversion'
+    }
+    inputs.file sourceSpec
     outputs.file rawSpecFile
     doLast {
         copy {
-            from "$rootDir/cwms-data-api/build/openapi.json"
+            from sourceSpec
             into projectDir
             rename { 'cwms-swagger-raw.json' }
         }
     }
 }
 
-tasks.register('modSpec', NpxTask) {
+tasks.register('modSpec', NpmTask) {
     group 'openapi'
     description 'Apply TypeScript client adjustments to the CDA OpenAPI spec.'
     dependsOn npmInstall
     dependsOn copyOpenApiSpec
-    command = 'npm'
     args = ['run', 'modSpec']
     inputs.file rawSpecFile
     inputs.files fileTree('scripts/spec-updates')
@@ -90,12 +97,11 @@ tasks.register('generateTypeScriptClient', GenerateTask) {
     ignoreFileOverride = layout.projectDirectory.file('.openapi-generator-ignore').asFile.absolutePath
 }
 
-tasks.register('modPackage', NpxTask) {
+tasks.register('modPackage', NpmTask) {
     group 'openapi'
     description 'Apply package metadata updates to the generated cwmsjs client.'
     dependsOn npmInstall
     dependsOn generateTypeScriptClient
-    command = 'npm'
     args = ['run', 'modPackage']
     environment.put('CDA_CLIENT_VERSION_SUFFIX', project.version.toString())
     inputs.file 'package.json'
@@ -104,34 +110,31 @@ tasks.register('modPackage', NpxTask) {
     outputs.file generatedClientDir.file('package.json')
 }
 
-tasks.register('postGenerate', NpxTask) {
+tasks.register('postGenerate', NpmTask) {
     group 'openapi'
     description 'Apply source patches required after OpenAPI generation.'
     dependsOn modPackage
-    command = 'npm'
     args = ['run', 'postGenerate']
     inputs.dir generatedClientDir
     inputs.files fileTree('scripts').include('postGenerate.js')
     outputs.dir generatedClientDir
 }
 
-tasks.register('installGeneratedClient', NpxTask) {
+tasks.register('installGeneratedClient', NpmTask) {
     group 'build'
     description 'Install dependencies for the generated cwmsjs client.'
     dependsOn postGenerate
     workingDir = generatedClientDir.asFile
-    command = 'npm'
     args = ['install']
     inputs.file generatedClientDir.file('package.json')
     outputs.dir generatedClientDir.dir('node_modules')
 }
 
-tasks.register('buildTypeScriptClient', NpxTask) {
+tasks.register('buildTypeScriptClient', NpmTask) {
     group 'build'
     description 'Compile the generated cwmsjs TypeScript client.'
     dependsOn installGeneratedClient
     workingDir = generatedClientDir.asFile
-    command = 'npm'
     args = ['run', 'build']
     inputs.dir generatedClientDir.dir('src')
     inputs.file generatedClientDir.file('package.json')
@@ -139,16 +142,28 @@ tasks.register('buildTypeScriptClient', NpxTask) {
     outputs.dir generatedClientDir.dir('dist')
 }
 
-tasks.register('buildTypeScriptDocs', NpxTask) {
+tasks.register('buildTypeScriptDocs', NpmTask) {
     group 'documentation'
     description 'Build TypeDoc and example documentation for the generated cwmsjs client.'
-    dependsOn buildTypeScriptClient
-    command = 'npm'
+    dependsOn 'testTypeScriptExamples'
     args = ['run', 'buildDocs']
     inputs.dir generatedClientDir.dir('src')
     inputs.dir 'tests'
-    inputs.files fileTree('scripts').include('buildTypedoc.js', 'tests2exampledocs.js', 'exampletemplate.html')
+    inputs.files fileTree('scripts').include('buildTypedoc.js', 'tests2exampledocs.js', 'exampleFiles.js', 'exampletemplate.html')
     outputs.dir generatedClientDir.dir('docs')
+}
+
+tasks.register('installExampleDependencies', NpmTask) {
+    workingDir = file('tests')
+    args = ['ci']
+}
+
+tasks.register('testTypeScriptExamples', NpmTask) {
+    group 'verification'
+    description 'Run the examples before publishing their source as documentation.'
+    dependsOn buildTypeScriptClient, installExampleDependencies
+    workingDir = file('tests')
+    args = ['run', 'test:docs']
 }
 
 tasks.named('build') {

@@ -8,6 +8,8 @@ jobs:
   develop:
     permissions:
       packages: write
+      pages: write
+      id-token: write
       contents: write
     uses: ./.github/workflows/release.yml
     secrets:

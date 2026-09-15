@@ -33,7 +33,7 @@ Welcome to CWMS Data API documentation!
    :caption: Data and References
 
    Data <./data/index.rst>
-   Client Libraries <libraries/index.rst>
+   SDKs and Client Repositories <libraries/index.rst>
    RFCs <./rfc/index.rst>
 
 
