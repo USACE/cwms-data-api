@@ -75,7 +75,8 @@ By making a contribution to this project, I certify that:
 
 ## Getting Started
 
-This project is intended to replace what is currently hosted at https://cwms-data.usace.army.mil/cwms-data/
+This project provides the UI hosted at https://cwms-data.usace.army.mil/ and the API hosted under
+https://cwms-data.usace.army.mil/cwms-data/ as separate web applications.
 
 Due to the current limits on releasing about database source we don't expect much random contribution. However, we will be moving more of the logic into
 this repository and any help on the formatting code and such will be greatly appreciated.

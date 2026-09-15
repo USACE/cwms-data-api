@@ -18,16 +18,18 @@ You can run the CDA GUI on your local system without tomcat.
 
 #### Quick Start
 
-1. `cd gda-gui`
+1. `cd cda-gui`
 2. `npm install` (NodeJS Required)
 3. `npm run dev`
-4. Open https://localhost:5173/cwms-data
+4. Open http://localhost:5173/
 
 Changes will now be hot reloaded in the browser as you update your React files.
 
-### Deployed Locally in the WAR
+### Deployed WAR
 
-- 🚧 WIP
+The GUI and API are packaged as separate applications. Deploy the GUI WAR as
+`ROOT.war` to serve the UI at `/`, and deploy the API WAR as `cwms-data.war`
+to serve API endpoints at `/cwms-data`.
 
 ## Helpful Tips
 

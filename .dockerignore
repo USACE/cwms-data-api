@@ -2,3 +2,9 @@
 Dockerfile
 *.md
 *.properties
+.git
+.gradle
+**/.gradle
+**/build
+**/dist
+**/node_modules
