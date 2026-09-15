@@ -1,0 +1,152 @@
+Shared ratings endpoint parameters
+======================================
+
+.. _shared-defs:
+
+Shared parameter definitions
+----------------------------
+
+This section lists and describes common parameters that are used by multiple Ratings endpoints.
+If the parameter is only used by a single endpoint, please refer to that endpoint's documentation for details.
+If a shared parameter has endpoint-specific behavior or constraints, those details will be noted in the individual
+endpoint documentation.
+
+.. _def-end:
+
+end
+  The date and time marking the end of the time window for data included in the response.
+  The format for this field is ISO 8601 extended with optional offset and timezone.
+
+    .. code-block:: sql
+
+        Example:
+        YYYY-MM-ddThh:mm:ss[Z[VV]]
+        2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
+
+    .. note::
+        Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
+
+
+.. _def-location-id:
+
+location-id
+    `CWMS database - Location Naming <https://cwms-database.readthedocs.io/en/latest/naming.html#locations>`_
+    `CWMS database - Location Definition <https://cwms-database.readthedocs.io/en/latest/locations.html#overview>`_
+
+.. _def-location-mask:
+
+location-mask
+  A regular expression used to filter the location name associated with the queried time series data. See the Regex
+  documentation page for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
+
+.. _def-method:
+
+method
+  The retrieval method used. If no method is provided, the EAGER method will be used.
+
+.. _def-office:
+
+office
+  The organizational context used to scope data access and defaults. Some endpoints infer a default office;
+  you can also specify it explicitly.
+
+.. _def-office-mask:
+
+office-mask
+  A regular expression used to filter the office identifier associated with the queried time series data.
+  See the Regex documentation page for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
+
+.. _def-page:
+
+page
+  Page token for paginated endpoints. Value to use is provided by the `next-page` entry of a qualifying query response.
+
+.. _def-page-size:
+
+page-size
+  Maximum number of items per page (server may enforce an upper bound). Further results must be accessed using the \
+  `next-page` value provided in the response of queries that return more results than will fit on one page.
+
+.. _def-parameter-id:
+
+parameter-id
+  A text identifier specifying the type of data measured by the time series, such as "Flow", "Stage", "Elev", etc.
+
+    .. note::
+        This link will take you to the Parameter Types definition. Scroll up one section to see the Parameter Definition.
+        `CWMS database - parameter types <https://cwms-database.readthedocs.io/en/latest/naming.html#parameter-types>`_
+
+        As soon as this link is repaired, we will replace the above link with the correct one:
+        `CWMS database - parameters <https://cwms-database.readthedocs.io/en/latest/naming.html#parameters>`_
+
+.. _def-parameter-id-mask:
+
+parameter-id-mask
+  A regular expression used to filter the parameter of the queried time series data.
+  See the Regex documentation for more information on usage:
+
+    .. note::
+        Detailed documentation for Regex usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/regexp in a future release.
+
+.. _def-rating-id:
+
+rating-id
+  A regular expression used to filter the rating specification IDs to be included in the response.
+
+    .. note::
+        Documentation for Rating Specifications is available at
+        `CWMS database - rating specification <https://cwms-database.readthedocs.io/en/latest/naming.html#rating-specifications>`_.
+
+.. _def-rating-id-mask:
+
+rating-id-mask
+  A regular expression used to filter the rating specification IDs to be included in the response.
+
+    .. note::
+        Documentation for Rating Specifications is available at
+        `CWMS database - rating specification <https://cwms-database.readthedocs.io/en/latest/naming.html#rating-specifications>`_.
+
+.. _def-start:
+
+start/begin
+  The date and time marking the beginning of the time window for data included in the response.
+  The format for this field is ISO 8601 extended with optional offset and timezone.
+
+    .. code-block:: sql
+
+        Example:
+        YYYY-MM-ddThh:mm:ss[Z[VV]]
+        2021-06-10T13:00:00-07:00  OR  2025-10-25T12:25:00Z
+
+    .. note::
+        Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
+        https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
+
+.. _def-timezone:
+
+timezone
+  The timezone to use for retrieved time data, such as "UTC", "America/Los_Angeles", etc.
+
+.. _def-unit:
+
+unit `(Deprecated, prefer units or unit-system)`
+  The unit system or specific unit to convert the response data into. Available unit systems are SI or EN.
+  Examples of other units are m, ft, m3, etc.
+  For reference: `CWMS database - units <https://cwms-database.readthedocs.io/en/latest/naming.html#units>`_
+
+.. _def-version-date:
+
+version-date
+  A date associated with a time series to make identification of the most recent data possible.
+  Often uses the forecast date.
+
