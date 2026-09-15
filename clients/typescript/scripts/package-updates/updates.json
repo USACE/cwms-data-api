@@ -1,16 +1,23 @@
 {
   "description": "CWMS Data API Library for JavaScript/TypeScript created with OpenAPI generator for use with browser webapps",
+  "files": [
+    "dist/",
+    "src/",
+    "tsconfig.json",
+    "tsconfig.esm.json"
+  ],
   "unpkg": "./dist/cwmsjs.min.js",
   "jsdelivr": "./dist/cwmsjs.min.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/esm/index.js",
+      "import": "./dist/cwmsjs.mjs",
       "require": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.esm.json && npm run build:browser",
+    "build": "tsc && tsc -p tsconfig.esm.json && npm run build:esm && npm run build:browser",
+    "build:esm": "esbuild dist/esm/index.js --bundle --format=esm --platform=neutral --outfile=dist/cwmsjs.mjs",
     "build:browser": "esbuild dist/esm/index.js --bundle --format=iife --global-name=cwmsjs --outfile=dist/cwmsjs.js && esbuild dist/esm/index.js --bundle --format=iife --global-name=cwmsjs --minify --sourcemap --outfile=dist/cwmsjs.min.js",
     "prepare": "npm run build"
   },

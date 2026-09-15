@@ -5,6 +5,12 @@ import {
   OfficesApi,
   ProjectsApi,
 } from "../cwmsjs/dist/index.js";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const {
+  normalizeVersionSuffix,
+} = require("../scripts/package-updates/modPackage.js");
 
 if (!global.fetch) {
   throw new Error(
@@ -29,7 +35,7 @@ async function main() {
 
   let expectedVersion = process.env.EXPECTED_CWMSJS_VERSION;
   if (!expectedVersion && process.env.CDA_CLIENT_VERSION_SUFFIX) {
-    expectedVersion = `${rootPackageJson.version}-${process.env.CDA_CLIENT_VERSION_SUFFIX}`;
+    expectedVersion = `${rootPackageJson.version}-${normalizeVersionSuffix(process.env.CDA_CLIENT_VERSION_SUFFIX)}`;
   }
 
   if (!expectedVersion) {
@@ -39,7 +45,7 @@ async function main() {
         "utf8",
       ),
     );
-    expectedVersion = `${rootPackageJson.version}-${rawSpec?.info?.version}`;
+    expectedVersion = `${rootPackageJson.version}-${normalizeVersionSuffix(rawSpec?.info?.version)}`;
   }
 
   if (packageJson.version !== expectedVersion) {

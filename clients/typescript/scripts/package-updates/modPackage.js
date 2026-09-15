@@ -15,19 +15,39 @@ function writeJson(relativePath, value) {
   );
 }
 
-function getVersionSuffixArg() {
+function getVersionSuffixArg(argv = process.argv.slice(2)) {
   const prefix = "--version-suffix=";
-  const value = process.argv.find((arg) => arg.startsWith(prefix));
-  return value ? value.slice(prefix.length) : process.argv[2];
+  const value = argv.find((arg) => arg.startsWith(prefix));
+  return value ? value.slice(prefix.length) : argv[0];
 }
 
-function getVersionSuffix() {
+function normalizeVersionSuffix(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new Error("Version suffix must be a non-empty string.");
+  }
+
+  return value
+    .trim()
+    .split(".")
+    .map((identifier) => {
+      if (!/^[0-9A-Za-z-]+$/.test(identifier)) {
+        throw new Error(`Invalid version suffix identifier: ${identifier}`);
+      }
+
+      return /^\d+$/.test(identifier)
+        ? BigInt(identifier).toString()
+        : identifier;
+    })
+    .join(".");
+}
+
+function getVersionSuffix(argv = process.argv.slice(2), env = process.env) {
   const explicitVersion =
-    getVersionSuffixArg() ||
-    process.env.CDA_CLIENT_VERSION_SUFFIX ||
-    process.env.CWMSJS_VERSION_SUFFIX;
+    getVersionSuffixArg(argv) ||
+    env.CDA_CLIENT_VERSION_SUFFIX ||
+    env.CWMSJS_VERSION_SUFFIX;
   if (explicitVersion) {
-    return explicitVersion;
+    return normalizeVersionSuffix(explicitVersion);
   }
 
   throw new Error(
@@ -60,4 +80,11 @@ function main() {
   );
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  getVersionSuffix,
+  normalizeVersionSuffix,
+};

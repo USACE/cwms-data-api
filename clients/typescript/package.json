@@ -41,6 +41,7 @@
     "modPackage": "node ./scripts/package-updates/modPackage.js",
     "modSpec": "node ./scripts/spec-updates/modSpec.js",
     "postGenerate": "node ./scripts/postGenerate.js",
+    "test:package": "node --test ./scripts/package-updates/modPackage.test.js",
     "link": "cd cwmsjs && npm link && cd ../tests && npm link cwmsjs"
   },
   "dependencies": {
