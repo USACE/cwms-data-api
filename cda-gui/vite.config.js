@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => {
       ],
     },
     server: {
+      allowedHosts: [".apps.hecdev.net"],
       proxy: {
         "^/(auth|CWMSLogin|cwms-data/(?!$|swagger-ui(?:/|$)|data-query(?:/|$)|regexp(?:/|$)|filter-expressions(?:/|$)|timestamps(?:/|$)|user-lists(?:/|$)|legacy-format(?:/|$)|location-search(?:/|$)|assets/|src/|node_modules/|@).*)":
           {
