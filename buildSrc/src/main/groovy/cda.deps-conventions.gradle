@@ -1,8 +1,11 @@
 
 repositories {
-    mavenLocal()
     maven {
         url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
+        content {
+            includeGroupAndSubgroups("mil.army.usace.hec")
+            includeGroup("org.jooq.pro-java-11")   
+        }
     }
 
     mavenCentral().content {
