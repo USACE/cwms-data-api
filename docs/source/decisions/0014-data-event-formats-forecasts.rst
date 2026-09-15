@@ -6,7 +6,7 @@ Data Event Formats - Forecasts
 Summary
 =======
 
-CWMS needs an message structure to notify clients of forecast-related events.
+CWMS needs a message structure to notify clients of forecast-related events.
 
 Opinions
 ========
