@@ -27,7 +27,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
 @Tag("integration")
-@ExtendWith(KeyCloakExtension.class)
 @MinimumSchema(260716)
 public final class UserListControllerTestIT extends DataApiTestIT {
     private static final String OFFICE = "SPK";

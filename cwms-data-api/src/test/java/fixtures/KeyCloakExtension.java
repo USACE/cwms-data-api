@@ -1,40 +1,33 @@
 package fixtures;
 
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.flogger.FluentLogger;
+import io.javalin.http.HttpCode;
+import io.restassured.filter.log.LogDetail;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
-import com.google.common.flogger.FluentLogger;
-
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.images.builder.Transferable;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import io.javalin.http.HttpCode;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.http.ContentType;
-import io.restassured.response.Response;
-
 /**
  * Sets up a KeyCloak instance to use for testing.
  */
-public final class KeyCloakExtension implements BeforeAllCallback {
+public final class KeyCloakExtension {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String WELL_KNOWN = "realms/cwms/.well-known/openid-configuration";
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -61,11 +54,10 @@ public final class KeyCloakExtension implements BeforeAllCallback {
 
     
     static void setup() throws IOException {
-        
         File realm = new File("../compose_files/keycloak/realm.json").getAbsoluteFile();
         String realmJson = null;
         try (FileInputStream is = new FileInputStream(realm)) {
-            realmJson = IOUtils.toString(is, Charset.forName("UTF-8"));
+            realmJson = IOUtils.toString(is, StandardCharsets.UTF_8);
         }
         kcc.withCopyToContainer(Transferable.of(realmJson), "/opt/keycloak/data/import/realm.json");
         kcc.setWaitStrategy(
@@ -95,13 +87,6 @@ public final class KeyCloakExtension implements BeforeAllCallback {
         logger.atFine().log(response.asPrettyString());
     }
 
-    @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
-        if (!kcc.isRunning()) {
-            setup();
-        }
-    }
-
     public static String getAuthUrl() {
         return authUrl;
     }
@@ -122,7 +107,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
         return tokenUrl;
     }
 
-    public static void shutdown() {
+    static void shutdown() {
         if (kcc.isRunning()) {
             kcc.stop();
         }

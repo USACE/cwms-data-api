@@ -5,8 +5,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fixtures.CwmsDataApiSetupCallback;
-import fixtures.KeyCloakExtension;
-import fixtures.ObjectStorageExtension;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -51,9 +49,7 @@ public final class TimeSeriesReadBenchmark {
         System.out.println("Starting benchmark fixtures...");
 
         try {
-            new KeyCloakExtension().beforeAll(null);
-            new ObjectStorageExtension().beforeAll(null);
-            new CwmsDataApiSetupCallback().beforeAll(null);
+            new CwmsDataApiSetupCallback().init();
 
             System.out.println("Running benchmark...");
             BenchmarkReport report = runBenchmark(config);
@@ -429,36 +425,7 @@ public final class TimeSeriesReadBenchmark {
     }
 
     private static void shutdownFixtures() throws Exception {
-        Exception failure = null;
-        try {
-            CwmsDataApiSetupCallback.shutdown();
-        } catch (Exception e) {
-            failure = e;
-        }
-
-        try {
-            ObjectStorageExtension.shutdown();
-        } catch (Exception e) {
-            if (failure == null) {
-                failure = e;
-            } else {
-                failure.addSuppressed(e);
-            }
-        }
-
-        try {
-            KeyCloakExtension.shutdown();
-        } catch (Exception e) {
-            if (failure == null) {
-                failure = e;
-            } else {
-                failure.addSuppressed(e);
-            }
-        }
-
-        if (failure != null) {
-            throw failure;
-        }
+        CwmsDataApiSetupCallback.shutdown();
     }
 
     private static final class BenchmarkConfig {

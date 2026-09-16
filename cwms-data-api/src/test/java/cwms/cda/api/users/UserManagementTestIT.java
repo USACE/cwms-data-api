@@ -31,7 +31,6 @@ import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
 @Tag("integration")
-@ExtendWith(KeyCloakExtension.class)
 public class UserManagementTestIT extends DataApiTestIT {
 
     private static final String LOCATION = "SOME_LOCATION";

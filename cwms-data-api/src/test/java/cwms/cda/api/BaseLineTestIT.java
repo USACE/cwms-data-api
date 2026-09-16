@@ -19,7 +19,6 @@ import io.restassured.filter.log.LogDetail;
  * Location for tests that aren't specifically related to a given endpoint.
  */
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
 class BaseLineTestIT extends DataApiTestIT {
 
     @ParameterizedTest

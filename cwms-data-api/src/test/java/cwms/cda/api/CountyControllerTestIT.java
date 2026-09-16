@@ -39,7 +39,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 @Tag("integration")
-@ExtendWith(CwmsDataApiSetupCallback.class)
 public class CountyControllerTestIT extends DataApiTestIT {
 
     @Test
