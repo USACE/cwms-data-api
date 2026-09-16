@@ -15,18 +15,18 @@ class OpenIDConfigTest {
 
     @Test
     void providerRemainsDisabledWhenWellKnownUrlIsMissing() {
-        String previousWellKnown = System.getProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY);
+        String previousWellKnown = System.getProperty(OpenIdConnectIdentityProvider.WELL_KNOWN_PROPERTY);
         try {
-            System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY, "");
+            System.setProperty(OpenIdConnectIdentityProvider.WELL_KNOWN_PROPERTY, "");
 
-            OpenIdConnectIdentitityProvider provider = new OpenIdConnectIdentitityProvider();
+            OpenIdConnectIdentityProvider provider = new OpenIdConnectIdentityProvider();
 
             assertNull(provider.getScheme());
         } finally {
             if (previousWellKnown == null) {
-                System.clearProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY);
+                System.clearProperty(OpenIdConnectIdentityProvider.WELL_KNOWN_PROPERTY);
             } else {
-                System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY, previousWellKnown);
+                System.setProperty(OpenIdConnectIdentityProvider.WELL_KNOWN_PROPERTY, previousWellKnown);
             }
         }
     }

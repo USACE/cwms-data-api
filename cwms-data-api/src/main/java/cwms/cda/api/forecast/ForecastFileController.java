@@ -22,13 +22,16 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api;
+package cwms.cda.api.forecast;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.BinaryTimeSeriesValueController;
+import cwms.cda.api.Controllers;
+import cwms.cda.api.RangeRequestUtil;
 import cwms.cda.api.errors.CdaError;
-import cwms.cda.data.dao.ForecastInstanceDao;
+import cwms.cda.data.dao.forecast.ForecastInstanceDao;
 import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.core.util.Header;

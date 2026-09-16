@@ -32,6 +32,8 @@ import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
@@ -572,5 +574,111 @@ class BasinControllerIT extends DataApiTestIT
 			.body("name", equalTo(BASIN_CONNECT.getBasinId().getName()))
 		;
 
+	}
+
+	/**
+	 * A brand new CWMS location is always created with a location kind of SITE, regardless of
+	 * what kind is requested at creation time. Storing a Basin against an existing SITE location
+	 * is what actually converts its kind in place. This test exercises that conversion through
+	 * the REST API: create a plain SITE location, confirm its kind,
+	 * then create a Basin against that same location and confirm the kind changed to BASIN.
+	 */
+	@Test
+	void test_site_location_converts_to_basin() throws Exception {
+		TestAccounts.KeyUser user = TestAccounts.KeyUser.SWT_NORMAL;
+		String basinId = "SiteConvertsToBasin";
+
+		Location location = new Location.Builder(basinId, "SITE", ZoneId.of("UTC"),
+				38.5613824, -121.7298432, "WGS84", OFFICE)
+				.withActive(true)
+				.build();
+		String locationJson = JsonV1.buildObjectMapper().registerModule(new Jdk8Module())
+				.writeValueAsString(location);
+
+		// Create a plain location - the database always stores it with kind SITE
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.contentType(Formats.JSON)
+			.body(locationJson)
+			.header(AUTH_HEADER, user.toHeaderValue())
+			.queryParam(FAIL_IF_EXISTS, false)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("/locations")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED));
+
+		// Confirm it starts out as SITE
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(Formats.JSON)
+			.queryParam(Controllers.OFFICE, OFFICE)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("/locations/" + basinId)
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.body("location-kind", equalTo("SITE"));
+
+		Basin basin = new Basin.Builder()
+				.withBasinId(new CwmsId.Builder().withName(basinId).withOfficeId(OFFICE).build())
+				.withSortOrder(1.0)
+				.withTotalDrainageArea(100.0)
+				.withAreaUnit("mi2")
+				.build();
+		String basinJson = Formats.format(Formats.parseHeader(Formats.JSON, Basin.class), basin);
+
+		// Store a Basin against that same, existing SITE location
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(Formats.JSONV1)
+			.contentType(Formats.JSONV1)
+			.body(basinJson)
+			.header(AUTH_HEADER, user.toHeaderValue())
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.post("basins/")
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_CREATED));
+
+		// Confirm the location's kind was converted to BASIN
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(Formats.JSON)
+			.queryParam(Controllers.OFFICE, OFFICE)
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.get("/locations/" + basinId)
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK))
+			.body("location-kind", equalTo("BASIN"));
+
+		// Cleanup
+		given()
+			.log().ifValidationFails(LogDetail.ALL, true)
+			.accept(Formats.JSONV1)
+			.queryParam(Controllers.OFFICE, OFFICE)
+			.queryParam(METHOD, DeleteRule.DELETE_ALL.getRule())
+			.header(AUTH_HEADER, user.toHeaderValue())
+		.when()
+			.redirects().follow(true)
+			.redirects().max(3)
+			.delete("basins/" + basinId)
+		.then()
+			.log().ifValidationFails(LogDetail.ALL, true)
+		.assertThat()
+			.statusCode(is(HttpServletResponse.SC_OK));
 	}
 }

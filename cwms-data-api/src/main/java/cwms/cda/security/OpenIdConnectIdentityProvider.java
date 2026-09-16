@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletResponse;
 
 @AutoService(IdentityProvider.class)
-public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
+public final class OpenIdConnectIdentityProvider implements IdentityProvider {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
     public static final String WELL_KNOWN_PROPERTY = "cwms.dataapi.access.openid.wellKnownUrl";
@@ -53,7 +53,7 @@ public final class OpenIdConnectIdentitityProvider implements IdentityProvider {
      * Create a new instance of OpenIDConnectProvider
      * Constructor will pull configuration from the environment with fixed property names.
      */
-    public OpenIdConnectIdentitityProvider() {
+    public OpenIdConnectIdentityProvider() {
         wellKnownUrl = System.getProperty(WELL_KNOWN_PROPERTY,System.getenv(WELL_KNOWN_PROPERTY));
         issuer = System.getProperty(ISSUER_PROPERTY,System.getenv(ISSUER_PROPERTY));
         String timeoutStr = System.getProperty(TIMEOUT_PROPERTY,System.getenv(TIMEOUT_PROPERTY));

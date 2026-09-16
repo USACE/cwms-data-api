@@ -41,7 +41,6 @@ import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.StatusResponse;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
@@ -82,10 +81,11 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase {
             String office = ctx.pathParam(OFFICE);
             String locationId = ctx.pathParam(PROJECT_ID);
             DeleteMethod deleteMode = getDeleteMethod(ctx.queryParam(METHOD));
+            DeleteMethod method = deleteMode == null ? DeleteMethod.DELETE_KEY : deleteMode;
             String entityName = ctx.pathParam(WATER_USER);
             CwmsId location = CwmsId.buildCwmsId(office, locationId);
             WaterContractDao contractDao = getContractDao(dsl);
-            contractDao.deleteWaterUser(location, entityName, deleteMode);
+            contractDao.deleteWaterUser(location, entityName, method);
             StatusResponse re = new StatusResponse(office, "Water user deleted successfully.", entityName);
             ctx.status(HttpServletResponse.SC_OK).json(re);
         }

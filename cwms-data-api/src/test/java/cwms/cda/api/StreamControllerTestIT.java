@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OFFICE_MASK;
@@ -34,14 +35,18 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV1;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
@@ -346,6 +351,110 @@ final class StreamControllerTestIT extends DataApiTestIT {
                 .body(OFFICE_ID_TEXT, equalTo(stream.getOfficeId()))
                 .body(MESSAGE, equalTo("Stream successfully deleted from CWMS."))
                 .body(IDENTIFIER, equalTo(streamId));
+    }
+
+    /**
+     * A brand new CWMS location is always created with a location kind of SITE, regardless of
+     * what kind is requested at creation time. Storing a Stream against an existing SITE
+     * location is what actually converts its kind in place. This test exercises that conversion
+     * through the REST API: create a plain SITE location, confirm its
+     * kind, then create a Stream against that same location and confirm the kind changed to
+     * STREAM.
+     */
+    @Test
+    void test_site_location_converts_to_stream() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String locId = "SiteConvertsToStream123";
+
+        Location location = new Location.Builder(locId, "SITE", ZoneId.of("UTC"),
+                38.5613824, -121.7298432, "WGS84", OFFICE_ID)
+                .withActive(true)
+                .build();
+        String locationJson = JsonV1.buildObjectMapper().registerModule(new Jdk8Module())
+                .writeValueAsString(location);
+
+        // Create a plain location - the database always stores it with kind SITE
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSON)
+                .body(locationJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(FAIL_IF_EXISTS, false)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/locations")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Confirm it starts out as SITE
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE_ID)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/locations/" + locId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("location-kind", equalTo("SITE"));
+
+        Stream stream = new Stream.Builder()
+                .withId(new CwmsId.Builder().withName(locId).withOfficeId(OFFICE_ID).build())
+                .withStartsDownstream(true)
+                .withLength(100.0)
+                .withLengthUnits("km")
+                .build();
+        String streamJson = Formats.format(Formats.parseHeader(Formats.JSON, Stream.class), stream);
+
+        // Store a Stream against that same, existing SITE location
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .contentType(Formats.JSON)
+                .body(streamJson)
+                .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/streams/")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Confirm the location's kind was converted to STREAM
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, OFFICE_ID)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/locations/" + locId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("location-kind", equalTo("STREAM"));
+
+        // Cleanup
+        given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .header(AUTH_HEADER, user.toHeaderValue())
+                .queryParam(OFFICE, OFFICE_ID)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/streams/" + locId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
     }
 
 }

@@ -7,7 +7,7 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import cwms.cda.data.dto.TimeSeriesGroup;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 
 import static cwms.cda.data.dao.DaoTest.getConnection;
 import static cwms.cda.data.dao.DaoTest.getDslContext;

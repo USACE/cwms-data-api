@@ -298,7 +298,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         } else if (isSimpleGlobPattern(regex)) {
             condition = DSL.upper(field).like(toSqlLikePattern(regex).toUpperCase(), '\\');
         } else {
-            condition = DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.inline(regex));
+            condition = DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex));
         }
         return negate ? condition.not() : condition;
     }
