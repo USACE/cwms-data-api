@@ -177,6 +177,8 @@ services:
       - '${FORWARD_S3_API_PORT0:-9090}:9090'
     environment:
       COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: cwms-test
+      COM_ADOBE_TESTING_S3MOCK_STORE_ROOT: /s3mockroot
+      COM_ADOBE_TESTING_S3MOCK_STORE_RETAIN_FILES_ON_EXIT: "true"
     volumes:
       - s3_data:/s3mockroot
     healthcheck:
