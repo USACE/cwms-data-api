@@ -1,10 +1,13 @@
-   set define on
+set define on
 define OFFICE_EROC=&1
+
 begin
-   cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'All Users', 'HQ');
-   cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'All Users', 'SPK');
-   cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'CWMS Users', 'HQ');
-   cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'CWMS User Admins', 'HQ');
+   for office in (select * from cwms_v_office) loop
+      cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'All Users', office.office_id);
+      cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'CWMS Users', office.office_id);
+      cwms_sec.add_user_to_group('&&OFFICE_EROC.webtest', 'CWMS User Admins', office.office_id);
+   end loop;
+
    cwms_sec.add_cwms_user('l2hectest', null, 'SPK');
    cwms_sec.update_edipi('l2hectest', 1234567890);
    cwms_sec.add_user_to_group('l2hectest', 'All Users', 'SPK');

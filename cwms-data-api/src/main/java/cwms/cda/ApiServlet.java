@@ -24,6 +24,7 @@
 
 package cwms.cda;
 
+import static com.google.common.flogger.LazyArgs.lazy;
 import static cwms.cda.openapi.ExampleUtils.addEndpointExamples;
 
 import com.codahale.metrics.Meter;
@@ -219,7 +220,8 @@ public class ApiServlet extends HttpServlet {
             config.defaultContentType = "application/json";
             getOpenApiOptions(config);
             config.autogenerateEtags = true;
-            config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
+            config.requestLogger((ctx, ms) -> logger.atFinest()
+                                                    .log("handling request: %s", lazy(ctx::fullUrl)));
             config.accessManager(cdaAccessManager);
         })
                 .attribute("PolicyFactory", sanitizer)
