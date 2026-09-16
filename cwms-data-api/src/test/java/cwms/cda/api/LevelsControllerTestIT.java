@@ -2569,7 +2569,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_insert_test_Data() throws Exception {
+    void testSeasonalOffsetRoundtrip() throws Exception {
         String locName = "SuperiorLake";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Stage.Ave.1Month.CoordinatedStatistics", locName);
@@ -2606,5 +2606,26 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        ExtractableResponse<Response> response = given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, "2025-06-27T21:00:00Z")
+            .queryParam(UNIT, "ft")
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .get("/levels/" + levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .extract();
+
+        SeasonalLocationLevel seasonal = response.as(SeasonalLocationLevel.class);
+
+        assertEquals(1, seasonal.getSeasonalValues().get(0).getOffsetMonths());
     }
 }
