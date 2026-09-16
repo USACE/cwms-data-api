@@ -75,7 +75,7 @@ services:
       - ./compose_files/proxy_auth.sh:/proxy_auth.sh:ro
     environment:
       - APP_PORT=${APP_PORT:-8081}
-      - JAVA_OPTS=-Dproperties.file=/conf/features.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -DLOG_LEVEL=TRACE -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
+      - JAVA_OPTS=-Dproperties.file=/conf/features.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -DLOG_LEVEL=INFO -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
         -Dcom.sun.management.jmxremote 
         -Dcom.sun.management.jmxremote.port=9010 
         -Dcom.sun.management.jmxremote.rmi.port=9010 
@@ -90,10 +90,10 @@ services:
       - CDA_JDBC_URL=jdbc:oracle:thin:@db/FREEPDB1
       - CDA_JDBC_USERNAME=q0webtest
       - CDA_JDBC_PASSWORD=simplecwmspasswD1
-      - CDA_POOL_INIT_SIZE=5
-      - CDA_POOL_MAX_ACTIVE=100
-      - CDA_POOL_MAX_IDLE=5
-      - CDA_POOL_MIN_IDLE=2
+      - CDA_POOL_INIT_SIZE=20
+      - CDA_POOL_MAX_ACTIVE=40
+      - CDA_POOL_MAX_IDLE=20
+      - CDA_POOL_MIN_IDLE=0
       - cwms.dataapi.access.provider=MultipleAccessManager
       - cwms.dataapi.access.providers.surpress=CwmsAAACacAuth
       - cwms.dataapi.access.openid.create_users=true
@@ -116,7 +116,7 @@ services:
       - 9010:9010
     healthcheck:
       test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
-      interval: 60s
+      interval: 10s
       timeout: 1s
       retries: 100
       start_period: 2s

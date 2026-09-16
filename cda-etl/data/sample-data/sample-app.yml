@@ -19,6 +19,10 @@ offices:
         timeseries:
           - id: EUFA.Elev.Inst.1Hour.0.Ccp-Rev
             enabled: true
+          - id: EUFA.Stor.Inst.1Hour.0.Ccp-Rev
+            enabled: true
+          - id: EUFA.%-Humidity.Inst.1Hour.0.Ccp-Rev
+            enabled: true
         outlets: []
         turbines: []
         embankments: []
