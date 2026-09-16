@@ -45,7 +45,7 @@ import cwms.cda.security.DataApiPrincipal;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
-import fixtures.MinIOExtension;
+import fixtures.ObjectStorageExtension;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import freemarker.template.Configuration;
@@ -96,7 +96,7 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
 @DisplayNameGeneration(IntegrationTestNameGenerator.class)
 @Tag("integration")
 @ExtendWith(KeyCloakExtension.class)
-@ExtendWith(MinIOExtension.class)
+@ExtendWith(ObjectStorageExtension.class)
 @ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
