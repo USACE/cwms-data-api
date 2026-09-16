@@ -44,8 +44,6 @@ import cwms.cda.helpers.ZoneIdHelper;
 import cwms.cda.security.DataApiPrincipal;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
-import fixtures.KeyCloakExtension;
-import fixtures.ObjectStorageExtension;
 import fixtures.TestAccounts;
 import fixtures.users.MockCwmsUserPrincipalImpl;
 import freemarker.template.Configuration;
@@ -84,7 +82,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
@@ -95,9 +92,6 @@ import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
  */
 @DisplayNameGeneration(IntegrationTestNameGenerator.class)
 @Tag("integration")
-@ExtendWith(KeyCloakExtension.class)
-@ExtendWith(ObjectStorageExtension.class)
-@ExtendWith(CwmsDataApiSetupCallback.class)
 public class DataApiTestIT {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

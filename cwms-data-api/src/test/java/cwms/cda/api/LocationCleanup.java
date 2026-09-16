@@ -24,6 +24,7 @@
 
 package cwms.cda.api;
 
+import com.google.auto.service.AutoService;
 import cwms.cda.data.dto.Location;
 import fixtures.CwmsDataApiSetupCallback;
 import java.io.IOException;
@@ -37,6 +38,7 @@ import org.apache.commons.io.IOUtils;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestPlan;
 
+@AutoService(TestExecutionListener.class)
 public class LocationCleanup implements TestExecutionListener {
 
     /**

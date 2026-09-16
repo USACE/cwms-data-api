@@ -28,25 +28,19 @@ import java.lang.reflect.Method;
 import org.junit.jupiter.api.DisplayNameGenerator;
 
 public final class IntegrationTestNameGenerator implements DisplayNameGenerator {
-    private static String schemaVersion;
-
-    static {
-        // Fetch the schema version from a system property
-        schemaVersion = CwmsDataApiSetupCallback.VERSION_STRING;
-    }
 
     @Override
     public String generateDisplayNameForClass(Class<?> testClass) {
-        return testClass.getSimpleName() + " (schema: " + schemaVersion + ")";
+        return testClass.getSimpleName() + " (schema: " + CwmsDataApiSetupCallback.getSchemaVersionString() + ")";
     }
 
     @Override
     public String generateDisplayNameForNestedClass(Class<?> nestedClass) {
-        return nestedClass.getSimpleName() + " (schema: " + schemaVersion + ")";
+        return nestedClass.getSimpleName() + " (schema: " + CwmsDataApiSetupCallback.getSchemaVersionString() + ")";
     }
 
     @Override
     public String generateDisplayNameForMethod(Class<?> testClass, Method testMethod) {
-        return testClass.getSimpleName() + "." + testMethod.getName() + " (schema: " + schemaVersion + ")";
+        return testClass.getSimpleName() + "." + testMethod.getName() + " (schema: " + CwmsDataApiSetupCallback.getSchemaVersionString() + ")";
     }
 }

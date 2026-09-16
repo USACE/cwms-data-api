@@ -17,7 +17,6 @@ import io.javalin.http.HttpCode;
 import io.restassured.filter.log.LogDetail;
 
 @Tag("integration")
-@ExtendWith(KeyCloakExtension.class)
 public class OpenIdConnectTestIT extends DataApiTestIT {
         
 

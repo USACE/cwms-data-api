@@ -1,5 +1,6 @@
 package fixtures;
 
+import com.google.auto.service.AutoService;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,10 +18,8 @@ import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
 import mil.army.usace.hec.test.database.TeamCityUtilities;
 
-import org.junit.jupiter.api.extension.AfterAllCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.launcher.LauncherSession;
+import org.junit.platform.launcher.LauncherSessionListener;
 
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
@@ -33,9 +32,7 @@ import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
-import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
 import org.testcontainers.images.PullPolicy;
 
@@ -45,8 +42,8 @@ import static org.hamcrest.Matchers.is;
 
 
 @SuppressWarnings("rawtypes")
-@ExtendWith(KeyCloakExtension.class)
-public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallback {
+@AutoService(LauncherSessionListener.class)
+public class CwmsDataApiSetupCallback implements LauncherSessionListener {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -69,13 +66,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static String webUser = null;
 
-    public static final String VERSION_STRING;
-    public static final int VERSION_INT;
-
-    static {
-        VERSION_STRING = schemaVersion();
-        VERSION_INT = versionInt();
-    }
+    public static String VERSION_STRING = schemaVersion();
+    public static int VERSION_INT = parseVersionInt(VERSION_STRING);
 
     static {
         SLF4JBridgeHandler.removeHandlersForRootLogger();
@@ -99,10 +91,12 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         return ret;
     }
 
-    private static int versionInt()
+    public static int parseVersionInt(String tmp)
     {
+        if (tmp == null || tmp.isBlank()) {
+            return -1;
+        }
         int ret;
-        String tmp = schemaVersion();
         if (tmp.equalsIgnoreCase("latest-dev")) {
             ret = LATEST_SCHEMA;
         } else if (tmp.equalsIgnoreCase("Bypass")) {
@@ -116,31 +110,36 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     public static int getSchemaVersion() {
-        if (cwmsDb == null) {
-            // Class-level execution conditions run before the database container starts.
-            return VERSION_INT;
-        }
-        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        return VERSION_INT;
+    }
+
+    public static String getSchemaVersionString() {
+        return VERSION_STRING;
+    }
+
+    @Override
+    public void launcherSessionOpened(LauncherSession session) {
+        init();
+    }
+
+    @Override
+    public void launcherSessionClosed(LauncherSession session) {
         try {
-            return db.connection((c) -> {
-                var ctx = JooqDao.getDslContext(c, db.getOfficeId());
-                return Dao.versionAsInteger(Dao.getVersion(ctx));
-            }, webUser);
-        } catch (SQLException ex) {
-            throw new RuntimeException(ex);
+            shutdown();
+        } catch (Exception e) {
+            logger.atWarning().withCause(e).log("Error during shutdown in launcherSessionClosed");
         }
     }
 
-    @Override
-    public void afterAll(ExtensionContext context) throws Exception {
-        if (cdaInstance != null) {
-            // test-containers will handle stopping everything
+    public static synchronized void init() {
+        if (System.getProperty("warFile") == null) {
+            //This means integration tests are not being run, so we don't need to do any setup.
+            return;
         }
-    }
+        try {
+            KeyCloakExtension.setup();
+            ObjectStorageExtension.setup();
 
-    @Override
-    public void beforeAll(ExtensionContext context) throws Exception {
-        if (cdaInstance == null ) {
             cwmsDb = CwmsDatabaseContainers.createDatabaseContainer(ORACLE_IMAGE)
                             .withOfficeEroc("s0")
                             .withOfficeId("HQ")
@@ -152,8 +151,21 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             final String jdbcUrl = cwmsDb.getJdbcUrl();
             webUser = cwmsDb.getPdUser().substring(0,2)+"webtest";
             final String pw = cwmsDb.getPassword();
-            this.loadDefaultData(cwmsDb);
-            this.loadTimeSeriesData(cwmsDb);
+            loadDefaultData(cwmsDb);
+            loadTimeSeriesData(cwmsDb);
+
+            try {
+                cwmsDb.connection((c) -> {
+                    var ctx = JooqDao.getDslContext(c, cwmsDb.getOfficeId());
+                    String dbVer = Dao.getVersion(ctx);
+                    if (dbVer != null && !dbVer.isBlank()) {
+                        VERSION_STRING = dbVer;
+                        VERSION_INT = parseVersionInt(dbVer);
+                    }
+                }, webUser);
+            } catch (Exception ex) {
+                logger.atWarning().withCause(ex).log("Unable to discover database version from DB, using fallback");
+            }
 
             System.setProperty("RADAR_JDBC_URL", jdbcUrl);
             System.setProperty("RADAR_JDBC_USERNAME", webUser);
@@ -199,6 +211,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
                                             false
                                          ));
             healthCheck();
+        } catch (Exception ex) {
+            throw new RuntimeException("Failed to initialize CwmsDataApiSetupCallback", ex);
         }
     }
 
@@ -227,8 +241,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         }
     }
 
-    private void loadTimeSeriesData(CwmsDatabaseContainer<?> cwmsDb2) {
-        String csv = this.loadResourceAsString("/cwms/cda/data/timeseries.csv");
+    private static void loadTimeSeriesData(CwmsDatabaseContainer<?> cwmsDb2) {
+        String csv = loadResourceAsString("/cwms/cda/data/timeseries.csv");
         StringReader reader = new StringReader(csv);
         try {
             List<TsRandomSampler.TsSample> samples = TsRandomSampler.load_data(reader);
@@ -244,7 +258,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     }
 
-    private void loadDefaultData(CwmsDatabaseContainer cwmsDb) throws SQLException {
+    private static void loadDefaultData(CwmsDatabaseContainer cwmsDb) throws SQLException {
         ArrayList<String> defaultList = getDefaultList();
         for( String data: defaultList){
             String[] user_resource = data.split(":");
@@ -263,9 +277,9 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         }
     }
 
-    private ArrayList<String> getDefaultList() {
+    private static ArrayList<String> getDefaultList() {
         ArrayList<String> list = new ArrayList<>();
-        InputStream listStream = getClass().getResourceAsStream("/cwms/cda/data/sql/defaultload.txt");
+        InputStream listStream = CwmsDataApiSetupCallback.class.getResourceAsStream("/cwms/cda/data/sql/defaultload.txt");
         try( BufferedReader br = new BufferedReader(new InputStreamReader(listStream))) {
             String line = null;
             while( (line = br.readLine() ) != null){
@@ -318,15 +332,33 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
         webUser = null;
 
+        try {
+            KeyCloakExtension.shutdown();
+        } catch (Exception e) {
+            if (failure == null) {
+                failure = e;
+            } else {
+                failure.addSuppressed(e);
+            }
+        }
+        try {
+            ObjectStorageExtension.shutdown();
+        } catch (Exception e) {
+            if (failure == null) {
+                failure = e;
+            } else {
+                failure.addSuppressed(e);
+            }
+        }
         if (failure != null) {
             throw failure;
         }
     }
 
-    private String loadResourceAsString(String fileName) {
+    private static String loadResourceAsString(String fileName) {
         try {
             return IOUtils.toString(
-                        getClass().getResourceAsStream(fileName),
+                        CwmsDataApiSetupCallback.class.getResourceAsStream(fileName),
                         "UTF-8"
                     );
         } catch (IOException e) {
@@ -348,4 +380,6 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         }
         return webUser;
     }
+
+
 }
