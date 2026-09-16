@@ -24,6 +24,7 @@
 package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OVERWRITE;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -282,6 +283,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .contentType(contentType.toString())
             .body(vdiPayload)
             .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(OVERWRITE, "true")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
@@ -310,6 +312,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .contentType(contentType.toString())
             .body(vdiPayload)
             .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(OVERWRITE, "true")
             .header(AUTH_HEADER, user.toHeaderValue())
         .when()
             .redirects().follow(true)
