@@ -46,7 +46,7 @@ import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
-import cwms.cda.data.dto.TimeSeriesGroup;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;

@@ -1,0 +1,29 @@
+{
+  "office-id": "SPK",
+  "id": "group-id",
+  "time-series-category": {
+    "office-id": "SPK",
+    "id": "category-id",
+    "description": "category description"
+  },
+  "description": "patch description",
+  "shared-alias-id": "shared-alias",
+  "shared-ref-ts-id": "Shared.Flow.Inst.1Hour.0.Raw",
+  "membership": {
+    "assign": [
+      {
+        "office-id": "SPK",
+        "timeseries-id": "Loc.Flow.Inst.1Hour.0.Raw",
+        "alias-id": "AliasId1",
+        "ref-ts-id": "Loc2.Flow.Inst.1Hour.0.Raw",
+        "attribute": 5
+      }
+    ],
+    "unassign": [
+      {
+        "office-id": "SPK",
+        "name": "Loc3.Flow.Inst.1Hour.0.Raw"
+      }
+    ]
+  }
+}
