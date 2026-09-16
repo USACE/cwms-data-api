@@ -358,7 +358,7 @@ public class ApiServlet extends HttpServlet {
                 try (ScanResult scanResult = new ClassGraph()
                         .acceptPackages("cwms.cda.data.dto")
                         .scan()) {
-                    List<Class<CwmsCsvDTO>> csvDtoClasses = 
+                    List<Class<CwmsCsvDTO>> csvDtoClasses =
                         scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
                                 .loadClasses(CwmsCsvDTO.class);
                     for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
@@ -399,11 +399,11 @@ public class ApiServlet extends HttpServlet {
                 doc.header(IS_NEW_LRTS,
                     Boolean.class,
                     p -> p.description(
-                        "If True, will use use the new 'Local Regular Time Series" 
+                        "If True, will use use the new 'Local Regular Time Series"
                         + " naming scheme. For example 1DayLocal. Instead of the original"
                         + " PsuedoRegular based scheme, for example ~1DayLocal."
                         + " NOTE: this parameter only applies to the input and output of"
-                        + " Time Series names. It is added to all endpoints and will be ignored" 
+                        + " Time Series names. It is added to all endpoints and will be ignored"
                         + " when not required. Default values is false if not set.")
                 );
             })
