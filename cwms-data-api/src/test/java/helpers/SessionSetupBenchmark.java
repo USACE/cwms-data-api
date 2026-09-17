@@ -31,7 +31,7 @@ final class SessionSetupBenchmark {
             String original = packageSource(owner);
             String patched = withoutSuccessLog(original);
             try {
-                withConnection(database, database.getDbaUser(), observer -> {
+                withConnection(database, "sys", observer -> {
                     for (int variant = 0; variant < 3; variant++) {
                         boolean logging = variant != 1;
                         install(owner, logging ? original : patched);
