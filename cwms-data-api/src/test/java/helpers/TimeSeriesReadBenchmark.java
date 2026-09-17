@@ -63,6 +63,13 @@ public final class TimeSeriesReadBenchmark {
             new MinIOExtension().beforeAll(null);
             new CwmsDataApiSetupCallback().beforeAll(null);
 
+            if (Boolean.getBoolean("benchmark.sessionSetupProbe")) {
+                SessionSetupBenchmark.run(config.resultsDir);
+            }
+            if (Boolean.getBoolean("benchmark.disableSessionSetupLogging")) {
+                SessionSetupBenchmark.disableSuccessLogging();
+            }
+
             if (Boolean.getBoolean("benchmark.serverMode")) {
                 List<String> series = new ArrayList<>();
                 int seriesCount = Integer.getInteger("benchmark.seriesCount", 4);
