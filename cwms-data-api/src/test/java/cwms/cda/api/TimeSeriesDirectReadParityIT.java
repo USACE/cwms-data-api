@@ -53,6 +53,140 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     private static final double DOUBLE_TOLERANCE = 1e-9;
 
     @Test
+    void databasePagingTransfersOnlyPageAndLookaheadInOneStatement() throws Exception {
+        String series = "ITSQLBOUND.Stage.Inst.1Minute.0.BENCH";
+        Instant begin = Instant.parse("2024-01-01T00:00:00Z");
+        seedTimeSeries("ITSQLBOUND", series, regularRows(begin, 2500, 1.0, Duration.ofDays(1)), false);
+        connectionAsWebUser(connection -> {
+            org.jooq.DSLContext context = cwms.cda.data.dao.JooqDao.getDslContext(connection, OFFICE);
+            java.util.concurrent.atomic.AtomicInteger queries = new java.util.concurrent.atomic.AtomicInteger();
+            java.util.concurrent.atomic.AtomicInteger fetched = new java.util.concurrent.atomic.AtomicInteger();
+            org.jooq.impl.DefaultExecuteListener listener = new org.jooq.impl.DefaultExecuteListener() {
+                @Override
+                public void executeStart(org.jooq.ExecuteContext event) {
+                    if (event.sql() != null && event.sql().contains("window_summary")) {
+                        queries.incrementAndGet();
+                    }
+                }
+
+                @Override
+                public void recordEnd(org.jooq.ExecuteContext event) {
+                    if (event.record() != null && event.sql() != null && event.sql().contains("window_summary")) {
+                        fetched.incrementAndGet();
+                    }
+                }
+            };
+            org.jooq.ExecuteListenerProvider[] existing = context.configuration().executeListenerProviders();
+            org.jooq.ExecuteListenerProvider[] providers = java.util.Arrays.copyOf(existing, existing.length + 1);
+            providers[existing.length] = new org.jooq.impl.DefaultExecuteListenerProvider(listener);
+            context.configuration().set(providers);
+            cwms.cda.data.dao.TimeSeriesDaoImpl dao = new cwms.cda.data.dao.TimeSeriesDaoImpl(context,
+                    new com.codahale.metrics.MetricRegistry());
+            cwms.cda.data.dao.TimeSeriesRequestParameters parameters =
+                    new cwms.cda.data.dao.TimeSeriesRequestParameters.Builder().withOffice(OFFICE)
+                            .withNames(series).withUnits("ft").withBeginTime(begin.atZone(java.time.ZoneOffset.UTC))
+                            .withEndTime(begin.plusSeconds(2499 * 60L).atZone(java.time.ZoneOffset.UTC)).build();
+            TimeSeries first = dao.getTimeseries(null, 3, parameters);
+            assertEquals(2500, first.getTotal());
+            assertEquals(3, first.getValues().size());
+            assertEquals(1, queries.get());
+            assertEquals(4, fetched.get());
+            assertNotNull(first.getNextPage());
+            queries.set(0);
+            fetched.set(0);
+            TimeSeries second = dao.getTimeseries(first.getNextPage(), 3, parameters);
+            assertEquals(2500, second.getTotal());
+            assertEquals(begin.plusSeconds(180), second.getValues().get(0).getDateTime().toInstant());
+            assertEquals(1, queries.get());
+            assertEquals(4, fetched.get());
+            queries.set(0);
+            fetched.set(0);
+            TimeSeries metadata = dao.getTimeseries(null, 0, parameters);
+            assertEquals(2500, metadata.getTotal());
+            assertEquals(0, metadata.getValues().size());
+            assertEquals(1, queries.get());
+            assertEquals(1, fetched.get());
+        });
+    }
+
+    @Test
+    void databasePagesMatchFullMergeAtFractionalCursorsAndEmptyWindows() throws Exception {
+        String series = "ITSQLPAGE.Stage.Inst.1Minute.0.BENCH";
+        seedTimeSeries("ITSQLPAGE", series, List.of(
+                row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-02T00:00:00Z", null),
+                row("2024-01-01T00:00:30Z", null, 5, "2024-01-02T00:00:01Z", null),
+                row("2024-01-01T00:02:00Z", 2.0, 0, "2024-01-02T00:00:02Z", null),
+                row("2024-01-01T00:05:15Z", 3.0, 0, "2024-01-02T00:00:03Z", null)), false);
+        Instant begin = Instant.parse("2024-01-01T00:00:00Z");
+        assertDatabasePagesMatchMerge(series, begin, begin.plusSeconds(360));
+        assertDatabasePagesMatchMerge(series, begin.plusMillis(500), begin.plusSeconds(315).plusMillis(500));
+        assertDatabasePagesMatchMerge(series, begin.plusSeconds(86400), begin.plusSeconds(86700));
+    }
+
+    @Test
+    void databasePagesPreserveIrregularAndMaximumVersionSelection() throws Exception {
+        String irregular = "ITSQLIRR.Stage.Inst.0.0.BENCH";
+        seedTimeSeries("ITSQLIRR", irregular, irregularRows(), false);
+        assertDatabasePagesMatchMerge(irregular, Instant.parse("2024-01-05T12:00:00Z"),
+                Instant.parse("2024-01-05T12:40:00Z"));
+        String versioned = "ITSQLVER.Stage.Inst.1Hour.0.BENCH";
+        seedTimeSeries("ITSQLVER", versioned, versionedRows(), true);
+        assertDatabasePagesMatchMerge(versioned, Instant.parse("2024-05-01T15:00:00Z"),
+                Instant.parse("2024-05-01T19:00:00Z"));
+    }
+
+    @Test
+    void databasePagesPreserveNonzeroIntervalOffsets() throws Exception {
+        String series = "ITSQLOFF.Stage.Inst.5Minutes.0.BENCH";
+        seedTimeSeries("ITSQLOFF", series, List.of(
+                row("2024-01-01T00:02:00Z", 1.0, 0, "2024-01-02T00:00:00Z", null),
+                row("2024-01-01T00:03:30Z", 2.0, 0, "2024-01-02T00:00:01Z", null),
+                row("2024-01-01T00:12:00Z", 3.0, 0, "2024-01-02T00:00:02Z", null)), false, 2);
+        assertDatabasePagesMatchMerge(series, Instant.parse("2024-01-01T00:00:00Z"),
+                Instant.parse("2024-01-01T00:20:00Z"));
+    }
+
+    private static void assertDatabasePagesMatchMerge(String series, Instant begin, Instant end) throws Exception {
+        String property = cwms.cda.data.dao.TimeSeriesDaoImpl.DATABASE_PAGING_PROPERTY;
+        String previous = System.getProperty(property);
+        try {
+            for (boolean trim : new boolean[]{false, true}) {
+                for (int size : new int[]{0, 1, 3}) {
+                    for (Instant cursor : new Instant[]{null, begin.plusMillis(500),
+                            begin.plusSeconds(61).plusMillis(500), end.plusSeconds(1)}) {
+                        System.setProperty(property, "false");
+                        JsonNode reference = fetchPageTree(series, begin, end, trim, size, cursor);
+                        System.setProperty(property, "true");
+                        JsonNode actual = fetchPageTree(series, begin, end, trim, size, cursor);
+                        assertEquals(reference, actual, series + " trim=" + trim + " size=" + size
+                                + " begin=" + begin + " cursor=" + cursor);
+                    }
+                }
+            }
+        } finally {
+            if (previous == null) {
+                System.clearProperty(property);
+            } else {
+                System.setProperty(property, previous);
+            }
+        }
+    }
+
+    private static JsonNode fetchPageTree(String series, Instant begin, Instant end, boolean trim,
+                                          int size, Instant cursor) throws Exception {
+        RequestSpecification request = given().accept(Formats.JSONV2)
+                .queryParam(Controllers.OFFICE, OFFICE).queryParam(Controllers.NAME, series)
+                .queryParam(Controllers.UNIT, "ft").queryParam(Controllers.BEGIN, begin.toString())
+                .queryParam(Controllers.END, end.toString()).queryParam(Controllers.TRIM, trim)
+                .queryParam(Controllers.PAGE_SIZE, size).queryParam(Controllers.INCLUDE_ENTRY_DATE, true);
+        if (cursor != null) {
+            request.queryParam(Controllers.PAGE, cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor(
+                    Long.toString(cursor.toEpochMilli()), size));
+        }
+        return OBJECT_MAPPER.readTree(request.get("/timeseries/").then().statusCode(200).extract().asString());
+    }
+
+    @Test
     void readLimitsRejectLargeWindowsPagesAndCursorOverrides() throws Exception {
         String seriesId = "ITPARCAP.Stage.Inst.1Minute.0.BENCH";
         seedTimeSeries("ITPARCAP", seriesId, denseRows(), false);

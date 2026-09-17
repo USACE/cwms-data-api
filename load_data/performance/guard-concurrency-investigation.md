@@ -146,7 +146,8 @@ gap-filled totals, off-grid observations, version selection, trim behavior,
 fractional cursors, and local-time/calendar intervals. Separate count and page
 queries also need a consistent database snapshot. Simply replacing the total
 with an observed-row count or adding a SQL row limit would break these contracts.
-That optimization has not been implemented in this set of commits.
+The subsequent [database paging change](database-paging-investigation.md) tracks
+that implementation and its validation separately from these guard-only results.
 
 ## Baseline provenance
 
