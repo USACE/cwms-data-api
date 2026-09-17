@@ -8,10 +8,12 @@ unknown; HTTP connections, active requests, and Oracle sessions are different.
 
 ## Repository evidence
 
-The infrastructure checkout is `M:\Programming\cwms-data-infra`, remote
-`cwbi-dev-infrastructure/cwms-data`. Its local HEAD was stale. Findings below use
-freshly fetched `origin/cwbi-dev`, commit
-`35b265227fca769e8db56b62d6cca5577248a43d` (June 25), without changing the checkout.
+The authoritative repository supplied by the user is `cwbi-infrastructure/cwms-data`.
+Findings below use its freshly fetched `cwbi-prod` branch, commit
+`51db741ddc7ea5b70ed90e809f255fcca4570d80` (September 16). The earlier review used
+`cwbi-dev-infrastructure/cwms-data`; its dev head matches the authoritative dev
+branch, but missed the newer production database resize. Remote refs were fetched
+into `M:\Programming\cwms-data-infra` without changing its working tree or origin.
 
 | Component | Declared setting | Source |
 | --- | --- | --- |
@@ -20,15 +22,17 @@ freshly fetched `origin/cwbi-dev`, commit
 | API deployment minimum healthy | Hard-coded 0%; production YAML declares 50%, which this constructor does not consume | `api.py:296`, `environment/prod.yaml:31` |
 | Pool | Runtime values injected from Secrets Manager | `api.py:192-203` |
 | Pool creation defaults | Initial 5, max active 30, min idle 5, max idle 10 | `infrastructure/stacks/app_secrets.py:32-35` |
-| Production Oracle | Oracle EE 19c Spatial, `db.m6i.2xlarge` | `environment/prod.yaml:49-50` |
+| Production Oracle | Oracle EE 19c Spatial, `db.r6i.2xlarge` | `environment/prod.yaml:49-50` |
 | Production storage | gp3, 16,000 IOPS, throughput 750; 1,000 GB initial / 3,000 GB maximum | `environment/prod.yaml:52-56` |
 | Database HA | `multiple_az: false`; no read replica definition found | `environment/prod.yaml:57`, `infrastructure/stacks/rds.py:215` |
 | JVM heap | No explicit heap sizing found in the CDK API environment or the inspected CDA Docker startup script | Live JVM flags remain unknown |
 
-AWS lists `db.m6i.2xlarge` as 8 vCPUs and 32 GiB. Thus the reported 32 GB matches
-the **database**, while the checked-in API task has **4 GiB**. This is an inference
-about the report, not proof of the current deployment. The API task memory limit
-is also not the same as its Java maximum heap.
+Production PR #21, merged September 16 at 19:28:46 UTC, changes the database
+from `db.m6i.2xlarge` (8 vCPUs, 32 GiB) to `db.r6i.2xlarge` (8 vCPUs, 64 GiB).
+The reported 32 GB matches the earlier database configuration, while the API
+task remains **4 GiB**. This is an inference about the incident report; a merged
+infrastructure change does not prove the resize has deployed. The API task memory
+limit is also not the same as its Java maximum heap.
 
 The repository defines one API task and no RDS standby/read replica. A runtime
 override, separate service, or later manual change could explain the reported
@@ -41,9 +45,10 @@ retrieved, and no infrastructure was changed. In particular, the pool defaults
 above do not establish its live maximum or disprove the reported 250 setting.
 
 Sources:
-- [API task/service at reviewed commit](https://github.com/cwbi-dev-infrastructure/cwms-data/blob/35b265227fca769e8db56b62d6cca5577248a43d/infrastructure/stacks/ecs/api.py)
-- [Production configuration](https://github.com/cwbi-dev-infrastructure/cwms-data/blob/35b265227fca769e8db56b62d6cca5577248a43d/environment/prod.yaml)
-- [Pool defaults](https://github.com/cwbi-dev-infrastructure/cwms-data/blob/35b265227fca769e8db56b62d6cca5577248a43d/infrastructure/stacks/app_secrets.py)
+- [Production database resize PR #21](https://github.com/cwbi-infrastructure/cwms-data/pull/21)
+- [API task/service at reviewed commit](https://github.com/cwbi-infrastructure/cwms-data/blob/51db741ddc7ea5b70ed90e809f255fcca4570d80/infrastructure/stacks/ecs/api.py)
+- [Production configuration](https://github.com/cwbi-infrastructure/cwms-data/blob/51db741ddc7ea5b70ed90e809f255fcca4570d80/environment/prod.yaml)
+- [Pool defaults](https://github.com/cwbi-infrastructure/cwms-data/blob/51db741ddc7ea5b70ed90e809f255fcca4570d80/infrastructure/stacks/app_secrets.py)
 - [AWS RDS instance specifications](https://aws.amazon.com/rds/instance-types/)
 - [RDS Multi-AZ DB-instance standby behavior](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.MultiAZSingleStandby.html)
 
@@ -102,8 +107,9 @@ HTTP concurrency through 100, 250, 500, 900, and 1,000. Explicitly label 900 as 
 stress scenario until the metric is identified. Hold heap constant between pool
 variants, model the 4 GiB container separately from heap, and repeat with a second
 API instance against the same database if two live API tasks are confirmed.
-The local Oracle Free fixture cannot reproduce the 8-vCPU/32-GiB production Oracle
-capacity. A large-heap allocation on the local JVM would not change that limitation.
+The local Oracle Free fixture cannot reproduce the declared 8-vCPU/64-GiB Oracle
+capacity (or the earlier 32-GiB instance). A large-heap allocation on the local JVM
+would not change that limitation.
 These two-CPU HTTP/pool scenarios have **not yet been run**.
 
 For availability, configure at least two API tasks across availability zones and

@@ -5,7 +5,8 @@ dev and test work. This supersedes the earlier assumption that dev was failing.
 No production endpoints or databases are used by these tests. No changes are pushed.
 
 **Production configuration follow-up:** the refreshed infrastructure repository
-declares a two-vCPU/4-GiB API task and a separate 32-GiB Oracle instance. A local
+declares a two-vCPU/4-GiB API task. Its production branch now specifies a separate
+64-GiB Oracle instance, resized in source from the earlier 32-GiB class. A local
 executor probe demonstrates materially different async behavior at two visible
 CPUs. See [production-settings-review.md](production-settings-review.md) before
 applying these four-CPU results to production or interpreting the reported 900
