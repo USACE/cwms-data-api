@@ -1,5 +1,7 @@
 package cwms.cda.formatters;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -13,6 +15,23 @@ import cwms.cda.data.dto.locationlevel.LocationLevels;
 import cwms.cda.formatters.json.JsonV2;
 
 class JsonV2Test extends TimeSeriesTestBase {
+
+    @Test
+    void streamedTimeseriesMatchesBufferedJsonAndLeavesStreamOpen() throws Exception {
+        var ts = getTimeSeries();
+        var closed = new java.util.concurrent.atomic.AtomicBoolean();
+        var output = new java.io.ByteArrayOutputStream() {
+            @Override
+            public void close() throws java.io.IOException {
+                closed.set(true);
+                super.close();
+            }
+        };
+        JsonV2 formatter = new JsonV2();
+        formatter.write(ts, output);
+        assertEquals(formatter.format(ts), output.toString(java.nio.charset.StandardCharsets.UTF_8));
+        assertFalse(closed.get());
+    }
 
     @Override
     public OutputFormatter getOutputFormatter() {

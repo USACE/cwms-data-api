@@ -335,6 +335,41 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             response.getEnd().toInstant(), "end");
     }
 
+    @Test
+    void cursorPagesPreserveGapRowsAndTotal() throws Exception {
+        String seriesId = "ITPARCUR.Stage.Inst.1Minute.0.BENCH";
+        seedTimeSeries("ITPARCUR", seriesId, gapRows(), false);
+        Instant begin = Instant.parse("2024-01-01T00:00:00Z");
+        Instant end = Instant.parse("2024-01-01T00:09:00Z");
+        TimeSeries whole = fetchCdaRowsWithPageSize(seriesId, "ft", begin, end, -1, false, null, false);
+        List<Long> timestamps = new ArrayList<>();
+        List<Double> values = new ArrayList<>();
+        String cursor = null;
+        int pages = 0;
+        do {
+            RequestSpecification request = given().accept(Formats.JSONV2)
+                    .queryParam(Controllers.OFFICE, OFFICE).queryParam(Controllers.NAME, seriesId)
+                    .queryParam(Controllers.UNIT, "ft").queryParam(Controllers.BEGIN, begin.toString())
+                    .queryParam(Controllers.END, end.toString()).queryParam(Controllers.PAGE_SIZE, 3)
+                    .queryParam(Controllers.TRIM, false);
+            if (cursor != null) {
+                request.queryParam(Controllers.PAGE, cursor);
+            }
+            String body = request.get("/timeseries/").then().statusCode(200).extract().asString();
+            TimeSeries page = OBJECT_MAPPER.readValue(body, TimeSeries.class);
+            assertEquals(whole.getTotal(), page.getTotal());
+            page.getValues().forEach(row -> {
+                timestamps.add(row.getDateTime().getTime());
+                values.add(row.getValue());
+            });
+            cursor = page.getNextPage();
+            org.junit.jupiter.api.Assertions.assertTrue(++pages <= 4, "Cursor must advance");
+        } while (cursor != null);
+        assertEquals(whole.getValues().stream().map(row -> row.getDateTime().getTime())
+                .collect(Collectors.toList()), timestamps);
+        assertEquals(whole.getValues().stream().map(TimeSeries.Record::getValue).collect(Collectors.toList()), values);
+    }
+
     private static void assertDirectReadMatchesOracle(String locationId, String seriesId, String units,
                                                       Instant beginTime, Instant endTime, List<SeedRow> rows,
                                                       boolean versioned, boolean includeEntryDate,

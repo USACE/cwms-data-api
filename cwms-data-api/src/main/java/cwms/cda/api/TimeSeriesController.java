@@ -28,6 +28,7 @@ import cwms.cda.formatters.DateFormat;
 import cwms.cda.formatters.csv.CsvConfiguration;
 import cwms.cda.data.dto.csv.TimeSeriesCsv;
 import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
@@ -52,6 +53,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jetbrains.annotations.NotNull;
@@ -546,13 +548,20 @@ public class TimeSeriesController implements CrudHandler {
                     ts = TimeSeriesVerticalDatumConverter.convertToVerticalDatum(ts, vd);
                 }
 
-                results = Formats.format(contentType, ts);
-
                 ctx.status(HttpServletResponse.SC_OK);
 
                 addLinkHeader(ctx, ts, contentType);
 
                 ctx.contentType(contentType.toString());
+
+                if (Formats.JSON.equals(contentType.getType())) {
+                    CountingOutputStream output = new CountingOutputStream(ctx.res.getOutputStream());
+                    new JsonV2().write(ts, output);
+                    requestResultSize.update(output.getByteCount());
+                    return;
+                }
+
+                results = Formats.format(contentType, ts);
 
                 requestResultSize.update(results.length());
 

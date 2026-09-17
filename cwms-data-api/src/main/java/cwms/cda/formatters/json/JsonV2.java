@@ -25,6 +25,7 @@
 package cwms.cda.formatters.json;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,6 +43,7 @@ import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
@@ -109,6 +111,18 @@ public class JsonV2 implements OutputFormatter {
             return om.writeValueAsString(dtoList);
         } catch (JsonProcessingException e) {
             throw new FormattingException("Could not format :" + dtoList, e);
+        }
+    }
+
+    /**
+     * Writes JSON without allocating a complete serialized string or closing the caller's stream.
+     *
+     * @throws IOException if serialization or writing fails
+     */
+    public void write(CwmsDTOBase dto, OutputStream output) throws IOException {
+        try (JsonGenerator generator = om.getFactory().createGenerator(output)) {
+            generator.disable(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
+            om.writeValue(generator, dto);
         }
     }
 

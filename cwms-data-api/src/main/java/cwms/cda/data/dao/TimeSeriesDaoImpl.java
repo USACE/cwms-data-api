@@ -943,6 +943,12 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         VersionType finalDateVersionType = getDirectReadVersionType(
                 metadata.versionFlag, versionDate != null);
 
+        if (!isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)
+                || resolveExpectedInterval(intervalPart) != null) {
+            return fetchTimeSeriesPage(cursor, tsCursor, pageSize, requestParameters, metadata,
+                    intervalPart, isLrts, verticalDatumInfo, finalDateVersionType);
+        }
+
         // Pagination happens after regular-interval gap rows are merged
         //  fetch the full raw window first
         List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId,
@@ -979,6 +985,83 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         populateTimeSeriesValues(timeseries, rawRows, expectedTimes, tsCursor, includeEntryDate);
         return timeseries.alignWindowToReturnedValues(requestParameters.isShouldTrim());
+    }
+
+    private TimeSeries fetchTimeSeriesPage(String cursor, Timestamp tsCursor, int pageSize,
+                                           TimeSeriesRequestParameters parameters, DirectReadMetadata metadata,
+                                           String intervalPart, boolean isLrts, VerticalDatumInfo verticalDatumInfo,
+                                           VersionType versionType) {
+        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(
+                metadata.tsCode, metadata.officeId, metadata.units, parameters, parameters.isIncludeEntryDate());
+        query.fetchSize(1000);
+        try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> rows = query.fetchLazy()) {
+            TimeSeries.Record first = readTimeSeriesRow(rows.fetchNext());
+            boolean regular = isRegularSeries(metadata.intervalMinutes, metadata.intervalUtcOffset,
+                    intervalPart, isLrts);
+            long offset = regular ? resolveIntervalOffset(metadata.intervalUtcOffset, metadata.timeZoneId,
+                    intervalPart, isLrts, first == null ? Collections.emptyList() : Collections.singletonList(first))
+                    : metadata.intervalUtcOffset;
+            java.util.Iterator<Timestamp> expected = Collections.emptyIterator();
+            if (regular && (first != null || !parameters.isShouldTrim())) {
+                Instant start = parameters.isShouldTrim() ? first.getDateTime().toInstant()
+                        : parameters.getBeginTime().toInstant();
+                expected = expectedRegularTimes(start, parameters.getEndTime().toInstant(), offset,
+                        resolveExpectedInterval(intervalPart), getExpectedTimeZone(metadata.timeZoneId, isLrts));
+            }
+            TimeSeriesPageReader page = TimeSeriesPageReader.read(first,
+                    () -> readTimeSeriesRow(rows.fetchNext()), expected, parameters.isShouldTrim(), tsCursor, pageSize);
+            TimeSeries result = new TimeSeries(cursor, pageSize, page.getTotal(), metadata.tsId, metadata.officeId,
+                    parameters.getBeginTime(), parameters.getEndTime(), metadata.units,
+                    resolveIntervalDuration(metadata.intervalMinutes, metadata.intervalUtcOffset, intervalPart, isLrts),
+                    verticalDatumInfo, offset, metadata.timeZoneId, parameters.getVersionDate(), versionType);
+            page.getValues().forEach(result::addValue);
+            return result.alignWindowToReturnedValues(parameters.isShouldTrim());
+        }
+    }
+
+    private TimeSeries.Record readTimeSeriesRow(Record4<Timestamp, Double, BigDecimal, Timestamp> row) {
+        return row == null ? null : new TimeSeries.Record(row.value1(), row.value2(),
+                normalizeQualityCode(row.value3()), row.value4());
+    }
+
+    private java.util.Iterator<Timestamp> expectedRegularTimes(Instant start, Instant end, long offsetMinutes,
+                                                              Interval interval, ZoneId timeZone) {
+        IntervalOffset offset = IntervalOffset.fromSeconds(Math.toIntExact(TimeUnit.MINUTES.toSeconds(offsetMinutes)));
+        return new java.util.Iterator<Timestamp>() {
+            private Instant next = firstTime();
+
+            private Instant firstTime() {
+                try {
+                    return interval.getTimeOnNextOrCurrentInterval(start, offset, timeZone);
+                } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
+                    throw new IllegalArgumentException("Unable to build expected times for "
+                            + interval.getInterval(), ex);
+                }
+            }
+
+            @Override
+            public boolean hasNext() {
+                return !next.isAfter(end);
+            }
+
+            @Override
+            public Timestamp next() {
+                if (!hasNext()) {
+                    throw new java.util.NoSuchElementException();
+                }
+                Instant current = next;
+                try {
+                    next = interval.getNextIntervalTime(current, timeZone);
+                } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
+                    throw new IllegalArgumentException("Unable to build expected times for "
+                            + interval.getInterval(), ex);
+                }
+                if (!next.isAfter(current)) {
+                    throw new IllegalArgumentException("Time-series interval must advance");
+                }
+                return Timestamp.from(current);
+            }
+        };
     }
 
     private DirectReadMetadata fetchRequestedTimeSeriesMetadataRecord(
