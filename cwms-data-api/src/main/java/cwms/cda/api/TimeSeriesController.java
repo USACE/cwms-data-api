@@ -22,6 +22,7 @@ import cwms.cda.data.dao.TimeSeriesRequestParameters;
 import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.datasource.ReadDeadline;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.DateFormatResolver;
 import cwms.cda.formatters.DateFormat;
@@ -49,9 +50,8 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.CountingOutputStream;
 import org.apache.http.client.utils.URIBuilder;
@@ -121,11 +121,17 @@ public class TimeSeriesController implements CrudHandler {
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
+    private final TimeSeriesReadAdmission readAdmission;
     static final int DEFAULT_PAGE_SIZE = 500;
 
 
     public TimeSeriesController(MetricRegistry metrics) {
+        this(metrics, Integer.getInteger("cwms.cda.timeseries.maxConcurrentReads", 8));
+    }
+
+    TimeSeriesController(MetricRegistry metrics, int maximumReads) {
         this.metrics = metrics;
+        readAdmission = new TimeSeriesReadAdmission(maximumReads);
         String className = this.getClass().getName();
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
@@ -202,13 +208,17 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     protected DSLContext getDslContext(Context ctx) {
+        return getDslContext(ctx, ctx.attribute(ApiServlet.DATA_SOURCE));
+    }
+
+    private DSLContext getDslContext(Context ctx, DataSource source) {
         String office = null;
         if (ctx.handlerType() == HandlerType.GET
                 && ctx.attribute(AuthDao.DATA_API_PRINCIPAL) != null) {
             office = ctx.queryParamAsClass(OFFICE, String.class)
                     .getOrDefault(ctx.attribute(ApiServlet.OFFICE_ID));
         }
-        return JooqDao.getDslContext(ctx, office);
+        return JooqDao.getDslContext(ctx, office, source);
     }
 
     @NotNull
@@ -429,6 +439,11 @@ public class TimeSeriesController implements CrudHandler {
                         @OpenApiContent(from = TimeSeriesCsv.class, type= Formats.CSV),
                         @OpenApiContent(from = TimeSeries.class, type = ""),}),
                 @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
+                @OpenApiResponse(status = "408", description = "Time-series read deadline exceeded",
+                        content = @OpenApiContent(from = CdaError.class)),
+                @OpenApiResponse(status = "503", description = "Time-series read capacity is busy; "
+                        + "retry with backoff using the Retry-After header",
+                        content = @OpenApiContent(from = CdaError.class)),
                 @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                         + "parameters did not find a timeseries."),
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
@@ -440,9 +455,18 @@ public class TimeSeriesController implements CrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-
+        if (!readAdmission.acquire()) {
+            metrics.counter(name(getClass(), "readRejected")).inc();
+            ctx.header("Retry-After", "1");
+            ctx.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
+                    .json(new CdaError("Time-series read capacity is busy; retry with backoff."));
+            return;
+        }
+        ReadDeadline deadline = null;
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
-            DSLContext dsl = getDslContext(ctx);
+            deadline = new ReadDeadline(Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000));
+            DSLContext dsl = getDslContext(ctx, deadline.wrap(ctx.attribute(ApiServlet.DATA_SOURCE)));
+            dsl.configuration().data(ReadDeadline.class, deadline);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
@@ -521,26 +545,9 @@ public class TimeSeriesController implements CrudHandler {
                     return;
                 }
 
-                // Execute DAO call with a timeout so we can return a clearer message instead of a generic 500
-                int apiTimeoutMs = Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000);
-                CompletableFuture<TimeSeries> daoFuture = CompletableFuture.supplyAsync(
-                        () -> dao.getTimeseries(cursor, pageSize, requestParameters));
-                TimeSeries ts;
-                try {
-                    ts = daoFuture.get(apiTimeoutMs, TimeUnit.MILLISECONDS);
-                } catch (java.util.concurrent.TimeoutException ex) {
-                    daoFuture.cancel(true);
-                    cwms.cda.api.errors.CdaError re = new cwms.cda.api.errors.CdaError("Request is taking too long; try narrowing the date range.");
-                    ctx.status(HttpServletResponse.SC_REQUEST_TIMEOUT);
-                    ctx.json(re);
-                    return;
-                } catch (InterruptedException ex) {
-                    daoFuture.cancel(true);
-                    Thread.currentThread().interrupt();
-                    throw new RuntimeException(ex);
-                } catch (java.util.concurrent.ExecutionException ex) {
-                    throw unwrapExecutionException(ex);
-                }
+                // The request retains ownership until JDBC has completed and released its resources.
+                TimeSeries ts = dao.getTimeseries(cursor, pageSize, requestParameters);
+                deadline.check();
 
                 if (datum != null) { //this will be null for non-elevation ts
                     // user has requested a specific vertical datum
@@ -623,9 +630,25 @@ public class TimeSeriesController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             ctx.json(re);
         } catch (IOException ex) {
+            if (ctx.res.isCommitted()) {
+                throw new java.io.UncheckedIOException(ex);
+            }
             CdaError re = new CdaError("Failed to process request to retrieve time series");
             logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        } catch (RuntimeException ex) {
+            if ((deadline != null && deadline.expired()) || ReadDeadline.isTimeout(ex)) {
+                metrics.counter(name(getClass(), "readTimeout")).inc();
+                if (ctx.res.isCommitted()) {
+                    throw ex;
+                }
+                ctx.status(HttpServletResponse.SC_REQUEST_TIMEOUT)
+                        .json(new CdaError("Request is taking too long; try narrowing the date range."));
+            } else {
+                throw ex;
+            }
+        } finally {
+            readAdmission.release();
         }
     }
 
@@ -648,18 +671,6 @@ public class TimeSeriesController implements CrudHandler {
                 null,
                 csvBatchSize //page-size drives streaming chunk size
         );
-    }
-
-    static RuntimeException unwrapExecutionException(java.util.concurrent.ExecutionException ex) {
-        Throwable cause = ex.getCause();
-        if (cause instanceof RuntimeException) {
-            // CDA ApplicationException extends RuntimeException.
-            throw (RuntimeException) cause;
-        }
-        if (cause instanceof Error) {
-            throw (Error) cause;
-        }
-        return new RuntimeException(cause);
     }
 
     private int validateCsvBatchSize(int requestedPageSize) {

@@ -1,6 +1,7 @@
 package cwms.cda.data.dao;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import cwms.cda.data.dto.TimeSeries;
 import java.sql.Timestamp;
@@ -12,6 +13,22 @@ import java.util.stream.LongStream;
 import org.junit.jupiter.api.Test;
 
 class TimeSeriesPageReaderTest {
+    @Test
+    void deadlineInterruptsGapGenerationWithoutFetchingAnotherRow() {
+        java.util.concurrent.atomic.AtomicInteger checked = new java.util.concurrent.atomic.AtomicInteger();
+        assertThrows(cwms.cda.datasource.ReadDeadline.Expired.class, () -> TimeSeriesPageReader.read(
+                null, () -> {
+                    throw new AssertionError("Empty series must not fetch another row");
+                },
+                LongStream.range(0, 1_000_000).mapToObj(Timestamp::new).iterator(), false, null, 500,
+                () -> {
+                    if (checked.incrementAndGet() == 10) {
+                        throw new cwms.cda.datasource.ReadDeadline.Expired();
+                    }
+                }));
+        assertEquals(10, checked.get());
+    }
+
     @Test
     void retainsOnlyPageAndLookaheadWhileCountingMillionRows() {
         Iterator<TimeSeries.Record> rows = IntStream.range(0, 1_000_000)

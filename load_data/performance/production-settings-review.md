@@ -92,7 +92,7 @@ Reference: [Java 11 CompletableFuture executor and cancellation contract](https:
 ## Revised next comparison and deployment recommendation
 
 Keep #1902 first and the memory fix separately reviewable, but prioritize an
-explicit bounded database executor with proper JDBC cancellation. Do not depend
+explicit read admission with proper JDBC cancellation. Do not depend
 on CPU-count-sensitive common-pool defaults or restore a 250-connection pool as a
 capacity fix. Pool size must be budgeted across all tasks/services using Oracle.
 
@@ -118,3 +118,71 @@ be a separate infrastructure change; doubling tasks also doubles the aggregate
 pool ceiling unless per-task limits are adjusted. Final CPU/heap/pool numbers
 require the revised load evidence and live deployment settings, not the database's
 32 GiB memory figure alone.
+
+## Local admission and deadline implementation
+
+The next local change replaces the default CompletableFuture execution in
+`GET /timeseries` with synchronous request-owned work. A semaphore admits at most
+eight reads per controller instance by default, including JSON, XML, legacy
+formats, and CSV. It does not queue excess work: those requests receive 503 with
+`Retry-After: 1` before creating their DAO or checking out a database connection.
+Clients should retry with exponential backoff and jitter. The permit remains held
+through response writing and resource cleanup.
+
+Operators can set the JVM system property
+`-Dcwms.cda.timeseries.maxConcurrentReads=8` (allowed range 1 through 64).
+This is a provisional limit for load testing, not a measured production optimum.
+The existing `-Dcwms.cda.api.apiTimeoutMs=45000` now supplies a request-owned JDBC
+deadline (allowed range 1 through 300000 milliseconds). JDBC safeguards wrap the
+data source before session preparation. They set statement query timeouts,
+schedule statement cancellation, check cursor advancement, and temporarily bound
+network reads. Connection return waits for any cancellation already in progress;
+the original network timeout is restored before returning the connection.
+The incremental gap-generation loop also checks the deadline.
+
+This does not establish a strict end-to-end HTTP deadline. Servlet queueing occurs
+before admission; pool checkout still uses the pool's own maximum wait; blocking
+client writes still depend on container/network settings. Cancellation can take
+time to finish. Streaming responses cannot change to a JSON error after headers
+have committed. Other endpoint controllers are outside this admission limit.
+Unlimited pages and the eager fallback/legacy response paths still require size
+bounds. The two-CPU, 900/1000-client comparison remains outstanding.
+
+### Guard validation, September 17 UTC
+
+The full build passed with Java 11 and UTC: 760 API unit tests passed, 40 were
+skipped; the focused Oracle suite passed 66 tests with one skipped. OpenAPI
+validation, generated TypeScript client builds, documentation, and ETL checks
+also passed. The unchanged GUI reused its existing build. Existing repository
+Checkstyle warnings remain. Local logs are `read-guard-validation.log` under the
+external evidence directory.
+
+The admission unit test made 1,000 attempts through 32 caller threads while
+holding accepted permits: exactly eight were admitted. This is not a
+1,000-connection HTTP load test. Additional tests cover rejection before DAO
+creation, permit recovery after failure, cursor/gap deadlines, and blocking
+connection return until in-progress cancellation completes.
+
+A real Tomcat pool with one connection and validation on every borrow ran a
+ten-second `DBMS_SESSION.SLEEP` call with a one-second deadline:
+
+| Oracle disableOob | Elapsed until failure | Oracle error | Next pool checkout |
+| --- | ---: | --- | --- |
+| false | 2,023 ms | ORA-18730 | Replacement session successfully queried |
+| true | 2,014 ms | ORA-18730 | Replacement session successfully queried |
+
+Both runs used the network-timeout fallback and destroyed the original physical
+connection. The pool returned to zero active connections and the replacement
+session worked. Neither run demonstrated clean ORA-01013 cancellation or proved
+when server-side execution stopped. An earlier test deliberately required clean
+cancellation and failed; its evidence is preserved in
+`read-deadline-initial-oracle-failure.xml`. The replacement test checks the two
+distinct valid cleanup outcomes instead of assuming clean cancellation.
+
+Oracle documents that [statement cancellation depends on the database and network
+responding](https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/JDBC-troubleshooting.html).
+JDBC's [network timeout contract closes the connection when the timeout
+expires](https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/Connection.html).
+Production validation must verify failed-session disposal and server-side work
+cessation using its driver, pool settings, and network path. These results are
+not a production-readiness claim.

@@ -9,6 +9,7 @@ import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.data.dto.catalog.TimeSeriesAlias;
+import cwms.cda.datasource.ReadDeadline;
 import cwms.cda.formatters.csv.CsvConfiguration;
 import cwms.cda.helpers.DateUtils;
 
@@ -1008,8 +1009,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 expected = expectedRegularTimes(start, parameters.getEndTime().toInstant(), offset,
                         resolveExpectedInterval(intervalPart), getExpectedTimeZone(metadata.timeZoneId, isLrts));
             }
+            ReadDeadline deadline = (ReadDeadline) dsl.configuration().data(ReadDeadline.class);
             TimeSeriesPageReader page = TimeSeriesPageReader.read(first,
-                    () -> readTimeSeriesRow(rows.fetchNext()), expected, parameters.isShouldTrim(), tsCursor, pageSize);
+                    () -> readTimeSeriesRow(rows.fetchNext()), expected, parameters.isShouldTrim(), tsCursor, pageSize,
+                    () -> {
+                        if (deadline != null) {
+                            deadline.check();
+                        }
+                    });
             TimeSeries result = new TimeSeries(cursor, pageSize, page.getTotal(), metadata.tsId, metadata.officeId,
                     parameters.getBeginTime(), parameters.getEndTime(), metadata.units,
                     resolveIntervalDuration(metadata.intervalMinutes, metadata.intervalUtcOffset, intervalPart, isLrts),

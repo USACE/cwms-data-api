@@ -157,9 +157,12 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @return A DSLContext for the current request.
      */
     public static DSLContext getDslContext(Context ctx, String office) {
-        DSLContext retVal;
+        return getDslContext(ctx, office, ctx.attribute(ApiServlet.DATA_SOURCE));
+    }
 
-        final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+    /** Allows a request to apply JDBC safeguards before session preparation obtains a connection. */
+    public static DSLContext getDslContext(Context ctx, String office, DataSource dataSource) {
+        DSLContext retVal;
         final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null
             && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
 

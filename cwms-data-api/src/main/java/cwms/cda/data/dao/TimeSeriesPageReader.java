@@ -18,11 +18,18 @@ final class TimeSeriesPageReader {
     static TimeSeriesPageReader read(TimeSeries.Record first, Supplier<TimeSeries.Record> nextRow,
                                     Iterator<Timestamp> expectedTimes, boolean trim,
                                     Timestamp cursor, int pageSize) {
+        return read(first, nextRow, expectedTimes, trim, cursor, pageSize, () -> { });
+    }
+
+    static TimeSeriesPageReader read(TimeSeries.Record first, Supplier<TimeSeries.Record> nextRow,
+                                    Iterator<Timestamp> expectedTimes, boolean trim,
+                                    Timestamp cursor, int pageSize, Runnable checkDeadline) {
         TimeSeriesPageReader page = new TimeSeriesPageReader();
         TimeSeries.Record raw = first;
         Timestamp expected = expectedTimes.hasNext() ? expectedTimes.next() : null;
         long retainedLimit = pageSize == 0 ? 0 : pageSize < 0 ? Long.MAX_VALUE : (long) pageSize + 1;
         while (raw != null || (!trim && expected != null)) {
+            checkDeadline.run();
             if (Thread.currentThread().isInterrupted()) {
                 throw new java.util.concurrent.CancellationException("Time-series read cancelled");
             }
