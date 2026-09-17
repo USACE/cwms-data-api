@@ -12,7 +12,7 @@ import urllib.parse
 import aiohttp
 
 
-async def run(server, output, hold):
+async def run(server, output, hold, expected_accepted):
     ready = json.loads((server / "ready.json").read_text())
     target = urllib.parse.urlsplit(ready["baseUrl"])
     if target.hostname not in {"localhost", "127.0.0.1"} or target.scheme != "http":
@@ -48,19 +48,24 @@ async def run(server, output, hold):
             # alive but deliberately do not consume any further response body.
             return {"client": index, "format": "csv" if csv else "json",
                     "status": int(header.split(b" ", 2)[1]), "headersEpochMs": int(time.time() * 1000),
+                    "retryAfter": next((line.split(b":", 1)[1].strip().decode("ascii")
+                                        for line in header.split(b"\r\n")
+                                        if line.lower().startswith(b"retry-after:")), None),
                     "reader": reader}
         except Exception:
             sock.close()
             raise
 
-    async def probe(session, phase):
-        sample = {"phase": phase, "epochMs": int(time.time() * 1000), "status": 0, "valid": False}
+    async def probe(session, phase, export=False):
+        sample = {"phase": phase, "kind": "tiny-export" if export else "paged-read",
+                  "epochMs": int(time.time() * 1000), "status": 0, "valid": False}
         try:
-            async with session.get(ready["baseUrl"] + "/timeseries/", params=parameters(0, 1440, 1),
+            async with session.get(ready["baseUrl"] + "/timeseries/", params=parameters(0, 1440, -1 if export else 1),
                                    headers={"Accept": "application/json;version=2"}) as response:
                 sample["status"] = response.status
                 body = await response.json()
-                sample["valid"] = response.status == 200 and body.get("total") == 1440 and len(body.get("values", [])) == 1
+                sample["valid"] = (response.status == 200 and body.get("total") == 1440
+                                   and len(body.get("values", [])) == (1440 if export else 1))
                 sample["retryAfter"] = response.headers.get("Retry-After")
         except Exception as error:
             sample["error"] = type(error).__name__
@@ -74,18 +79,21 @@ async def run(server, output, hold):
         outcomes = await asyncio.gather(*(slow(index) for index in range(8)), return_exceptions=True)
         clients = [result for result in outcomes if isinstance(result, dict)]
         errors = [type(result).__name__ for result in outcomes if isinstance(result, Exception)]
-        if len(clients) != 8 or any(client["status"] != 200 for client in clients):
-            raise RuntimeError("The probe did not establish eight successful export responses")
+        if (len(clients) != 8 or sum(c["status"] == 200 for c in clients) != expected_accepted
+                or any(c["status"] != 200 and (c["status"] != 503 or c["retryAfter"] != "1") for c in clients)):
+            raise RuntimeError("The export admission outcomes did not match the expected configuration")
         held_from = int(time.time() * 1000)
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
             until = time.monotonic() + hold
             while time.monotonic() < until:
                 await probe(session, "unread-bodies")
+                await probe(session, "unread-bodies", export=True)
                 await asyncio.sleep(1)
             for writer in opened:
                 writer.close()
             for _ in range(10):
                 await probe(session, "after-disconnect")
+                await probe(session, "after-disconnect", export=True)
                 await asyncio.sleep(1)
     finally:
         for writer in opened:
@@ -97,10 +105,14 @@ async def run(server, output, hold):
                 pass
         summary = {"startedEpochMs": started, "endedEpochMs": int(time.time() * 1000),
                    "unreadBodiesStartedEpochMs": held_from, "clientErrors": errors,
-                   "holdSeconds": hold, "clients": [{k: v for k, v in c.items() if k != "reader"} for c in clients],
-                   "phases": {phase: {"statuses": dict(collections.Counter(str(p["status"]) for p in probes if p["phase"] == phase)),
-                                      "validSuccesses": sum(p["valid"] for p in probes if p["phase"] == phase)}
-                              for phase in {p["phase"] for p in probes}}, "probes": probes}
+                   "holdSeconds": hold, "expectedAccepted": expected_accepted,
+                   "clients": [{k: v for k, v in c.items() if k != "reader"} for c in clients],
+                   "phases": {phase + "/" + kind:
+                              {"statuses": dict(collections.Counter(str(p["status"]) for p in probes
+                                                                   if p["phase"] == phase and p["kind"] == kind)),
+                               "validSuccesses": sum(p["valid"] for p in probes
+                                                     if p["phase"] == phase and p["kind"] == kind)}
+                              for phase, kind in {(p["phase"], p["kind"]) for p in probes}}, "probes": probes}
         output.write_text(json.dumps(summary, indent=2), encoding="utf-8")
         print(json.dumps({k: v for k, v in summary.items() if k != "probes"}))
 
@@ -110,7 +122,10 @@ if __name__ == "__main__":
     parser.add_argument("server", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--hold", type=int, default=60)
+    parser.add_argument("--expected-accepted", type=int, default=8)
     args = parser.parse_args()
     if not 1 <= args.hold <= 120:
         parser.error("hold must be between 1 and 120 seconds")
-    asyncio.run(run(args.server, args.output, args.hold))
+    if not 1 <= args.expected_accepted <= 8:
+        parser.error("expected-accepted must be between 1 and 8")
+    asyncio.run(run(args.server, args.output, args.hold, args.expected_accepted))

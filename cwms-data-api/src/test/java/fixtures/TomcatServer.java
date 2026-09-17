@@ -55,6 +55,9 @@ public class TomcatServer {
         new File(tomcatInstance.getServer().getCatalinaBase(),"webapps").mkdirs();
         tomcatInstance.setPort(port);
         Connector connector = tomcatInstance.getConnector();
+        // Match the HTTP connector shipped in src/docker/server.xml. This also
+        // bounds blocking NIO writes to consumers that stop reading responses.
+        connector.setProperty("connectionTimeout", "20000");
         connector.setSecure(true);
         connector.setScheme("https");
         tomcatInstance.setSilent(false);
