@@ -9,6 +9,7 @@ import fixtures.KeyCloakExtension;
 import fixtures.MinIOExtension;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -29,6 +30,11 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_TS_PACKAGE;
@@ -49,11 +55,34 @@ public final class TimeSeriesReadBenchmark {
     public static void main(String[] args) throws Exception {
         BenchmarkConfig config = BenchmarkConfig.fromSystemProperties();
         System.out.println("Starting benchmark fixtures...");
+        System.out.println("API classes: " + cwms.cda.data.dao.TimeSeriesDaoImpl.class
+                .getProtectionDomain().getCodeSource().getLocation());
 
         try {
             new KeyCloakExtension().beforeAll(null);
             new MinIOExtension().beforeAll(null);
             new CwmsDataApiSetupCallback().beforeAll(null);
+
+            if (Boolean.getBoolean("benchmark.serverMode")) {
+                List<String> series = new ArrayList<>();
+                int seriesCount = Integer.getInteger("benchmark.seriesCount", 4);
+                for (int index = 0; index < seriesCount; index++) {
+                    String location = "PERFLOAD" + index;
+                    BenchmarkConfig seedConfig = new BenchmarkConfig(config.office, location,
+                            location + ".Stage.Inst.1Minute.0.BENCH", config.units, config.baseUrl,
+                            config.startTime, config.pointCount, config.pageSize, 1, false, false,
+                            false, false, config.resultsDir, config.responsesDir);
+                    SeedInfo seed = ensureBenchmarkSeed(seedConfig);
+                    if (seed.pointCount != config.pointCount) {
+                        throw new IllegalStateException("Incorrect seed count for " + seedConfig.seriesId);
+                    }
+                    series.add(seedConfig.seriesId);
+                }
+                waitForCdaReady(config);
+                BenchmarkServerMonitor.serve(config.resultsDir, config.resolvedBaseUrl(), series,
+                        config.startTime, config.pointCount);
+                return;
+            }
 
             System.out.println("Running benchmark...");
             BenchmarkReport report = runBenchmark(config);
@@ -99,10 +128,43 @@ public final class TimeSeriesReadBenchmark {
             }
         }
 
+        int concurrency = Integer.getInteger("benchmark.concurrency", 1);
+        System.gc();
+        long heapBefore = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed();
+        AtomicLong peakHeap = new AtomicLong(heapBefore);
+        ScheduledExecutorService sampler = Executors.newSingleThreadScheduledExecutor();
+        sampler.scheduleAtFixedRate(() -> peakHeap.accumulateAndGet(
+                ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed(), Math::max),
+                0, 10, TimeUnit.MILLISECONDS);
+        var workers = Executors.newFixedThreadPool(concurrency);
         List<BenchmarkRun> runs = new ArrayList<>();
-        for (int runIndex = 1; runIndex <= config.runs; runIndex++) {
-            runs.add(executeRun(config, runIndex));
+        final long started = System.nanoTime();
+        try {
+            List<Future<BenchmarkRun>> pending = new ArrayList<>();
+            for (int runIndex = 1; runIndex <= config.runs; runIndex++) {
+                final int index = runIndex;
+                pending.add(workers.submit(() -> executeRun(config, index)));
+            }
+            for (Future<BenchmarkRun> future : pending) {
+                runs.add(future.get());
+            }
+        } finally {
+            workers.shutdownNow();
+            sampler.shutdownNow();
         }
+        var measurements = new java.util.LinkedHashMap<String, Object>();
+        measurements.put("concurrency", concurrency);
+        measurements.put("heapMaxBytes", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax());
+        measurements.put("heapBeforeBytes", heapBefore);
+        measurements.put("sampledPeakHeapBytes", peakHeap.get());
+        measurements.put("batchSeconds", roundSeconds(System.nanoTime() - started));
+        measurements.put("javaVersion", System.getProperty("java.version"));
+        measurements.put("processors", Runtime.getRuntime().availableProcessors());
+        measurements.put("apiClasses", cwms.cda.data.dao.TimeSeriesDaoImpl.class
+                .getProtectionDomain().getCodeSource().getLocation().toString());
+        measurements.put("scope", "Embedded CDA, fixtures and streaming HTTP client share this JVM; 10ms heap samples");
+        OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValue(
+                config.resultsDir.resolve("memory.json").toFile(), measurements);
 
         return new BenchmarkReport(
                 "timeseries-read",
@@ -334,6 +396,7 @@ public final class TimeSeriesReadBenchmark {
                 responseSummary.reportedPageSize,
                 responseSummary.firstTimestamp,
                 responseSummary.lastTimestamp,
+                responseSummary.returnedRows,
                 requestResult.httpCode == 200 ? null : Files.readString(responseFile),
                 responseFileValue
         );
@@ -342,6 +405,7 @@ public final class TimeSeriesReadBenchmark {
     private static RequestResult executeRequest(BenchmarkConfig config, Path responseFile) throws Exception {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder(config.requestUrl())
+                .timeout(Duration.ofSeconds(90))
                 .header("Accept", ACCEPT_JSON_V2)
                 .GET()
                 .build();
@@ -356,6 +420,7 @@ public final class TimeSeriesReadBenchmark {
         Integer reportedPageSize = null;
         Long firstTimestamp = null;
         Long lastTimestamp = null;
+        int returnedRows = 0;
 
         try (InputStream inputStream = Files.newInputStream(responseFile);
              JsonParser parser = JSON_FACTORY.createParser(inputStream)) {
@@ -381,6 +446,7 @@ public final class TimeSeriesReadBenchmark {
                             firstTimestamp = timestamp;
                         }
                         lastTimestamp = timestamp;
+                        returnedRows++;
                         while (parser.nextToken() != JsonToken.END_ARRAY) {
                             parser.skipChildren();
                         }
@@ -396,7 +462,8 @@ public final class TimeSeriesReadBenchmark {
                 reportedTotal,
                 reportedPageSize,
                 firstTimestamp,
-                lastTimestamp
+                lastTimestamp,
+                returnedRows
         );
     }
 
@@ -573,14 +640,16 @@ public final class TimeSeriesReadBenchmark {
         private final Integer reportedPageSize;
         private final Long firstTimestamp;
         private final Long lastTimestamp;
+        private final int returnedRows;
 
         private ResponseSummary(long responseBytes, Integer reportedTotal, Integer reportedPageSize,
-                                Long firstTimestamp, Long lastTimestamp) {
+                                Long firstTimestamp, Long lastTimestamp, int returnedRows) {
             this.responseBytes = responseBytes;
             this.reportedTotal = reportedTotal;
             this.reportedPageSize = reportedPageSize;
             this.firstTimestamp = firstTimestamp;
             this.lastTimestamp = lastTimestamp;
+            this.returnedRows = returnedRows;
         }
     }
 
@@ -647,10 +716,11 @@ public final class TimeSeriesReadBenchmark {
         public final Long lastTimestamp;
         public final String errorBody;
         public final String responseFile;
+        public final int returnedRows;
 
         private BenchmarkRun(int run, int httpCode, double timeTotalSeconds, long responseBytesOnDisk,
                              Integer reportedTotal, Integer reportedPageSize, Long firstTimestamp,
-                             Long lastTimestamp, String errorBody, String responseFile) {
+                             Long lastTimestamp, int returnedRows, String errorBody, String responseFile) {
             this.run = run;
             this.httpCode = httpCode;
             this.timeTotalSeconds = timeTotalSeconds;
@@ -661,6 +731,7 @@ public final class TimeSeriesReadBenchmark {
             this.lastTimestamp = lastTimestamp;
             this.errorBody = errorBody;
             this.responseFile = responseFile;
+            this.returnedRows = returnedRows;
         }
     }
 
