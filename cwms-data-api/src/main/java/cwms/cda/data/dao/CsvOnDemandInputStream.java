@@ -30,6 +30,8 @@ final class CsvOnDemandInputStream extends InputStream {
     private final int rowsPerBuffer;
     private final CsvConfiguration csvConfiguration;
     private final CsvConfiguration rowConfiguration;
+    private final TimeSeriesReadLimits limits;
+    private long totalRows;
 
     private byte[] buffer = new byte[0];
     private int bufPos = 0;
@@ -44,6 +46,13 @@ final class CsvOnDemandInputStream extends InputStream {
                            Timestamp versionTs,
                            CsvConfiguration csvConfiguration,
                            Integer rowsPerBuffer) {
+        this(cursor, csv, tsIdStr, officeId, units, versionTs, csvConfiguration, rowsPerBuffer, null);
+    }
+
+    CsvOnDemandInputStream(Cursor<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> cursor,
+                           CsvV1 csv, String tsIdStr, String officeId, String units, Timestamp versionTs,
+                           CsvConfiguration csvConfiguration, Integer rowsPerBuffer, TimeSeriesReadLimits limits) {
+        this.limits = limits;
         this.cursor = cursor;
         this.it = cursor.iterator();
         this.csv = csv;
@@ -111,6 +120,11 @@ final class CsvOnDemandInputStream extends InputStream {
 
         while (it.hasNext() && produced < rowsPerBuffer) {
             Record4<Timestamp, Double, BigDecimal, Timestamp> r = it.next();
+            totalRows++;
+            if (limits != null) {
+                // Rows can change after the preflight count; never finish a silently truncated export.
+                limits.checkWindowRows(totalRows);
+            }
 
             Timestamp ts = r.value1();
             Double val = r.value2();

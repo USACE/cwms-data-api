@@ -15,13 +15,13 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @Tag("integration")
 class ReadDeadlineTestIT extends DataApiTestIT {
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void deadlineReleasesPoolSlotAndNextBorrowerWorks(boolean disableOob) throws Exception {
+    @CsvSource({"false,false", "true,false", "false,true", "true,true"})
+    void deadlineReleasesPoolSlotAndNextBorrowerWorks(boolean disableOob, boolean sqlQuery) throws Exception {
         org.apache.tomcat.jdbc.pool.DataSource source = new org.apache.tomcat.jdbc.pool.DataSource();
         source.setUrl(CwmsDataApiSetupCallback.getDatabaseLink().getJdbcUrl());
         source.setUsername(CwmsDataApiSetupCallback.getWebUser());
@@ -45,18 +45,27 @@ class ReadDeadlineTestIT extends DataApiTestIT {
                 firstSession = sessionId(warm);
                 originalTimeout = warm.getNetworkTimeout();
             }
+            String sql = sqlQuery
+                    ? "select /* cda_deadline_probe */ sum(sqrt(a.n + b.n)) "
+                        + "from (select level n from dual connect by level <= ?) a "
+                        + "cross join (select level n from dual connect by level <= ?) b"
+                    : "begin dbms_session.sleep(?); end;";
             long started = System.nanoTime();
             SQLException failure = assertThrows(SQLException.class, () -> {
                 try (Connection guarded = new ReadDeadline(1000).wrap(source).getConnection();
-                     PreparedStatement sleep = guarded.prepareStatement("begin dbms_session.sleep(?); end;")) {
-                    sleep.setInt(1, 10);
+                     PreparedStatement sleep = guarded.prepareStatement(sql)) {
+                    sleep.setInt(1, sqlQuery ? 10_000 : 10);
+                    if (sqlQuery) {
+                        sleep.setInt(2, 10_000);
+                    }
                     sleep.execute();
                 }
             });
             long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
-            System.out.println("Oracle deadline: disableOob=" + disableOob + ", elapsedMs=" + elapsed
+            System.out.println("Oracle deadline: disableOob=" + disableOob + ", sqlQuery=" + sqlQuery
+                    + ", elapsedMs=" + elapsed
                     + ", errorCode=" + failure.getErrorCode());
-            assertTrue(elapsed < 5000, "Ten-second query returned after " + elapsed + " ms");
+            assertTrue(elapsed < 5000, "Slow database call returned after " + elapsed + " ms");
             assertEquals(0, source.getActive(), "Timed-out request must release its pool slot");
             try (Connection next = source.getConnection()) {
                 String nextSession = sessionId(next);

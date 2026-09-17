@@ -322,6 +322,34 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     public String getTimeseries(String format, String names, String office, String units,
                                 String datum,
                                 ZonedDateTime begin, ZonedDateTime end, ZoneId timezone) {
+        TimeSeriesReadLimits limits = readLimits();
+        if (limits != null) {
+            return dsl.connectionResult(connection -> {
+                try (java.sql.CallableStatement call = connection.prepareCall(
+                        "{? = call cwms_20.cwms_ts.retrieve_time_series_f(?, ?, ?, ?, ?, ?, ?, ?)}")) {
+                    call.registerOutParameter(1, java.sql.Types.CLOB);
+                    call.setString(2, names);
+                    call.setString(3, format);
+                    call.setString(4, units);
+                    call.setString(5, datum);
+                    call.setString(6, begin.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+                    call.setString(7, end.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+                    call.setString(8, timezone.getId());
+                    call.setString(9, office);
+                    call.execute();
+                    java.sql.Clob clob = call.getClob(1);
+                    try {
+                        return limits.readLegacy(clob, this::checkReadDeadline);
+                    } finally {
+                        if (clob != null) {
+                            clob.free();
+                        }
+                    }
+                } catch (SQLException | IOException ex) {
+                    throw JooqDao.wrapException(new DataAccessException("Unable to retrieve time-series response", ex));
+                }
+            });
+        }
         return CWMS_TS_PACKAGE.call_RETRIEVE_TIME_SERIES_F(dsl.configuration(),
                 names, format, units, datum,
                 begin.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
@@ -329,7 +357,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 timezone.getId(), office);
     }
 
-    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildTsvDquQuery(
+    private TimeSeriesReadLimits readLimits() {
+        return (TimeSeriesReadLimits) dsl.configuration().data(TimeSeriesReadLimits.class);
+    }
+
+    private void checkReadDeadline() {
+        ReadDeadline deadline = (ReadDeadline) dsl.configuration().data(ReadDeadline.class);
+        if (deadline != null) {
+            deadline.check();
+        }
+    }
+
+    private org.jooq.Select<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildTsvDquQuery(
             long tsCode, String officeId, String units,
             TimeSeriesRequestParameters requestParameters,
             boolean includeEntryDate) {
@@ -359,7 +398,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .and(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
                         dateTimeField, DSL.val(endTimestampText)));
 
-        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
+        org.jooq.Select<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
         if (versionDate != null) {
             query = buildVersionedRowsQuery(
                     view,
@@ -401,8 +440,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String officeResolved = metadata.officeId;
         String resolvedUnits = metadata.units;
 
-        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved,
+        org.jooq.Select<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved,
                 resolvedUnits, requestParameters, includeDataEntryDate);
+
+        TimeSeriesReadLimits limits = readLimits();
+        if (limits != null) {
+            if (metadata.intervalUtcOffset != UTC_OFFSET_IRREGULAR) {
+                limits.checkRegularWindow(requestParameters.getBeginTime().toInstant(),
+                        requestParameters.getEndTime().toInstant(), metadata.intervalMinutes);
+            }
+            limits.checkPageSize(rowsPerBuffer == null ? 1 : rowsPerBuffer);
+            // Detect oversized irregular/off-grid exports before committing streaming headers.
+            Integer count = dsl.selectCount().from(dsl.selectFrom(query.asTable("export_rows"))
+                    .limit(limits.maximumWindowRows() + 1).asTable("bounded_export")).fetchOne(0, Integer.class);
+            limits.checkWindowRows(count == null ? 0 : count);
+        }
 
         logger.atFine().log("%s", lazy(query::getSQL));
 
@@ -430,7 +482,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     resolvedUnits,
                     versionTs,
                     csvConfiguration,
-                    rowsPerBuffer
+                    rowsPerBuffer,
+                    limits
             );
 
             try (stream) {
@@ -937,6 +990,15 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String timeZoneId = metadata.timeZoneId;
         boolean isLrts = parseBool(CWMS_TS_PACKAGE.call_IS_LRTS__2(dsl.configuration(), tsCode));
 
+        TimeSeriesReadLimits limits = readLimits();
+        if (limits != null) {
+            // Cursor tokens carry their original page size and must be checked too.
+            limits.checkPageSize(pageSize);
+            if (isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts)) {
+                limits.checkRegularWindow(beginTime.toInstant(), endTime.toInstant(), intervalMinutes);
+            }
+        }
+
         VerticalDatumInfo verticalDatumInfo = null;
         if (shouldFetchVerticalDatum(parmPart)) {
             verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, requestedUnits, office);
@@ -963,6 +1025,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 intervalPart, isLrts, requestParameters, rawRows);
         int total = countMergedRows(rawRows, expectedTimes);
 
+        if (limits != null) {
+            limits.checkWindowRows(total);
+        }
+
         TimeSeries timeseries = new TimeSeries(
                 cursor,
                 pageSize,
@@ -985,6 +1051,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         populateTimeSeriesValues(timeseries, rawRows, expectedTimes, tsCursor, includeEntryDate);
+        if (limits != null) {
+            limits.checkResponseValues(timeseries.getValues().size());
+        }
         return timeseries.alignWindowToReturnedValues(requestParameters.isShouldTrim());
     }
 
@@ -1016,7 +1085,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         if (deadline != null) {
                             deadline.check();
                         }
-                    });
+                    }, readLimits());
             TimeSeries result = new TimeSeries(cursor, pageSize, page.getTotal(), metadata.tsId, metadata.officeId,
                     parameters.getBeginTime(), parameters.getEndTime(), metadata.units,
                     resolveIntervalDuration(metadata.intervalMinutes, metadata.intervalUtcOffset, intervalPart, isLrts),
@@ -1165,6 +1234,18 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
 
+        TimeSeriesReadLimits limits = readLimits();
+        if (limits != null) {
+            List<TimeSeries.Record> result = new ArrayList<>();
+            query.fetchSize(1000);
+            try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> rows = query.fetchLazy()) {
+                while (rows.hasNext()) {
+                    limits.checkResponseValues((long) result.size() + 1);
+                    result.add(readTimeSeriesRow(rows.fetchNext()));
+                }
+            }
+            return result;
+        }
         return query.fetch(record -> {
             Timestamp dateTime = record.getValue(0, Timestamp.class);
             Double dataValue = record.getValue(1, Double.class);
@@ -1185,7 +1266,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return (int) quality;
     }
 
-    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
+    private org.jooq.Select<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
             AV_TSV_DQU view,
             Field<Timestamp> dateTime,
             Field<Timestamp> versionDateField,
@@ -1215,7 +1296,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .orderBy(dateTime.asc());
     }
 
-    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
+    private org.jooq.Select<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
             AV_TSV_DQU view,
             Field<Timestamp> dateTime,
             Field<Timestamp> versionDateField,
@@ -1291,6 +1372,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         String intervalTimeZone = isLrts ? timeZoneId : UTC;
         DATE_RANGE_T dateRange = new DATE_RANGE_T(rangeStart, rangeEnd, UTC, "T", "T", null);
+        TimeSeriesReadLimits limits = readLimits();
+        if (limits != null) {
+            return fetchBoundedExpectedTimes(dateRange, intervalPart, intervalOffset, intervalTimeZone, limits);
+        }
         DATE_TABLE_TYPE expectedTimeTable = CWMS_TS_PACKAGE.call_GET_REG_TS_TIMES_UTC_F(
                 dsl.configuration(),
                 dateRange,
@@ -1308,6 +1393,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             });
         }
         return retVal;
+    }
+
+    List<Timestamp> fetchBoundedExpectedTimes(DATE_RANGE_T dateRange, String intervalPart, long intervalOffset,
+                                            String intervalTimeZone, TimeSeriesReadLimits limits) {
+        List<Timestamp> expected = new ArrayList<>();
+        // Fetch the collection as rows so JDBC never materializes an unbounded Oracle array in Java.
+        try (Cursor<org.jooq.Record> times = dsl.resultQuery(
+                "select column_value from table(cwms_20.cwms_ts.get_reg_ts_times_utc_f(?, ?, ?, ?))",
+                dateRange, intervalPart, String.valueOf(intervalOffset), intervalTimeZone)
+                .fetchSize(1000).fetchLazy()) {
+            for (org.jooq.Record row : times) {
+                checkReadDeadline();
+                Timestamp timestamp = row.get(0, Timestamp.class);
+                if (timestamp != null) {
+                    limits.checkResponseValues((long) expected.size() + 1);
+                    expected.add(normalizeOracleUtcTimestamp(timestamp));
+                }
+            }
+        }
+        return expected;
     }
 
     private long resolveIntervalOffset(long intervalOffset, String timeZoneId,

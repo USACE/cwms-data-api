@@ -53,6 +53,51 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     private static final double DOUBLE_TOLERANCE = 1e-9;
 
     @Test
+    void readLimitsRejectLargeWindowsPagesAndCursorOverrides() throws Exception {
+        String seriesId = "ITPARCAP.Stage.Inst.1Minute.0.BENCH";
+        seedTimeSeries("ITPARCAP", seriesId, denseRows(), false);
+        Instant begin = Instant.parse("2024-01-01T00:00:00Z");
+        for (String accept : new String[]{Formats.JSONV2, Formats.CSV}) {
+            given().accept(accept).queryParam(Controllers.OFFICE, OFFICE)
+                    .queryParam(Controllers.NAME, seriesId).queryParam(Controllers.UNIT, "ft")
+                    .queryParam(Controllers.BEGIN, begin.toString())
+                    .queryParam(Controllers.END, begin.plusSeconds(5_000_000L * 60).toString())
+                    .queryParam(Controllers.PAGE_SIZE, 500)
+                    .get("/timeseries/").then().statusCode(413);
+        }
+        given().accept(Formats.JSONV2).queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, seriesId).queryParam(Controllers.PAGE_SIZE, 100_001)
+                .get("/timeseries/").then().statusCode(413);
+        String cursor = cwms.cda.data.dto.CwmsDTOPaginated.encodeCursor(
+                Long.toString(begin.toEpochMilli()), 100_001);
+        given().accept(Formats.JSONV2).queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, seriesId).queryParam(Controllers.PAGE_SIZE, 1)
+                .queryParam(Controllers.PAGE, cursor).queryParam(Controllers.UNIT, "ft")
+                .queryParam(Controllers.BEGIN, begin.toString())
+                .queryParam(Controllers.END, begin.plusSeconds(300).toString())
+                .get("/timeseries/").then().statusCode(413);
+    }
+
+    @Test
+    void unlimitedGapFilledResultIsRejectedAndSmallPageStillWorks() throws Exception {
+        String seriesId = "ITPARCAPG.Stage.Inst.1Minute.0.BENCH";
+        seedTimeSeries("ITPARCAPG", seriesId, denseRows(), false);
+        Instant begin = Instant.parse("2024-01-01T00:00:00Z");
+        Instant end = begin.plusSeconds(100_000L * 60);
+        given().accept(Formats.JSONV2).queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, seriesId).queryParam(Controllers.UNIT, "ft")
+                .queryParam(Controllers.BEGIN, begin.toString()).queryParam(Controllers.END, end.toString())
+                .queryParam(Controllers.TRIM, false).queryParam(Controllers.PAGE_SIZE, -1)
+                .get("/timeseries/").then().statusCode(413);
+        given().accept(Formats.JSONV2).queryParam(Controllers.OFFICE, OFFICE)
+                .queryParam(Controllers.NAME, seriesId).queryParam(Controllers.UNIT, "ft")
+                .queryParam(Controllers.BEGIN, begin.toString()).queryParam(Controllers.END, end.toString())
+                .queryParam(Controllers.TRIM, false).queryParam(Controllers.PAGE_SIZE, 10)
+                .get("/timeseries/").then().statusCode(200).body("total", is(100_001))
+                .body("values.size()", is(10));
+    }
+
+    @Test
     void denseRegularReadMatchesRetrieveTs() throws Exception {
         assertDirectReadMatchesOracle(
             "ITPARREG",

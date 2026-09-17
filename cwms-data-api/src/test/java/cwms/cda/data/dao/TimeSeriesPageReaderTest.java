@@ -14,6 +14,24 @@ import org.junit.jupiter.api.Test;
 
 class TimeSeriesPageReaderTest {
     @Test
+    void unlimitedPageStopsBeforeRetainingAnOversizedResult() {
+        java.util.concurrent.atomic.AtomicInteger fetched = new java.util.concurrent.atomic.AtomicInteger();
+        TimeSeriesReadLimits limits = new TimeSeriesReadLimits(10, 1000, 8000);
+        assertThrows(TimeSeriesReadLimits.Exceeded.class, () -> TimeSeriesPageReader.read(row(0),
+                () -> row(fetched.incrementAndGet()), Collections.emptyIterator(), true, null, -1, () -> { }, limits));
+        assertEquals(11, fetched.get());
+    }
+
+    @Test
+    void smallPageCannotScanAnUnlimitedWindow() {
+        java.util.concurrent.atomic.AtomicInteger fetched = new java.util.concurrent.atomic.AtomicInteger();
+        TimeSeriesReadLimits limits = new TimeSeriesReadLimits(10, 100, 8000);
+        assertThrows(TimeSeriesReadLimits.Exceeded.class, () -> TimeSeriesPageReader.read(row(0),
+                () -> row(fetched.incrementAndGet()), Collections.emptyIterator(), true, null, 1, () -> { }, limits));
+        assertEquals(101, fetched.get());
+    }
+
+    @Test
     void deadlineInterruptsGapGenerationWithoutFetchingAnotherRow() {
         java.util.concurrent.atomic.AtomicInteger checked = new java.util.concurrent.atomic.AtomicInteger();
         assertThrows(cwms.cda.datasource.ReadDeadline.Expired.class, () -> TimeSeriesPageReader.read(

@@ -22,7 +22,10 @@ public final class ReadDeadline {
     private static final ScheduledThreadPoolExecutor CANCELLATIONS = cancellationExecutor();
     private final long expires;
 
-    /** Starts a deadline with a positive timeout of at most five minutes. */
+    /**
+     * Starts a deadline with a positive timeout of at most five minutes.
+     * @throws IllegalArgumentException if the configured timeout is outside the allowed range
+     */
     public ReadDeadline(long timeoutMillis) {
         if (timeoutMillis < 1 || timeoutMillis > 300_000) {
             throw new IllegalArgumentException("Read timeout must be between 1 and 300000 milliseconds");
@@ -47,7 +50,10 @@ public final class ReadDeadline {
         return System.nanoTime() >= expires;
     }
 
-    /** Stops request-owned work once its deadline or thread interruption is observed. */
+    /**
+     * Stops request-owned work once its deadline or thread interruption is observed.
+     * @throws Expired if the deadline elapsed or the request thread was interrupted
+     */
     public void check() {
         if (expired() || Thread.currentThread().isInterrupted()) {
             throw new Expired();

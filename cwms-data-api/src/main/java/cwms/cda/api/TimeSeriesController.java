@@ -18,6 +18,7 @@ import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.TimeSeriesDeleteOptions;
+import cwms.cda.data.dao.TimeSeriesReadLimits;
 import cwms.cda.data.dao.TimeSeriesRequestParameters;
 import cwms.cda.data.dao.TimeSeriesVerticalDatumConverter;
 import cwms.cda.data.dao.VerticalDatum;
@@ -122,6 +123,7 @@ public class TimeSeriesController implements CrudHandler {
 
     private final Histogram requestResultSize;
     private final TimeSeriesReadAdmission readAdmission;
+    private final TimeSeriesReadLimits readLimits = new TimeSeriesReadLimits();
     static final int DEFAULT_PAGE_SIZE = 500;
 
 
@@ -441,6 +443,8 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_400, description = "Invalid parameter combination"),
                 @OpenApiResponse(status = "408", description = "Time-series read deadline exceeded",
                         content = @OpenApiContent(from = CdaError.class)),
+                @OpenApiResponse(status = "413", description = "Time-series read or response size limit exceeded; "
+                        + "use a smaller page or date range", content = @OpenApiContent(from = CdaError.class)),
                 @OpenApiResponse(status = "503", description = "Time-series read capacity is busy; "
                         + "retry with backoff using the Retry-After header",
                         content = @OpenApiContent(from = CdaError.class)),
@@ -467,6 +471,7 @@ public class TimeSeriesController implements CrudHandler {
             deadline = new ReadDeadline(Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000));
             DSLContext dsl = getDslContext(ctx, deadline.wrap(ctx.attribute(ApiServlet.DATA_SOURCE)));
             dsl.configuration().data(ReadDeadline.class, deadline);
+            dsl.configuration().data(TimeSeriesReadLimits.class, readLimits);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
@@ -497,6 +502,8 @@ public class TimeSeriesController implements CrudHandler {
                     new String[]{PAGE_SIZE},
                     Integer.class, DEFAULT_PAGE_SIZE, metrics,
                     name(TimeSeriesController.class.getName(), GET_ALL)));
+
+            readLimits.checkPageSize(pageSize);
 
             boolean includeMetadata = ctx.queryParamAsClass(INCLUDE_METADATA_AS_CSV_COMMENTS, Boolean.class)
                     .getOrDefault(false);
@@ -619,6 +626,12 @@ public class TimeSeriesController implements CrudHandler {
             }
 
             addDeprecatedContentTypeWarning(ctx, contentType);
+        } catch (TimeSeriesReadLimits.Exceeded ex) {
+            metrics.counter(name(getClass(), "readSizeRejected")).inc();
+            if (ctx.res.isCommitted()) {
+                throw ex;
+            }
+            ctx.status(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE).json(new CdaError(ex.getMessage()));
         } catch (NotFoundException e) {
             CdaError re = new CdaError("Not found.");
             logger.atSevere().withCause(e).log("%s", re.toString());

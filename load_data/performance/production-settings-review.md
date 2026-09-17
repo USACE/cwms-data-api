@@ -145,8 +145,9 @@ before admission; pool checkout still uses the pool's own maximum wait; blocking
 client writes still depend on container/network settings. Cancellation can take
 time to finish. Streaming responses cannot change to a JSON error after headers
 have committed. Other endpoint controllers are outside this admission limit.
-Unlimited pages and the eager fallback/legacy response paths still require size
-bounds. The two-CPU, 900/1000-client comparison remains outstanding.
+The follow-up [size guards](read-limits-investigation.md) cover unlimited pages,
+the eager fallback, CSV batches/exports, and legacy CLOB responses. The two-CPU,
+900/1000-client comparison remains outstanding.
 
 ### Guard validation, September 17 UTC
 
@@ -186,3 +187,13 @@ expires](https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/Co
 Production validation must verify failed-session disposal and server-side work
 cessation using its driver, pool settings, and network path. These results are
 not a production-readiness claim.
+
+The subsequent full size-guard build added a CPU-intensive SQL calculation over
+two 10,000-row inputs. With a one-second deadline, Oracle returned ORA-01013 after
+1,021 ms (`disableOob=false`) and 1,007 ms (`true`). Both cases preserved the same
+physical session, restored its prior network timeout, and successfully queried
+it again. The sleep cases still required the network fallback (2,006/2,015 ms,
+ORA-18730). Thus clean cancellation was demonstrated for the expensive SQL probe,
+while the slower PL/SQL cancellation case exercised pool replacement. These are
+distinct behaviors, not interchangeable timeout guarantees. Evidence is in
+`read-limits-full-validation.log` and the `ReadDeadlineTestIT` XML results.

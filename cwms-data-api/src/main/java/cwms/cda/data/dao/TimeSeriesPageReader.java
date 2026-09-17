@@ -24,6 +24,15 @@ final class TimeSeriesPageReader {
     static TimeSeriesPageReader read(TimeSeries.Record first, Supplier<TimeSeries.Record> nextRow,
                                     Iterator<Timestamp> expectedTimes, boolean trim,
                                     Timestamp cursor, int pageSize, Runnable checkDeadline) {
+        return read(first, nextRow, expectedTimes, trim, cursor, pageSize, checkDeadline, null);
+    }
+
+    static TimeSeriesPageReader read(TimeSeries.Record first, Supplier<TimeSeries.Record> nextRow,
+                                    Iterator<Timestamp> expectedTimes, boolean trim,
+                                    Timestamp cursor, int pageSize, Runnable checkDeadline, TimeSeriesReadLimits limits) {
+        if (limits != null) {
+            limits.checkPageSize(pageSize);
+        }
         TimeSeriesPageReader page = new TimeSeriesPageReader();
         TimeSeries.Record raw = first;
         Timestamp expected = expectedTimes.hasNext() ? expectedTimes.next() : null;
@@ -45,8 +54,14 @@ final class TimeSeriesPageReader {
                 raw = nextRow.get();
             }
             page.total = Math.incrementExact(page.total);
+            if (limits != null) {
+                limits.checkWindowRows(page.total);
+            }
             if (page.values.size() < retainedLimit
                     && (cursor == null || candidate.getDateTime().getTime() >= cursor.getTime())) {
+                if (limits != null && pageSize == -1) {
+                    limits.checkResponseValues((long) page.values.size() + 1);
+                }
                 page.values.add(candidate);
             }
         }
