@@ -20,8 +20,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Tag("integration")
 class ReadDeadlineTestIT extends DataApiTestIT {
     @ParameterizedTest
-    @CsvSource({"false,false", "true,false", "false,true", "true,true"})
-    void deadlineReleasesPoolSlotAndNextBorrowerWorks(boolean disableOob, boolean sqlQuery) throws Exception {
+    @CsvSource({"false,false,0", "true,false,0", "false,true,0", "true,true,0",
+            "false,false,30000", "true,false,30000", "false,true,30000", "true,true,30000"})
+    void deadlineReleasesPoolSlotAndNextBorrowerWorks(boolean disableOob, boolean sqlQuery,
+                                                     long validationInterval) throws Exception {
         org.apache.tomcat.jdbc.pool.DataSource source = new org.apache.tomcat.jdbc.pool.DataSource();
         source.setUrl(CwmsDataApiSetupCallback.getDatabaseLink().getJdbcUrl());
         source.setUsername(CwmsDataApiSetupCallback.getWebUser());
@@ -37,7 +39,7 @@ class ReadDeadlineTestIT extends DataApiTestIT {
         source.setMaxWait(2000);
         source.setTestOnBorrow(true);
         source.setValidationQuery("select 1 from dual");
-        source.setValidationInterval(0);
+        source.setValidationInterval(validationInterval);
         try {
             String firstSession;
             int originalTimeout;
@@ -63,7 +65,7 @@ class ReadDeadlineTestIT extends DataApiTestIT {
             });
             long elapsed = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
             System.out.println("Oracle deadline: disableOob=" + disableOob + ", sqlQuery=" + sqlQuery
-                    + ", elapsedMs=" + elapsed
+                    + ", validationInterval=" + validationInterval + ", elapsedMs=" + elapsed
                     + ", errorCode=" + failure.getErrorCode());
             assertTrue(elapsed < 5000, "Slow database call returned after " + elapsed + " ms");
             assertEquals(0, source.getActive(), "Timed-out request must release its pool slot");

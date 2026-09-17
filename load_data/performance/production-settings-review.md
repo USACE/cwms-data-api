@@ -198,3 +198,12 @@ ORA-18730). Thus clean cancellation was demonstrated for the expensive SQL probe
 while the slower PL/SQL cancellation case exercised pool replacement. These are
 distinct behaviors, not interchangeable timeout guarantees. Evidence is in
 `read-limits-full-validation.log` and the `ReadDeadlineTestIT` XML results.
+
+The later `pool-cached-validation.log` and XML snapshot repeat both kinds of
+cancellation with `validationInterval=0` and `30000`, each with OOB enabled and
+disabled. All eight cases pass: clean SQL cancellation preserves the session,
+and the network-timeout cases obtain a working replacement session. The Docker
+image copies the test-resource Tomcat context through `prepareDockerBuild`; that
+context enables validation on borrow but does not override the pool's cached
+validation interval. This additional test did not require changing that setting.
+It still does not verify a deployed image, secret override, or production network.
