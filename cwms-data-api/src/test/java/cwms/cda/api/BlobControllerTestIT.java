@@ -16,7 +16,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -37,7 +36,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
     private static final String EXISTING_BLOB_VALUE = "test value";
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         createExistingBlob();
     }
 
@@ -71,7 +70,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     @Test
-    void test_getOne_not_found() throws UnsupportedEncodingException {
+    void test_getOne_not_found() {
         String blobId = "TEST";
         String urlencoded = URLEncoder.encode(blobId, StandardCharsets.UTF_8);
 
@@ -493,6 +492,123 @@ public class BlobControllerTestIT extends DataApiTestIT {
         }
     }
 
+    @Test
+    void testCreateMultipartFormData() {
+        String blobId = "TEST_BLOBIT_CREATE_MULTIPART_ID";
+        String description = "multipart create description";
+        String blobValue = "multipart create blob value";
+        String mediaType = "application/octet-stream";
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .contentType(Formats.MULTIPART_FORM_DATA)
+            .queryParam(Controllers.FAIL_IF_EXISTS, false)
+            .multiPart("office-id", SPK)
+            .multiPart("id", blobId)
+            .multiPart("description", description)
+            .multiPart("media-type-id", mediaType)
+            .multiPart("value", "blob.bin", blobValue.getBytes(), mediaType)
+        .when()
+            .post("/v2/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(blobValue));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .delete("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @Test
+    void testUpdateMultipartFormData() throws Exception
+    {
+        String blobId = "TEST_BLOBIT_MULTIPART_ID";
+        String blobValue = "initial value";
+        String origDesc = "testing description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS, false)
+        .when()
+            .post("/v2/blobs/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        String newDescription = "multipart description";
+        String newBlobValue = "multipart blob value";
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .contentType("multipart/form-data")
+            .multiPart("office-id", SPK)
+            .multiPart("id", blobId)
+            .multiPart("description", newDescription)
+            .multiPart("media-type-id", mediaType)
+            .multiPart("value", "blob.bin", newBlobValue.getBytes(), mediaType)
+        .when()
+            .patch("/v2/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(newBlobValue));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .delete("/blobs/" + blobId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
 
     enum GetAllTest
     {
