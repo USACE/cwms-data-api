@@ -1125,7 +1125,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     private boolean supportsDatabasePaging(int pageSize, TimeSeriesRequestParameters parameters,
                                             DirectReadMetadata metadata, String intervalPart,
                                             boolean isLrts, boolean regular) {
-        if (!Boolean.parseBoolean(System.getProperty(DATABASE_PAGING_PROPERTY, "true"))
+        if (!Boolean.parseBoolean(System.getProperty(DATABASE_PAGING_PROPERTY, "false"))
                 || pageSize < 0 || pageSize == Integer.MAX_VALUE || parameters.getVersionDate() != null
                 || !ZoneId.systemDefault().normalized().equals(ZoneOffset.UTC)) {
             return false;

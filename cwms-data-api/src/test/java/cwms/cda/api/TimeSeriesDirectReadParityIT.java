@@ -54,6 +54,21 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
     @Test
     void databasePagingTransfersOnlyPageAndLookaheadInOneStatement() throws Exception {
+        String property = cwms.cda.data.dao.TimeSeriesDaoImpl.DATABASE_PAGING_PROPERTY;
+        String previous = System.getProperty(property);
+        try {
+            System.clearProperty(property);
+            verifyDatabasePagingOptIn();
+        } finally {
+            if (previous == null) {
+                System.clearProperty(property);
+            } else {
+                System.setProperty(property, previous);
+            }
+        }
+    }
+
+    private void verifyDatabasePagingOptIn() throws Exception {
         String series = "ITSQLBOUND.Stage.Inst.1Minute.0.BENCH";
         Instant begin = Instant.parse("2024-01-01T00:00:00Z");
         seedTimeSeries("ITSQLBOUND", series, regularRows(begin, 2500, 1.0, Duration.ofDays(1)), false);
@@ -86,6 +101,11 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                     new cwms.cda.data.dao.TimeSeriesRequestParameters.Builder().withOffice(OFFICE)
                             .withNames(series).withUnits("ft").withBeginTime(begin.atZone(java.time.ZoneOffset.UTC))
                             .withEndTime(begin.plusSeconds(2499 * 60L).atZone(java.time.ZoneOffset.UTC)).build();
+            TimeSeries defaultPage = dao.getTimeseries(null, 3, parameters);
+            assertEquals(2500, defaultPage.getTotal());
+            assertEquals(3, defaultPage.getValues().size());
+            assertEquals(0, queries.get());
+            System.setProperty(cwms.cda.data.dao.TimeSeriesDaoImpl.DATABASE_PAGING_PROPERTY, "true");
             TimeSeries first = dao.getTimeseries(null, 3, parameters);
             assertEquals(2500, first.getTotal());
             assertEquals(3, first.getValues().size());

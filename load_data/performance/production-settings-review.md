@@ -110,7 +110,15 @@ API instance against the same database if two live API tasks are confirmed.
 The local Oracle Free fixture cannot reproduce the declared 8-vCPU/64-GiB Oracle
 capacity (or the earlier 32-GiB instance). A large-heap allocation on the local JVM
 would not change that limitation.
-These two-CPU HTTP/pool scenarios have **not yet been run**.
+These two-CPU HTTP/pool scenarios have now been run locally. The
+[measured comparison](guard-concurrency-investigation.md) includes pool 30 and
+250, observed 900 simultaneous HTTP requests, and 900 logical requests with
+backoff. The guards bounded active database work and recovered after overload,
+but only 263/900 and 279/900 logical requests completed within two minutes.
+Neither result establishes adequate production capacity. The PR 1902 baseline
+already left database work active after timeouts at 100 clients; it was stopped
+before escalating further. The [database paging follow-up](database-paging-investigation.md)
+tracks the subsequent query optimization and its separate measurements.
 
 For availability, configure at least two API tasks across availability zones and
 make task count/health settings actually consume environment values. This should
