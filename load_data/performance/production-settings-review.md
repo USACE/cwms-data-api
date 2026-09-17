@@ -146,8 +146,9 @@ client writes still depend on container/network settings. Cancellation can take
 time to finish. Streaming responses cannot change to a JSON error after headers
 have committed. Other endpoint controllers are outside this admission limit.
 The follow-up [size guards](read-limits-investigation.md) cover unlimited pages,
-the eager fallback, CSV batches/exports, and legacy CLOB responses. The two-CPU,
-900/1000-client comparison remains outstanding.
+the eager fallback, CSV batches/exports, and legacy CLOB responses. The subsequent
+[two-CPU mixed-load investigation](guard-concurrency-investigation.md) records
+900/1000-client load, overload responses, retries, and remaining throughput limits.
 
 ### Guard validation, September 17 UTC
 

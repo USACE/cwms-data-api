@@ -77,6 +77,8 @@ public final class TimeSeriesReadBenchmark {
                         throw new IllegalStateException("Incorrect seed count for " + seedConfig.seriesId);
                     }
                     series.add(seedConfig.seriesId);
+                    System.out.println("Seeded benchmark series " + (index + 1) + " of " + seriesCount
+                            + " with " + seed.pointCount + " observations");
                 }
                 waitForCdaReady(config);
                 BenchmarkServerMonitor.serve(config.resultsDir, config.resolvedBaseUrl(), series,

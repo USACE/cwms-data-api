@@ -347,6 +347,9 @@ task timeseriesReadBenchmark(type: JavaExec) {
     mainClass = "helpers.TimeSeriesReadBenchmark"
     if (project.hasProperty("benchmark.baselineClasses")) {
         classpath = files(project.property("benchmark.baselineClasses")) + classpath.minus(sourceSets.main.output)
+        if (project.hasProperty("benchmark.baselineResources")) {
+            classpath += files(project.property("benchmark.baselineResources"))
+        }
     }
     jvmArgs "-Dlogback.configurationFile=$projectDir/logback.xml"
     jvmArgs "-Duser.timezone=UTC"
@@ -355,7 +358,8 @@ task timeseriesReadBenchmark(type: JavaExec) {
     def benchmarkResults = file(project.findProperty("benchmark.resultsDir") ?: "../load_data/performance/results")
     def benchmarkGcLog = project.relativePath(new File(benchmarkResults, "gc.log")).replace('\\', '/')
     doFirst { benchmarkResults.mkdirs() }
-    jvmArgs "-XX:+UseG1GC", "-XX:+ExitOnOutOfMemoryError", "-XX:ActiveProcessorCount=4",
+    def benchmarkProcessors = project.findProperty("benchmark.processors") ?: "4"
+    jvmArgs "-XX:+UseG1GC", "-XX:+ExitOnOutOfMemoryError", "-XX:ActiveProcessorCount=${benchmarkProcessors}",
             "-Xlog:gc*:file=${benchmarkGcLog}:time,uptime,level,tags"
     systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms.cda.") }
 

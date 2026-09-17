@@ -63,4 +63,5 @@ passed. `read-limits-full-validation.log` subsequently records a successful full
 build and 71 passing Oracle tests with one skipped (including four cancellation
 cases); the API unit suite has 766 passing tests and 40 skipped. OpenAPI and
 generated-client validation passed. The unchanged GUI reused its existing build.
-High-concurrency results are recorded separately when complete.
+High-concurrency results are recorded in the
+[guard concurrency investigation](guard-concurrency-investigation.md).

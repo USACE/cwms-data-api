@@ -47,12 +47,30 @@ final class BenchmarkServerMonitor {
             long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.MINUTES.toNanos(
                     Integer.getInteger("benchmark.serverMinutes", 45));
             while (!Files.exists(output.resolve("stop")) && System.nanoTime() < deadline) {
+                Path poolControl = output.resolve("pool-max-active");
+                if (Files.exists(poolControl)) {
+                    int maximum = Integer.parseInt(Files.readString(poolControl).trim());
+                    if (maximum < 1 || maximum > 250) {
+                        throw new IllegalArgumentException("Benchmark pool limit must be between 1 and 250");
+                    }
+                    datasource.getClass().getMethod("setMaxActive", int.class).invoke(datasource, maximum);
+                    datasource.getClass().getMethod("setMaxIdle", int.class).invoke(datasource, maximum);
+                    Map<String, Object> change = new LinkedHashMap<>();
+                    change.put("epochMs", System.currentTimeMillis());
+                    change.put("poolMaxActive", datasource.getClass().getMethod("getMaxActive").invoke(datasource));
+                    ready.put("poolMaxActive", change.get("poolMaxActive"));
+                    ready.put("poolChangeEpochMs", change.get("epochMs"));
+                    MAPPER.writerWithDefaultPrettyPrinter().writeValue(output.resolve("ready.json").toFile(), ready);
+                    MAPPER.writeValue(output.resolve("pool-change.json").toFile(), change);
+                    Files.delete(poolControl);
+                }
                 Map<String, Object> sample = new LinkedHashMap<>();
                 sample.put("epochMs", System.currentTimeMillis());
                 sample.put("heapUsedBytes", ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
                 sample.put("threads", ManagementFactory.getThreadMXBean().getThreadCount());
                 sample.put("cpuTimeNs", ((com.sun.management.OperatingSystemMXBean)
                         ManagementFactory.getOperatingSystemMXBean()).getProcessCpuTime());
+                sample.put("poolMaxActive", datasource.getClass().getMethod("getMaxActive").invoke(datasource));
                 for (String metric : new String[]{"Active", "Idle", "Size", "WaitCount"}) {
                     sample.put("pool" + metric, pool.getClass().getMethod("get" + metric).invoke(pool));
                 }

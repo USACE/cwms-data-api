@@ -416,7 +416,10 @@ public class TimeSeriesController implements CrudHandler {
                         + "CSV clients do not request subsequent pages. "
                         + "Default " + DEFAULT_PAGE_SIZE +". Use 0 to return an empty values array, "
                                 + "or -1 to return the entire window in one response without a next-page cursor. "
-                                + "Values less than -1 are invalid."),
+                                + "Values less than -1 are invalid. Server response and window limits still apply, "
+                                + "including when using -1 or a next-page cursor. Requests exceeding a limit "
+                                + "return HTTP 413; use a smaller page or date window. "
+                                + "The default maximum page size is 100000 values."),
                 @OpenApiParam(name = INCLUDE_METADATA_AS_CSV_COMMENTS, type = Boolean.class,
                         description = "When true, include dataset metadata as csv header comments "
                         + "prepended with # (default is false)."),

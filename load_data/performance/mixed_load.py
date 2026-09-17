@@ -35,6 +35,7 @@ def summarize(records):
     latencies = [r["seconds"] for r in records]
     successes = [r["seconds"] for r in records if r["status"] == 200 and r["valid"]]
     return {"requests": len(records), "statuses": dict(collections.Counter(str(r["status"]) for r in records)),
+            "retryableOverloadResponses": sum(r["status"] == 503 and r.get("retryAfter") == "1" for r in records),
             "validSuccesses": len(successes), "invalid200": sum(r["status"] == 200 and not r["valid"] for r in records),
             "p50Seconds": percentile(latencies, 50), "p95Seconds": percentile(latencies, 95),
             "p99Seconds": percentile(latencies, 99), "successP95Seconds": percentile(successes, 95),
@@ -114,6 +115,7 @@ class Load:
                                    headers={"Accept": plan["accept"], "Accept-Encoding": "identity"},
                                    trace_request_ctx=trace) as response:
                 record["status"] = response.status
+                record["retryAfter"] = response.headers.get("Retry-After")
                 record["ttfbSeconds"] = time.perf_counter() - started
                 body = await response.read()
                 record["bytes"] = len(body)
@@ -193,6 +195,46 @@ class Load:
         (self.output / "load-summary.json").write_text(json.dumps(self.phases, indent=2), encoding="utf-8")
         print(json.dumps(result), flush=True)
 
+    async def retry_burst(self, session, clients, budget):
+        """Measure logical completion separately from the number of HTTP attempts."""
+        phase = f"retry-burst-{clients}"
+        started_epoch = int(time.time() * 1000)
+
+        async def logical(index, plan):
+            started = time.perf_counter()
+            attempts = 0
+            rng = random.Random(20260916 + index)
+
+            async def attempt_until_done():
+                nonlocal attempts
+                while True:
+                    attempts += 1
+                    result = await self.request(session, phase, plan)
+                    if result["status"] != 503:
+                        return result
+                    delay = min(10, 2 ** min(attempts - 1, 3))
+                    await asyncio.sleep(delay + rng.random())
+
+            try:
+                result = await asyncio.wait_for(attempt_until_done(), timeout=budget)
+                valid = result["status"] == 200 and result["valid"]
+                status = result["status"]
+            except asyncio.TimeoutError:
+                valid, status = False, "logical_timeout"
+            return {"logicalId": index, "attempts": attempts, "valid": valid, "status": status,
+                    "seconds": time.perf_counter() - started, "profile": plan["profile"]}
+
+        results = await asyncio.gather(*(logical(i, plan)
+                                        for i, plan in enumerate(self.plan(clients, 20260916))))
+        successful = [r["seconds"] for r in results if r["valid"]]
+        summary = {"phase": phase, "logicalRequests": clients, "deadlineSeconds": budget,
+                   "startedEpochMs": started_epoch, "endedEpochMs": int(time.time() * 1000),
+                   "validSuccesses": len(successful), "httpAttempts": sum(r["attempts"] for r in results),
+                   "finalStatuses": dict(collections.Counter(str(r["status"]) for r in results)),
+                   "successP95Seconds": percentile(successful, 95), "results": results}
+        (self.output / "retry-summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        print(json.dumps({k: v for k, v in summary.items() if k != "results"}), flush=True)
+
     async def run(self, args):
         trace = aiohttp.TraceConfig()
         trace.on_request_headers_sent.append(self.headers_sent)
@@ -217,6 +259,9 @@ class Load:
             if args.arrival:
                 await self.phase(session, "arrival-20rps", 0, duration=args.arrival, rate=20)
                 await self.recover(session, "arrival-20rps")
+            if args.retry_burst:
+                await self.retry_burst(session, args.retry_burst, args.retry_deadline)
+                await self.recover(session, f"retry-burst-{args.retry_burst}")
 
 
 if __name__ == "__main__":
@@ -229,6 +274,8 @@ if __name__ == "__main__":
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument("--units", choices=["mixed", "EN"], default="mixed")
+    parser.add_argument("--retry-burst", type=int, default=0)
+    parser.add_argument("--retry-deadline", type=int, default=120)
     options = parser.parse_args()
     options.output.mkdir(parents=True, exist_ok=True)
     ready = json.loads((options.server / "ready.json").read_text())
