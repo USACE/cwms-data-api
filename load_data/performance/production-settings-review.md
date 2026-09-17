@@ -157,6 +157,10 @@ The follow-up [size guards](read-limits-investigation.md) cover unlimited pages,
 the eager fallback, CSV batches/exports, and legacy CLOB responses. The subsequent
 [two-CPU mixed-load investigation](guard-concurrency-investigation.md) records
 900/1000-client load, overload responses, retries, and remaining throughput limits.
+The [bulk-read and session-logging follow-up](export-and-session-investigation.md)
+adds a shared two-slot limit for exports and large regular windows, and measures
+the Oracle PGA cost of successful session-setup logging. Its combined-candidate
+results supersede export-only results for the latest local code.
 
 ### Guard validation, September 17 UTC
 
