@@ -123,7 +123,7 @@ public class TimeSeriesController implements CrudHandler {
 
     private final Histogram requestResultSize;
     private final TimeSeriesReadAdmission readAdmission;
-    private final TimeSeriesReadAdmission exportAdmission;
+    private final TimeSeriesReadAdmission bulkAdmission;
     private final TimeSeriesReadLimits readLimits = new TimeSeriesReadLimits();
     static final int DEFAULT_PAGE_SIZE = 500;
 
@@ -135,12 +135,13 @@ public class TimeSeriesController implements CrudHandler {
     TimeSeriesController(MetricRegistry metrics, int maximumReads) {
         this.metrics = metrics;
         readAdmission = new TimeSeriesReadAdmission(maximumReads);
-        int maximumExports = Integer.getInteger("cwms.cda.timeseries.maxConcurrentExports",
-                Math.min(2, Math.max(1, maximumReads - 1)));
-        if (maximumExports > maximumReads || (maximumReads > 1 && maximumExports == maximumReads)) {
-            throw new IllegalArgumentException("Export concurrency must leave capacity for paged reads");
+        int maximumBulkReads = Integer.getInteger("cwms.cda.timeseries.maxConcurrentBulkReads",
+                Integer.getInteger("cwms.cda.timeseries.maxConcurrentExports",
+                        Math.min(2, Math.max(1, maximumReads - 1))));
+        if (maximumBulkReads > maximumReads || (maximumReads > 1 && maximumBulkReads == maximumReads)) {
+            throw new IllegalArgumentException("Bulk-read concurrency must leave capacity for small reads");
         }
-        exportAdmission = new TimeSeriesReadAdmission(maximumExports);
+        bulkAdmission = new TimeSeriesReadAdmission(maximumBulkReads);
         String className = this.getClass().getName();
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
@@ -477,12 +478,12 @@ public class TimeSeriesController implements CrudHandler {
             return;
         }
         ReadDeadline deadline = null;
-        boolean exportAcquired = false;
+        TimeSeriesReadAdmission.Lease bulkLease = bulkAdmission.lease();
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             deadline = new ReadDeadline(Integer.getInteger("cwms.cda.api.apiTimeoutMs", 45000));
             DSLContext dsl = getDslContext(ctx, deadline.wrap(ctx.attribute(ApiServlet.DATA_SOURCE)));
             dsl.configuration().data(ReadDeadline.class, deadline);
-            dsl.configuration().data(TimeSeriesReadLimits.class, readLimits);
+            dsl.configuration().data(TimeSeriesReadLimits.class, readLimits.withBulkAdmission(bulkLease::acquire));
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
@@ -526,14 +527,7 @@ public class TimeSeriesController implements CrudHandler {
             String acceptHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeaderAndQueryParm(acceptHeader, format, TimeSeries.class);
             if (TimeSeriesExportPolicy.isExport(contentType, cursor, pageSize)) {
-                if (!exportAdmission.acquire()) {
-                    metrics.counter(name(getClass(), "exportRejected")).inc();
-                    ctx.header("Retry-After", "1");
-                    ctx.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE)
-                            .json(new CdaError("Time-series export capacity is busy; retry with backoff."));
-                    return;
-                }
-                exportAcquired = true;
+                bulkLease.acquire();
             }
             DateFormat dateFormat = DateFormatResolver.resolve(dateFormatParam, dateFormatPattern);
             CsvConfiguration csvConfig = new CsvConfiguration.Builder()
@@ -647,6 +641,13 @@ public class TimeSeriesController implements CrudHandler {
             }
 
             addDeprecatedContentTypeWarning(ctx, contentType);
+        } catch (TimeSeriesReadAdmission.CapacityExceeded ex) {
+            metrics.counter(name(getClass(), "bulkReadRejected")).inc();
+            if (ctx.res.isCommitted()) {
+                throw ex;
+            }
+            ctx.header("Retry-After", "1");
+            ctx.status(HttpServletResponse.SC_SERVICE_UNAVAILABLE).json(new CdaError(ex.getMessage()));
         } catch (TimeSeriesReadLimits.Exceeded ex) {
             metrics.counter(name(getClass(), "readSizeRejected")).inc();
             if (ctx.res.isCommitted()) {
@@ -682,9 +683,7 @@ public class TimeSeriesController implements CrudHandler {
                 throw ex;
             }
         } finally {
-            if (exportAcquired) {
-                exportAdmission.release();
-            }
+            bulkLease.close();
             readAdmission.release();
         }
     }

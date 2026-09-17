@@ -11,10 +11,28 @@ import static org.mockito.Mockito.when;
 import java.io.StringReader;
 import java.sql.Clob;
 import java.time.Instant;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 class TimeSeriesReadLimitsTest {
     private final TimeSeriesReadLimits limits = new TimeSeriesReadLimits(100, 1000, 8000);
+
+    @Test
+    void largeWindowAcquiresBulkCapacityBeforeItsDataCursorAndHardCapTakesPrecedence() {
+        AtomicInteger acquisitions = new AtomicInteger();
+        TimeSeriesReadLimits configured = new TimeSeriesReadLimits(100000, 1000000, 8000000);
+        TimeSeriesReadLimits request = configured.withBulkAdmission(acquisitions::incrementAndGet);
+        Instant begin = Instant.parse("2020-01-01T00:00:00Z");
+        request.checkRegularWindow(begin, begin.plusSeconds(99999L * 60), 1);
+        assertEquals(0, acquisitions.get());
+        request.checkRegularWindow(begin, begin.plusSeconds(100000L * 60), 1);
+        assertEquals(1, acquisitions.get());
+        assertThrows(TimeSeriesReadLimits.Exceeded.class,
+                () -> request.checkRegularWindow(begin, begin.plusSeconds(1000000L * 60), 1));
+        assertEquals(1, acquisitions.get());
+        configured.checkWindowRows(100001);
+        assertEquals(1, acquisitions.get(), "Request admission must not leak into shared configuration");
+    }
 
     @Test
     void oversizedLegacyClobIsRejectedBeforeReadingItsContent() throws Exception {

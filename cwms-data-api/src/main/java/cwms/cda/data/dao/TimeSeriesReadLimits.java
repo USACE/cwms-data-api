@@ -6,12 +6,15 @@ import java.sql.Clob;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 
 /** Request limits checked before retaining unbounded result data. */
 public final class TimeSeriesReadLimits {
     private final int maximumValues;
     private final int maximumWindowRows;
     private final int maximumLegacyCharacters;
+    private final int bulkWindowRows;
+    private final Runnable bulkAdmission;
 
     /** Uses the operator's limits, with conservative defaults for a small API task. */
     public TimeSeriesReadLimits() {
@@ -21,14 +24,33 @@ public final class TimeSeriesReadLimits {
     }
 
     TimeSeriesReadLimits(int maximumValues, int maximumWindowRows, int maximumLegacyCharacters) {
+        this(maximumValues, maximumWindowRows, maximumLegacyCharacters,
+                Integer.getInteger("cwms.cda.timeseries.bulkWindowRows", 100_000), () -> { });
+    }
+
+    private TimeSeriesReadLimits(int maximumValues, int maximumWindowRows, int maximumLegacyCharacters,
+                                 int bulkWindowRows, Runnable bulkAdmission) {
         if (maximumValues < 1 || maximumValues > 1_000_000
                 || maximumWindowRows < maximumValues || maximumWindowRows > 10_000_000
-                || maximumLegacyCharacters < 1 || maximumLegacyCharacters > 32_000_000) {
+                || maximumLegacyCharacters < 1 || maximumLegacyCharacters > 32_000_000
+                || bulkWindowRows < 1 || bulkWindowRows > 10_000_000) {
             throw new IllegalArgumentException("Invalid time-series read limits");
         }
         this.maximumValues = maximumValues;
         this.maximumWindowRows = maximumWindowRows;
         this.maximumLegacyCharacters = maximumLegacyCharacters;
+        this.bulkWindowRows = bulkWindowRows;
+        this.bulkAdmission = Objects.requireNonNull(bulkAdmission);
+    }
+
+    /**
+     * Attaches request-owned admission without changing the configured limits.
+     * @param admission idempotent acquisition, throwing when bulk capacity is unavailable
+     * @return a request-specific copy of the limits
+     */
+    public TimeSeriesReadLimits withBulkAdmission(Runnable admission) {
+        return new TimeSeriesReadLimits(maximumValues, maximumWindowRows, maximumLegacyCharacters,
+                bulkWindowRows, admission);
     }
 
     /**
@@ -48,6 +70,9 @@ public final class TimeSeriesReadLimits {
     void checkWindowRows(long rows) {
         if (rows > maximumWindowRows) {
             throw new Exceeded("Requested window exceeds the time-series read limit; use a narrower date range.");
+        }
+        if (rows > bulkWindowRows) {
+            bulkAdmission.run();
         }
     }
 
