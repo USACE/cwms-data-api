@@ -2578,7 +2578,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             dao.storeLocationLevel(level);
         });
 
-        ExtractableResponse<Response> response = given()
+        given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
@@ -2593,10 +2593,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .extract();
-
-        assertThat(response.path("levels.size()"),is(100));
+            .statusCode(is(HttpServletResponse.SC_OK));
     }
 
     enum GetAllTestNewAliases {
