@@ -22,21 +22,30 @@
  * SOFTWARE.
  */
 
-package cwms.cda.data.dto.project;
+package cwms.cda.data.dto;
 
-import java.time.Instant;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-public interface ProjectLock {
+public abstract class CwmsIdentifiedDTO extends CwmsDTOBase {
+    @JsonProperty(required = true)
+    private final CwmsId id;
 
-    String getApplicationId();
+    protected CwmsIdentifiedDTO(CwmsId id) {
+        this.id = id;
+    }
 
-    Instant getAcquireTime();
+    public CwmsId getId() {
+        return id;
+    }
 
-    String getSessionUser();
+    @JsonIgnore
+    public String getOfficeId() {
+        return id == null ? null : id.getOfficeId();
+    }
 
-    String getOsUser();
-
-    String getSessionProgram();
-
-    String getSessionMachine();
+    @JsonIgnore
+    public String getName() {
+        return id == null ? null : id.getName();
+    }
 }
