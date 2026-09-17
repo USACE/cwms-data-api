@@ -10,6 +10,16 @@ public final class DateFormatResolver {
     private DateFormatResolver() {
     }
 
+    /**
+     * Given either a named format or a custom parameter return an appropriate DateFormat instance.
+     * At least one of the two cannot be null. If both are provide dateFormatParam takes
+     * priority if valid.
+     * @param dateFormatParam named format, can be null
+     * @param customPattern custom date format pattern string, can be null.
+     * @return DateFormat instance
+     * @throws IllegalArgumentException if date pattern is null or "custom" and customPattern is null
+     * @throws UnsupportedOperationException if no DateFormat instance can be created
+     */
     public static DateFormat resolve(String dateFormatParam, String customPattern) {
         if (dateFormatParam == null || dateFormatParam.isEmpty()) {
             return DateFormat.pattern(ISO_INSTANT_PATTERN);
@@ -33,7 +43,8 @@ public final class DateFormatResolver {
                 return DateFormat.pattern(DATE_ONLY_PATTERN);
             case CUSTOM:
                 if (customPattern == null || customPattern.isEmpty()) {
-                    throw new IllegalArgumentException("date-format-pattern is required when date-format is set to 'custom'");
+                    throw new IllegalArgumentException(
+                        "date-format-pattern is required when date-format is set to 'custom'");
                 }
                 return DateFormat.pattern(customPattern);
             default:

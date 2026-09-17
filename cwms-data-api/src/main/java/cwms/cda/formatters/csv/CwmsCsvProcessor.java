@@ -24,11 +24,9 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.csv.CsvRequiredColumn;
 import cwms.cda.data.dto.csv.CsvUnitHeader;
 import cwms.cda.data.dto.csv.CwmsCsvDTO;
-import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.DateFormat;
+import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
-import org.jetbrains.annotations.Nullable;
-
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -43,12 +41,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Utility class to processing cwms CSV DTOs for both reading and writing.
- * Handles building header lines with units, building metadata comment lines, and parsing metadata and units from CSV content.
+ * Handles building header lines with units, building metadata comment lines,
+ * and parsing metadata and units from CSV content.
  */
-public class CwmsCsvProcessor {
+public final class CwmsCsvProcessor {
+
+    private CwmsCsvProcessor() {
+        /* utility class */
+    }
 
     private static String buildMetadataComments(Object dto) {
         StringBuilder sb = new StringBuilder();
@@ -143,8 +147,11 @@ public class CwmsCsvProcessor {
         return sb.toString();
     }
 
-    private static void extractFieldToUnits(Object dto, Map<String, String> fieldToUnits) throws IllegalAccessException, InvocationTargetException {
-        if (dto == null) return;
+    private static void extractFieldToUnits(Object dto, Map<String, String> fieldToUnits)
+        throws IllegalAccessException, InvocationTargetException {
+        if (dto == null) { 
+            return;
+        }
         Class<?> cls = dto.getClass();
         List<Field> fields = getAllFields(cls);
         for (Field f : fields) {
@@ -208,10 +215,14 @@ public class CwmsCsvProcessor {
         } catch (Exception e) {
             throw new FormattingException("Could not parse " + type.getName(), e);
         }
-        throw new FormattingException("Could not parse " + type.getName() + ". Must be a " + CwmsCsvDTO.class.getName());
+        throw new FormattingException("Could not parse " + type.getName()
+                                     + ". Must be a " + CwmsCsvDTO.class.getName());
     }
 
-    private static <T extends CwmsDTOBase> void injectMetadataAndUnits(String content, Class<T> type, T dto, Map<String, String> metadata, String units) throws IOException, IllegalAccessException {
+    private static <T extends CwmsDTOBase> void injectMetadataAndUnits(String content, Class<T> type,
+                                                                       T dto, Map<String, String> metadata,
+                                                                       String units)
+        throws IOException, IllegalAccessException {
         // Inject metadata into DTO
         CwmsCsvProcessor.applyMetadataAndUnits(dto, metadata, units);
 
@@ -275,7 +286,8 @@ public class CwmsCsvProcessor {
             String header = buildHeader(dto, config.includeOptionalColumns());
             sb.append(header);
             FilterProvider filters = new SimpleFilterProvider()
-                    .addFilter("columnFilter", SimpleBeanPropertyFilter.filterOutAllExcept(new HashSet<>(schema.getColumnNames())));
+                    .addFilter("columnFilter",
+                               SimpleBeanPropertyFilter.filterOutAllExcept(new HashSet<>(schema.getColumnNames())));
             sb.append(csvMapper.writer(schema).with(filters).writeValueAsString(rows));
         }
         return sb.toString();
@@ -292,11 +304,12 @@ public class CwmsCsvProcessor {
 
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        
         mapper.registerModule(new Jdk8Module());
         mapper.enable(CsvParser.Feature.ALLOW_COMMENTS);
         mapper.addMixIn(rowType, PropertyFilterMixIn.class);
 
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
         DateFormat dateFormat = config.getDateFormat();
         dateFormat.apply(mapper, javaTimeModule);
         mapper.registerModule(javaTimeModule);
@@ -309,7 +322,8 @@ public class CwmsCsvProcessor {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonFilter("columnFilter")
-    abstract static class PropertyFilterMixIn {}
+    abstract static class PropertyFilterMixIn {
+    }
 
     private static <T extends CwmsDTOBase> @Nullable Field getRowsField(Class<T> type) {
         // Find rows field
@@ -349,7 +363,8 @@ public class CwmsCsvProcessor {
                 if (strat instanceof PropertyNamingStrategies.NamingBase) {
                     return ((PropertyNamingStrategies.NamingBase) strat).translate(f.getName());
                 }
-            } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+            } catch (InvocationTargetException | InstantiationException 
+                    | IllegalAccessException | NoSuchMethodException e) {
                 throw new FormattingException("Error resolving property name for " + f.getName(), e);
             }
         }
@@ -365,6 +380,7 @@ public class CwmsCsvProcessor {
         return getName(f, naming);
     }
 
+    @SuppressWarnings({"checkstyle:NeedBraces"}) // always returns, would get really noisy.
     private static Object convertToType(String val, Class<?> type) {
         if (type == String.class) return val;
         if (type == Instant.class) return Instant.parse(val);
@@ -376,7 +392,9 @@ public class CwmsCsvProcessor {
     }
 
     private static void applyMetadataAndUnits(Object dto, Map<String, String> metadata, String units) {
-        if (dto == null) return;
+        if (dto == null) {
+            return;
+        }
         Class<?> cls = dto.getClass();
         // Use a list of all fields including superclasses
         List<Field> allFields = CwmsCsvProcessor.getAllFields(cls);
@@ -431,8 +449,12 @@ public class CwmsCsvProcessor {
         String[] lines = content.split("\\r?\\n");
         for (String line : lines) {
             String trimmed = line.trim();
-            if (trimmed.startsWith("#")) continue;
-            if (trimmed.isEmpty()) continue;
+            if (trimmed.startsWith("#")) {
+                continue;
+            }
+            if (trimmed.isEmpty()) {
+                continue;
+            }
             // First non-comment line is header
             int start = trimmed.indexOf('(');
             int end = trimmed.indexOf(')');
@@ -447,10 +469,10 @@ public class CwmsCsvProcessor {
     private static class ColumnInfo {
         final String name;
         final int order;
+
         ColumnInfo(String name, int order) {
             this.name = name;
             this.order = order;
         }
     }
-
 }

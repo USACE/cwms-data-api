@@ -76,6 +76,30 @@ End user documentation available here: [📕 Read the Docs](https://cwms-data-ap
 
 Development and runtime currently requires java 11. JDKs and JREs greater than 11 should work, please report if they don't.
 
+### Dev Container
+
+The repository includes a [Dev Container](https://containers.dev/) with Java 11, Node.js 22,
+Python 3.13, and Docker Compose. It supports the Gradle build, CDA GUI and client development,
+documentation builds, the local Docker Compose stack, and Docker-backed integration tests.
+
+To use it locally:
+
+1. Install Docker and the Visual Studio Code Dev Containers extension.
+2. Open the cloned repository in Visual Studio Code.
+3. Run **Dev Containers: Reopen in Container** from the command palette.
+
+GitHub Codespaces also detects the same configuration automatically. The first container creation
+downloads the development image and initializes the Gradle wrapper. After it completes, run the
+normal project commands from the container terminal, for example:
+
+```bash
+./gradlew build
+docker compose up -d --force-recreate
+```
+
+The integration tests use the host Docker engine through the forwarded Docker socket. Their database
+setup has the same resource and startup-time requirements described in [Testing](#testing).
+
 
 To build the war:
 

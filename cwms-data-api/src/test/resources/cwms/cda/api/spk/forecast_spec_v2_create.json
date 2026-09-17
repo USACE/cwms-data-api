@@ -1,0 +1,26 @@
+{
+  "spec-id": {
+    "office-id": "SPK",
+    "name": "TEST-SPEC-V2"
+  },
+  "designator": "designator",
+  "location-ids": [
+    {
+      "location-id": "TsBinTestLoc",
+      "sort-order": 1,
+      "is-primary": false
+    },
+    {
+      "location-id": "TsBinTestLoc2",
+      "sort-order": -1,
+      "is-primary": true
+    }
+  ],
+  "source-entity-id": "USACE",
+  "description": "description",
+  "time-series-ids": [
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid1",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid2",
+    "TsBinTestLoc.Flow.Ave.1Day.1Day.tsid3"
+  ]
+}

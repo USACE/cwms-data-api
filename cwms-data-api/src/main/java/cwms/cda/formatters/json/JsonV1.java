@@ -11,6 +11,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
+import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OfficeFormatV1;
@@ -44,7 +45,7 @@ public class JsonV1 implements OutputFormatter {
      * Create a V1 instance using the project ObjectMapper.
      * @param om ObjectMapper with its own settings.
      */
-    public JsonV1(ObjectMapper om) {
+    private JsonV1(ObjectMapper om) {
         this.om = om;
     }
 
@@ -68,12 +69,19 @@ public class JsonV1 implements OutputFormatter {
         module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
         retVal.registerModule(module);
 
+        registerMixIns(retVal);
+
         return retVal;
+    }
+
+    public static void registerMixIns(ObjectMapper retVal) {
+        retVal.addMixIn(Measurement.class, Measurement.MeasurementV1Mixin.class)
+              .addMixIn(Measurement.Builder.class, Measurement.MeasurementV1Mixin.MeasurementBuilderV1Mixin.class);
     }
 
     @Override
     public String getContentType() {
-        return Formats.JSON;
+        return Formats.JSONV1;
     }
 
     @Override

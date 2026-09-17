@@ -67,6 +67,7 @@ import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.rating.Ratings;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -184,7 +185,7 @@ public class RatingController extends BaseCrudHandler {
         String formatHeader = ctx.req.getContentType();
         //Using placeholder CwmsDTOBase.class since we do not have a RatingSet DTO
         //The contentType will match against the standard listing of Formats constants
-        ContentType contentType = Formats.parseHeader(formatHeader, CwmsDTOBase.class);
+        ContentType contentType = Formats.parseHeader(formatHeader, Ratings.class);
         String body = ctx.body();
         return deserializeRatingSet(body, contentType.getType(), storeTemplate);
     }

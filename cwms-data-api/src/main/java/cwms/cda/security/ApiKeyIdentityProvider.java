@@ -1,17 +1,15 @@
 package cwms.cda.security;
 
 import com.google.auto.service.AutoService;
+import cwms.cda.ApiServlet;
+import cwms.cda.data.dao.AuthDao;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
 import io.javalin.http.Context;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
-
 import java.security.Principal;
-
-import cwms.cda.ApiServlet;
-import cwms.cda.data.dao.AuthDao;
-import cwms.cda.data.dao.JooqDao;
 
 @AutoService(IdentityProvider.class)
 public class ApiKeyIdentityProvider implements IdentityProvider {

@@ -16,6 +16,11 @@ public class CwmsAuthException extends ApplicationException {
             HttpServletResponse.SC_UNAUTHORIZED, LOG_LEVEL, new HashMap<>(), null);
     }
 
+    /**
+     * Create a new CwmsAuthException with the given Msg and HTTP Status code.
+     * @param msg Explanatory text.
+     * @param code Http Status Code
+     */
     public CwmsAuthException(String msg, int code) {
         super(msg, AUTHORIZATION_SOURCE, getAuthErrorMessageFromCodeAndMessage(msg, code),
             code, LOG_LEVEL, new HashMap<>(), null);
@@ -27,6 +32,12 @@ public class CwmsAuthException extends ApplicationException {
             HttpServletResponse.SC_UNAUTHORIZED, LOG_LEVEL, new HashMap<>(), err);
     }
 
+    /**
+     * Create a new CwmsAuthException with the given Msg and HTTP Status code and original cause.
+     * @param msg Explanatory text.
+     * @param err the specific cause of this auth issue
+     * @param code Http Status Code
+     */
     public CwmsAuthException(String msg, Throwable err, int code) {
         super(msg, AUTHORIZATION_SOURCE, getAuthErrorMessageFromCodeAndMessage(msg, code),
             code, LOG_LEVEL, new HashMap<>(), err);

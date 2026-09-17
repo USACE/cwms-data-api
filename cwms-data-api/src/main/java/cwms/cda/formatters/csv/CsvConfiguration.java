@@ -1,7 +1,7 @@
 package cwms.cda.formatters.csv;
 
-import cwms.cda.formatters.DateFormatResolver;
 import cwms.cda.formatters.DateFormat;
+import cwms.cda.formatters.DateFormatResolver;
 
 public final class CsvConfiguration {
     private final boolean includeMetadata;
@@ -46,6 +46,11 @@ public final class CsvConfiguration {
             return this;
         }
 
+        /**
+         * load an existing configuration.
+         * @param config existing configuration.
+         * @return this builder
+         */
         public Builder from(CsvConfiguration config) {
             this.includeMetadata = config.includeMetadata;
             this.includeOptionalColumns = config.includeOptionalColumns;

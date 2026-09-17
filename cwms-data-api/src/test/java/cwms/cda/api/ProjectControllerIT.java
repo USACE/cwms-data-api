@@ -251,6 +251,8 @@ final class ProjectControllerIT extends DataApiTestIT {
             .body("projects[0].location", not(empty()))
             .body("projects[0].location.office-id", equalTo(office))
             .body("projects[0].location.name", equalTo(loc.getName()))
+            .body("projects[0].location.public-name", equalTo(loc.getPublicName()))
+            .body("projects[0].location.long-name", equalTo(loc.getLongName()))
             .body("projects[0].federal-cost", equalTo(100))
             .body("projects[0].non-federal-cost", equalTo(50))
             .body("projects[0].federal-o-and-m-cost", equalTo(10f))

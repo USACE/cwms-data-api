@@ -40,9 +40,7 @@ import io.javalin.core.validation.JavalinValidation;
 import io.javalin.core.validation.Validator;
 import io.javalin.http.Context;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -89,6 +87,7 @@ public final class Controllers {
     public static final String BLOB_ID = "blob-id";
     public static final String INCLUDE_VALUES = "include-values";
     public static final String FAIL_IF_EXISTS = "fail-if-exists";
+    public static final String CREATE_POOL_NAME = "create-pool-name";
     public static final String IGNORE_NULLS = "ignore-nulls";
     public static final String EFFECTIVE_DATE = "effective-date";
     public static final String DATE = "date";
@@ -160,6 +159,7 @@ public final class Controllers {
     public static final String INCLUDE_ALIASES = "include-aliases";
     public static final String MIN_NUMBER = "min-number";
     public static final String MAX_NUMBER = "max-number";
+    public static final String MEASUREMENT_ID = "measurement-id";
     public static final String MIN_HEIGHT = "min-height";
     public static final String MAX_HEIGHT = "max-height";
     public static final String MIN_FLOW = "min-flow";
@@ -174,10 +174,11 @@ public final class Controllers {
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
     public static final String TS_IDS = "ts-ids";
+    public static final String IGNORE_MISSING = "ignore-missing";
 
     public static final String EXAMPLE_DATE = "2021-06-10T13:00:00-07:00";
-    public static final String TIME_FORMAT_DESC = "The <a href=\"times.html\">format for this field</a> " +
-            "is ISO 8601 extended in UTC, e.g., 2026-06-18T19:42:00Z";
+    public static final String TIME_FORMAT_DESC = "The <a href=\"times.html\">format for this field</a> "
+        + "is ISO 8601 extended in UTC, e.g., 2026-06-18T19:42:00Z";
 
     public static final String INCLUDE_ASSIGNED = "include-assigned";
     public static final String ANY_MASK = "*";

@@ -282,6 +282,7 @@ task run(type: JavaExec) {
     jvmArgs += "-DwarContext=/" + context
     jvmArgs += "-Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true"
     jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
+    jvmArgs += "-Duser.timezone=UTC"
     // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"

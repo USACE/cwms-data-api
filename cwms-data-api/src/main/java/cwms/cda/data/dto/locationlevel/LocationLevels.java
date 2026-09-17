@@ -32,6 +32,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -42,6 +43,7 @@ import java.util.List;
 
 @JsonRootName("location-levels")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 public class LocationLevels extends CwmsDTOPaginated {
     @JacksonXmlElementWrapper
     @JacksonXmlProperty(localName = "location-level")

@@ -26,6 +26,7 @@
 
 package cwms.cda.data.dto.locationlevel;
 
+import cwms.cda.data.dto.catalog.LocationAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -39,7 +40,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.CwmsDTOValidator;
-import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.formatters.annotations.FormattableWith;

@@ -15,84 +15,65 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
+
 import location
-from location import LocationData
+from config import LocationConfig
 
-@pytest.fixture
-def mock_config():
-    config = MagicMock()
-    config.locations = ["SWT.TestLoc"]
-    return config
-
-@pytest.fixture
-def mock_session_manager():
-    return MagicMock()
-
-def test_process(mock_config, mock_session_manager, mocker):
-    mock_process_locations = mocker.patch("location.process_locations")
-    mock_process_locations.return_value = LocationData(["SWT.TestLoc"])
-    
-    result = location.process(mock_config, mock_session_manager)
-    
-    mock_process_locations.assert_called_once_with(mock_config.locations, mock_session_manager)
-    assert result.location_ids == ["SWT.TestLoc"]
-
-def test_process_locations(mock_session_manager, mocker):
+def test_stage_locations(mocker):
     mock_execute = mocker.patch("utils.threading_util.execute_tasks")
-    
-    # Mock retrieval results: [[location_str, location_data], ...]
-    retrieval_results = [["SWT.TestLoc", {"name": "TestLoc"}]]
-    # Mock storage results: [[retrieval_result, storage_result], ...]
-    # where retrieval_result is ["SWT.TestLoc", {"name": "TestLoc"}]
-    storage_results = [[retrieval_results[0], {"name": "TestLoc"}]]
-    
-    mock_execute.side_effect = [retrieval_results, storage_results]
-    
-    locations = ["SWT.TestLoc"]
-    result = location.cache_locations(locations, mock_session_manager)
-    
-    assert mock_session_manager.use_source_session.called
-    assert mock_session_manager.use_dest_session.called
-    assert len(mock_execute.call_args_list) == 2
-    assert result.location_ids == storage_results
+    locations = [LocationConfig(id="TestLoc", enabled=True, raw={})]
+
+    location.stage_locations("SWT", locations)
+
+    mock_execute.assert_called_once_with(location._download_one_location, [["SWT", "TestLoc"]])
+
+
+def test_publish_staged_locations(mocker):
+    mock_execute = mocker.patch("utils.threading_util.execute_tasks")
+    locations = [LocationConfig(id="TestLoc", enabled=True, raw={})]
+
+    location.publish_staged_locations("SWT", locations)
+
+    mock_execute.assert_called_once_with(location._upload_one_location, [["SWT", "TestLoc"]])
 
 def test_retrieve_one_location_invalid_format(mocker):
-    logger_spy = mocker.spy(location.logger, "warning")
-    result = location._retrieve_one_location("invalid_location")
-    assert result is None
-    assert logger_spy.called
+    mock_warning = mocker.patch.object(location.logger, "warning")
 
-def test_retrieve_one_location_from_cache(mocker):
-    mock_get_cache = mocker.patch("utils.cache_util.get_from_cache")
-    mock_get_cache.return_value = {"name": "CachedLoc"}
-    
-    result = location._retrieve_one_location("SWT.CachedLoc")
-    
-    assert result == {"name": "CachedLoc"}
-    mock_get_cache.assert_called_once_with("SWT", "CachedLoc")
+    location.stage_locations("SWT", [LocationConfig(id="", enabled=True, raw={})])
+
+    assert mock_warning.called
+
+def test_download_one_location_always_refreshes_from_cwms(mocker):
+    mock_write_json = mocker.patch("utils.filesystem_store.write_json")
+    mock_cwms_get = mocker.patch("cwms.get_location")
+
+    mock_response = MagicMock()
+    mock_response.json = {"name": "FreshLoc"}
+    mock_cwms_get.return_value = mock_response
+
+    location._download_one_location(["SWT", "CachedLoc"])
+
+    mock_cwms_get.assert_called_once_with("CachedLoc", "SWT")
+    mock_write_json.assert_called_once_with({"name": "FreshLoc"}, "SWT", "Locations", "CachedLoc")
 
 def test_retrieve_one_location_from_cwms(mocker):
-    mocker.patch("utils.cache_util.get_from_cache", return_value=None)
-    mock_put_cache = mocker.patch("utils.cache_util.put_in_cache")
+    mock_write_json = mocker.patch("utils.filesystem_store.write_json")
     mock_cwms_get = mocker.patch("cwms.get_location")
-    
+
     mock_response = MagicMock()
     mock_response.json = {"name": "CwmsLoc"}
     mock_cwms_get.return_value = mock_response
-    
-    result = location._retrieve_one_location("SWT.CwmsLoc")
-    
-    assert result == {"name": "CwmsLoc"}
+
+    location._download_one_location(["SWT", "CwmsLoc"])
+
     mock_cwms_get.assert_called_once_with("CwmsLoc", "SWT")
-    mock_put_cache.assert_called_once_with({"name": "CwmsLoc"}, "SWT", "CwmsLoc")
+    mock_write_json.assert_called_once_with({"name": "CwmsLoc"}, "SWT", "Locations", "CwmsLoc")
 
 def test_store_one_location(mocker):
     mock_cwms_store = mocker.patch("cwms.store_location")
-    location_data = {"name": "TestLoc"}
-    
-    result = location._store_one_location(location_data)
-    
-    assert result == location_data
-    mock_cwms_store.assert_called_once_with(location_data)
+    mocker.patch("utils.filesystem_store.read_json", return_value={"name": "TestLoc"})
+
+    location._upload_one_location(["SWT", "TestLoc"])
+
+    mock_cwms_store.assert_called_once_with({"name": "TestLoc"}, False)

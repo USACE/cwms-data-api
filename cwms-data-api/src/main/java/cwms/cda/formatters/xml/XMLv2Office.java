@@ -30,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
  * however it can't unwrap a plain list or provide appropriate naming
  * overrides.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 public class XMLv2Office implements OutputFormatter {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 

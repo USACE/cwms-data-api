@@ -29,6 +29,7 @@ package cwms.cda.api.rss;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,6 +50,8 @@ import io.restassured.response.Response;
 import java.math.BigInteger;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.Configuration;
 import org.jooq.impl.DSL;
@@ -82,10 +85,12 @@ final class RssHandlerIT extends DataApiTestIT {
     @Test
     void test_rss_feed_with_pagination() {
         // Page 1: verify core RSS elements + 5 items + next link exists
+        int pagesVisited = 0;
         ExtractableResponse<Response> page1 = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.RSS)
             .header(AUTH_HEADER, user.toHeaderValue())
+            .header("page", pagesVisited)
             .queryParam(PAGE_SIZE, 5)
         .when()
             .redirects().follow(true)
@@ -96,7 +101,7 @@ final class RssHandlerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .extract();
-
+        pagesVisited++;
         String xmlBody = page1.asString();
         XmlPath xml = rssXml(xmlBody);
 
@@ -114,7 +119,7 @@ final class RssHandlerIT extends DataApiTestIT {
         assertNotNull(nextHref, "Expected an atom:link rel=\"next\" on the first page");
 
         // Walk pages via nextLine
-        int pagesVisited = 1;
+        
         int maxPages = 500;
         while (nextHref != null && pagesVisited < maxPages) {
             String nextPath = toPathAndQuery(nextHref);
@@ -123,6 +128,7 @@ final class RssHandlerIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
                 .accept(Formats.RSS)
                 .header(AUTH_HEADER, user.toHeaderValue())
+                .header("page", pagesVisited)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -130,23 +136,25 @@ final class RssHandlerIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-                .statusCode(is(HttpServletResponse.SC_OK))
+                .statusCode(either(is(HttpServletResponse.SC_OK)).or(is(429)))
                 .extract();
-
-            XmlPath nextXml = rssXml(nextPage.asString());
-
-            // Still a valid RSS document with items
-            assertNotNull(nextXml.getString("rss.channel.title"));
-            assertNotNull(nextXml.getList("rss.channel.item"));
-
-            pagesVisited++;
-            nextHref = nextLinkHref(nextXml);
+            if (nextPage.statusCode() == HttpServletResponse.SC_OK) {
+                XmlPath nextXml = rssXml(nextPage.asString());
+                // Still a valid RSS document with items
+                assertNotNull(nextXml.getString("rss.channel.title"));
+                assertNotNull(nextXml.getList("rss.channel.item"));
+                
+                pagesVisited++;
+                nextHref = nextLinkHref(nextXml);
+            }
             String waitStr = nextPage.header("Retry-After");
-            int wait = waitStr != null && !waitStr.isEmpty() ? Integer.parseInt(waitStr) : 10;
-            try {
-                Thread.sleep(wait*1000);
-            } catch (InterruptedException ex) {
-                LOGGER.atFine().withCause(ex).log("Next query wait was interrupted.");
+            if (waitStr != null) {
+                int wait = waitStr != null && !waitStr.isEmpty() ? Integer.parseInt(waitStr) : 10;
+                try {
+                    TimeUnit.SECONDS.sleep(wait); // NOSONAR - have to wait, 429 response
+                } catch (InterruptedException ex) {
+                    LOGGER.atFine().withCause(ex).log("Next query wait was interrupted.");
+                }
             }
         }
 

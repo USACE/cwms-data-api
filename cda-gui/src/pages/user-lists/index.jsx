@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Card, H1, Text } from "@usace/groundwork";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
+import { useAuthConfiguration } from "../../components/auth-configuration-context";
 import { FaUsers } from "react-icons/fa";
 import { request, userListsFrom } from "./api";
 import { OfficeSelector } from "./components/OfficeSelector";
@@ -12,6 +13,7 @@ import { UserListsHeader } from "./components/UserListsHeader";
 
 export default function UserLists() {
   const auth = useAuth();
+  const { error: authConfigurationError } = useAuthConfiguration();
   const [profile, setProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [office, setOffice] = useState("");
@@ -290,12 +292,14 @@ export default function UserLists() {
         </div>
         <H1>User Lists</H1>
         <Text className="mx-auto mt-3 max-w-lg">
-          Sign in to view reusable recipient lists and manage membership for your
-          authorized CWMS offices.
+          {authConfigurationError ??
+            "Sign in to view reusable recipient lists and manage membership for your authorized CWMS offices."}
         </Text>
-        <Button className="mt-6" type="button" onClick={auth.login}>
-          Log in
-        </Button>
+        {!authConfigurationError && (
+          <Button className="mt-6" type="button" onClick={auth.login}>
+            Log in
+          </Button>
+        )}
       </Card>
     );
   }

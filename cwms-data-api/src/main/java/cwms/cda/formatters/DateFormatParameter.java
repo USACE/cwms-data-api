@@ -18,6 +18,11 @@ public enum DateFormatParameter {
         return value;
     }
 
+    /**
+     * Given a num, return the appropriate DataFormatter enum type.
+     * @param value String name we are looking for.
+     * @return The appropriate Enum, or null if it can't be matched.
+     */
     public static DateFormatParameter get(String value) {
         for (DateFormatParameter format : DateFormatParameter.values()) {
             if (format.value.equalsIgnoreCase(value)) {

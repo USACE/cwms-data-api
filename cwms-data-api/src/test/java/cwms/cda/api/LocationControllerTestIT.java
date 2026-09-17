@@ -54,6 +54,7 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
@@ -1209,6 +1210,15 @@ class LocationControllerTestIT extends DataApiTestIT {
         String timeseriesId = "Putah_Creek.Elev.Ave.30Minutes.30Minutes.Raw";
         createTimeseries(user.getOperatingOffice(), timeseriesId);
 
+        String expectedMessage = "Unable to delete requested location: Putah_Creek for office: SPK: ORA-20056: CAN_NOT_DELETE_LOC_2: Can not delete location: " +
+                                "\"Putah_Creek\" because dependent data exists: time series identifiers=1.";
+
+        if (CwmsDataApiSetupCallback.getSchemaVersion() <= SCHEMA_VERSION.V2026_07_16.numeric()) {
+            expectedMessage = "Unable to delete requested location: "
+                + "Putah_Creek for office: SPK: ORA-20031: CAN_NOT_DELETE_LOC_1: "
+                + "Can not delete location: \"Putah_Creek\" because Timeseries Identifiers exist.";
+        }
+
         // attempt to delete location that is referenced by TS
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
@@ -1227,9 +1237,7 @@ class LocationControllerTestIT extends DataApiTestIT {
             .body("source", equalTo("Database"))
             .body("message",
                 equalTo("Cannot delete this record because it is linked to other data in CWMS"))
-            .body("details.message", equalTo("Unable to delete requested location: "
-                + "Putah_Creek for office: SPK: ORA-20031: CAN_NOT_DELETE_LOC_1: "
-                + "Can not delete location: \"Putah_Creek\" because Timeseries Identifiers exist."));
+            .body("details.message", equalTo(expectedMessage));
     }
 
     @Test

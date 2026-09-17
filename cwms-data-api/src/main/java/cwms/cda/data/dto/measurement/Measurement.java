@@ -23,6 +23,7 @@
  */
 package cwms.cda.data.dto.measurement;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -35,13 +36,16 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.formatters.json.JsonV2;
+
 import java.time.Instant;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
+@FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 @JsonDeserialize(builder = Measurement.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-public final class Measurement extends CwmsDTOBase {
+public class Measurement extends CwmsDTOBase {
     private final String heightUnit;
     private final String flowUnit;
     private final String tempUnit;
@@ -55,13 +59,20 @@ public final class Measurement extends CwmsDTOBase {
     private final Instant instant;
     @JsonProperty(required = true)
     private final CwmsId id;
-    @JsonProperty(required = true)
-    private final String number;
+    private final String measurementId;
+
+    @Override
+    protected void validateInternal(cwms.cda.data.dto.CwmsDTOValidator validator) {
+        super.validateInternal(validator);
+        validator.required(id, "id");
+        validator.required(measurementId, "measurementId");
+        validator.required(instant, "instant");
+    }
     private final StreamflowMeasurement streamflowMeasurement;
     private final SupplementalStreamflowMeasurement supplementalStreamflowMeasurement;
     private final UsgsMeasurement usgsMeasurement;
 
-    private Measurement(Builder builder) {
+    Measurement(Builder builder) {
         this.heightUnit = builder.heightUnit;
         this.flowUnit = builder.flowUnit;
         this.tempUnit = builder.tempUnit;
@@ -75,7 +86,7 @@ public final class Measurement extends CwmsDTOBase {
         this.supplementalStreamflowMeasurement = builder.supplementalStreamflowMeasurement;
         this.usgsMeasurement = builder.usgsMeasurement;
         this.id = builder.id;
-        this.number = builder.number;
+        this.measurementId = builder.measurementId;
         this.instant = builder.instant;
     }
 
@@ -134,8 +145,8 @@ public final class Measurement extends CwmsDTOBase {
         return instant;
     }
 
-    public String getNumber() {
-        return number;
+    public String getMeasurementId() {
+        return measurementId;
     }
 
     public StreamflowMeasurement getStreamflowMeasurement() {
@@ -150,7 +161,7 @@ public final class Measurement extends CwmsDTOBase {
         return usgsMeasurement;
     }
 
-    public static final class Builder {
+    public static class Builder {
         private String heightUnit;
         private String flowUnit;
         private String tempUnit;
@@ -164,7 +175,7 @@ public final class Measurement extends CwmsDTOBase {
         private SupplementalStreamflowMeasurement supplementalStreamflowMeasurement;
         private UsgsMeasurement usgsMeasurement;
         private Instant instant;
-        private String number;
+        private String measurementId;
         private CwmsId id;
 
         public Builder withHeightUnit(String heightUnit) {
@@ -232,8 +243,9 @@ public final class Measurement extends CwmsDTOBase {
             return this;
         }
 
-        public Builder withNumber(String number) {
-            this.number = number;
+        @JsonAlias("number")
+        public Builder withMeasurementId(String measurementId) {
+            this.measurementId = measurementId;
             return this;
         }
 
@@ -246,4 +258,17 @@ public final class Measurement extends CwmsDTOBase {
             return new Measurement(this);
         }
     }
+
+    public abstract static class MeasurementV1Mixin {
+        @JsonProperty("number")
+        @JsonAlias("measurement-id")
+        abstract String getMeasurementId();
+
+        public abstract static class MeasurementBuilderV1Mixin {
+            @JsonProperty("number")
+            @JsonAlias("measurement-id")
+            abstract Measurement.Builder withMeasurementId(String measurementId);
+        }
+    }
+
 }

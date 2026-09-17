@@ -1,5 +1,7 @@
 select project.office_id,
        project.location_id as project_id,
+       project.public_name,
+       project.long_name,
        project.COST_YEAR,
        project.federal_cost,
        project.nonfederal_cost,
@@ -20,8 +22,10 @@ select project.office_id,
        project.project_remarks
 from ( select o.office_id as office_id,
               bl.base_location_id
-                  ||substr('-', 1, length(pl.sub_location_id))
-                  ||pl.sub_location_id as location_id,
+                 ||substr('-', 1, length(pl.sub_location_id))
+                 ||pl.sub_location_id as location_id,
+              pl.public_name,
+              pl.long_name,
               p.COST_YEAR,
               p.federal_cost,
               p.nonfederal_cost,

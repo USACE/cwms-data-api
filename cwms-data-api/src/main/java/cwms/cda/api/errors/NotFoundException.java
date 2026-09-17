@@ -1,6 +1,8 @@
 package cwms.cda.api.errors;
 
+import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,6 +18,10 @@ public class NotFoundException extends ApplicationException {
     public NotFoundException(String message, Throwable cause) {
         super(message, DATABASE_SOURCE, message, HttpServletResponse.SC_NOT_FOUND,
             LOG_LEVEL, new HashMap<>(), cause);
+    }
+
+    public NotFoundException(String message, Map<String, Serializable> details, Throwable cause) {
+        super(message, DATABASE_SOURCE, message, HttpServletResponse.SC_NOT_FOUND, LOG_LEVEL, details, cause);
     }
 
     public NotFoundException(Throwable cause) {

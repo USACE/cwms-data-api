@@ -1,6 +1,5 @@
 package cwms.cda;
 
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -15,7 +14,6 @@ public final class OpenTelemetrySetup {
    * Initializes the OpenTelemetry SDK with a logging span exporter and the W3C Trace Context
    * propagator.
    *
-   * @return A ready-to-use {@link OpenTelemetry} instance.
    */
     @SuppressWarnings("null") // nothing here can be null without other exceptions getting thrown.
     public static void initTelemetry() {
@@ -30,5 +28,4 @@ public final class OpenTelemetrySetup {
         Runtime.getRuntime().addShutdownHook(new Thread(sdkTracerProvider::close));
        
     }
-
 }
