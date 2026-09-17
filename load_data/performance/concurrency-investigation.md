@@ -4,6 +4,13 @@ The reported problem is in **production under substantially more connections**;
 dev and test work. This supersedes the earlier assumption that dev was failing.
 No production endpoints or databases are used by these tests. No changes are pushed.
 
+**Production configuration follow-up:** the refreshed infrastructure repository
+declares a two-vCPU/4-GiB API task and a separate 32-GiB Oracle instance. A local
+executor probe demonstrates materially different async behavior at two visible
+CPUs. See [production-settings-review.md](production-settings-review.md) before
+applying these four-CPU results to production or interpreting the reported 900
+connections / temporary 250 pool maximum.
+
 ## Scope and controls
 
 The earlier four-request, 256 MiB experiment demonstrated a memory failure. It did
