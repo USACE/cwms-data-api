@@ -19,7 +19,7 @@ import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record1;
-import org.jooq.Record5;
+import org.jooq.Record7;
 import org.jooq.SelectConditionStep;
 import org.jooq.SelectSeekStep2;
 import org.jooq.Table;
@@ -33,13 +33,16 @@ import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
 import cwms.cda.security.DataApiPrincipal;
 import usace.cwms.db.jooq.codegen.tables.AV_SEC_USERS;
+import usace.cwms.db.jooq.codegen.tables.AV_CWMS_USER;
 
 public class UserDao extends JooqDao<User> {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final String GET_USER =
-        "select ut.userid as username,ut.email, ut.principle_name,groups.db_office_id as \"office\",groups.user_group_id as \"role\" " +
+        "select ut.userid as username,ut.email, ut.principle_name, profile.first_name, profile.last_name, " +
+        "groups.db_office_id as \"office\",groups.user_group_id as \"role\" " +
         " from cwms_20.at_sec_cwms_users ut " +
+        "left join cwms_20.av_cwms_user profile on profile.user_id = upper(ut.userid) " +
         "left join cwms_20.av_sec_users groups on ut.userid=groups.username and is_member='T' " +
         "where ut.principle_name = ? or upper(ut.userid) = upper(?) " +
         "order by \"office\", \"role\""
@@ -61,6 +64,8 @@ public class UserDao extends JooqDao<User> {
                     String userName = null;
                     String principalName = null;
                     String email = null;
+                    String firstName = null;
+                    String lastName = null;
                     final Map<String,List<String>> roles = new HashMap<>();
                     try (ResultSet rs = getUser.executeQuery()) {
                         if (rs.isBeforeFirst()) {
@@ -69,6 +74,8 @@ public class UserDao extends JooqDao<User> {
                                     userName = rs.getString("username");
                                     principalName = rs.getString("principle_name");
                                     email = rs.getString("email");
+                                    firstName = rs.getString("first_name");
+                                    lastName = rs.getString("last_name");
                                 }
                                 final String roleOffice = rs.getString("office");
                                 final String role = rs.getString("role");
@@ -77,7 +84,8 @@ public class UserDao extends JooqDao<User> {
                                 }
                             }
                             logger.atInfo().log("Building user object.");
-                           return new User(userName, principalName, email, cac_role != null,  roles);
+                           return new User(userName, principalName, email, cac_role != null, roles,
+                                   firstName, lastName);
                         } else {
                             return null;
                         }
@@ -136,6 +144,7 @@ public class UserDao extends JooqDao<User> {
 
     public Users getAll(String cursor, int pageSize, String office, boolean includeRoles, String usernameRegex) {
         final AV_SEC_USERS vUserGroups = AV_SEC_USERS.AV_SEC_USERS.as("ug");
+        final AV_CWMS_USER profile = AV_CWMS_USER.AV_CWMS_USER.as("profile");
         final Table<?> vUsers = AT_SEC_CWMS_USERS.as("ut");
         final Field<String> userId = field(name(vUsers.getName(),"USERID"), String.class);
         final Field<String> email = field(name(vUsers.getName(),"EMAIL"), String.class);
@@ -218,14 +227,18 @@ public class UserDao extends JooqDao<User> {
             Field<String> limitUserId = field(name(limiter.getName(), userId.getName()), String.class);
             Field<String> limitEmail = field(name(limiter.getName(), email.getName()), String.class);
             Field<String> limitPrincipal = field(name(limiter.getName(), principal.getName()), String.class);
-            SelectSeekStep2<Record5<String, String, String, String, String>, String, String> query = dsl.with(limiter).select(
+            SelectSeekStep2<Record7<String, String, String, String, String, String, String>, String, String> query =
+                dsl.with(limiter).select(
                     limitUserId,
                     limitEmail,
                     limitPrincipal,
                     vUserGroups.DB_OFFICE_ID,
-                    vUserGroups.USER_GROUP_ID
+                    vUserGroups.USER_GROUP_ID,
+                    profile.FIRST_NAME,
+                    profile.LAST_NAME
                 )
                 .from(limiter)
+                .leftOuterJoin(profile).on(profile.USER_ID.eq(upper(limitUserId)))
                 .leftOuterJoin(vUserGroups).on(limitUserId.eq(vUserGroups.USERNAME)
                                         .and(vUserGroups.IS_MEMBER.eq("T")))
                 // office id is included in order by to maintain consistent ordering.
@@ -242,8 +255,10 @@ public class UserDao extends JooqDao<User> {
             final Map<String, User.Builder> tmpUsers = new LinkedHashMap<>();
 
             query.fetch().forEach(row -> {
-                User.Builder userBuilder = tmpUsers.computeIfAbsent(row.get(userId), (key) -> {
-                    return new User.Builder(key, row.get(principal),row.get(principal), null);
+                User.Builder userBuilder = tmpUsers.computeIfAbsent(row.get(limitUserId), (key) -> {
+                    return new User.Builder(key, row.get(limitPrincipal), row.get(limitEmail), null)
+                            .firstName(row.get(profile.FIRST_NAME))
+                            .lastName(row.get(profile.LAST_NAME));
                 });
                 final String roleOffice = row.get(vUserGroups.DB_OFFICE_ID);
                 final String role = row.get(vUserGroups.USER_GROUP_ID);
