@@ -60,6 +60,7 @@ export default [
       },
     ],
   },
+  { id: "api-keys", text: "API Keys", href: "/api-keys", requiresAuth: true },
   {
     id: "help",
     text: "Help",
