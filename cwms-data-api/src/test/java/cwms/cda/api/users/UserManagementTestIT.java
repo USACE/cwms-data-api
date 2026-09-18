@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.sql.CallableStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import cwms.cda.api.Controllers;
@@ -23,6 +25,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dto.auth.users.User;
 import cwms.cda.data.dto.auth.users.Users;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.KeyCloakExtension;
 import fixtures.TestAccounts;
 import fixtures.users.annotation.AuthType;
@@ -96,11 +99,11 @@ public class UserManagementTestIT extends DataApiTestIT {
             .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
             .body("roles.SPK",hasItems("All Users", "CWMS Users", "TS ID Creator"))
             ;
-        // we can add a role
+        // Role lookup remains case insensitive.
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .spec(authSpec)
-            .body("[\"CCP Mgr\"]")
+            .body("[\"ccp mgr\"]")
         .when()
             .post("/user/{user-name}/roles/{office-id}", userUnderTest.getName(), theUser.getOperatingOffice())
         .then()
@@ -145,6 +148,81 @@ public class UserManagementTestIT extends DataApiTestIT {
             .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
             .body("roles.SPK",not(hasItem("CCP Mgr")))
         ;
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_missing_roles_rejected_before_adding_valid_roles(String authType, TestAccounts.KeyUser theUser,
+            RequestSpecification authSpec) {
+        String user = TestAccounts.KeyUser.SPK_NORMAL.getName();
+        try {
+            given().spec(authSpec).body("[\"CCP Mgr\"]")
+                .delete("/user/{user-name}/roles/SPK", user)
+                .then().statusCode(204);
+
+            given().spec(authSpec)
+                .body("[\"CCP Mgr\",\"MISSING ROLE ONE\",\"MISSING ROLE TWO\"]")
+                .post("/user/{user-name}/roles/SPK", user)
+                .then().log().ifValidationFails()
+                .statusCode(400)
+                .body("details.message",
+                    equalTo("Roles do not exist for office SPK: MISSING ROLE ONE, MISSING ROLE TWO"));
+
+            given().spec(authSpec).get("/users/{user-name}", user)
+                .then().statusCode(200)
+                .body("roles.SPK", not(hasItem("CCP Mgr")))
+                .body("roles.SPK", hasItems("All Users", "CWMS Users", "TS ID Creator"));
+        } finally {
+            given().spec(authSpec).body("[\"CCP Mgr\"]")
+                .delete("/user/{user-name}/roles/SPK", user)
+                .then().statusCode(204);
+        }
+    }
+
+    @Test
+    void test_missing_role_with_api_key() {
+        given().header("Authorization", TestAccounts.KeyUser.SPK_NORMAL2.toHeaderValue())
+            .body("[\"MISSING ROLE\"]")
+            .post("/user/{user-name}/roles/SPK", TestAccounts.KeyUser.SPK_NORMAL.getName())
+            .then().statusCode(400)
+            .body("details.message", equalTo("Roles do not exist for office SPK: MISSING ROLE"));
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(UserSpecSource.class)
+    @AuthType(user = TestAccounts.KeyUser.SPK_NORMAL2)
+    void test_role_from_another_office_is_rejected(String authType, TestAccounts.KeyUser theUser,
+            RequestSpecification authSpec) throws Exception {
+        String role = "CDA TEST SWT ONLY";
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(connection -> {
+            try (CallableStatement statement = connection.prepareCall(
+                    "call cwms_20.cwms_sec.create_user_group(?, ?, ?)")) {
+                statement.setString(1, role);
+                statement.setString(2, "Office-specific role validation test");
+                statement.setString(3, SWT);
+                statement.execute();
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+        }, "cwms_20");
+        try {
+            given().spec(authSpec).body("[\"" + role + "\"]")
+                .post("/user/{user-name}/roles/SPK", TestAccounts.KeyUser.SPK_NORMAL.getName())
+                .then().log().ifValidationFails().statusCode(400)
+                .body("details.message", equalTo("Roles do not exist for office SPK: " + role));
+        } finally {
+            CwmsDataApiSetupCallback.getDatabaseLink().connection(connection -> {
+                try (CallableStatement statement = connection.prepareCall(
+                        "call cwms_20.cwms_sec.delete_user_group(?, ?)")) {
+                    statement.setString(1, role);
+                    statement.setString(2, SWT);
+                    statement.execute();
+                } catch (SQLException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }, "cwms_20");
+        }
     }
 
     @ParameterizedTest
