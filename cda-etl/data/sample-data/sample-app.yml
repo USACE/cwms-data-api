@@ -4,26 +4,111 @@ settings:
   endTime: now
   maxThreads: 1
   logLevel: INFO
-  path: /data/sample-app
+  path: /data/sample-data
 offices:
 - id: SWT
   enabled: true
   projects:
+  - id: KEYS
+    enabled: true
+    outlets:
+    - id: KEYS-TG1
+    - id: KEYS-TG2
+    - id: KEYS-TG4
+    - id: KEYS-TG6
+    - id: KEYS-TG9
+    - id: KEYS-TG10
+    - id: KEYS-TG12
+    - id: KEYS-TG14
+    - id: KEYS-TG17
+    - id: KEYS-SG2
+    - id: KEYS-SG4
+    - id: KEYS-SG7
+    - id: KEYS-SG9
+    - id: KEYS-LF1
+    - id: KEYS-TG16
+    - id: KEYS-SG1
+    - id: KEYS-SG3
+    - id: KEYS-SG5
+    - id: KEYS-SG6
+    - id: KEYS-SG8
+    - id: KEYS-TG11
+    - id: KEYS-TG13
+    - id: KEYS-TG15
+    - id: KEYS-TG18
+    - id: KEYS-TG3
+    - id: KEYS-TG5
+    - id: KEYS-TG7
+    - id: KEYS-TG8
+    turbines:
+    - id: KEYS-Turbine1
+    - id: KEYS-Turbine2
+    gateChanges:
+      enabled: true
+    turbineChanges:
+      enabled: true
+    clobs:
+    - id: FLOW.KEYS.GATED_TOTAL
+    - id: FLOW.KEYS.LOCK_TOTAL
+    - id: FLOW.KEYS.LOW FLOW_TOTAL
+    - id: FLOW.KEYS.PROJECT_TOTAL
+    - id: FLOW.KEYS.PUMP_IN_TOTAL
+    - id: FLOW.KEYS.PUMP_OUT_BELOW_TOTAL
+    - id: FLOW.KEYS.PUMP_OUT_TOTAL
+    - id: FLOW.KEYS.SLUICEGATE_TOTAL
+    - id: FLOW.KEYS.TAINTERGATE_TOTAL
+    - id: FLOW.KEYS.TURBINE_TOTAL
+    - id: FLOW.KEYS.UNCONTROLLED_TOTAL
+    ratings:
+    - id: KEYS.Elev;Area.Linear.Production
+      por: true
+    - id: KEYS.Elev;Stor.Linear.Production
+      por: true
   - id: EUFA
     enabled: true
     locations:
     - id: EUFA-Dam
-    outlets: []
-    turbines: []
+    outlets:
+    - id: EUFA-SG1
+    - id: EUFA-TG1
+    - id: EUFA-TG2
+    - id: EUFA-TG3
+    - id: EUFA-TG4
+    - id: EUFA-TG5
+    - id: EUFA-TG6
+    - id: EUFA-TG7
+    - id: EUFA-TG8
+    - id: EUFA-TG9
+    - id: EUFA-TG10
+    - id: EUFA-TG11
+    turbines:
+    - id: EUFA-Turbine1
+    - id: EUFA-Turbine2
+    - id: EUFA-Turbine3
     embankments: []
+    locks: []
+    waterUsers: []
+    gateChanges:
+      enabled: true
+    turbineChanges:
+      enabled: true
     clobs:
+    - id: FLOW.EUFA.CONTROLLED
+    - id: FLOW.EUFA.EUFA TURBINE_TOTAL
+    - id: FLOW.EUFA.GATED_TOTAL
+    - id: FLOW.EUFA.LOCK_TOTAL
     - id: FLOW.EUFA.PROJECT_TOTAL
+    - id: FLOW.EUFA.PUMP_IN_TOTAL
+    - id: FLOW.EUFA.PUMP_OUT_BELOW_TOTAL
+    - id: FLOW.EUFA.PUMP_OUT_TOTAL
+    - id: FLOW.EUFA.SLUICEGATE_TOTAL
+    - id: FLOW.EUFA.TAINTERGATE_TOTAL
+    - id: FLOW.EUFA.TURBINE_TOTAL
+    - id: FLOW.EUFA.UNCONTROLLED_TOTAL
     locationLevels:
     - id: EUFA-Dam.Elev.Inst.0.Top of Flood
       por: true
     ratings:
-    - id: EUFA.Stage;Flow.Standard.Production
-      por: true
     - id: EUFA.Elev;Area.Linear.Production
       por: true
     - id: EUFA.Elev;Stor.Linear.Production
@@ -43,9 +128,7 @@ offices:
     - id: EUFA.Stor.Inst.1Hour.0.Ccp-Rev
     - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted
     - id: EUFA.Temp-Air.Inst.1Hour.0.Ccp-Rev
-    - id: EUFA.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed
     - id: EUFA.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed
-    - id: EUFA.Evap.Total.~1Day.1Day.Ccp-Rev
     - id: EUFA.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev
     - id: EUFA.%-Humidity.Inst.1Hour.0.Ccp-Rev
     - id: EUFA.Flow-Res In.Ave.~1Day.1Day.Regi-Rev-Adjusted
@@ -66,6 +149,57 @@ offices:
     - id: EUFA.Code-Evap Type.Total.~1Day.1Day.Ccp-Rev
     - id: EUFA.%-Humidity.Inst.1Hour.0.Decodes-Raw
     - id: EUFA.Code-Weather Condition.Inst.1Day.0.Wcds-Obs
+  locationGroups:
+  - categoryId: Flow
+    id: Flow.EUFA.Project_Total
+  - categoryId: Flow
+    id: Flow.EUFA.SluiceGate_Total
+  - categoryId: Flow
+    id: EUFA-SluiceGate
+  - categoryId: Flow
+    id: Flow.EUFA.TainterGate_Total
+  - categoryId: Flow
+    id: Flow.EUFA.EUFA Turbine_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Gated_Total
+  - categoryId: Flow
+    id: EUFA-TainterGate
+  - categoryId: Flow
+    id: Flow.EUFA.Turbine_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Pump_Out_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Controlled
+  - categoryId: Flow
+    id: Flow.EUFA.Pump_Out_Below_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Uncontrolled_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Lock_Total
+  - categoryId: Flow
+    id: Flow.EUFA.Pump_In_Total
+  - categoryId: Flow
+    id: Flow.KEYS.TainterGate_Total
+  - categoryId: Flow
+    id: Flow.KEYS.SluiceGate_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Project_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Gated_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Turbine_Total
+  - categoryId: Flow
+    id: Flow.KEYS.LOW Flow_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Uncontrolled_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Pump_In_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Lock_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Pump_Out_Total
+  - categoryId: Flow
+    id: Flow.KEYS.Pump_Out_Below_Total
   properties:
   - categoryId: LOCATION TIME SERIES ASSOCIATION
     all: true
