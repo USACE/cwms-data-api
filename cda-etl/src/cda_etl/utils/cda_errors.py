@@ -55,7 +55,7 @@ _AMBIGUOUS_RATING_MARKER = "Failed to process request to retrieve RatingSet"
 
 def is_ambiguous_rating_failure(error: BaseException) -> bool:
     """
-    True for the 500 the ratings values endpoint returns when a rating does not
+    True for the 500 error code the ratings values endpoint returns when a rating does not
     exist. Cannot be distinguished from a real processing failure, so callers
     should report it more loudly than a true 404.
     """
