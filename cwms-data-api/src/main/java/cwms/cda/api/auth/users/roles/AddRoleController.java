@@ -1,11 +1,13 @@
 package cwms.cda.api.auth.users.roles;
 
 import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_400;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 
 import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.UserDao;
 import cwms.cda.formatters.Formats;
@@ -34,9 +36,12 @@ public class AddRoleController implements Handler {
             @OpenApiParam(name = "user-name", required = true,
                 description = "Name of the user to alter")
         },
-        responses = @OpenApiResponse(
-                    status = STATUS_204
-        ),
+        responses = {
+            @OpenApiResponse(status = STATUS_204),
+            @OpenApiResponse(status = STATUS_400,
+                description = "One or more roles do not exist for the requested office.",
+                content = @OpenApiContent(from = CdaError.class, type = Formats.JSON))
+        },
         requestBody = @OpenApiRequestBody(
                     content = {
                         @OpenApiContent(from = String[].class, type = Formats.JSON, isArray = true)
