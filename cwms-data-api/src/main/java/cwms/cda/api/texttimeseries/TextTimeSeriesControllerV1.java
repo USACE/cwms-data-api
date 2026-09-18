@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,36 +22,26 @@
  * SOFTWARE.
  */
 
-package cwms.cda.api;
+package cwms.cda.api.texttimeseries;
 
 import static cwms.cda.api.Controllers.BEGIN;
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.DATE;
-import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.END;
-import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.NAME;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.VERSION_DATE;
-import static cwms.cda.api.Controllers.queryParamAsInstant;
-import static cwms.cda.api.Controllers.requiredInstant;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
-import cwms.cda.api.errors.CdaError;
-import cwms.cda.api.errors.ExceptionTraceSupport;
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -59,33 +49,18 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.time.Instant;
-import javax.servlet.http.HttpServletResponse;
-import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
+public final class TextTimeSeriesControllerV1 extends TextTimeSeriesController {
 
-
-public class TextTimeSeriesController extends BaseCrudHandler {
-    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-    static final String TAG = "Text-TimeSeries";
-
-    public static final String REPLACE_ALL = "replace-all";
-
-    public static final boolean DEFAULT_CREATE_REPLACE_ALL = false;
-    public static final boolean DEFAULT_UPDATE_REPLACE_ALL = true;
-
-    public TextTimeSeriesController(MetricRegistry metrics) {
+    public TextTimeSeriesControllerV1(MetricRegistry metrics) {
         super(metrics);
     }
 
-    @NotNull
-    protected TimeSeriesTextDao getDao(DSLContext dsl) {
-        return new TimeSeriesTextDao(dsl);
+    @Override
+    protected String getOffice(@NotNull Context ctx) {
+        return requiredParam(ctx, OFFICE);
     }
 
     @OpenApi(
@@ -116,64 +91,13 @@ public class TextTimeSeriesController extends BaseCrudHandler {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-
-        String office = requiredParam(ctx, OFFICE);
-        String tsId = requiredParam(ctx, NAME);
-        Instant begin = requiredInstant(ctx, BEGIN);
-        Instant end = requiredInstant(ctx, END);
-        Instant version = queryParamAsInstant(ctx, VERSION_DATE);
-        int kiloByteLimit = Integer.parseInt(System.getProperty("cda.api.ts.text.max.length.kB", "64"));
-        String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
-        try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            DSLContext dsl = getDslContext(ctx);
-            TimeSeriesTextDao dao = getDao(dsl);
-
-            String textMask = "*";
-
-            String dateToken = "{date_token}";
-            String path = ctx.path();
-            if (!path.endsWith("/"))  {
-                path += "/";
-            }
-            path += tsId + "/value";
-            String url = new URIBuilder(ctx.fullUrl())
-                    .setPath(path)
-                    .clearParameters()
-                    .addParameter(OFFICE, office)
-                    .addParameter(VERSION_DATE, ctx.queryParam(VERSION_DATE))
-                    .addParameter(DATE, dateToken)
-                    .build()
-                    .toString();
-            ReplaceUtils.OperatorBuilder urlBuilder = new ReplaceUtils.OperatorBuilder()
-                    .withTemplate(url)
-                    .withOperatorKey(URLEncoder.encode(dateToken, "UTF-8"));
-            TextTimeSeries textTimeSeries = dao.retrieveFromDao(office, tsId, textMask,
-                    begin, end, version, kiloByteLimit, urlBuilder);
-
-            ctx.contentType(contentType.toString());
-
-            String result = Formats.format(contentType, textTimeSeries);
-
-            ctx.status(HttpServletResponse.SC_OK);
-
-            byte[] bytes = result.getBytes();
-            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
-        } catch (URISyntaxException | IOException ex) {
-            CdaError re = ExceptionTraceSupport.buildError(ctx,
-                    "Failed to process request: " + ex.getLocalizedMessage(), ex);
-            logger.atSevere().withCause(ex).log("%s", re);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
-        }
-
+        super.getAll(ctx);
     }
-
 
     @OpenApi(ignore = true)
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
-        ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
+        super.getOne(ctx, templateId);
     }
 
     @OpenApi(
@@ -192,46 +116,34 @@ public class TextTimeSeriesController extends BaseCrudHandler {
     )
     @Override
     public void create(@NotNull Context ctx) {
-        try (Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
-
-            String formatHeader = ctx.req.getContentType();
-
-            ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
-            TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyAsInputStream(), TextTimeSeries.class);
-            TimeSeriesTextDao dao = getDao(dsl);
-
-            boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(DEFAULT_CREATE_REPLACE_ALL);
-            dao.create(tts, replaceAll);
-            ctx.status(HttpServletResponse.SC_CREATED);
-        }
+        super.create(ctx);
     }
 
     @OpenApi(
-        description = "Updates a text timeseries",
-        pathParams = {
-            @OpenApiParam(name = NAME, description = "The id of the text timeseries to be updated"),
-        },
-        queryParams = {
-            @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to "
-                    + "replace any and all existing text with the specified text. "
-                    + "Default is:" + DEFAULT_UPDATE_REPLACE_ALL)
-        },
-        requestBody = @OpenApiRequestBody(
-            content = {
-                @OpenApiContent(from = TextTimeSeries.class, type = Formats.JSONV2),
+            description = "Updates a text timeseries",
+            pathParams = {
+                    @OpenApiParam(name = NAME, description = "The id of the text timeseries to be updated"),
             },
-            required = true
-        ),
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+            queryParams = {
+                    @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to "
+                            + "replace any and all existing text with the specified text. "
+                            + "Default is:" + DEFAULT_UPDATE_REPLACE_ALL)
+            },
+            requestBody = @OpenApiRequestBody(
+                    content = {
+                            @OpenApiContent(from = TextTimeSeries.class, type = Formats.JSONV2),
+                    },
+                    required = true
+            ),
+            method = HttpMethod.PATCH,
+            tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
         logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class)
-                .getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
+                    .getOrDefault(DEFAULT_UPDATE_REPLACE_ALL);
             String formatHeader = ctx.req.getContentType();
             ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
             TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyAsInputStream(), TextTimeSeries.class);
@@ -241,7 +153,6 @@ public class TextTimeSeriesController extends BaseCrudHandler {
             dao.store(tts, replaceAll);
         }
     }
-
 
     @OpenApi(
         description = "Deletes requested text timeseries id",
@@ -272,21 +183,6 @@ public class TextTimeSeriesController extends BaseCrudHandler {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String textTimeSeriesId) {
-        try (Timer.Context ignored = markAndTime(DELETE)) {
-            DSLContext dsl = getDslContext(ctx);
-            String office = requiredParam(ctx, OFFICE);
-            String mask = requiredParam(ctx, Controllers.TEXT_MASK);
-
-
-            Instant begin = requiredInstant(ctx, BEGIN);
-            Instant end = requiredInstant(ctx, END);
-            Instant version = queryParamAsInstant(ctx, VERSION_DATE);
-
-            TimeSeriesTextDao dao = getDao(dsl);
-
-            dao.delete(office, textTimeSeriesId, mask, begin, end, version);
-
-            ctx.status(HttpServletResponse.SC_NO_CONTENT);
-        }
+        super.delete(ctx, textTimeSeriesId);
     }
 }
