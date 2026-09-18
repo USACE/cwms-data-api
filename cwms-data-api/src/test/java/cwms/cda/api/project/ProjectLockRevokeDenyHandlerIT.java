@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.api.project.ProjectLockHandlerUtil.Fixture;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.Project;
@@ -52,8 +53,9 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 
 @Tag("integration")
@@ -79,22 +81,9 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
             ProjectDao prjDao = new ProjectDao(dsl);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject, true);
-
-            lockDao.allowLockRevokerRights(OFFICE, projId, appId, user1.getName());
-            lockDao.allowLockRevokerRights(OFFICE, projId, appId, user2.getName());
-
-            boolean dontRevoke = false;
-
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
-            lockId[0] = lockDao.requestLock(req1, dontRevoke, revokeTimeout);
-            assertNotNull(lockId[0]);
-
-            assertFalse(lockId[0].isEmpty());
-            // now user1 has a lock.
         });
     }
 
@@ -111,10 +100,28 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
     }
 
     @Timeout(value = 30, unit = TimeUnit.SECONDS)
-    @Test
-    void test_can_deny_revoke() {
+    @ParameterizedTest
+    @MethodSource(ProjectLockHandlerUtil.METHOD_SOURCE)
+    <T extends ProjectLock> void test_can_deny_revoke(Fixture<T> fixture) throws SQLException {
 
-        requestOnThread();
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectLockDao<T> lockDao = fixture.newDao(dsl);
+
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, user1.getName());
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, user2.getName());
+
+            boolean dontRevoke = false;
+
+            T req1 = fixture.minimal(OFFICE, projId, appId);
+            lockId[0] = lockDao.requestLock(req1, dontRevoke, revokeTimeout);
+            assertNotNull(lockId[0]);
+
+            assertFalse(lockId[0].isEmpty());
+            // now user1 has a lock.
+        });
+
+        requestOnThread(fixture);
 
         // while the above is waiting on thread for revokeTimeout we deny the revoke.
         given()
@@ -125,19 +132,19 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/project-locks/deny")
+            .post(fixture.denyPath(OFFICE))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
     }
 
-    private void requestOnThread() {
+    private <T extends ProjectLock> void requestOnThread(Fixture<T> fixture) {
         // try to get the lock on another thread.
         Thread thread = new Thread(() -> {
             try {
                 long before = System.currentTimeMillis();
-                lockId2[0]  = requestLock();
+                lockId2[0]  = requestLock(fixture);
                 assertNull(lockId2[0]);
 
                 long after = System.currentTimeMillis();
@@ -151,16 +158,16 @@ public class ProjectLockRevokeDenyHandlerIT extends DataApiTestIT {
         thread.start();
     }
 
-    private String requestLock() throws SQLException {
+    private <T extends ProjectLock> String requestLock(Fixture<T> fixture) throws SQLException {
         final String[] retval = {null};
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectLockDao<T> lockDao = fixture.newDao(dsl);
 
             // this should block until revokeTimeout if we don't do anything
             // but we are going to deny the revoke so it should return before 10s and
             // user2 should not get the lock
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+            T req1 = fixture.minimal(OFFICE, projId, appId);
             retval[0] = lockDao.requestLock(req1, true, revokeTimeout);
         });
         return retval[0];
