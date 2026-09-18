@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CWMS_USER_ROLE_DESCRIPTIONS,
-  CWMS_USER_ROLE_PRESETS,
   OfficeDropdown,
-  matchCwmsUserRolePreset,
-  resolveCwmsUserRolePreset,
   useAuth,
   useCdaRoles,
   useCdaUsers,
@@ -39,6 +36,11 @@ import {
   sameRoles,
   usersForOffice,
 } from "./role-state";
+import {
+  CWMS_USER_ROLE_PRESETS,
+  matchCwmsUserRolePreset,
+  resolveCwmsUserRolePreset,
+} from "./role-presets";
 
 const cdaUrl = import.meta.env.VITE_CDA_API_ROOT;
 const cliRoleDocsUrl =
@@ -557,8 +559,8 @@ export default function UserRoles() {
                       </label>
                       <HelpTip title="Custom role configuration">
                         Use Custom when a staff member needs a combination that does not
-                        exactly match the read-only, read/write, or administrator
-                        presets.
+                        exactly match the read-only, read/write, batch administrator,
+                        or user administrator presets.
                       </HelpTip>
                     </div>
                   </div>

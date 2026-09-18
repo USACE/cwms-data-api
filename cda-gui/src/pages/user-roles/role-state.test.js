@@ -1,5 +1,27 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { matchCwmsUserRolePreset, resolveCwmsUserRolePreset } from "./role-presets.js";
+
+test("batchadmin resolves catalog casing and matches saved roles", () => {
+  const roles = ["All Users", "CWMS Users", "TS ID Creator", "Data Acquisition Mgr"];
+  const catalog = [...roles.map((role) => role.toUpperCase()), "CWMS User Admins"];
+  const resolved = resolveCwmsUserRolePreset("batchadmin", catalog);
+  assert.deepEqual(resolved, {
+    roles: roles.map((role) => role.toUpperCase()),
+    unavailableRoles: [],
+  });
+  assert.equal(matchCwmsUserRolePreset([...resolved.roles].reverse()), "batchadmin");
+  assert.equal(matchCwmsUserRolePreset([...roles, "CWMS User Admins"]), null);
+});
+
+test("batchadmin reports unavailable acquisition access", () => {
+  const roles = ["All Users", "CWMS Users", "TS ID Creator"];
+  assert.deepEqual(resolveCwmsUserRolePreset("batchadmin", roles), {
+    roles,
+    unavailableRoles: ["Data Acquisition Mgr"],
+  });
+  assert.equal(matchCwmsUserRolePreset(roles), "readwrite");
+});
 
 import {
   filterUsers,
