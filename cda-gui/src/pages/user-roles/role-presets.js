@@ -20,8 +20,14 @@ export const CWMS_USER_ROLE_PRESETS = [
   {
     id: "admin",
     label: "User administrator",
-    description: "Manage CWMS users in addition to read/write access.",
-    roles: ["All Users", "CWMS Users", "TS ID Creator", "CWMS User Admins"],
+    description: "Manage CWMS users and paired data in addition to read/write access.",
+    roles: [
+      "All Users",
+      "CWMS Users",
+      "TS ID Creator",
+      "CWMS User Admins",
+      "CWMS PD Users",
+    ],
   },
 ];
 

@@ -23,6 +23,26 @@ test("batchadmin reports unavailable acquisition access", () => {
   assert.equal(matchCwmsUserRolePreset(roles), "readwrite");
 });
 
+test("admin includes paired-data access and reports it when unavailable", () => {
+  const previousRoles = [
+    "All Users",
+    "CWMS Users",
+    "TS ID Creator",
+    "CWMS User Admins",
+  ];
+  const roles = [...previousRoles, "CWMS PD Users"];
+  assert.deepEqual(resolveCwmsUserRolePreset("admin", roles), {
+    roles,
+    unavailableRoles: [],
+  });
+  assert.equal(matchCwmsUserRolePreset(roles), "admin");
+  assert.equal(matchCwmsUserRolePreset(previousRoles), null);
+  assert.deepEqual(resolveCwmsUserRolePreset("admin", previousRoles), {
+    roles: previousRoles,
+    unavailableRoles: ["CWMS PD Users"],
+  });
+});
+
 import {
   filterUsers,
   paginateUsers,
