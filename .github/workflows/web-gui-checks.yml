@@ -44,6 +44,16 @@ jobs:
         working-directory: ./cda-gui
         run: npx --no-install playwright install --with-deps chromium
 
+      - name: run GUI unit tests and production build
+        working-directory: ./cda-gui
+        run: |
+          npm run test:unit
+          npm run build
+
+      - name: run authentication and role-management browser tests
+        working-directory: ./cda-gui
+        run: npm run test:auth
+
       - name: run Storybook UI tests
         working-directory: ./cda-gui
         run: npm run test-storybook -- --run

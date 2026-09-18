@@ -559,8 +559,8 @@ export default function UserRoles() {
                       </label>
                       <HelpTip title="Custom role configuration">
                         Use Custom when a staff member needs a combination that does not
-                        exactly match the read-only, read/write, batch administrator,
-                        or user administrator presets.
+                        exactly match the read-only, read/write, batch administrator, or
+                        user administrator presets.
                       </HelpTip>
                     </div>
                   </div>

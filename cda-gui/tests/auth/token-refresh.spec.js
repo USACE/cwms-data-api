@@ -1,5 +1,81 @@
 import { expect, test } from "@playwright/test";
 
+test("published user hooks search across offices, assign membership, and save a preset", async ({
+  page,
+}) => {
+  const deployment = await mockDeployment(page, "pkce");
+  const user = { "user-name": "new.staff", roles: { HQ: ["All Users"] } };
+  const writes = [];
+  const searches = [];
+  await page.route("**/cwms-data/offices*", (route) =>
+    route.fulfill({
+      json: [
+        { name: "HQ", "long-name": "Headquarters" },
+        { name: "SWT", "long-name": "Tulsa" },
+      ],
+    }),
+  );
+  await page.route("**/cwms-data/roles", (route) =>
+    route.fulfill({
+      json: ["All Users", "CWMS Users", "TS ID Creator", "Data Acquisition Mgr"],
+    }),
+  );
+  await page.route("**/cwms-data/users?*", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    searches.push(params);
+    const users = !params.has("office") || user.roles.SWT ? [user] : [];
+    return route.fulfill({ json: { users, total: users.length } });
+  });
+  await page.route("**/cwms-data/user/new.staff/roles/SWT", (route) => {
+    const request = route.request();
+    const roles = request.postDataJSON();
+    writes.push({
+      method: request.method(),
+      roles,
+      authorization: request.headers().authorization,
+    });
+    user.roles.SWT = [...new Set([...(user.roles.SWT ?? []), ...roles])];
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto("/cwms-data/user-roles");
+  await page.getByRole("button", { name: "Assign office", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog
+    .getByRole("textbox", { name: "Username", exact: true })
+    .fill("new.staff");
+  await dialog.getByRole("button", { name: "Search", exact: true }).click();
+  await dialog.getByRole("button", { name: "new.staff", exact: true }).click();
+  await expect(dialog.getByRole("combobox")).toHaveValue("SWT");
+  await expect(dialog.getByRole("combobox").locator("option")).toHaveCount(1);
+  await dialog.getByRole("button", { name: "Assign office", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(
+    page.getByText("Assigned new.staff to SWT. Choose their roles below."),
+  ).toBeVisible();
+  await page.locator("#role-mode-batchadmin").check();
+  await page.getByRole("button", { name: "Save roles", exact: true }).click();
+  await expect.poll(() => writes.length).toBe(2);
+  expect(writes).toEqual([
+    {
+      method: "POST",
+      roles: ["All Users"],
+      authorization: `Bearer ${deployment.token()}`,
+    },
+    {
+      method: "POST",
+      roles: ["CWMS Users", "Data Acquisition Mgr", "TS ID Creator"],
+      authorization: `Bearer ${deployment.token()}`,
+    },
+  ]);
+  expect(
+    searches.some(
+      (params) =>
+        params.get("username-like") === "new\\.staff" && !params.has("office"),
+    ),
+  ).toBe(true);
+  expect(user.roles.HQ).toEqual(["All Users"]);
+});
+
 async function mockDeployment(page, flow) {
   const origin = "http://127.0.0.1:18741";
   const authority = `${flow === "pkce" ? "https://auth.example.test" : origin}/auth/realms/test`;
