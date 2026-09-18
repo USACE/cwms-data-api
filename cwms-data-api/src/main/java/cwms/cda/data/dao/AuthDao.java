@@ -6,6 +6,7 @@ import com.password4j.HashUpdate;
 import cwms.cda.ApiServlet;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.data.dto.auth.ApiKey;
+import cwms.cda.data.dto.auth.ApiKeyMetadata;
 import cwms.cda.datasource.ConnectionPreparer;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
@@ -554,15 +555,15 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @param p User for which we want the keys
      * @return List of all the keys, with the actual key removed (only user,name,created, and expires)
      */
-    public List<ApiKey> apiKeysForUser(DataApiPrincipal p) {
-        List<ApiKey> keys = new ArrayList<>();
+    public List<ApiKeyMetadata> apiKeysForUser(DataApiPrincipal p) {
+        List<ApiKeyMetadata> keys = new ArrayList<>();
         dsl.connection(c -> {
             setSessionForAuthCheck(c);
             try (PreparedStatement listKeys = c.prepareStatement(LIST_KEYS)) {
                 listKeys.setString(1,p.getName());
                 try (ResultSet rs = listKeys.executeQuery()) {
                     while (rs.next()) {
-                        keys.add(rs2ApiKey(rs));
+                        keys.add(rs2ApiKeyMetadata(rs));
                     }
                 }
             }
@@ -570,7 +571,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         return keys;
     }
 
-    public ApiKey apiKeyForUser(DataApiPrincipal p, String keyName) {
+    public ApiKeyMetadata apiKeyForUser(DataApiPrincipal p, String keyName) {
         return dsl.connectionResult(c -> {
             setSessionForAuthCheck(c);
             try (PreparedStatement singleKey = c.prepareStatement(GET_SINGLE_KEY)) {
@@ -578,7 +579,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                 singleKey.setString(2,keyName);
                 try (ResultSet rs = singleKey.executeQuery()) {
                     if (rs.next()) {
-                        return rs2ApiKey(rs);
+                        return rs2ApiKeyMetadata(rs);
                     } else {
                         return null;
                     }
@@ -587,7 +588,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         });
     }
 
-    private static ApiKey rs2ApiKey(ResultSet rs) throws SQLException {
+    private static ApiKeyMetadata rs2ApiKeyMetadata(ResultSet rs) throws SQLException {
         String userId = rs.getString("userid");
         String keyName = rs.getString("key_name");
 
@@ -601,7 +602,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             .map(Timestamp::toInstant)
             .map(i -> i.atZone(ZoneOffset.UTC))
             .orElse(null);
-        return new ApiKey(userId,keyName,null,created,expires);
+        return new ApiKeyMetadata(userId,keyName,created,expires);
     }
 
     /**
