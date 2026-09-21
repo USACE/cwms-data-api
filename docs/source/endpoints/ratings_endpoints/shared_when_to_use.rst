@@ -76,3 +76,13 @@ rating-id
 
 rating-id-mask
     To limit results to a specific rating ID or pattern.
+
+.. _when_template_id:
+
+template-id
+    To limit results to a specific rating template ID or pattern.
+
+.. _when_template_id_mask:
+
+template-id-mask
+    To limit results to a specific rating template ID or pattern.

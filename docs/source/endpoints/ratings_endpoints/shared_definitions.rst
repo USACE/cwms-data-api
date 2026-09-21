@@ -132,6 +132,24 @@ start/begin
         Detailed documentation for Timestamps usage in CDA is currently in development and will be available at
         https://cwms-data.usace.army.mil/cwms-data/timestamps in a future release.
 
+.. _def-template-id:
+
+template-id
+  A regular expression used to filter the rating template IDs to be included in the response.
+
+    .. note::
+        Documentation for Rating Specifications is available at
+        `CWMS database - rating specification <https://cwms-database.readthedocs.io/en/latest/naming.html#rating-templates>`_.
+
+.. _def-template-id-mask:
+
+template-id-mask
+  A regular expression used to filter the rating template IDs to be included in the response.
+
+    .. note::
+        Documentation for Rating Specifications is available at
+        `CWMS database - rating specification <https://cwms-database.readthedocs.io/en/latest/naming.html#rating-templates>`_.
+
 .. _def-timezone:
 
 timezone

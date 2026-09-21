@@ -3,24 +3,22 @@ Ratings — GET /ratings/spec
 
 What it does
 ------------
-Returns the rating specification available for a given district office.
+Returns the rating specification(s) available for a given district office.
 
 The rating specifications returned can also be matched to a pattern passed through the `rating-id-mask`.
 
 When to use
 -----------
-- Dashboards needing the latest readings
-- Health checks and alerts for current conditions
-
+- Retrieve list of available rating specifications
 
 .. csv-table:: GET /ratings/spec - Endpoint Parameters
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 60, 25, 55
 
-  office, ":ref:`def-office`","", ":ref:`when_office`"
-  page, ":ref:`def-page`", "", ":ref:`when_page`"
-  page-size, ":ref:`def-page-size", "", ":ref:`when_page_size`"
-  rating-id-mask, ":ref:`def-rating-id-mask`", "", ":ref:`when_rating_id_mask`"
+    office, ":ref:`def-office`","", ":ref:`when_office`"
+    page, ":ref:`def-page`", "", ":ref:`when_page`"
+    page-size, ":ref:`def-page-size", "", ":ref:`when_page_size`"
+    rating-id-mask, ":ref:`def-rating-id-mask`", "", ":ref:`when_rating_id_mask`"
 
 Examples
 --------
