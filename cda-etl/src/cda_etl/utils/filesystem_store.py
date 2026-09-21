@@ -20,8 +20,34 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote, unquote
 
 _STORAGE_ROOT = Path("./data")
+
+# CWMS ids and property names legitimately contain characters that NTFS forbids
+# in a filename. REGI's association properties are the live example - "Regi_project_INPUT.Elev_Area.?GLOBAL?"
+# cannot be written on Windows at all ([Errno 22] Invalid argument), while the
+# same name is fine on Linux, so this only shows up outside the container.
+#
+# "%" is escaped too, otherwise a real "%3F" in an id would decode back to "?" and collide.
+# list_json_stems reverses this, so names handed back to callers
+# (and on to CDA) are always the true ones.
+_ILLEGAL_IN_FILENAMES = '<>:"/\\|?*%'
+_SAFE_CHARACTERS = "".join(
+    chr(code) for code in range(32, 127) if chr(code) not in _ILLEGAL_IN_FILENAMES
+)
+
+
+def _encode_part(part: str) -> str:
+    return quote(part, safe=_SAFE_CHARACTERS)
+
+
+def decode_part(part: str) -> str:
+    """
+    Reverses _encode_part. Exposed because a name read back off disk has to be
+    decoded before it is used as a CWMS id.
+    """
+    return unquote(part)
 
 
 def set_storage_root(path: str | Path) -> None:
@@ -52,6 +78,21 @@ def write_json(value: Any, *path_parts: str) -> None:
         json.dump(value, file, indent=2)
 
 
+def list_json_stems(*path_parts: str) -> list[str]:
+    """
+    Returns the true names of the staged files in a directory - decoded, so a
+    stem can be passed straight back into read_json or used as a CWMS id.
+    """
+    if not path_parts:
+        return []
+
+    directory = _STORAGE_ROOT.joinpath(*_normalize_path_parts(*path_parts))
+    if not directory.exists() or not directory.is_dir():
+        return []
+
+    return sorted(decode_part(path.stem) for path in directory.glob("*.json") if path.is_file())
+
+
 def _build_path(*path_parts: str) -> Path | None:
     if not path_parts:
         return None
@@ -69,7 +110,7 @@ def _normalize_path_parts(*path_parts: str) -> list[str]:
     if len(normalized_parts) >= 6 and normalized_parts[-1] == "data":
         normalized_parts = normalized_parts[:-4] + [normalized_parts[2]]
 
-    return normalized_parts
+    return [_encode_part(part) for part in normalized_parts]
 
 
-__all__ = ["read_json", "set_storage_root", "write_json"]
+__all__ = ["decode_part", "list_json_stems", "read_json", "set_storage_root", "write_json"]
