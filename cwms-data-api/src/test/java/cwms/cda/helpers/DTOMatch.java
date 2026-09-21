@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,12 +24,20 @@
 
 package cwms.cda.helpers;
 
+import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.data.dto.Entity;
 import cwms.cda.data.dto.ParameterLegacy;
 import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesVersions;
+import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.catalog.LocationAlias;
+import cwms.cda.data.dto.LocationToPublishedData;
+import cwms.cda.data.dto.LocationToPublishedDataList;
+import cwms.cda.data.dto.PublishedTimeSeriesData;
+import cwms.cda.data.dto.csv.TimeSeriesCsv;
+import cwms.cda.data.dto.csv.TimeSeriesCsvRow;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.location.kind.GateChange;
@@ -45,6 +53,8 @@ import cwms.cda.data.dto.measurement.UsgsMeasurement;
 import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.data.dto.rating.RatingSpecEffectiveDates;
 import cwms.cda.data.dto.stream.StreamLocationNode;
+import cwms.cda.data.dto.forecast.ForecastLocation;
+import cwms.cda.data.dto.forecast.ForecastSpecV2;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
@@ -59,6 +69,8 @@ import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.data.dto.stream.StreamNode;
 import cwms.cda.data.dto.stream.StreamReach;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.data.dto.watersupply.PumpLocation;
 import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
@@ -89,6 +101,10 @@ public final class DTOMatch {
     }
 
     public static void assertMatch(CwmsId first, CwmsId second, String variableName) {
+        if (first == null || second == null) {
+            Assertions.assertEquals(first, second, variableName + " null mismatch");
+            return;
+        }
         assertAll(
             () -> Assertions.assertEquals(first.getOfficeId(), second.getOfficeId(),variableName + " is not the same. Office ID differs"),
             () -> Assertions.assertEquals(first.getName(), second.getName(),variableName + " is not the same. Name differs")
@@ -403,6 +419,29 @@ public final class DTOMatch {
         );
     }
 
+    public static void assertMatch(TimeSeriesCsv first, TimeSeriesCsv second) {
+        assertAll(
+            () -> assertEquals(first.getTimeSeriesId(), second.getTimeSeriesId(), "Time series IDs do not match"),
+            () -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office IDs do not match"),
+            () -> assertEquals(first.getVersionDate(), second.getVersionDate(), "Version dates do not match"),
+            () -> assertMatch(first.getRows(), second.getRows())
+        );
+    }
+
+    public static void assertMatch(List<TimeSeriesCsvRow> first, List<TimeSeriesCsvRow> second) {
+        assertMatch(first, second, DTOMatch::assertMatch);
+    }
+
+    public static void assertMatch(TimeSeriesCsvRow first, TimeSeriesCsvRow second) {
+        assertAll(
+            () -> assertEquals(first.getDateTime(), second.getDateTime(), "Date times do not match"),
+            () -> assertEquals(first.getDataEntryDate(), second.getDataEntryDate(), "Data entry dates do not match"),
+            () -> assertEquals(first.getUnits(), second.getUnits(), "Units do not match"),
+            () -> assertEquals(first.getValue(), second.getValue(), "Values do not match"),
+            () -> assertEquals(first.getQualityCode(), second.getQualityCode(), "Quality codes do not match")
+        );
+    }
+
     public static void assertMatch(Map<Instant, List<PumpTransfer>> first, Map<Instant, List<PumpTransfer>> second) {
         assertAll(
             () -> assertEquals(first.size(), second.size(), "Pump accounting sizes do not match"),
@@ -493,7 +532,7 @@ public final class DTOMatch {
                 () -> assertEquals(first.getParty(), second.getParty(), "Party does not match"),
                 () -> assertEquals(first.getWmComments(), second.getWmComments(), "WM Comments do not match"),
                 () -> assertEquals(first.getInstant(), second.getInstant(), "Instant does not match"),
-                () -> assertEquals(first.getNumber(), second.getNumber(), "Number does not match"),
+                () -> assertEquals(first.getMeasurementId(), second.getMeasurementId(), "Number does not match"),
                 () -> assertMatch(first.getStreamflowMeasurement(), second.getStreamflowMeasurement()),
                 () -> assertMatch(first.getSupplementalStreamflowMeasurement(), second.getSupplementalStreamflowMeasurement()),
                 () -> assertMatch(first.getUsgsMeasurement(), second.getUsgsMeasurement())
@@ -622,6 +661,13 @@ public final class DTOMatch {
         );
     }
 
+    public static void assertMatch(TimeSeriesVersions first, TimeSeriesVersions second) {
+        assertAll(
+            () -> assertMatch(first.getTsId(), second.getTsId()),
+            () -> assertMatch(first.getVersions(), second.getVersions(), DTOMatch::assertMatch)
+        );
+    }
+
     public static void assertMatch(TimeExtents first, TimeExtents second) {
         assertAll(
             () -> assertEquals(first.getEarliestTime(), second.getEarliestTime(), "Start time does not match"),
@@ -662,6 +708,132 @@ public final class DTOMatch {
             () -> assertEquals(first.getParentEntityId(), second.getParentEntityId(), "Entity parent Ids do not match"),
             () -> assertEquals(first.getLongName(), second.getLongName(), "Entity long names do not match")
         );
+    }
+
+    public static void assertMatch(TimeSeriesIdentifierDescriptor tsDescriptor, TimeSeriesIdentifierDescriptor timeSeriesIdDescriptor) {
+        assertAll(
+                () -> assertEquals(tsDescriptor.getIntervalOffsetMinutes(), timeSeriesIdDescriptor.getIntervalOffsetMinutes(), "Identifier does not match"),
+                () -> assertEquals(tsDescriptor.getTimeSeriesId(), timeSeriesIdDescriptor.getTimeSeriesId(), "Part does not match"),
+                () -> assertEquals(tsDescriptor.getOfficeId(), timeSeriesIdDescriptor.getOfficeId(), "Time series type does not match"),
+                () -> assertEquals(tsDescriptor.getTimezoneName(), timeSeriesIdDescriptor.getTimezoneName(), "Office ID does not match")
+        );
+    }
+
+    public static void assertMatch(LocationToPublishedData first, LocationToPublishedData second)
+    {
+        assertAll(
+                () -> assertMatch(first.getLocationId(), second.getLocationId()),
+                () -> assertEquals(first.getKind(), second.getKind(), "Kind does not match"),
+                () -> assertEquals(first.getBoundingOfficeId(), second.getBoundingOfficeId(), "Bounding office ID does not match"),
+                () -> assertEquals(first.getPublishedTimesSeries().size(), second.getPublishedTimesSeries().size(), "Type to TS ID map sizes do not match"),
+                () -> first.getPublishedTimesSeries().forEach((type, tsId) -> {
+                    if (!second.getPublishedTimesSeries().containsKey(type)) {
+                        fail("tsType " + type + " not found in both tsType to tsId maps");
+                    }
+                    assertMatch(tsId, second.getPublishedTimesSeries().get(type));
+                })
+        );
+    }
+
+    public static void assertMatch(PublishedTimeSeriesData ts1, PublishedTimeSeriesData ts2) {
+        assertAll(
+                () -> assertMatch(ts1.getTimeSeriesId(), ts2.getTimeSeriesId()),
+                () -> assertEquals(ts1.getTimezoneName(), ts2.getTimezoneName(), "Time zone names do not match"),
+                () -> assertEquals(ts1.getActive(), ts2.getActive(), "Active flags do not match"),
+                () -> assertEquals(ts1.getIntervalOffsetMinutes(), ts2.getIntervalOffsetMinutes(), "Interval offset minutes do not match"),
+                () -> assertEquals(ts1.getDateRefreshed(), ts2.getDateRefreshed(), "Date-Refreshed does not match"),
+                () -> assertEquals(ts1.getNotes(), ts2.getNotes(), "Notes do not match")
+        );
+    }
+
+    public static void assertMatch(LocationToPublishedDataList list, LocationToPublishedDataList list2) {
+        assertAll(
+                () -> assertEquals(list.getPage(), list2.getPage(), "Page does not match"),
+                () -> assertEquals(list.getPageSize(), list2.getPageSize(), "Page size does not match"),
+                () -> assertEquals(list.getTotal(), list2.getTotal(), "Total does not match"),
+                () -> assertEquals(list.getNextPage(), list2.getNextPage(), "Next page does not match"),
+                () -> assertEquals(list.getLocationToPublishedData().size(), list2.getLocationToPublishedData().size(), "Time series identifiers sizes do not match"),
+                () -> list.getLocationToPublishedData().forEach(tsIdsForLocation -> {
+                    LocationToPublishedData found = list2.getLocationToPublishedData().stream()
+                            .filter(tsId1 -> isEqual(tsIdsForLocation.getLocationId(),tsId1.getLocationId()))
+                            .findFirst().orElse(null);
+                    assertNotNull(found, "Time series identifiers were expected but not found for locationId: " + tsIdsForLocation.getLocationId().getName());
+                    assertMatch(tsIdsForLocation, found);
+                })
+        );
+    }
+
+    public static void assertMatch(TimeSeriesGroupPatch first, TimeSeriesGroupPatch second) {
+        assertAll(() -> assertEquals(first.getOfficeId(), second.getOfficeId(), "Office IDs do not match"),
+                () -> assertEquals(first.getId(), second.getId(), "Time series group IDs do not match"),
+                () -> assertEquals(first.getDescription(), second.getDescription(), "Descriptions do not match"),
+                () -> assertEquals(first.getSharedAliasId(), second.getSharedAliasId(), "Shared alias IDs do not match"),
+                () -> assertEquals(first.getSharedRefTsId(), second.getSharedRefTsId(), "Shared reference time series IDs do not match"),
+                () -> assertEquals(first.getTimeSeriesCategory(), second.getTimeSeriesCategory(), "Time series categories do not match"),
+                () -> assertMatch(first.getMembership(), second.getMembership())
+        );
+    }
+
+    public static void assertMatch(TimeSeriesGroupMembership first, TimeSeriesGroupMembership second) {
+        assertEquals(first.getUnassign().size(), second.getUnassign().size(), "Unassign list sizes do not match");
+        assertEquals(first.getAssign().size(), second.getAssign().size(), "Assign list sizes do not match");
+
+        List<AssignedTimeSeries> firstAssigned = first.getAssign();
+        List<AssignedTimeSeries> secondAssigned = second.getAssign();
+        for (int i = 0; i < firstAssigned.size(); i++) {
+            AssignedTimeSeries expectedTs = firstAssigned.get(i);
+            AssignedTimeSeries actualTs = secondAssigned.get(i);
+            assertEquals(expectedTs.getOfficeId(), actualTs.getOfficeId(), "Office IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getTimeseriesId(), actualTs.getTimeseriesId(), "Time series IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getAliasId(), actualTs.getAliasId(), "Alias IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getRefTsId(), actualTs.getRefTsId(), "Reference time series IDs do not match for assigned time series at index " + i);
+            assertEquals(expectedTs.getAttribute(), actualTs.getAttribute(), "Attributes do not match for assigned time series at index " + i);
+        }
+
+        List<CwmsId> firstUnassigned = first.getUnassign();
+        List<CwmsId> secondUnassigned = second.getUnassign();
+        for (int i = 0; i < firstUnassigned.size(); i++) {
+            CwmsId expectedTsId = firstUnassigned.get(i);
+            CwmsId actualTsId = secondUnassigned.get(i);
+            assertEquals(expectedTsId.getOfficeId(), actualTsId.getOfficeId(), "Office IDs do not match for unassigned time series at index " + i);
+            assertEquals(expectedTsId.getName(), actualTsId.getName(), "Time series IDs do not match for unassigned time series at index " + i);
+        }
+    }
+
+    public static void assertMatch(ForecastLocation first, ForecastLocation second) {
+        if (first == null || second == null) {
+            assertEquals(first, second, "ForecastLocation null mismatch");
+            return;
+        }
+        assertAll(
+            () -> assertEquals(first.getLocationId(), second.getLocationId(), "Location ID does not match"),
+            () -> assertEquals(first.getSortOrder(), second.getSortOrder(), "Sort order does not match"),
+            () -> assertEquals(first.isPrimary(), second.isPrimary(), "Primary flag does not match")
+        );
+    }
+
+    public static void assertMatch(ForecastSpecV2 first, ForecastSpecV2 second) {
+        if (first == null || second == null) {
+            assertEquals(first, second, "ForecastSpecV2 null mismatch");
+            return;
+        }
+        assertAll(
+            () -> assertMatch(first.getSpecId(), second.getSpecId()),
+            () -> assertEquals(first.getDesignator(), second.getDesignator(), "Designator does not match"),
+            () -> assertEquals(first.getSourceEntityId(), second.getSourceEntityId(), "Source entity ID does not match"),
+            () -> assertEquals(first.getDescription(), second.getDescription(), "Description does not match"),
+            () -> {
+                if (first.getLocationIds() != null || second.getLocationIds() != null) {
+                    assertMatch(first.getLocationIds(), second.getLocationIds(), DTOMatch::assertMatch);
+                }
+            },
+            () -> assertEquals(first.getTimeSeriesIds(), second.getTimeSeriesIds(), "Time series IDs do not match")
+        );
+    }
+
+    private static boolean isEqual(CwmsId loc1, CwmsId loc2) {
+        return loc1.getName().equals(loc2.getName())
+                && loc1.getOfficeId().equals(loc2.getOfficeId());
     }
 
     @FunctionalInterface

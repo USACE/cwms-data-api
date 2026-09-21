@@ -44,7 +44,7 @@ class JsonV2Test extends TimeSeriesTestBase {
 
     private LocationLevel buildLevel(String crazyName) {
         ZonedDateTime efDate = ZonedDateTime.parse("2021-06-21T08:00:00-07:00[PST8PDT]");
-        return new ConstantLocationLevel.Builder(crazyName, efDate).build();
+        return new ConstantLocationLevel.Builder(crazyName, efDate.toInstant()).build();
     }
 
     @Test

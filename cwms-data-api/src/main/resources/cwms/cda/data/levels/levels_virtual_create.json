@@ -1,0 +1,28 @@
+{
+  "office-id": "SPK",
+  "location-level-id": "Sacramento.Stage.Ave.1Day.Top of Normal",
+  "specified-level-id": "Top of Normal",
+  "parameter-id": "Stage",
+  "attribute-value": 12.5,
+  "attribute-units-id": "ft",
+  "attribute-parameter-id": "Stage",
+  "attribute-parameter-type-id": "Inst",
+  "level-units-id": "ft",
+  "level-date": "2023-06-01T00:00:00-07:00",
+  "expiration-date": "2025-06-01T00:00:00-07:00",
+  "constituents": [
+    {
+      "type": "LOCATION_LEVEL",
+      "abbr": "L1",
+      "name": "Sonoma.Stage.Ave.1Day.Top of Normal",
+      "attribute-id": "Stage",
+      "attribute-value": 16.5
+    },
+    {
+      "type": "RATING",
+      "abbr": "R1",
+      "name": "Sacramento.Stage;Flow.COE.Production"
+    }
+  ],
+  "constituent-connections": "L1=R1I1"
+}

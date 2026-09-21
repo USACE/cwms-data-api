@@ -36,7 +36,10 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BaseHandler;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.RateDao;
 import cwms.cda.data.dto.rating.RateInputTimeSeries;
 import cwms.cda.data.dto.rating.RatedOutput;
@@ -52,11 +55,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class ReverseRateTimeSeriesController extends BaseHandler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     private static final String REVERSE_RATE = "ReverseRate";
 
@@ -110,7 +115,17 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
             String acceptFormatHeader = ctx.header(Header.ACCEPT);
             ContentType acceptContentType = Formats.parseHeader(acceptFormatHeader, RatedOutputTimeSeries.class);
             String result = Formats.format(acceptContentType, output);
-            ctx.status(HttpServletResponse.SC_OK).result(result);
+            ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to reverse rate input values", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to reverse rate input values");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 }

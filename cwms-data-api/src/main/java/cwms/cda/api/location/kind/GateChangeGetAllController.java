@@ -20,12 +20,26 @@
 
 package cwms.cda.api.location.kind;
 
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.END_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
+import static cwms.cda.api.Controllers.START_TIME_INCLUSIVE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT_SYSTEM;
+import static cwms.cda.api.Controllers.requiredInstant;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.CwmsId;
@@ -39,6 +53,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -46,6 +61,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class GateChangeGetAllController extends BaseHandler {
+    private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final int DEFAULT_PAGE_SIZE = 500;
 
     public GateChangeGetAllController(MetricRegistry metrics) {
@@ -116,9 +132,18 @@ public class GateChangeGetAllController extends BaseHandler {
             String formatHeader = context.header(Header.ACCEPT) != null ? context.header(Header.ACCEPT) : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, GateChange.class);
             String serialized = Formats.format(contentType, changes, GateChange.class);
-            context.result(serialized);
             context.status(HttpServletResponse.SC_OK);
             updateResultSize(serialized.length());
+            context.contentType(contentType.toString());
+
+            byte[] bytes = serialized.getBytes();
+            context.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            context.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(context,
+                "Failed to process request to retrieve Gate Changes", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Gate Changes");
+            context.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 }

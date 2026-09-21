@@ -6,16 +6,51 @@ const config = new Configuration({
   basePath: CDA_URL,
 });
 const cataApi = new CatalogApi(config);
+const ALIAS_PAGE_SIZE = 2000;
+const MAX_ALIAS_PAGES = 10;
+const MIN_ALIAS_SEARCH_LENGTH = 2;
 
-export default function useAliases({ office, kind, cacheDuration, props }) {
+async function getCatalogPages(request) {
+  const firstPage = await cataApi.getCatalogWithDataset(request);
+  const entries = firstPage?.entries || [];
+  let nextPage = firstPage?.["next-page"];
+  let pageCount = 1;
+
+  while (nextPage && pageCount < MAX_ALIAS_PAGES) {
+    const page = await cataApi.getCatalogWithDataset({
+      ...request,
+      page: nextPage,
+    });
+    entries.push(...(page?.entries || []));
+    nextPage = page?.["next-page"];
+    pageCount += 1;
+  }
+
+  return { ...firstPage, entries };
+}
+
+export default function useAliases({
+  office,
+  kind,
+  searchTerm = "",
+  cacheDuration,
+  props,
+}) {
+  const normalizedSearchTerm = searchTerm.trim();
+  const hasSearchTerm = normalizedSearchTerm.length >= MIN_ALIAS_SEARCH_LENGTH;
   const { data, isLoading, error } = useQuery({
-    queryKey: ["aliases", office, kind],
-    queryFn: async () =>
-      cataApi.getCatalogWithDataset({
+    queryKey: ["aliases", office, kind, normalizedSearchTerm],
+    queryFn: async () => {
+      const request = {
         dataset: "LOCATIONS",
-        locationKindLike: kind,
-        office,
-      }),
+        includeAliases: true,
+        pageSize: ALIAS_PAGE_SIZE,
+      };
+      if (kind && kind !== "*") request.locationKindLike = kind;
+      if (hasSearchTerm) request.like = `*${normalizedSearchTerm}*`;
+      if (office) request.office = office;
+      return getCatalogPages(request);
+    },
     staleTime: cacheDuration,
     select: (data) => {
       const aliasMap = {};
@@ -25,7 +60,8 @@ export default function useAliases({ office, kind, cacheDuration, props }) {
           a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
         )
         .forEach((loc) => {
-          aliasMap[loc.name] = {
+          const key = office ? loc.name : `${loc.office}/${loc.name}`;
+          aliasMap[key] = {
             name: loc.name,
             publicName: loc.publicName,
             office: loc.office,

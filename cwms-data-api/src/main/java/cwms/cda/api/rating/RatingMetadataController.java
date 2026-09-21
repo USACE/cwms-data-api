@@ -25,10 +25,8 @@
 package cwms.cda.api.rating;
 
 import static com.codahale.metrics.MetricRegistry.name;
-
 import static cwms.cda.api.Controllers.END;
 import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.NOT_SUPPORTED_YET;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
@@ -42,8 +40,10 @@ import static cwms.cda.api.Controllers.TIMEZONE;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.RatingMetadataDao;
 import cwms.cda.data.dto.rating.RatingMetadataList;
@@ -57,8 +57,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.time.ZonedDateTime;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -152,7 +152,7 @@ public class RatingMetadataController implements CrudHandler {
         String formatHeader = ctx.header(Header.ACCEPT);
         ContentType contentType = Formats.parseHeader(formatHeader, RatingMetadataList.class);
 
-        try (final Timer.Context timeContext = markAndTime(GET_ALL)){
+        try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
 
             RatingMetadataDao dao = getDao(dsl);
@@ -161,17 +161,19 @@ public class RatingMetadataController implements CrudHandler {
                     ratingIdMask, beginZdt, endZdt);
 
             String result = Formats.format(contentType, metadataList);
-            ctx.result(result);
-
             ctx.contentType(contentType.toString());
 
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
-        } catch (Exception ex) {
-            CdaError re =
-                    new CdaError("Failed to process request: " + ex.getLocalizedMessage());
-            logger.atSevere().withCause(ex).log("%s", re);
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve rating metadata", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve rating metadata");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

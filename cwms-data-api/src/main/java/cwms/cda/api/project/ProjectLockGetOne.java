@@ -36,7 +36,10 @@ import static cwms.cda.api.Controllers.requiredParam;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.ProjectLock;
@@ -51,11 +54,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
-
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class ProjectLockGetOne implements Handler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     public static final String TAGS = "Project Locks";
 
     private final MetricRegistry metrics;
@@ -105,17 +109,25 @@ public class ProjectLockGetOne implements Handler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
             ProjectLock lock = lockDao.retrieveLock(office, prjId, appId);
-            if(lock != null) {
+            if (lock != null) {
                 String acceptHeader = ctx.header(Header.ACCEPT);
                 ContentType acceptType = Formats.parseHeader(acceptHeader, ProjectLock.class);
                 String result = Formats.format(acceptType, lock);
-                ctx.result(result);
                 ctx.contentType(acceptType.toString());
                 requestResultSize.update(result.length());
                 ctx.status(HttpServletResponse.SC_OK);
+
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             } else {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND);
             }
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Project Lock", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Project Lock");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

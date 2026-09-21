@@ -27,24 +27,29 @@
       <tr>
         <th>CWMS Database Schema target</th>
         <th>Status</th>
+        <th>Coverage</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>Latest</td>
-        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg">
+        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg"></td>
+        <td><img alt="Latest Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest-coverage.svg"></td>
       </tr>
       <tr>
         <td>Current Release</td>
-        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg">
+        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg"></td>
+        <td><img alt="Current Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Next Release</td>
-        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg">
+        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg"></td>
+        <td><img alt="Next Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Previous Release - NOTE: Not applicable yet</td>
-        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg">
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg"></td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous-coverage.svg"></td>
       </tr>
     </tbody>
   </table>
@@ -71,6 +76,30 @@ End user documentation available here: [📕 Read the Docs](https://cwms-data-ap
 
 Development and runtime currently requires java 11. JDKs and JREs greater than 11 should work, please report if they don't.
 
+### Dev Container
+
+The repository includes a [Dev Container](https://containers.dev/) with Java 11, Node.js 22,
+Python 3.13, and Docker Compose. It supports the Gradle build, CDA GUI and client development,
+documentation builds, the local Docker Compose stack, and Docker-backed integration tests.
+
+To use it locally:
+
+1. Install Docker and the Visual Studio Code Dev Containers extension.
+2. Open the cloned repository in Visual Studio Code.
+3. Run **Dev Containers: Reopen in Container** from the command palette.
+
+GitHub Codespaces also detects the same configuration automatically. The first container creation
+downloads the development image and initializes the Gradle wrapper. After it completes, run the
+normal project commands from the container terminal, for example:
+
+```bash
+./gradlew build
+docker compose up -d --force-recreate
+```
+
+The integration tests use the host Docker engine through the forwarded Docker socket. Their database
+setup has the same resource and startup-time requirements described in [Testing](#testing).
+
 
 To build the war:
 
@@ -78,9 +107,62 @@ To build the war:
 
 This will compile the jar and run the basic unit tests.
 
+To run the OWASP dependency vulnerability scan:
+
+     ./gradlew dependencyCheckAggregate
+
+For faster scans, add a free [NVD API key](https://nvd.nist.gov/developers/request-an-api-key) to your
+user gradle properties file (`~/.gradle/gradle.properties`):
+
+     nvdApiKey=<your-key>
+
+The report is written to `build/reports/dependency-check-report.html`.
+
 ## Development stack
 
 See the docker-compose.README.md for instructions using the docker-compose environment
+
+### Running CDA locally
+
+To run CDA locally using the Gradle development task:
+
+```bash
+./gradlew run
+```
+
+The `run` task builds the WAR, generates the local Tomcat configuration, and starts an embedded Tomcat instance using the database connection and runtime settings from your Gradle properties.
+
+At minimum, configure the following properties in your user Gradle properties file, `~/.gradle/gradle.properties`:
+
+    CDA_JDBC_DRIVER=oracle.jdbc.driver.OracleDriver
+    CDA_JDBC_URL=jdbc:oracle:thin:@localhost/CWMSDB
+    CDA_JDBC_USERNAME=username
+    CDA_JDBC_PASSWORD=password
+    CDA_LISTEN_PORT=7000
+
+By default, the WAR is deployed under the `spk-data` context. To override the context path, set:
+
+    cda.war.context=cwms-data
+
+With the default port and a `cwms-data` context, the API will be available at:
+
+    http://localhost:7000/cwms-data/
+
+### Generating development API keys
+
+For local development, API keys can be generated directly for the HEC test users 
+in the configured CWMS database without requiring external auth provider setup.
+
+Run:
+```bash
+./gradlew seedDevApiKeys
+```
+
+The task finds users whose `USERID` ends with `HECTEST`, 
+creates development API keys for them, and prints the plaintext keys to the console log.
+
+The generated keys are intended for local development only. 
+The plaintext key is only available when it is created.
 
 ## Testing
 
@@ -139,3 +221,9 @@ However it MUST be explicit on each request.
 
 If expanding the functionality of the Base class, do not depend on the SQL wrappers. Either use direct JDBC, or [JDBI3](https://jdbi.org/)
 This is to isolate specific possible errors with various APIs and reduces points of failure in initial setup for traceability.
+
+
+
+# Releasing and Deploying new versios
+
+See (Release and Deployments)[RELEASE_DEPLOY.md] for information about how releases are created and what the different naming means.

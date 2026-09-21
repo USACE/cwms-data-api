@@ -1,0 +1,12 @@
+{
+  "servers": [
+    {
+      "url": "https://cwms-data.usace.army.mil/cwms-data",
+      "description": "PRIMARY production server"
+    },
+    {
+      "url": "https://water.usace.army.mil/cwms-data",
+      "description": "Alias for the PRIMARY production server"
+    }
+  ]
+}

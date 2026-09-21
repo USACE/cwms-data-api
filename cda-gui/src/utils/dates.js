@@ -14,12 +14,7 @@ export function getYearRange(start_year, end_year, FORMAT = "YYYY") {
   return _years;
 }
 
-export function getMonthRange({
-  selectedProject,
-  selectedMonth,
-  selectedYear,
-  lookback_year = 1994,
-}) {
+export function getMonthRange({ selectedMonth, selectedYear, lookback_year = 1994 }) {
   const current_dt = dayjs();
   if (!selectedMonth) selectedMonth = current_dt.format("MMM");
   if (!selectedYear) selectedYear = current_dt.year();

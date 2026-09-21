@@ -27,13 +27,13 @@
 package cwms.cda.api.watersupply;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BaseHandler;
-import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import org.jooq.DSLContext;
 
 public abstract class WaterSupplyControllerBase extends BaseHandler {
+    static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Water Contracts";
 
     public WaterSupplyControllerBase(MetricRegistry metrics) {

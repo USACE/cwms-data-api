@@ -1,7 +1,6 @@
 package cwms.cda.helpers;
 
 import com.google.common.flogger.FluentLogger;
-import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.DateTimeException;
@@ -11,8 +10,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
-
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Helper class for handling timezone IDs and their aliases.

@@ -54,5 +54,5 @@ runs:
       uses: actions/upload-artifact@v4
       with:
         name: badges_${{ inputs.run_id }}_${{ steps.vars.outputs.safe_file }}
-        path: badges/**/*.svg
+        path: badges/**/${{inputs.file}}
         overwrite: true

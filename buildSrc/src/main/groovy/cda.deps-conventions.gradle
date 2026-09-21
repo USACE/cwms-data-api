@@ -1,8 +1,11 @@
 
 repositories {
-    mavenLocal()
     maven {
         url = uri('https://www.hec.usace.army.mil/nexus/repository/maven-public')
+        content {
+            includeGroupAndSubgroups("mil.army.usace.hec")
+            includeGroup("org.jooq.pro-java-11")
+        }
     }
 
     mavenCentral().content {
@@ -13,10 +16,21 @@ repositories {
     maven {
         url = uri('https://repo.maven.apache.org/maven2')
     }
-
+    gradlePluginPortal()
 }
 
 
 configurations.all {
     exclude group: "org.python", module: "jython-standalone"
+    exclude group: "com.mrsid"
+
+    resolutionStrategy {
+        // javalin 4.6.8 pulls in the vulnerable kotlin-stdlib 1.5.32
+        // Force a patched version; javalin can't be bumped past 4.x while we target Java 11.
+        force "org.jetbrains.kotlin:kotlin-stdlib:1.9.25"
+        force "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.25"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.25"
+        force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.25"
+        force "org.codehaus.plexus:plexus-utils:3.6.1"
+    }
 }

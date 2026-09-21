@@ -22,20 +22,24 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import org.slf4j.bridge.SLF4JBridgeHandler;
+
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.security.OpenIdConnectIdentitityProvider;
+import cwms.cda.security.OpenIdConnectIdentityProvider;
 import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
+import io.restassured.config.EncoderConfig;
 import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
 import javax.servlet.http.HttpServletResponse;
 import org.testcontainers.images.PullPolicy;
 
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 
@@ -68,14 +72,17 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     public static final String VERSION_STRING;
     public static final int VERSION_INT;
 
-    static
-    {
+    static {
         VERSION_STRING = schemaVersion();
         VERSION_INT = versionInt();
     }
 
-    private static String schemaVersion()
-    {
+    static {
+        SLF4JBridgeHandler.removeHandlersForRootLogger();
+        SLF4JBridgeHandler.install();
+    }
+
+    private static String schemaVersion() {
         String ret;
         if (!System.getProperty(CwmsDatabaseContainers.BYPASS_URL,"").isEmpty())
         {
@@ -97,7 +104,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         int ret;
         String tmp = schemaVersion();
         if (tmp.equalsIgnoreCase("latest-dev")) {
-            ret = 999999;
+            ret = LATEST_SCHEMA;
         } else if (tmp.equalsIgnoreCase("Bypass")) {
             ret = -1;
         } else if(tmp.toLowerCase().endsWith("staging")) {
@@ -109,11 +116,15 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     public static int getSchemaVersion() {
+        if (cwmsDb == null) {
+            // Class-level execution conditions run before the database container starts.
+            return VERSION_INT;
+        }
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         try {
             return db.connection((c) -> {
                 var ctx = JooqDao.getDslContext(c, db.getOfficeId());
-                return Dao.versionAsInteger(Dao.getVersion(ctx));
+                return Dao.getDbVersion(ctx);
             }, webUser);
         } catch (SQLException ex) {
             throw new RuntimeException(ex);
@@ -154,10 +165,10 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
             // OIDC properties
             System.setProperty("cwms.dataapi.access.providers","KeyAccessManager,OpenID,CwmsAccessManager");
-            System.setProperty(OpenIdConnectIdentitityProvider.CREATE_USERS_KEY,"true");
-            System.setProperty(OpenIdConnectIdentitityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
-            System.setProperty(OpenIdConnectIdentitityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
-
+            System.setProperty(OpenIdConnectIdentityProvider.CREATE_USERS_KEY,"true");
+            System.setProperty(OpenIdConnectIdentityProvider.WELL_KNOWN_PROPERTY,KeyCloakExtension.getOidcWellKnown());
+            System.setProperty(OpenIdConnectIdentityProvider.ISSUER_PROPERTY,KeyCloakExtension.getIssuer());
+            System.setProperty(OpenIdConnectIdentityProvider.TIMEOUT_PROPERTY, "1"); // to force a reload at least once.
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
             cdaInstance = new TomcatServer("build/tomcat",
@@ -169,11 +180,24 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = System.getProperty("warContext");
-            // we only use doubles
-            RestAssured.config()
-                       .jsonConfig(
-                            JsonConfig.jsonConfig()
-                                      .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE));
+            // actually assign the new config to the global configuration. just running this here without
+            // the assignment apparently does nothing.
+            RestAssured.config = RestAssured.config()
+                        // we only use doubles (NOTE: this is commend out because this config was
+                        // never originally active and will be addressed in a followup)
+                    //    .jsonConfig(
+                    //         JsonConfig.jsonConfig()
+                    //                   .numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))
+                        // our content type processing is a bit more picky now.
+                        // I also don't recal seeing any default COntent-Type or Accept header
+                        // defaults from browsers that include this much.
+                        // if we start seeing it we need to add explicity @FormattableWith annotations
+                        // per character as that is a distinct content-type.
+                       .encoderConfig(
+                            EncoderConfig.encoderConfig()
+                                         .appendDefaultContentCharsetToContentTypeIfUndefined(
+                                            false
+                                         ));
             healthCheck();
         }
     }

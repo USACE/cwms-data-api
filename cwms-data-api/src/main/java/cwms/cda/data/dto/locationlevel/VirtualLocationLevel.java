@@ -26,7 +26,7 @@
 
 package cwms.cda.data.dto.locationlevel;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -80,7 +80,7 @@ public final class VirtualLocationLevel extends LocationLevel {
 
 		@JsonCreator
 		public Builder(@JsonProperty(value = "location-level-id", required = true) String name,
-				@JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate) {
+				@JsonProperty(value = "level-date", required = true) Instant lvlDate) {
 			super(name, lvlDate);
 		}
 

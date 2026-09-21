@@ -16,22 +16,27 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.UnitsDao;
 import cwms.cda.data.dto.Unit;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class UnitsController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+
     private final MetricRegistry metrics;
 
     private final Histogram requestResultSize;
@@ -111,11 +116,17 @@ public class UnitsController implements CrudHandler {
             }
 
             ctx.status(HttpServletResponse.SC_OK);
-            ctx.result(results);
             addDeprecatedContentTypeWarning(ctx, contentType);
             requestResultSize.update(results.length());
-        }
 
+            byte[] bytes = results.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Failed to procees request to retrieve units");
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve units");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
+        }
     }
 
     @OpenApi(ignore = true)

@@ -2,10 +2,6 @@ package cwms.cda.formatters.xml.adapters;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 public class TimestampAdapter extends XmlAdapter<Long, Timestamp> {

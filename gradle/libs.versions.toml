@@ -2,21 +2,24 @@
 jaxb-api = "2.3.1"
 jaxb-impl = "3.0.2"
 jooq-codegen = "26.02.17-RC01-oracle19c"
+codegen-latest = "latest-dev_sha256_e7740339fdf4-oracle19c"
+codegen-legacy = "24.12.04-2025.01.21"
 jooq = "3.18.7-jdk11"
-slf4j = "2.0.9"
+slf4j = "2.0.17"
 hec-monolith = "3.3.20"
 hec-nucleus = "2.0.1"
-flogger = "0.7.4"
+flogger = "0.9"
+logback = "1.5.34"
 google-findbugs = "3.0.2"
 error_prone_annotations = "2.15.0"
 cwms-ratings = "4.2.3"
 javalin = "4.6.8"
-tomcat = "9.0.118"
+tomcat = "9.0.121"
 swagger-core = "2.2.23"
-jackson = "2.17.1"
+jackson = "2.22.2"
 geojson-jackson = "1.14"
 dropwizard = "4.2.12"
-dropwizard_prometheus = "0.15.0"
+prometheus_client = "1.6.1"
 owasp = "20220608.1"
 java-ee = "8.0.1"
 cwms-tomcat-auth = "1.1.0"
@@ -37,7 +40,11 @@ auto-service = "1.1.1"
 openapi-validation = "2.44.9"
 javaparser = "3.26.2"
 togglz = "3.3.3"
-minio = "8.6.0"
+minio = "8.6.0" # for client
+s3mock = "5.2.2"
+opentelemetry = "1.63.0"
+opentelemetry-java = "2.29.0"
+opentelemetry-java-logging = "2.29.0-alpha"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -52,13 +59,22 @@ jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 jaxb-impl = { module = "com.sun.xml.bind:jaxb-impl", version.ref = "jaxb-impl" }
 jaxb-core = { module = "com.sun.xml.bind:jaxb-core", version.ref = "jaxb-impl" }
 cwms-db-jooq-codegen = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "jooq-codegen" }
-cwms-db-jooq-codegen-legacy = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version = "24.12.04-2025.01.21" }
-cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version = "latest-dev_sha256_f1-oracle19c" }
+cwms-db-jooq-codegen-legacy = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java8", version.ref = "codegen-legacy" }
+cwms-db-jooq-codegen-latest = { module = "mil.army.usace.hec:cwms-db-jooq-codegen_java11", version.ref = "codegen-latest" }
 jooq = { module = "org.jooq.pro-java-11:jooq", version.ref ="jooq" }
-slf4j = { module = "org.slf4j:slf4j-jdk14", version.ref = "slf4j" }
+slf4j = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-jul = { module = "org.slf4j:jul-to-slf4j", version.ref = "slf4j" }
 monolith = { module = "mil.army.usace.hec:hec-monolith", version.ref = "hec-monolith" }
 google-flogger-api = { module = "com.google.flogger:flogger", version.ref = "flogger" }
-google-flogger-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "flogger" }
+google-flogger-system-backend = { module = "com.google.flogger:flogger-system-backend", version.ref = "flogger" }
+google-flogger-slf4j-backend = { module = "com.google.flogger:flogger-slf4j-backend", version.ref = "flogger" }
+ch-qos-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+io-opentelemetry-instrumentation-logback-mdc = { module = "io.opentelemetry.instrumentation:opentelemetry-logback-mdc-1.0", version.ref = "opentelemetry-java-logging" }
+io-opentelemetry-api = { module="io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
+io-opentelemetry-sdk = { module="io.opentelemetry:opentelemetry-sdk", version.ref = "opentelemetry" }
+io-opentelemetry-exporter-logging = { module="io.opentelemetry:opentelemetry-exporter-logging", version.ref="opentelemetry" }
+io-opentelemetry-instrumentation-java = { module="io.opentelemetry.instrumentation:opentelemetry-instrumentation-api", version.ref = "opentelemetry-java" }
+
 google-findbugs = { module = "com.google.code.findbugs:jsr305", version.ref = "google-findbugs" }
 google-errorProne = { module = "com.google.errorprone:error_prone_annotations", version.ref = "error_prone_annotations"}
 nucleus-data = { module = "mil.army.usace.hec:hec-nucleus-data", version.ref = "hec-nucleus" }
@@ -73,8 +89,8 @@ javalin-openapi = { module = "io.javalin:javalin-openapi", version.ref = "javali
 swagger-core = { module = "io.swagger.core.v3:swagger-core", version.ref = "swagger-core" }
 metrics-core = { module = "io.dropwizard.metrics:metrics-core", version.ref = "dropwizard" }
 metrics-servlets = { module = "io.dropwizard.metrics:metrics-servlets", version.ref = "dropwizard" }
-metrics-prometheus-client = { module = "io.prometheus:simpleclient_dropwizard", version.ref = "dropwizard_prometheus" }
-metrics-prometheus-servlets = { module = "io.prometheus:simpleclient_servlet", version.ref = "dropwizard_prometheus" }
+metrics-prometheus-client = { module = "io.prometheus:prometheus-metrics-instrumentation-dropwizard", version.ref = "prometheus_client" }
+metrics-prometheus-servlets = { module = "io.prometheus:prometheus-metrics-exporter-servlet-javax", version.ref = "prometheus_client" }
 password4j = { module = "com.password4j:password4j", version = "1.8.4" }
 
 
@@ -86,6 +102,7 @@ jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datat
 
 togglz-core = { module = "org.togglz:togglz-core", version.ref = "togglz" }
 
+# for s3 client
 minio = { module = "io.minio:minio", version.ref = "minio"}
 
 #compile compileOnly
@@ -113,7 +130,7 @@ testcontainers-database-commons = { module = "org.testcontainers:testcontainers-
 testcontainers-jdbc = { module = "org.testcontainers:testcontainers-jdbc", version.ref = "testcontainers"}
 testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers"}
 testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "cwms-testcontainers"}
-testcontainers-minio = { module = "org.testcontainers:testcontainers-minio", version.ref = "testcontainers" }
+testcontainers-s3mock = { module = "com.adobe.testing:s3mock-testcontainers", version.ref = "s3mock" }
 
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 oracle-jdbc-driver = { module ="com.oracle.database.jdbc:ojdbc11", version.ref = "oracle-jdbc" }
@@ -129,7 +146,7 @@ javaparser-symbol-solver-core = { module = "com.github.javaparser:javaparser-sym
 
 tomcat-embedded-core = { module = "org.apache.tomcat.embed:tomcat-embed-core", version.ref = "tomcat" }
 tomcat-embedded-jasper = { module = "org.apache.tomcat.embed:tomcat-embed-jasper", version.ref = "tomcat" }
-tomcat-juli = { module = "org.apache.tomcat:tomcat-juli", version.ref = "tomcat" }
+# juli is excluded since we are using logback for logging.
 tomcat-jdbc = { module = "org.apache.tomcat:tomcat-jdbc", version.ref = "tomcat" }
 
 
@@ -144,9 +161,9 @@ com-google-auto-service = { module = "com.google.auto.service:auto-service", ver
 [bundles]
 junit = ["junit-jupiter-api", "junit-jupiter-params", "junit-jupiter-engine", "junit-platform-launcher"]
 tomcat-embedded = [ "tomcat-embedded-core", "tomcat-embedded-jasper" ]
-tomcat-support = [ "tomcat-juli", "tomcat-jdbc" ]
+tomcat-support = [ "tomcat-jdbc" ]
 testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "testcontainers-jdbc",
-                   "testcontainers-junit-jupiter", "testcontainers-cwms", "testcontainers-minio" ]
+                   "testcontainers-junit-jupiter", "testcontainers-cwms", "testcontainers-s3mock" ]
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
 overrides = ["io-github.classgraph", "io-swagger-parser"]

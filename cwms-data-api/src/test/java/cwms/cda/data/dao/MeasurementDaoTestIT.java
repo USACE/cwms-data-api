@@ -30,6 +30,8 @@ import org.jooq.Record4;
 import org.jooq.SelectConditionStep;
 import org.jooq.Table;
 import org.jooq.impl.DSL;
+
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static org.jooq.impl.DSL.inline;
 import org.junit.jupiter.api.AfterAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -46,7 +48,6 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
     private static final String OFFICE_ID = TestAccounts.KeyUser.SPK_NORMAL.getOperatingOffice();
     private static final List<String> STREAM_LOC_IDS = new ArrayList<>();
     private static final List<Stream> STREAMS_CREATED = new ArrayList<>();
-    public static final int MINIMUM_SCHEMA = 999999;
 
     @BeforeAll
     public static void setup() {
@@ -144,7 +145,7 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
     }
 
     @Test
-    @MinimumSchema(MINIMUM_SCHEMA)
+    @MinimumSchema(LATEST_SCHEMA)
     void testRoundTripStore() throws Exception {
         CwmsDatabaseContainer<?> databaseLink = CwmsDataApiSetupCallback.getDatabaseLink();
         String webUser = CwmsDataApiSetupCallback.getWebUser();
@@ -175,14 +176,14 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 measurementDao.storeMeasurements(measurements, false);
 
                 List<Measurement> retrievedMeasurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
-                        null, null, null, null, null, null, null, null);
+                        null, null, null, null, null, null, null, null, null);
                 assertEquals(2, retrievedMeasurements.size());
 
                 DTOMatch.assertMatch(meas1, retrievedMeasurements.get(0));
                 DTOMatch.assertMatch(meas1B, retrievedMeasurements.get(1));
 
                 List<Measurement> measurementsAll = measurementDao.retrieveMeasurements(OFFICE_ID, null, null, null, UnitSystem.EN.getValue(),
-                        null, null, null, null, null, null, null, null);
+                        null, null, null, null, null, null, null, null, null);
                 List<Measurement> meas1List = measurementsAll.stream()
                         .filter(m -> m.getLocationId().equals(streamLocId))
                         .collect(Collectors.toList());
@@ -198,18 +199,18 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 DTOMatch.assertMatch(meas2, meas2Found);
 
                 retrievedMeasurements = measurementDao.retrieveMeasurements(OFFICE_ID, streamLocId, null, null, UnitSystem.EN.getValue(),
-                        null, null, null, null, null, null, null, null);
+                        null, null, null, null, null, null, null, null, null);
 
                 Measurement finalMeas1 = meas1;
                 Measurement finalMeas1B = meas1B;
                 Measurement retrievedMeas1 = retrievedMeasurements.stream()
-                        .filter(m -> m.getNumber().equals(finalMeas1.getNumber()))
+                        .filter(m -> m.getMeasurementId().equals(finalMeas1.getMeasurementId()))
                         .findFirst()
                         .orElse(null);
                 assertNotNull(retrievedMeas1);
                 DTOMatch.assertMatch(meas1, retrievedMeas1);
                 Measurement retrievedMeas1B = retrievedMeasurements.stream()
-                        .filter(m -> m.getNumber().equals(finalMeas1B.getNumber()))
+                        .filter(m -> m.getMeasurementId().equals(finalMeas1B.getMeasurementId()))
                         .findFirst()
                         .orElse(null);
                 assertNotNull(retrievedMeas1B);
@@ -226,15 +227,15 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
                 assertEquals(meas1B.getInstant(), extentsFound.getTimeExtents().getLatestTime().toInstant());
 
                 //delete measurements
-                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null);
-                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null);
+                measurementDao.deleteMeasurements(meas1.getId().getOfficeId(), meas1.getId().getName(), null, null, null, null, null);
+                measurementDao.deleteMeasurements(meas2.getId().getOfficeId(), meas2.getId().getName(), null, null, null, null, null);
 
                 final Measurement meas1F  = meas1;
                 final Measurement meas2F = meas2;
                 assertThrows(NotFoundException.class, () -> measurementDao.retrieveMeasurements(meas1F.getId().getOfficeId(), meas1F.getId().getName(),
-                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null));
+                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null, null));
                 assertThrows(NotFoundException.class, () -> measurementDao.retrieveMeasurements(meas2F.getId().getOfficeId(), meas2F.getId().getName(),
-                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null));
+                        null, null, UnitSystem.EN.getValue(), null, null, null, null, null, null, null, null, null));
             } finally {
                 //delete stream locations
                 streamLocationDao.deleteStreamLocation(
@@ -257,7 +258,7 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
 
     private Measurement buildMeasurement1(String streamLocId, double flow) {
         return new Measurement.Builder()
-                .withNumber("12345")
+                .withMeasurementId("12345")
                 .withAgency("USGS")
                 .withParty("SomeParty")
                 .withInstant(Instant.parse("2024-01-01T00:00:00Z"))
@@ -314,7 +315,7 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
     private Measurement buildMeasurement2(String streamLocId, double flow) {
         //same as buildMeasurement but with different values (same office)
         return new Measurement.Builder()
-                .withNumber("54321")
+                .withMeasurementId("54321")
                 .withAgency("USGS")
                 .withParty("SomeParty2")
                 .withInstant(Instant.parse("2024-02-01T00:00:00Z"))
@@ -366,7 +367,7 @@ public final class MeasurementDaoTestIT extends DataApiTestIT {
 
     private Measurement buildMeasurementDoesntExist(String streamLocId) {
         return new Measurement.Builder()
-                .withNumber("0981273")
+                .withMeasurementId("0981273")
                 .withAgency("USGS")
                 .withParty("SomeParty")
                 .withInstant(Instant.parse("2024-01-01T00:00:00Z"))

@@ -1,35 +1,56 @@
+import { cwd } from "node:process";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { playwright } from "@vitest/browser-playwright";
+
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), "");
+  const env = loadEnv(mode, cwd(), "");
+  const cdaApiRoot = new URL(
+    env.VITE_CDA_API_ROOT || env.CDA_API_ROOT || "http://localhost:8081",
+    "http://localhost:8081",
+  ).origin;
   // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
   return {
     base: "/cwms-data",
     plugins: [react()],
+    optimizeDeps: {
+      include: ["react-dom/client", "react-router-dom"],
+    },
+    test: {
+      projects: [
+        {
+          extends: true,
+          plugins: [
+            storybookTest({
+              configDir: path.join(dirname, ".storybook"),
+            }),
+          ],
+          test: {
+            name: "storybook",
+            browser: {
+              enabled: true,
+              headless: true,
+              provider: playwright({}),
+              instances: [{ browser: "chromium" }],
+            },
+          },
+        },
+      ],
+    },
     server: {
       proxy: {
-        "^/cwms-data/timeseries/.*": {
-          target: env.CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
-        "^/cwms-data/catalog/.*": {
-          target: env.CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
-        "^/cwms-data/auth/.*": {
-          target: env.CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
-        "^/cwms-data/swagger-docs$": {
-          target: env.CDA_API_ROOT,
-          changeOrigin: true,
-          secure: false,
-        },
+        "^/(auth|CWMSLogin|cwms-data/(?!$|swagger-ui(?:/|$)|data-query(?:/|$)|regexp(?:/|$)|filter-expressions(?:/|$)|timestamps(?:/|$)|users(?:/|$)|user-lists(?:/|$)|user-roles(?:/|$)|api-keys(?:/|$)|legacy-format(?:/|$)|location-search(?:/|$)|assets/|src/|node_modules/|@).*)":
+          {
+            target: cdaApiRoot,
+            changeOrigin: true,
+            secure: false,
+          },
       },
     },
     experimental: {

@@ -28,6 +28,7 @@ package cwms.cda.data.dao.watersupply;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.PumpLocation;
@@ -35,6 +36,7 @@ import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.data.dto.watersupply.WaterUser;
+import cwms.cda.data.dto.watersupply.WaterUserContract;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,11 @@ import java.util.TreeMap;
 import mil.army.usace.hec.metadata.Parameter;
 import mil.army.usace.hec.metadata.UnitUtil;
 import org.junit.jupiter.api.Test;
+import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_OBJ_T;
+import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
+import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
+import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_CONTRACT_REF_T;
+import usace.cwms.db.jooq.codegen.udt.records.WATER_USER_OBJ_T;
 
 class WaterSupplyUtilsTest {
 
@@ -137,5 +144,79 @@ class WaterSupplyUtilsTest {
         List<PumpTransfer> convertedList = converted.getPumpAccounting().get(Instant.parse("2025-10-01T00:00:00Z"));
         assertEquals(1.0, convertedList.get(0).getFlow(), 1e-6);
         assertEquals(2.5, convertedList.get(1).getFlow(), 1e-6);
+    }
+
+    @Test
+    void toWaterContractHandlesNullDates() {
+        WATER_USER_CONTRACT_OBJ_T contract =
+              createWaterUserContract("Project", "SPK", "Contract", "CWMS");
+
+        contract.setWS_CONTRACT_EFFECTIVE_DATE(null);
+        contract.setWS_CONTRACT_EXPIRATION_DATE(null);
+
+        WaterUserContract result = WaterSupplyUtils.toWaterContract(contract);
+
+        assertNull(result.getContractEffectiveDate());
+        assertNull(result.getContractExpirationDate());
+    }
+
+    @Test
+    void toWaterContractUsesProjectOfficeId() {
+        String projectOffice = "SPK";
+        String contractTypeOffice = "CWMS";
+
+        WATER_USER_CONTRACT_OBJ_T contract =
+              createWaterUserContract("Project", projectOffice, "Contract", contractTypeOffice);
+
+        WaterUserContract result = WaterSupplyUtils.toWaterContract(contract);
+
+        assertNotNull(result);
+        assertEquals(projectOffice, result.getOfficeId());
+    }
+
+    @Test
+    void toWaterContractUsesProjectOfficeIdForContractId() {
+        String projectOffice = "SPK";
+        String contractTypeOffice = "CWMS";
+
+        WATER_USER_CONTRACT_OBJ_T contract =
+              createWaterUserContract("Project", projectOffice, "Contract", contractTypeOffice);
+
+        WaterUserContract result = WaterSupplyUtils.toWaterContract(contract);
+
+        assertNotNull(result.getContractId());
+        assertEquals("Contract", result.getContractId().getName());
+        assertEquals(projectOffice, result.getContractId().getOfficeId());
+    }
+
+    private static WATER_USER_CONTRACT_OBJ_T createWaterUserContract(
+          String projectId,
+          String projectOffice,
+          String contractName,
+          String contractTypeOffice) {
+
+        LOCATION_REF_T projectLocationRef = new LOCATION_REF_T();
+        projectLocationRef.setBASE_LOCATION_ID(projectId);
+        projectLocationRef.setOFFICE_ID(projectOffice);
+
+        WATER_USER_OBJ_T waterUser = new WATER_USER_OBJ_T();
+        waterUser.setPROJECT_LOCATION_REF(projectLocationRef);
+        waterUser.setENTITY_NAME("Entity");
+        waterUser.setWATER_RIGHT("Right");
+
+        WATER_USER_CONTRACT_REF_T contractRef = new WATER_USER_CONTRACT_REF_T();
+        contractRef.setWATER_USER(waterUser);
+        contractRef.setCONTRACT_NAME(contractName);
+
+        LOOKUP_TYPE_OBJ_T contractType = new LOOKUP_TYPE_OBJ_T();
+        contractType.setOFFICE_ID(contractTypeOffice);
+        contractType.setDISPLAY_VALUE("Storage");
+        contractType.setACTIVE("T");
+
+        WATER_USER_CONTRACT_OBJ_T contract = new WATER_USER_CONTRACT_OBJ_T();
+        contract.setWATER_USER_CONTRACT_REF(contractRef);
+        contract.setWATER_SUPPLY_CONTRACT_TYPE(contractType);
+
+        return contract;
     }
 }

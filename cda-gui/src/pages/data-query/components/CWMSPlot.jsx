@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Configuration, LevelsApi, TimeSeriesApi } from "cwmsjs";
 import Plotly from "plotly.js-basic-dist";
 import { gwMerge, Skeleton } from "@usace/groundwork";
 import deepmerge from "deepmerge";
-import { useMemo } from "react";
 import PropTypes from "prop-types";
 
 /**
@@ -75,21 +74,25 @@ function CWMSPlot({
     [locationLevels],
   );
 
-  const config_v2 = new Configuration({
-    basePath: cdaUrl,
-    headers: {
-      accept: "application/json;version=2",
-    },
-  });
-  const ts_api = new TimeSeriesApi(config_v2);
+  const ts_api = useMemo(() => {
+    const config_v2 = new Configuration({
+      basePath: cdaUrl,
+      headers: {
+        accept: "application/json;version=2",
+      },
+    });
+    return new TimeSeriesApi(config_v2);
+  }, [cdaUrl]);
 
-  const config_level = new Configuration({
-    basePath: cdaUrl,
-    headers: {
-      accept: "*/*",
-    },
-  });
-  const level_api = new LevelsApi(config_level);
+  const level_api = useMemo(() => {
+    const config_level = new Configuration({
+      basePath: cdaUrl,
+      headers: {
+        accept: "*/*",
+      },
+    });
+    return new LevelsApi(config_level);
+  }, [cdaUrl]);
 
   const defaultLayout = {
     height: 750,
@@ -234,6 +237,8 @@ function CWMSPlot({
     begin,
     datum,
     end,
+    inputTSValues,
+    level_api,
     locationLevelsArray,
     office,
     timeSeriesArray,
@@ -241,6 +246,7 @@ function CWMSPlot({
     trim,
     unit,
     pageSize,
+    ts_api,
   ]);
 
   useEffect(() => {

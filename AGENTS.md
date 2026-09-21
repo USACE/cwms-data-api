@@ -16,7 +16,7 @@ Guidance for coding agents working in `USACE/cwms-data-api`.
 - `cwms-data-api/`: main Java WAR service. Most API work happens here.
 - `access-manager-api/`: access/auth support library used by the service.
 - `cda-gui/`: frontend artifact bundled into the WAR as webjar content.
-- `cda-client/`: generated TypeScript fetch client from OpenAPI output.
+- `clients/typescript/`: generated TypeScript fetch client from OpenAPI output.
 - `docs/`: Read the Docs content and documentation build.
 - `buildSrc/`: shared Gradle conventions, including Java 11, Checkstyle, JaCoCo, dependency repositories.
 - `gradle/libs.versions.toml`: dependency version catalog.
@@ -76,9 +76,9 @@ Use filters for focused test cycles:
 Useful documentation/client tasks:
 
 ```sh
-./gradlew :cwms-data-api:validateOpenApiSpec
-./gradlew :cwms-data-api:generateOpenApiDoc
-./gradlew :cwms-data-api:compileTypeScriptOpenApiSpec
+./gradlew :clients:typescript:validateOpenApiSpec
+./gradlew :clients:typescript:generateTypeScriptClient
+./gradlew :clients:typescript:build
 ```
 
 ## Local Runtime
@@ -108,7 +108,7 @@ Never point integration tests at production or valued databases. The test suite 
 - RestAssured is the standard HTTP test client. Failures should log request/response details.
 - Prefer parameterized tests for repeated API cases.
 - Do not make integration tests parallel unless the shared fixtures are redesigned; `DataApiTestIT` notes that it is not thread safe.
-- ALWAYS use bind variables. Never concatenate strings. 
+- ALWAYS use bind variables. Never concatenate strings.
 
 ## Database And SQL Guidance
 
@@ -118,7 +118,7 @@ Never point integration tests at production or valued databases. The test suite 
 - If nested queries are needed, name derived tables to avoid unstable generated names and shared-memory pressure.
 - Gate features that require newer CWMS schema behavior behind schema/version checks with clear error messages.
 - Be careful with generated jOOQ codegen compatibility. The service shades legacy and latest CWMS DB codegen artifacts; preserve that pattern.
-- ALWAYS use bind variables. Never concatenate strings. 
+- ALWAYS use bind variables. Never concatenate strings.
 
 ## API Compatibility
 
@@ -153,4 +153,3 @@ Before finishing:
 3. State clearly if integration tests were skipped and why.
 4. Do not include generated client/docs artifacts unless the task requires them.
 5. Do not commit credentials, local Gradle properties, database URLs, API keys, or generated local compose data.
-

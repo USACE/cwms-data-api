@@ -1,0 +1,6 @@
+{
+  "items": {
+    "type": "number",
+    "description": "List of retrieved time-series values"
+  }
+}

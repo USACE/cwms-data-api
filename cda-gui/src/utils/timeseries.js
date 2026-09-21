@@ -28,8 +28,6 @@ export function getMinInterval(tsids) {
   }
 
   let intervalCompare = Infinity;
-  let minValue = "";
-  let minInterval = Infinity;
 
   // Iterate over each value in the array
   let tsIdx;
@@ -40,8 +38,6 @@ export function getMinInterval(tsids) {
     // Check for the minimum interval
     if (intervalInMinutes < intervalCompare) {
       intervalCompare = intervalInMinutes;
-      minValue = unit;
-      minInterval = value;
       tsIdx = i;
     }
   }
@@ -74,7 +70,7 @@ export function mergeTimeseries(timeseriesList) {
       merged.tsids.push({ name: ts.name, units: ts.units });
       ts.values.forEach((v) => {
         // destructure value array [epoch, value, quality_code]
-        let [_d, _v, _q] = v;
+        let [_d, _v] = v;
         // Parse the value to a float with the correct precision given the units
         _v = parseFloat(_v) || null;
         if (!merged.values[_d]) {
