@@ -1,0 +1,931 @@
+[
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Controlled",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-SG1",
+        "office-id": "SWT",
+        "attribute": 0
+      },
+      {
+        "location-id": "EUFA-TG1",
+        "office-id": "SWT",
+        "attribute": 1
+      },
+      {
+        "location-id": "EUFA-TG10",
+        "office-id": "SWT",
+        "attribute": 2
+      },
+      {
+        "location-id": "EUFA-TG11",
+        "office-id": "SWT",
+        "attribute": 3
+      },
+      {
+        "location-id": "EUFA-TG2",
+        "office-id": "SWT",
+        "attribute": 4
+      },
+      {
+        "location-id": "EUFA-TG3",
+        "office-id": "SWT",
+        "attribute": 5
+      },
+      {
+        "location-id": "EUFA-TG4",
+        "office-id": "SWT",
+        "attribute": 6
+      },
+      {
+        "location-id": "EUFA-TG5",
+        "office-id": "SWT",
+        "attribute": 7
+      },
+      {
+        "location-id": "EUFA-TG6",
+        "office-id": "SWT",
+        "attribute": 8
+      },
+      {
+        "location-id": "EUFA-TG7",
+        "office-id": "SWT",
+        "attribute": 9
+      },
+      {
+        "location-id": "EUFA-TG8",
+        "office-id": "SWT",
+        "attribute": 10
+      },
+      {
+        "location-id": "EUFA-TG9",
+        "office-id": "SWT",
+        "attribute": 11
+      },
+      {
+        "location-id": "EUFA-Turbine1",
+        "office-id": "SWT",
+        "attribute": 12
+      },
+      {
+        "location-id": "EUFA-Turbine2",
+        "office-id": "SWT",
+        "attribute": 13
+      },
+      {
+        "location-id": "EUFA-Turbine3",
+        "office-id": "SWT",
+        "attribute": 14
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.EUFA Turbine_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-Turbine1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-Turbine2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-Turbine3",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Gated_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-SG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG10",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG11",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG8",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG9",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Lock_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Project_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-SG1",
+        "office-id": "SWT",
+        "attribute": 0
+      },
+      {
+        "location-id": "EUFA-TG1",
+        "office-id": "SWT",
+        "attribute": 1
+      },
+      {
+        "location-id": "EUFA-TG10",
+        "office-id": "SWT",
+        "attribute": 2
+      },
+      {
+        "location-id": "EUFA-TG11",
+        "office-id": "SWT",
+        "attribute": 3
+      },
+      {
+        "location-id": "EUFA-TG2",
+        "office-id": "SWT",
+        "attribute": 4
+      },
+      {
+        "location-id": "EUFA-TG3",
+        "office-id": "SWT",
+        "attribute": 5
+      },
+      {
+        "location-id": "EUFA-TG4",
+        "office-id": "SWT",
+        "attribute": 6
+      },
+      {
+        "location-id": "EUFA-TG5",
+        "office-id": "SWT",
+        "attribute": 7
+      },
+      {
+        "location-id": "EUFA-TG6",
+        "office-id": "SWT",
+        "attribute": 8
+      },
+      {
+        "location-id": "EUFA-TG7",
+        "office-id": "SWT",
+        "attribute": 9
+      },
+      {
+        "location-id": "EUFA-TG8",
+        "office-id": "SWT",
+        "attribute": 10
+      },
+      {
+        "location-id": "EUFA-TG9",
+        "office-id": "SWT",
+        "attribute": 11
+      },
+      {
+        "location-id": "EUFA-Turbine1",
+        "office-id": "SWT",
+        "attribute": 12
+      },
+      {
+        "location-id": "EUFA-Turbine2",
+        "office-id": "SWT",
+        "attribute": 13
+      },
+      {
+        "location-id": "EUFA-Turbine3",
+        "office-id": "SWT",
+        "attribute": 14
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Pump_In_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Pump_Out_Below_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Pump_Out_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.SluiceGate_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-SG1",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.TainterGate_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-TG10",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG8",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG11",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "EUFA-TG9",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Turbine_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": [
+      {
+        "location-id": "EUFA-Turbine1",
+        "office-id": "SWT",
+        "attribute": 0
+      },
+      {
+        "location-id": "EUFA-Turbine2",
+        "office-id": "SWT",
+        "attribute": 1
+      },
+      {
+        "location-id": "EUFA-Turbine3",
+        "office-id": "SWT",
+        "attribute": 2
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.EUFA.Uncontrolled_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "EUFA",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Gated_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-LF1",
+        "office-id": "SWT",
+        "attribute": 0
+      },
+      {
+        "location-id": "KEYS-SG1",
+        "office-id": "SWT",
+        "attribute": 1
+      },
+      {
+        "location-id": "KEYS-SG2",
+        "office-id": "SWT",
+        "attribute": 2
+      },
+      {
+        "location-id": "KEYS-SG3",
+        "office-id": "SWT",
+        "attribute": 3
+      },
+      {
+        "location-id": "KEYS-SG4",
+        "office-id": "SWT",
+        "attribute": 4
+      },
+      {
+        "location-id": "KEYS-SG5",
+        "office-id": "SWT",
+        "attribute": 5
+      },
+      {
+        "location-id": "KEYS-SG6",
+        "office-id": "SWT",
+        "attribute": 6
+      },
+      {
+        "location-id": "KEYS-SG7",
+        "office-id": "SWT",
+        "attribute": 7
+      },
+      {
+        "location-id": "KEYS-SG8",
+        "office-id": "SWT",
+        "attribute": 8
+      },
+      {
+        "location-id": "KEYS-SG9",
+        "office-id": "SWT",
+        "attribute": 9
+      },
+      {
+        "location-id": "KEYS-TG1",
+        "office-id": "SWT",
+        "attribute": 10
+      },
+      {
+        "location-id": "KEYS-TG10",
+        "office-id": "SWT",
+        "attribute": 11
+      },
+      {
+        "location-id": "KEYS-TG11",
+        "office-id": "SWT",
+        "attribute": 12
+      },
+      {
+        "location-id": "KEYS-TG12",
+        "office-id": "SWT",
+        "attribute": 13
+      },
+      {
+        "location-id": "KEYS-TG13",
+        "office-id": "SWT",
+        "attribute": 14
+      },
+      {
+        "location-id": "KEYS-TG14",
+        "office-id": "SWT",
+        "attribute": 15
+      },
+      {
+        "location-id": "KEYS-TG15",
+        "office-id": "SWT",
+        "attribute": 16
+      },
+      {
+        "location-id": "KEYS-TG16",
+        "office-id": "SWT",
+        "alias-id": "KEYS-TG16",
+        "attribute": 17
+      },
+      {
+        "location-id": "KEYS-TG17",
+        "office-id": "SWT",
+        "attribute": 18
+      },
+      {
+        "location-id": "KEYS-TG18",
+        "office-id": "SWT",
+        "attribute": 19
+      },
+      {
+        "location-id": "KEYS-TG2",
+        "office-id": "SWT",
+        "attribute": 20
+      },
+      {
+        "location-id": "KEYS-TG3",
+        "office-id": "SWT",
+        "attribute": 21
+      },
+      {
+        "location-id": "KEYS-TG4",
+        "office-id": "SWT",
+        "attribute": 22
+      },
+      {
+        "location-id": "KEYS-TG5",
+        "office-id": "SWT",
+        "attribute": 23
+      },
+      {
+        "location-id": "KEYS-TG6",
+        "office-id": "SWT",
+        "attribute": 24
+      },
+      {
+        "location-id": "KEYS-TG7",
+        "office-id": "SWT",
+        "attribute": 25
+      },
+      {
+        "location-id": "KEYS-TG8",
+        "office-id": "SWT",
+        "attribute": 26
+      },
+      {
+        "location-id": "KEYS-TG9",
+        "office-id": "SWT",
+        "attribute": 27
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.LOW Flow_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-LF1",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Lock_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Project_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-LF1",
+        "office-id": "SWT",
+        "attribute": 0
+      },
+      {
+        "location-id": "KEYS-SG1",
+        "office-id": "SWT",
+        "attribute": 1
+      },
+      {
+        "location-id": "KEYS-SG2",
+        "office-id": "SWT",
+        "attribute": 2
+      },
+      {
+        "location-id": "KEYS-SG3",
+        "office-id": "SWT",
+        "attribute": 3
+      },
+      {
+        "location-id": "KEYS-SG4",
+        "office-id": "SWT",
+        "attribute": 4
+      },
+      {
+        "location-id": "KEYS-SG5",
+        "office-id": "SWT",
+        "attribute": 5
+      },
+      {
+        "location-id": "KEYS-SG6",
+        "office-id": "SWT",
+        "attribute": 6
+      },
+      {
+        "location-id": "KEYS-SG7",
+        "office-id": "SWT",
+        "attribute": 7
+      },
+      {
+        "location-id": "KEYS-SG8",
+        "office-id": "SWT",
+        "attribute": 8
+      },
+      {
+        "location-id": "KEYS-SG9",
+        "office-id": "SWT",
+        "attribute": 9
+      },
+      {
+        "location-id": "KEYS-TG1",
+        "office-id": "SWT",
+        "attribute": 10
+      },
+      {
+        "location-id": "KEYS-TG10",
+        "office-id": "SWT",
+        "attribute": 11
+      },
+      {
+        "location-id": "KEYS-TG11",
+        "office-id": "SWT",
+        "attribute": 12
+      },
+      {
+        "location-id": "KEYS-TG12",
+        "office-id": "SWT",
+        "attribute": 13
+      },
+      {
+        "location-id": "KEYS-TG13",
+        "office-id": "SWT",
+        "attribute": 14
+      },
+      {
+        "location-id": "KEYS-TG14",
+        "office-id": "SWT",
+        "attribute": 15
+      },
+      {
+        "location-id": "KEYS-TG15",
+        "office-id": "SWT",
+        "attribute": 16
+      },
+      {
+        "location-id": "KEYS-TG16",
+        "office-id": "SWT",
+        "alias-id": "KEYS-TG16",
+        "attribute": 17
+      },
+      {
+        "location-id": "KEYS-TG17",
+        "office-id": "SWT",
+        "attribute": 18
+      },
+      {
+        "location-id": "KEYS-TG18",
+        "office-id": "SWT",
+        "attribute": 19
+      },
+      {
+        "location-id": "KEYS-TG2",
+        "office-id": "SWT",
+        "attribute": 20
+      },
+      {
+        "location-id": "KEYS-TG3",
+        "office-id": "SWT",
+        "attribute": 21
+      },
+      {
+        "location-id": "KEYS-TG4",
+        "office-id": "SWT",
+        "attribute": 22
+      },
+      {
+        "location-id": "KEYS-TG5",
+        "office-id": "SWT",
+        "attribute": 23
+      },
+      {
+        "location-id": "KEYS-TG6",
+        "office-id": "SWT",
+        "attribute": 24
+      },
+      {
+        "location-id": "KEYS-TG7",
+        "office-id": "SWT",
+        "attribute": 25
+      },
+      {
+        "location-id": "KEYS-TG8",
+        "office-id": "SWT",
+        "attribute": 26
+      },
+      {
+        "location-id": "KEYS-TG9",
+        "office-id": "SWT",
+        "attribute": 27
+      },
+      {
+        "location-id": "KEYS-Turbine1",
+        "office-id": "SWT",
+        "attribute": 28
+      },
+      {
+        "location-id": "KEYS-Turbine2",
+        "office-id": "SWT",
+        "attribute": 29
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Pump_In_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Pump_Out_Below_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Pump_Out_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": []
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.SluiceGate_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-SG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG9",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-SG8",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.TainterGate_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-TG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG16",
+        "office-id": "SWT",
+        "alias-id": "KEYS-TG16"
+      },
+      {
+        "location-id": "KEYS-TG15",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG18",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG9",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG10",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG17",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG14",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG8",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG13",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG12",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG11",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-TG2",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Turbine_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": [
+      {
+        "location-id": "KEYS-Turbine1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "KEYS-Turbine2",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "Flow.KEYS.Uncontrolled_Total",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Flow"
+    },
+    "shared-ref-location-id": "KEYS",
+    "assigned-locations": []
+  }
+]
