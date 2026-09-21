@@ -41,27 +41,33 @@ def test_rating_config_requires_a_literal_id():
 
 
 def test_download_one_rating_por(mocker):
-    mock_write_json = mocker.patch("utils.filesystem_store.write_json")
+    mock_write_xml = mocker.patch("utils.filesystem_store.write_xml")
     mock_get_ratings_xml = mocker.patch("cwms.get_ratings_xml", return_value="<ratings>xml</ratings>")
 
     rating._download_one_rating(["SWT", "EUFA.Stage;Flow.Standard.Production", None, None, True])
 
     mock_get_ratings_xml.assert_called_once_with("EUFA.Stage;Flow.Standard.Production", "SWT")
-    mock_write_json.assert_called_once_with(
-        {"xml": "<ratings>xml</ratings>"},
+    mock_write_xml.assert_called_once_with(
+        "<ratings>xml</ratings>",
         "SWT",
         "Ratings",
-        "EUFA.Stage;Flow.Standard.Production.por",
+        "EUFA.Stage;Flow.Standard.Production",
     )
 
 
 def test_upload_one_rating_uses_xml_only(mocker):
-    mock_store_rating = mocker.patch("cwms.store_rating")
-    mocker.patch("utils.filesystem_store.read_json", return_value={"xml": "<ratings>xml</ratings>"})
+    mock_post = mocker.patch("cwms.api.post")
+    mock_read_xml = mocker.patch("utils.filesystem_store.read_xml", return_value="<ratings>xml</ratings>")
 
     rating._upload_one_rating(["SWT", "EUFA.Stage;Flow.Standard.Production", None, None, True])
 
-    mock_store_rating.assert_called_once_with("<ratings>xml</ratings>", store_template=True)
+    mock_read_xml.assert_called_once_with("SWT", "Ratings", "EUFA.Stage;Flow.Standard.Production")
+    mock_post.assert_called_once_with(
+        "ratings",
+        "<ratings>xml</ratings>",
+        {"store-template": True, "fail-if-exists": False},
+        api_version=102,
+    )
 
 
 def _api_error(status_code: int, body: str = ""):
@@ -85,7 +91,7 @@ def test_missing_rating_curve_is_not_a_failure(mocker, caplog):
     import logging
     caplog.set_level(logging.DEBUG)
     mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(404, '{"message":"Not found."}'))
-    mock_write = mocker.patch("utils.filesystem_store.write_json")
+    mock_write = mocker.patch("utils.filesystem_store.write_xml")
 
     begin = rating._parse_timestamp("2026-07-01", "start")
     end = rating._parse_timestamp("2026-07-15", "end")
@@ -99,7 +105,7 @@ def test_missing_por_rating_curve_is_not_a_failure(mocker, caplog):
     import logging
     caplog.set_level(logging.DEBUG)
     mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(404, '{"message":"Not found."}'))
-    mock_write = mocker.patch("utils.filesystem_store.write_json")
+    mock_write = mocker.patch("utils.filesystem_store.write_xml")
 
     rating._download_one_rating(["SWT", "EUFA.Elev;Stor.Linear.Production", None, None, True])
 
@@ -108,7 +114,7 @@ def test_missing_por_rating_curve_is_not_a_failure(mocker, caplog):
 
 def test_rating_server_errors_still_propagate(mocker):
     mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(500, '{"message":"Database Error"}'))
-    mocker.patch("utils.filesystem_store.write_json")
+    mocker.patch("utils.filesystem_store.write_xml")
 
     with pytest.raises(cwms.api.ApiError):
         rating._download_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", None, None, True])
@@ -127,7 +133,7 @@ def test_ambiguous_500_is_treated_as_a_missing_rating(mocker, caplog):
     import logging
     caplog.set_level(logging.WARNING)
     mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(500, AMBIGUOUS_500))
-    mock_write = mocker.patch("utils.filesystem_store.write_json")
+    mock_write = mocker.patch("utils.filesystem_store.write_xml")
 
     rating._download_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", None, None, True])
 
@@ -142,7 +148,7 @@ def test_ambiguous_500_is_reported_at_warning_not_info(mocker, caplog):
     import logging
     caplog.set_level(logging.DEBUG)
     mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(500, AMBIGUOUS_500))
-    mocker.patch("utils.filesystem_store.write_json")
+    mocker.patch("utils.filesystem_store.write_xml")
 
     rating._download_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", None, None, True])
 
@@ -159,7 +165,7 @@ def test_an_unrelated_500_still_fails(mocker):
         "cwms.get_ratings_xml",
         side_effect=_api_error(500, '{"message":"Database Error"}'),
     )
-    mocker.patch("utils.filesystem_store.write_json")
+    mocker.patch("utils.filesystem_store.write_xml")
 
     with pytest.raises(cwms.api.ApiError):
         rating._download_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", None, None, True])
@@ -179,7 +185,7 @@ def test_a_partial_ambiguous_batch_is_not_flagged(mocker, caplog):
         return "<ratings/>"
 
     mocker.patch("cwms.get_ratings_xml", side_effect=maybe)
-    mocker.patch("utils.filesystem_store.write_json")
+    mocker.patch("utils.filesystem_store.write_xml")
     threading_util.init_executor(2)
 
     rating.stage_ratings(
@@ -200,7 +206,7 @@ def test_a_single_ambiguous_rating_is_not_flagged(mocker, caplog):
     import logging
     caplog.set_level(logging.WARNING)
     mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(500, AMBIGUOUS_500))
-    mocker.patch("utils.filesystem_store.write_json")
+    mocker.patch("utils.filesystem_store.write_xml")
     threading_util.init_executor(2)
 
     rating.stage_ratings(
@@ -217,7 +223,7 @@ def test_the_ambiguous_counter_resets_between_batches(mocker, caplog):
     import logging
     caplog.set_level(logging.WARNING)
     mocker.patch("cwms.get_ratings_xml", side_effect=_api_error(500, AMBIGUOUS_500))
-    mocker.patch("utils.filesystem_store.write_json")
+    mocker.patch("utils.filesystem_store.write_xml")
     threading_util.init_executor(2)
 
     items = [RatingConfig(id="EUFA.Elev;Area.Linear.Production", enabled=True, raw={"por": True})]
@@ -239,27 +245,27 @@ def test_ratings_are_stored_with_their_template(mocker):
     True is also cwms-python's default and CDA's documented default; this was the
     one place the pipeline opted out.
     """
-    mock_store = mocker.patch("cwms.store_rating")
+    mock_post = mocker.patch("cwms.api.post")
     mocker.patch(
-        "utils.filesystem_store.read_json",
-        return_value={"xml": "<ratings><rating-template/><rating-spec/></ratings>"},
+        "utils.filesystem_store.read_xml",
+        return_value="<ratings><rating-template/><rating-spec/></ratings>",
     )
 
     rating._upload_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", None, None, True])
 
-    assert mock_store.call_args.kwargs["store_template"] is True
+    assert mock_post.call_args.args[2]["store-template"] is True
 
 
 def test_the_windowed_path_also_stores_the_template(mocker):
-    mock_store = mocker.patch("cwms.store_rating")
-    mocker.patch("utils.filesystem_store.read_json", return_value={"xml": "<ratings/>"})
+    mock_post = mocker.patch("cwms.api.post")
+    mocker.patch("utils.filesystem_store.read_xml", return_value="<ratings/>")
 
     begin = rating._parse_timestamp("2026-07-01", "start")
     end = rating._parse_timestamp("2026-07-15", "end")
 
     rating._upload_one_rating(["SWT", "EUFA.Elev;Area.Linear.Production", begin, end, False])
 
-    assert mock_store.call_args.kwargs["store_template"] is True
+    assert mock_post.call_args.args[2]["store-template"] is True
 
 
 def test_nothing_configured_is_not_a_warning(caplog):

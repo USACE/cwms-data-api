@@ -22,6 +22,7 @@ from typing import Iterable
 from urllib.parse import quote
 
 import cwms
+import utils.cda_errors as cda_errors
 import utils.filesystem_store as filesystem_store
 import utils.log_util as log_util
 import utils.threading_util as threading_util
@@ -251,10 +252,29 @@ def _upload_properties_in_category(work_item: list[str]) -> None:
                 office_id,
                 error,
             )
-            failures.append(f"{property_name}: {error}")
+            failures.append(property_name)
+
+            # A refused connection means the destination is down, not that this
+            # one property was rejected - every property still queued behind it
+            # would fail identically. Stop here instead of repeating the same
+            # connection error once per remaining property.
+            if cda_errors.is_connection_failure(error):
+                remaining = len(selected) - len(failures)
+                if remaining:
+                    logger.error(
+                        "Destination is unreachable; not attempting the remaining %s for category %s "
+                        "in office %s.",
+                        log_util.plural(remaining, "property"),
+                        category_id,
+                        office_id,
+                    )
+                break
 
     if failures:
-        raise RuntimeError(f"{len(failures)} of {len(selected)} property item(s) failed. {'; '.join(failures)}")
+        raise RuntimeError(
+            f"{len(failures)} of {len(selected)} property item(s) failed for category {category_id}: "
+            f"{', '.join(failures)}."
+        )
 
 
 def _upload_one_property(property_name: str, property_data: dict) -> None:
