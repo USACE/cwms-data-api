@@ -38,7 +38,6 @@ import static cwms.cda.api.Controllers.LIKE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
-import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -67,12 +66,6 @@ import cwms.cda.formatters.FormattingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
@@ -81,16 +74,12 @@ import org.jooq.DSLContext;
 import org.togglz.core.context.FeatureContext;
 import org.togglz.core.manager.FeatureManager;
 
-
-/**
- *
- */
-public class BlobController extends BaseCrudHandler {
+public abstract class BlobController extends BaseCrudHandler {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-    private static final int DEFAULT_PAGE_SIZE = 20;
+    static final int DEFAULT_PAGE_SIZE = 20;
     public static final String TAG = "Blob";
 
-    public BlobController(MetricRegistry metrics) {
+    protected BlobController(MetricRegistry metrics) {
         super(metrics);
     }
 
@@ -113,40 +102,6 @@ public class BlobController extends BaseCrudHandler {
         return new BlobDao(dsl);
     }
 
-
-    @OpenApi(
-            queryParams = {
-                    @OpenApiParam(name = OFFICE,
-                            description = "Specifies the owning office. If this field is not "
-                                    + "specified, matching information from all offices shall be "
-                                    + "returned."),
-                    @OpenApiParam(name = PAGE,
-                            description = "This end point can return a lot of data, this "
-                                    + "identifies where in the request you are. This is an opaque"
-                                    + " value, and can be obtained from the 'next-page' value in "
-                                    + "the response."),
-                    @OpenApiParam(name = CURSOR, deprecated = true,
-                            description = "This end point can return a lot of data, this "
-                                    + "identifies where in the request you are. This is an opaque"
-                                    + " value, and can be obtained from the 'next-page' value in "
-                                    + "the response. Deprecated, use " + PAGE + " instead."),
-                    @OpenApiParam(name = PAGE_SIZE,
-                            type = Integer.class,
-                            description = "How many entries per page returned. Default "
-                                    + DEFAULT_PAGE_SIZE + "."),
-                    @OpenApiParam(name = LIKE,
-                            description = "Posix <a href=\"regexp.html\">regular expression</a> "
-                                    + "describing the blob id's you want")
-            },
-            responses = {@OpenApiResponse(status = STATUS_200,
-                    description = "A list of blobs.",
-                    content = {
-                            @OpenApiContent(type = Formats.JSON, from = Blobs.class),
-                            @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
-                    })
-            },
-            tags = {TAG}
-    )
     @Override
     public void getAll(@NotNull Context ctx) {
 
@@ -155,17 +110,17 @@ public class BlobController extends BaseCrudHandler {
             String office = ctx.queryParam(OFFICE);
 
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
-                    String.class, "", getMetrics(), name(BlobController.class.getName(), GET_ALL));
+                String.class, "", getMetrics(), name(BlobControllerV1.class.getName(), GET_ALL));
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new CdaError("cursor or page passed in but failed validation"))
-                        .status(HttpCode.BAD_REQUEST);
+                    .status(HttpCode.BAD_REQUEST);
                 return;
             }
 
             int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE},
-                    Integer.class, DEFAULT_PAGE_SIZE, getMetrics(),
-                    name(BlobController.class.getName(), GET_ALL));
+                Integer.class, DEFAULT_PAGE_SIZE, getMetrics(),
+                name(BlobControllerV1.class.getName(), GET_ALL));
 
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
@@ -192,35 +147,6 @@ public class BlobController extends BaseCrudHandler {
         }
     }
 
-    @OpenApi(
-            description = "Returns the binary value of the requested blob as a seekable stream with the "
-                    + "appropriate media type.",
-            pathParams = {
-                    @OpenApiParam(name = BLOB_ID, description = "If the _query_ parameter is provided this _path_ parameter "
-                            + "is ignored and the value of the query parameter is used.   "
-                            + "Note: the _query_ parameter is necessary for id's that contain '/' or other special "
-                            + "characters. This is due to limitations in path pattern matching. "
-                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
-                    @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
-                            + "is ignored and the value of the query parameter is used.   "
-                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                            + "characters. This is due to limitations in path pattern matching. "
-                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
-            },
-            responses = {
-                    @OpenApiResponse(status = STATUS_200,
-                            description = "Returns requested blob.",
-                            content = {
-                                    @OpenApiContent(type = "application/octet-stream", from = byte[].class)
-                            })
-            },
-            tags = {TAG}
-    )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
 
@@ -252,7 +178,7 @@ public class BlobController extends BaseCrudHandler {
             StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
                 if (is == null) {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
-                            + "blob based on given parameters"));
+                        + "blob based on given parameters"));
                 } else {
                     updateResultSize(totalLength);
                     // is  OracleBlobInputStream or something from MinIO
@@ -268,21 +194,6 @@ public class BlobController extends BaseCrudHandler {
         }
     }
 
-
-    @OpenApi(
-            description = "Create new Blob",
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Blob.class, type = Formats.JSONV2)
-                    },
-                    required = true),
-            queryParams = {
-                    @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                            description = "Create will fail if provided ID already exists. Default: true")
-            },
-            method = HttpMethod.POST,
-            tags = {TAG}
-    )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
@@ -297,28 +208,6 @@ public class BlobController extends BaseCrudHandler {
         }
     }
 
-    @OpenApi(
-            description = "Update an existing Blob",
-            pathParams = {
-                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be updated"),
-            },
-            requestBody = @OpenApiRequestBody(
-                    content = {
-                            @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
-                            @OpenApiContent(from = Blob.class, type = Formats.JSON)
-                    },
-                    required = true),
-            queryParams = {
-                    @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
-                            + "is ignored and the value of the query parameter is used.   "
-                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                            + "characters. This is due to limitations in path pattern matching. "
-                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
-            },
-            method = HttpMethod.PATCH,
-            tags = {TAG}
-    )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
         logUnusedPathParameter(ctx, BLOB_ID, "Body contains information");
@@ -346,13 +235,13 @@ public class BlobController extends BaseCrudHandler {
 
             if (blob.getValue() == null) {
                 throw new FormattingException("A non-empty value field is required when "
-                        + "updating a blob");
+                    + "updating a blob");
             }
 
             if (!blob.getId().equals(blobId)) {
                 throw new FormattingException("The blob id parameter does not match the blob id in the body. " +
-                        "The blob end-point does not support renaming blobs.  " +
-                        "Create a new blob with the new id and delete the old one.");
+                    "The blob end-point does not support renaming blobs.  " +
+                    "Create a new blob with the new id and delete the old one.");
             }
 
             BlobAccess dao = chooseBlobAccess(dsl);
@@ -361,24 +250,6 @@ public class BlobController extends BaseCrudHandler {
         }
     }
 
-    @OpenApi(
-            description = "Deletes requested blob",
-            pathParams = {
-                    @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
-            },
-            queryParams = {
-                    @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                            + "owning office of the blob to be deleted"),
-                    @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
-                            + "is ignored and the value of the query parameter is used.   "
-                            + "Note: this query parameter is necessary for id's that contain '/' or other special "
-                            + "characters. This is due to limitations in path pattern matching. "
-                            + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                            + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
-            },
-            method = HttpMethod.DELETE,
-            tags = {TAG}
-    )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
         try (Timer.Context ignored = markAndTime(DELETE)) {

@@ -23,7 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BinaryTimeSeriesController;
 import cwms.cda.api.BinaryTimeSeriesValueController;
-import cwms.cda.api.blob.BlobController;
+import cwms.cda.api.blob.BlobControllerV1;
 import cwms.cda.api.CatalogController;
 import cwms.cda.api.CdaVersionHandler;
 import cwms.cda.api.ClobController;
@@ -322,7 +322,7 @@ public final class ApiServletRouteConfiguration {
         cdaCrudCache(format("/published/{%s}", LOCATION_ID),
                 new PublishedController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
-                new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+                new BlobControllerV1(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/v2/blobs/{blob-id}",
             new BlobControllerV2(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
