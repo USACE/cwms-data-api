@@ -72,8 +72,8 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "", "/v2" })
-    void test_getOne_not_found(String version) {
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_getOne_not_found(String path) {
         String blobId = "TEST";
         String urlencoded = URLEncoder.encode(blobId, StandardCharsets.UTF_8);
 
@@ -82,7 +82,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + urlencoded)
+            .get(path + urlencoded)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -91,8 +91,8 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
 
     @ParameterizedTest
-    @ValueSource(strings = { "", "/v2" })
-    void test_create_getOne(String version)
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_create_getOne(String path)
     {
         /* There is an issue with how javalin handles / in the path that are actually part
         of the object name (NOTE: good candidate for actually having a GUID or other "code"
@@ -104,7 +104,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
@@ -113,15 +113,15 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "", "/v2" })
-    void test_blob_get_one_default(String version)
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_blob_get_one_default(String path)
     {
         given()
             .log()
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
@@ -130,8 +130,8 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = { "", "/v2" })
-    void test_blob_range(String version)
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_blob_range(String path)
     {
         // We can now do Range requests!
         // Our example blob above has a value "test value"
@@ -142,7 +142,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Range", " bytes=0-")
         .when()
-            .get(version + "/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -155,7 +155,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Range", " bytes=0-9")
         .when()
-            .get(version + "/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -168,7 +168,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Range", " bytes=3-")
         .when()
-            .get(version + "/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -181,7 +181,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Range", " bytes=3-7")
         .when()
-            .get(version + "/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -190,8 +190,8 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "/v2"})
-    void testCreateUpdateDelete(String version) throws Exception
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void testCreateUpdateDelete(String path) throws Exception
     {
         String blobId = "TEST_BLOBIT_ID";
         String blobValue = "testing value";
@@ -215,7 +215,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post(version + "/blobs/")
+            .post(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -227,7 +227,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -249,7 +249,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch(version + "/blobs/" + blobId)
+            .patch(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -261,7 +261,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -275,7 +275,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Authorization", user.toHeaderValue())
         .when()
-            .delete(version + "/blobs/" + blobId)
+            .delete(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -287,7 +287,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -295,8 +295,8 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "/v2"})
-    void testIdCase(String version) throws Exception
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void testIdCase(String path) throws Exception
     {
         String blobId = "test_blob_id_case";
         String blobValue = "testing value";
@@ -320,7 +320,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post(version + "/blobs/")
+            .post(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -332,7 +332,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -346,7 +346,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Authorization", user.toHeaderValue())
         .when()
-            .delete(version + "/blobs/" + blobId)
+            .delete(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -358,7 +358,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -367,14 +367,14 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @MethodSource("provideBlobGetAllArgs")
-    void test_blob_get_all_default_alias(GetAllTest test, String version)
+    void test_blob_get_all_default_alias(GetAllTest test, String path)
     {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(test._accept)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get(version + "/blobs/")
+            .get(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -384,13 +384,13 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
     private static Stream<Arguments> provideBlobGetAllArgs() {
         return Stream.of(GetAllTest.values())
-            .flatMap(test -> Stream.of("", "/v2")
+            .flatMap(test -> Stream.of("/blobs/", String.format("/v2/blobs/%s/", SPK))
                 .map(version -> Arguments.of(test, version)));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "/v2"})
-    void test_create_too_long_name(String version) throws Exception
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void test_create_too_long_name(String path) throws Exception
     {
         String blobId = RandomStringUtils.randomAlphabetic(300);
         String blobValue = "test value";
@@ -413,7 +413,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post(version + "/blobs/")
+            .post(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -423,8 +423,8 @@ public class BlobControllerTestIT extends DataApiTestIT {
 
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "/v2"})
-    void test_pagination_works(String version) {
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void test_pagination_works(String path) {
         int count = 11;
         String prefix = "test_blob_pagination_";
         assertTimeout(Duration.ofMinutes(5), () -> {
@@ -434,18 +434,18 @@ public class BlobControllerTestIT extends DataApiTestIT {
             final int pageSize = 5;
             Response initialResponse =
                     given()
-                            .log()
-                            .ifValidationFails(LogDetail.ALL, true)
-                            .queryParam(Controllers.OFFICE, SPK)
-                            .queryParam(Controllers.PAGE_SIZE, pageSize)
-                            .queryParam(Controllers.LIKE, prefix + ".+")
-                            .when()
-                            .get(version + "/blobs/" )
-                            .then()
-                            .log().ifValidationFails(LogDetail.ALL, true)
-                            .assertThat()
-                            .statusCode(is(HttpServletResponse.SC_OK))
-                            .extract().response();
+                        .log()
+                        .ifValidationFails(LogDetail.ALL, true)
+                        .queryParam(Controllers.OFFICE, SPK)
+                        .queryParam(Controllers.PAGE_SIZE, pageSize)
+                        .queryParam(Controllers.LIKE, prefix + ".+")
+                    .when()
+                        .get(path)
+                    .then()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                        .statusCode(is(HttpServletResponse.SC_OK))
+                        .extract().response();
 
             String nextPage = initialResponse.path("next-page");
             assertNotNull(nextPage, "Expected a next page to be returned");
@@ -455,17 +455,17 @@ public class BlobControllerTestIT extends DataApiTestIT {
             do {
                 Response pageN =
                         given()
-                                .log()
-                                .ifValidationFails(LogDetail.ALL, true)
-                                .queryParam(Controllers.OFFICE, SPK)
-                                .queryParam("page", nextPage)
-                                .when()
-                                .get(version + "/blobs/" )
-                                .then()
-                                .log().ifValidationFails(LogDetail.ALL, true)
-                                .assertThat()
-                                .statusCode(is(HttpServletResponse.SC_OK))
-                                .extract().response();
+                            .log()
+                            .ifValidationFails(LogDetail.ALL, true)
+                            .queryParam(Controllers.OFFICE, SPK)
+                            .queryParam("page", nextPage)
+                        .when()
+                            .get(path)
+                        .then()
+                            .log().ifValidationFails(LogDetail.ALL, true)
+                        .assertThat()
+                            .statusCode(is(HttpServletResponse.SC_OK))
+                            .extract().response();
 
                 nextPage = pageN.path("next-page");
                 int pageTotal = pageN.path("blobs.size()");
@@ -507,7 +507,9 @@ public class BlobControllerTestIT extends DataApiTestIT {
         }
     }
 
-    // V2 Only tests below
+    //---------------------//
+    // V2 Only tests below //
+    //---------------------//
 
     @Test
     void testCreateMultipartFormData() {
@@ -528,7 +530,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .multiPart("media-type-id", mediaType)
             .multiPart("value", "blob.bin", blobValue.getBytes(), mediaType)
         .when()
-            .post("/v2/blobs/")
+            .post(String.format("/v2/blobs/%s/", SPK))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -538,7 +540,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + blobId)
+            .get(String.format("/v2/blobs/%s/%s/", SPK, blobId))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -550,7 +552,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .delete("/blobs/" + blobId)
+            .delete(String.format("/v2/blobs/%s/%s", SPK, blobId))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -579,7 +581,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .queryParam(Controllers.FAIL_IF_EXISTS, false)
         .when()
-            .post("/v2/blobs/")
+            .post(String.format("/v2/blobs/%s/", SPK))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -598,7 +600,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .multiPart("media-type-id", mediaType)
             .multiPart("value", "blob.bin", newBlobValue.getBytes(), mediaType)
         .when()
-            .patch("/v2/blobs/" + blobId)
+            .patch(String.format("/v2/blobs/%s/%s/", SPK, blobId))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -608,7 +610,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + blobId)
+            .get(String.format("/v2/blobs/%s/%s/", SPK, blobId))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -620,7 +622,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .header("Authorization", user.toHeaderValue())
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .delete("/blobs/" + blobId)
+            .delete(String.format("/v2/blobs/%s/%s", SPK, blobId))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()

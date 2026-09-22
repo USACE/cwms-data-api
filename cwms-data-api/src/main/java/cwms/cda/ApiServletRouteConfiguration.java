@@ -323,7 +323,7 @@ public final class ApiServletRouteConfiguration {
                 new PublishedController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
                 new BlobControllerV1(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/v2/blobs/{blob-id}",
+        cdaCrudCache(formatV2("/blobs/{blob-id}"),
             new BlobControllerV2(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
                 new ClobController(metrics), requiredRoles,5, TimeUnit.MINUTES);

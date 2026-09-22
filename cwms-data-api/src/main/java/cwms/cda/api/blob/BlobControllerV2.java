@@ -84,6 +84,9 @@ public final class BlobControllerV2 extends BlobController {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true")
         },
+        pathParams = {
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
+        },
         formParams = {
             @OpenApiFormParam(name = "office-id", required = true),
             @OpenApiFormParam(name = "id", required = true),
@@ -119,6 +122,7 @@ public final class BlobControllerV2 extends BlobController {
         description = "Update an existing Blob",
         pathParams = {
             @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be updated"),
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
         requestBody = @OpenApiRequestBody(
             content = {
@@ -196,6 +200,7 @@ public final class BlobControllerV2 extends BlobController {
         description = "Deletes requested blob",
         pathParams = {
             @OpenApiParam(name = BLOB_ID, description = "The blob identifier to be deleted"),
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
         queryParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -239,6 +244,9 @@ public final class BlobControllerV2 extends BlobController {
                 description = "Posix <a href=\"regexp.html\">regular expression</a> "
                     + "describing the blob id's you want")
         },
+        pathParams = {
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
+        },
         responses = {@OpenApiResponse(status = STATUS_200,
             description = "A list of blobs.",
             content = {
@@ -263,6 +271,7 @@ public final class BlobControllerV2 extends BlobController {
                 + "characters. This is due to limitations in path pattern matching. "
                 + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
                 + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+            @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
         queryParams = {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
@@ -271,7 +280,7 @@ public final class BlobControllerV2 extends BlobController {
                 + "Note: this query parameter is necessary for id's that contain '/' or other special "
                 + "characters. This is due to limitations in path pattern matching. "
                 + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+                + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint.")
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
