@@ -28,9 +28,11 @@ import {
 
 import { HelpTip } from "../../components/HelpTip";
 import { AssignOfficeDialog } from "./AssignOfficeDialog";
+import { OnboardingDialog } from "./OnboardingDialog";
 import { EmptyState, Notice } from "../user-lists/components/StatusMessages";
 import {
   filterUsers,
+  officeAssignmentOffices,
   paginateUsers,
   rolesForOffice,
   sameRoles,
@@ -75,6 +77,7 @@ export default function UserRoles() {
   const [message, setMessage] = useState("");
   const [mutationError, setMutationError] = useState("");
   const [assignOfficeOpened, setAssignOfficeOpened] = useState(false);
+  const [onboardingOpened, setOnboardingOpened] = useState(false);
   const [pendingSelection, setPendingSelection] = useState(null);
 
   const adminOffices = useMemo(
@@ -83,6 +86,10 @@ export default function UserRoles() {
         .filter(([, roles]) => roles.includes("CWMS User Admins"))
         .map(([officeId]) => officeId)
         .sort(),
+    [auth.profile],
+  );
+  const assignmentOffices = useMemo(
+    () => officeAssignmentOffices(auth.profile?.roles),
     [auth.profile],
   );
 
@@ -311,20 +318,45 @@ export default function UserRoles() {
               office.
             </Text>
           )}
-          {adminOffices.length > 0 && (
-            <Button type="button" onClick={() => setAssignOfficeOpened(true)}>
-              <FaUsers aria-hidden="true" /> Assign office
-            </Button>
+          {assignmentOffices.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={() => setOnboardingOpened(true)}>
+                <FaUsers aria-hidden="true" /> Onboard users
+              </Button>
+              <Button
+                type="button"
+                color="light"
+                onClick={() => setAssignOfficeOpened(true)}
+              >
+                Assign office
+              </Button>
+            </div>
           )}
         </div>
+        <Text className="mt-4 text-sm">
+          To assign users to an office, you must have both CWMS User Admins and CWMS PD
+          Users in that office.
+        </Text>
       </Card>
 
-      {assignOfficeOpened && (
+      {onboardingOpened && assignmentOffices.length > 0 && (
+        <OnboardingDialog
+          cdaUrl={cdaUrl}
+          token={auth.token}
+          offices={assignmentOffices}
+          initialOffice={office}
+          onClose={() => setOnboardingOpened(false)}
+        />
+      )}
+
+      {assignOfficeOpened && assignmentOffices.length > 0 && (
         <AssignOfficeDialog
           cdaUrl={cdaUrl}
           token={auth.token}
-          adminOffices={adminOffices}
-          initialOffice={office}
+          adminOffices={assignmentOffices}
+          initialOffice={
+            assignmentOffices.includes(office) ? office : assignmentOffices[0]
+          }
           onClose={() => setAssignOfficeOpened(false)}
           onAssigned={async (userName, assignedOffice) => {
             changeOffice(assignedOffice);

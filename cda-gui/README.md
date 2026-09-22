@@ -11,6 +11,9 @@ Setup the project by running:
 
 ## Development
 
+For user registration, office assignment, and the required Admin and PD roles,
+see the [user onboarding guide](../docs/source/user-onboarding.md).
+
 To run the project in dev:
 `npm run dev`
 

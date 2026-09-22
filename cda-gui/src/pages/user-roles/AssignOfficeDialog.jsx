@@ -64,6 +64,10 @@ export function AssignOfficeDialog({
       dialogDescription="Find a registered user across all offices, then add an office assignment."
       size="2xl"
     >
+      <Text className="mb-4 text-sm">
+        Assigning users to an office requires both CWMS User Admins and CWMS PD Users in
+        the destination office.
+      </Text>
       <form
         className="flex items-end gap-3"
         onSubmit={(event) => {
