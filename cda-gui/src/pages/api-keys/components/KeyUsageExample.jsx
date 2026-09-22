@@ -9,17 +9,43 @@ export default function KeyUsageExample() {
   return (
     <div className="space-y-3">
       <Text>
+        The following examples show how to use the API key you created. You can test
+        your key in Bash: on Windows, search for &quot;Git Bash&quot; if you have Git
+        installed, or open a Bash terminal on Linux/Unix.
+      </Text>
+      <Text>
         Send the key in this header. Include the space after <code>apikey</code>.
       </Text>
       <pre className="whitespace-pre-wrap break-all rounded-lg bg-blue-50 p-4 text-sm">
         <code>Authorization: apikey YOUR_KEY</code>
       </pre>
       <div>
+        <Strong>Set up your environment (Bash)</Strong>
+      </div>
+      <Text>
+        Run these two export commands before either example below. Replace{" "}
+        <code>YOUR_KEY</code> with your saved API key. These variables apply to your
+        current terminal session.
+      </Text>
+      <pre
+        aria-label="environment setup example"
+        className="whitespace-pre-wrap break-all rounded-lg bg-zinc-100 p-4 text-sm leading-6"
+      >
+        <code className="language-bash">
+          <span className="font-semibold text-blue-800">export</span>{" "}
+          <span className="text-purple-800">CDA_API_KEY</span>=
+          <span className="text-emerald-800">{'"YOUR_KEY"'}</span>
+          {"\n"}
+          <span className="font-semibold text-blue-800">export</span>{" "}
+          <span className="text-purple-800">CDA_API_ROOT</span>=
+          <span className="text-emerald-800">{`"${apiRoot}"`}</span>
+        </code>
+      </pre>
+      <div>
         <Strong>List roles with curl (Bash)</Strong>
       </div>
       <Text>
-        Export your saved key as <code>CDA_API_KEY</code>. This request lists available
-        roles using curl; cwms-cli is not required.
+        This request lists available roles using curl; cwms-cli is not required.
       </Text>
       <pre
         aria-label="curl example"
@@ -34,26 +60,25 @@ export default function KeyUsageExample() {
             {'"'}
           </span>
           {" \\\n  "}
-          <span className="text-emerald-800">{`"${apiRoot}roles"`}</span>
+          <span className="text-emerald-800">
+            {'"'}
+            <span className="text-purple-800">{"${CDA_API_ROOT}"}</span>
+            {'roles"'}
+          </span>
         </code>
       </pre>
       <div>
         <Strong>List roles with cwms-cli (Bash)</Strong>
       </div>
       <Text>
-        If you have cwms-cli installed, use this equivalent command. Set{" "}
-        <code>CDA_API_ROOT</code> to this CDA URL; cwms-cli also reads your exported{" "}
-        <code>CDA_API_KEY</code>.
+        If you have cwms-cli installed, use this equivalent command. It reads the
+        environment variables you exported above.
       </Text>
       <pre
         aria-label="cwms-cli example"
         className="whitespace-pre-wrap break-all rounded-lg bg-zinc-100 p-4 text-sm leading-6"
       >
         <code className="language-bash">
-          <span className="font-semibold text-blue-800">export</span>{" "}
-          <span className="text-purple-800">CDA_API_ROOT</span>=
-          <span className="text-emerald-800">{`"${apiRoot}"`}</span>
-          {"\n"}
           <span className="font-semibold text-blue-800">cwms-cli</span>
           {" users roles list-all"}
         </code>
