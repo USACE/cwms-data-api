@@ -5,8 +5,8 @@ import javax.servlet.annotation.WebListener;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.servlets.MetricsServlet;
 
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.dropwizard.DropwizardExports;
+import io.prometheus.metrics.instrumentation.dropwizard.DropwizardExports;
+import io.prometheus.metrics.model.registry.PrometheusRegistry;
 
 @WebListener
 public class CdaMetricsContextListener extends MetricsServlet.ContextListener {
@@ -14,7 +14,9 @@ public class CdaMetricsContextListener extends MetricsServlet.ContextListener {
     public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
 
     static {
-        CollectorRegistry.defaultRegistry.register(new DropwizardExports(METRIC_REGISTRY));
+        DropwizardExports.builder()
+                .dropwizardRegistry(METRIC_REGISTRY)
+                .register(PrometheusRegistry.defaultRegistry);
     }
 
     @Override

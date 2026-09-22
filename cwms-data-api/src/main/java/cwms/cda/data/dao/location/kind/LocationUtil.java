@@ -24,18 +24,20 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import static cwms.cda.data.dao.JooqDao.buildDouble;
+import static cwms.cda.data.dao.JooqDao.formatBool;
+import static cwms.cda.data.dao.JooqDao.parseBool;
+import static cwms.cda.data.dao.JooqDao.toBigDecimal;
+
 import cwms.cda.api.enums.Nation;
-import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.CwmsId;
+import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
-import java.util.Optional;
 import cwms.cda.helpers.ZoneIdHelper;
+import java.util.Optional;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_OBJ_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOOKUP_TYPE_OBJ_T;
-
-import static  cwms.cda.data.dao.JooqDao.*;
 
 public final class LocationUtil {
 
@@ -60,17 +62,10 @@ public final class LocationUtil {
     }
 
     public static LOCATION_REF_T getLocationRef(CwmsId cwmsId) {
-        LOCATION_REF_T retval = null;
-        if(cwmsId != null) {
-            retval = new LOCATION_REF_T();
-            String[] split = cwmsId.getName().split("-");
-            retval.setBASE_LOCATION_ID(split[0]);
-            if(split.length > 1) {
-                retval.setSUB_LOCATION_ID(split[1]);
-            }
-            retval.setOFFICE_ID(cwmsId.getOfficeId());
+        if (cwmsId == null) {
+            return null;
         }
-        return retval;
+        return getLocationRef(cwmsId.getName(), cwmsId.getOfficeId());
     }
 
     public static String getLocationId(LOCATION_REF_T ref) {
@@ -87,11 +82,11 @@ public final class LocationUtil {
 
     public static LOCATION_REF_T getLocationRef(String locationId, String officeId) {
         LOCATION_REF_T retval = null;
-        if(locationId != null && !locationId.isEmpty()) {
+        if (locationId != null && !locationId.isEmpty()) {
             retval = new LOCATION_REF_T();
-            String[] split = locationId.split("-");
+            String[] split = locationId.split("-", 2);
             retval.setBASE_LOCATION_ID(split[0]);
-            if(split.length > 1) {
+            if (split.length > 1) {
                 retval.setSUB_LOCATION_ID(split[1]);
             }
             retval.setOFFICE_ID(officeId);

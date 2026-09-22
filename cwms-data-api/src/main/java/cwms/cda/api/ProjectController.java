@@ -49,6 +49,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
@@ -65,7 +66,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import com.google.common.flogger.FluentLogger;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -136,12 +137,18 @@ public class ProjectController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Projects.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, projects);
-            ctx.result(serialized);
+            ctx.contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
 
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error writing response");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(
@@ -186,11 +193,18 @@ public class ProjectController implements CrudHandler {
 
                 String result = Formats.format(contentType, project);
 
-                ctx.result(result);
+                ctx.contentType(contentType.toString());
+                ctx.status(HttpServletResponse.SC_OK);
                 requestResultSize.update(result.length());
 
-                ctx.status(HttpServletResponse.SC_OK);
+                byte[] bytes = result.getBytes();
+                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+                ctx.res.getOutputStream().write(bytes);
             }
+        } catch (IOException ex) {
+            CdaError re = new CdaError("Error writing response");
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
     }
 

@@ -11,15 +11,18 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.Office;
+import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.OfficeFormatV1;
 import cwms.cda.formatters.OutputFormatter;
 import cwms.cda.formatters.annotations.FormattableWith;
+import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import io.javalin.http.BadRequestResponse;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
@@ -38,10 +41,18 @@ public class JsonV1 implements OutputFormatter {
         this(OBJECT_MAPPER);
     }
 
-    public JsonV1(ObjectMapper om) {
+    /**
+     * Create a V1 instance using the project ObjectMapper.
+     * @param om ObjectMapper with its own settings.
+     */
+    private JsonV1(ObjectMapper om) {
         this.om = om;
     }
 
+    /**
+     * Build an ObjectMapper with appropriate default settings for V1 JSON.
+     * @return ObjectMapper Instance.
+     */
     @NotNull
     public static ObjectMapper buildObjectMapper() {
         ObjectMapper retVal = new ObjectMapper();
@@ -55,14 +66,22 @@ public class JsonV1 implements OutputFormatter {
 
         SimpleModule module = new SimpleModule();
         module.addDeserializer(ZoneId.class, new ZoneIdDeserializer());
+        module.addDeserializer(Instant.class, new FlexibleInstantDeserializer());
         retVal.registerModule(module);
+
+        registerMixIns(retVal);
 
         return retVal;
     }
 
+    public static void registerMixIns(ObjectMapper retVal) {
+        retVal.addMixIn(Measurement.class, Measurement.MeasurementV1Mixin.class)
+              .addMixIn(Measurement.Builder.class, Measurement.MeasurementV1Mixin.MeasurementBuilderV1Mixin.class);
+    }
+
     @Override
     public String getContentType() {
-        return Formats.JSON;
+        return Formats.JSONV1;
     }
 
     @Override
@@ -132,22 +151,9 @@ public class JsonV1 implements OutputFormatter {
             }
             throw new BadRequestResponse(
                     String.format("Format %s not implemented for data of class:%s",
-							getContentType(), klassName));
+                                  getContentType(), klassName));
         }
         return retVal;
-    }
-
-    private boolean isFormattableWith(Class<?> klass) {
-        FormattableWith[] formats = klass.getAnnotationsByType(FormattableWith.class);
-        for (FormattableWith format : formats) {
-            /*
-             * Compare against the actual formatter not the name
-             */
-            if (format.formatter().equals(JsonV1.class)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private Object buildFormatting(List<? extends CwmsDTOBase> daoList) {
@@ -182,4 +188,16 @@ public class JsonV1 implements OutputFormatter {
         return retVal;
     }
 
+    private boolean isFormattableWith(Class<?> klass) {
+        FormattableWith[] formats = klass.getAnnotationsByType(FormattableWith.class);
+        for (FormattableWith format : formats) {
+            /*
+             * Compare against the actual formatter not the name
+             */
+            if (format.formatter().equals(JsonV1.class)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

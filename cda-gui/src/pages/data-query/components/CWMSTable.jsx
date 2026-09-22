@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Configuration, TimeSeriesApi } from "cwmsjs";
 import dayjs from "dayjs";
+import PropTypes from "prop-types";
 import {
   Table,
   TableBody,
@@ -31,14 +32,21 @@ function CWMSTable({
   const tableElement = useRef([]);
   const [tableData, setTableData] = useState(null);
   const [tsData, setTsData] = useState(null);
-  const config = new Configuration({
-    basePath: cdaUrl,
-    headers: {
-      accept: "application/json;version=2",
-    },
-  });
-  const ts_api = new TimeSeriesApi(config);
-  +useEffect(() => {
+  const tsids = useMemo(
+    () => timeseriesParams.map((item) => item.tsid),
+    [timeseriesParams],
+  );
+  const ts_api = useMemo(() => {
+    const config = new Configuration({
+      basePath: cdaUrl,
+      headers: {
+        accept: "application/json;version=2",
+      },
+    });
+    return new TimeSeriesApi(config);
+  }, [cdaUrl]);
+
+  useEffect(() => {
     // Need support for page size, either defined or set with time delta
     // And then code to page thru each page and append into ts data
 
@@ -81,7 +89,7 @@ function CWMSTable({
           }
 
           let precision = 2;
-          timeseriesParams.map((entry) => {
+          timeseriesParams.forEach((entry) => {
             if (entry.tsid == result.name && entry.precision != null) {
               precision = entry.precision;
             }
@@ -136,6 +144,9 @@ function CWMSTable({
     sortAscending,
     missingString,
     interval,
+    inputTSValues,
+    ts_api,
+    tsids,
   ]);
 
   useEffect(() => {
@@ -155,8 +166,6 @@ function CWMSTable({
     });
     setTableData(table);
   }, [tsData, timeseriesParams]);
-  const tsids = timeseriesParams.map((item) => item.tsid);
-
   if (!tsids.length) {
     return (
       <div className="text-center m-auto p-2 gap-2 flex justify-center">
@@ -209,3 +218,27 @@ function CWMSTable({
 
 export default CWMSTable;
 export { CWMSTable };
+
+CWMSTable.propTypes = {
+  begin: PropTypes.any,
+  cdaUrl: PropTypes.string,
+  dateFormat: PropTypes.string,
+  datum: PropTypes.string,
+  end: PropTypes.any,
+  inputTSValues: PropTypes.array,
+  interval: PropTypes.number,
+  missingString: PropTypes.string,
+  office: PropTypes.string,
+  pageSize: PropTypes.number,
+  sortAscending: PropTypes.bool,
+  timezone: PropTypes.string,
+  timeseriesParams: PropTypes.arrayOf(
+    PropTypes.shape({
+      header: PropTypes.string,
+      precision: PropTypes.number,
+      tsid: PropTypes.string.isRequired,
+    }),
+  ).isRequired,
+  trim: PropTypes.bool,
+  unit: PropTypes.string,
+};

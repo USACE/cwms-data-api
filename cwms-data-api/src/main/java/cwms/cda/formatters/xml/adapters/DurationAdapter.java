@@ -1,7 +1,6 @@
 package cwms.cda.formatters.xml.adapters;
 
 import java.time.Duration;
-
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 public class DurationAdapter extends XmlAdapter<String, Duration> {

@@ -13,6 +13,7 @@ import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.json.JsonV2;
+import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +24,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static cwms.cda.data.dao.JsonRatingUtilsTest.loadResourceAsString;
+import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cwms.cda.data.dao.DeleteRule;
@@ -75,6 +77,7 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         createLocation("Flat Lake",true, OFFICE);
 
         createProject("Flat Project", OFFICE);
+        createProject("Paonia", OFFICE);
         createTimeseries(OFFICE,"Alder Springs.Precip-Cumulative.Inst.15Minutes.0.raw-cda");
         createTimeseries(OFFICE,"Alder Springs.Precip-INC.Total.15Minutes.15Minutes.calc-cda");
         createTimeseries(OFFICE,"Pine Flat-Outflow.Stage.Inst.15Minutes.0.raw-cda");
@@ -789,5 +792,90 @@ public class CatalogControllerTestIT extends DataApiTestIT {
         assertEquals(2, parts.length, "Expected exactly two unsupported parameters to be reported");
         // Order of parameters in the message is not guaranteed; verify as a set
         assertTrue(List.of(parts).containsAll(List.of(INCLUDE_EXTENTS, EXCLUDE_EMPTY)));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_timeseries_unsupported_search_text() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(SEARCH_TEXT, "test")
+        .when()
+            .get("/catalog/" + TIMESERIES)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_IMPLEMENTED));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_basic() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(SEARCH_TEXT, "outflow")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.name", hasItem("Pine Flat-Outflow"));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_on_location_kind() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(SEARCH_TEXT, "project")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("entries.name", hasItem("Paonia"));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_combines_with_location_kind_filter() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, OFFICE)
+            .queryParam(SEARCH_TEXT, "flat")
+            .queryParam(LOCATION_KIND_LIKE, "PROJECT")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("total", is(1))
+            .body("entries.size()", is(1))
+            .body("entries[0].name", is("Flat Project"));
+    }
+
+    @MinimumSchema(LATEST_SCHEMA)
+    @Test
+    void test_location_search_text_no_matches() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSON)
+            .queryParam(OFFICE, OFFICE)
+            .queryParam(SEARCH_TEXT, "zzzzzzzzzz-fake-location")
+        .when()
+            .get("/catalog/" + LOCATIONS)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("total", is(0))
+            .body("entries.size()", is(0));
     }
 }

@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Disabled;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -244,7 +245,7 @@ public class LocationLevelsDaoTest extends DaoTest
 
         String levelUnitsId = (updatedLevel.getLevelUnitsId() == null
                 ? existinglocation.getLevelUnitsId() : updatedLevel.getLevelUnitsId());
-        ZonedDateTime levelDate = (updatedLevel.getLevelDate() == null
+        Instant levelDate = (updatedLevel.getLevelDate() == null
                 ? existinglocation.getLevelDate() : updatedLevel.getLevelDate());
         String levelComment = (updatedLevel.getLevelComment() == null
                 ? existinglocation.getLevelComment() : updatedLevel.getLevelComment());
@@ -273,7 +274,7 @@ public class LocationLevelsDaoTest extends DaoTest
             attributeUnitsId = null;
         }
 
-        ZonedDateTime intervalOrigin = (updatedLevel.getIntervalOrigin() == null
+        Instant intervalOrigin = (updatedLevel.getIntervalOrigin() == null
                 ? existinglocation.getIntervalOrigin() : updatedLevel.getIntervalOrigin());
         Integer intervalMinutes = (updatedLevel.getIntervalMinutes() == null
                 ? existinglocation.getIntervalMinutes() : updatedLevel.getIntervalMinutes());
@@ -337,10 +338,10 @@ public class LocationLevelsDaoTest extends DaoTest
         seasonalValues.add(0, seasonalVal);
         ZonedDateTimeAdapter zonedDateTimeAdapter = new ZonedDateTimeAdapter();
         ZonedDateTime unmarshalledDateTime = zonedDateTimeAdapter.unmarshal(dateString);
-        return ((SeasonalLocationLevel.Builder) new SeasonalLocationLevel.Builder(locationName + ".Elev.Inst.0.Bottom of Inlet", unmarshalledDateTime)
+        return new SeasonalLocationLevel.Builder(locationName + ".Elev.Inst.0.Bottom of Inlet", unmarshalledDateTime.toInstant())
                 .withOfficeId(OFFICE_ID)
                 .withLevelComment("For testing")
-                .withLevelUnitsId(Unit.FEET.getValue()))
+                .withLevelUnitsId(Unit.FEET.getValue())
                 .withSeasonalValues(seasonalValues)
                 .withIntervalMonths(1)
                 .build();

@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 import { UsaceBox, BadgeButton } from "@usace/groundwork";
 
 export default function RegExp() {

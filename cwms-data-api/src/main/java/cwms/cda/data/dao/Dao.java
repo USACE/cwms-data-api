@@ -50,7 +50,7 @@ public abstract class Dao<T> {
             .maximumSize(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
                     + ".maxSize", 8))
             .expireAfterWrite(Integer.getInteger(PROP_BASE + "." + VERSION_NAME
-                    + ".expireAfterSeconds", 300), TimeUnit.SECONDS)
+                    + ".expireAfterSeconds", 86400), TimeUnit.SECONDS)
             .build();
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
@@ -63,7 +63,7 @@ public abstract class Dao<T> {
         this.dsl = dsl;
         if (CURRENT_SCHEMA_VERSION == null)
         {
-            CURRENT_SCHEMA_VERSION = getDbVersion();
+            CURRENT_SCHEMA_VERSION = getDbVersion(dsl);
         }
     }
 
@@ -76,16 +76,18 @@ public abstract class Dao<T> {
                 .fetchOne().component1());
     }
 
-    public int getDbVersion() {
-        Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
-        if (cachedValue == null) {
-            String version = getVersion(dsl);
-            LOGGER.atInfo().log("Connected to CWMS Database schema version: %s", version);
-            int newValue = versionAsInteger(version);
-            versionCache.put(VERSION_NAME, newValue);
-            return newValue;
-        } else {
-            return cachedValue;
+    public static int getDbVersion(DSLContext dsl) {
+        synchronized (versionCache) {
+            Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
+            if (cachedValue == null) {
+                String version = getVersion(dsl);
+                LOGGER.atInfo().log("Connected to CWMS Database schema version: %s", version);
+                int newValue = versionAsInteger(version);
+                versionCache.put(VERSION_NAME, newValue);
+                return newValue;
+            } else {
+                return cachedValue;
+            }
         }
     }
 

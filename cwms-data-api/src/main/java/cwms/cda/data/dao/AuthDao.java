@@ -4,6 +4,7 @@ import com.google.common.flogger.FluentLogger;
 import com.password4j.Hash;
 import com.password4j.HashUpdate;
 import cwms.cda.ApiServlet;
+import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
@@ -46,6 +47,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
@@ -113,7 +115,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
     private AuthDao(DSLContext dsl, String defaultOffice) {
         super(dsl);
-        if (getDbVersion() < Dao.CWMS_23_03_16) {
+        if (getDbVersion(dsl) < Dao.CWMS_23_03_16) {
             throw new RuntimeException(SCHEMA_TOO_OLD);
         }
 
@@ -409,19 +411,34 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * @throws CwmsAuthException if the user is not authorized
      */
     public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles) throws CwmsAuthException {
+        isAuthorized(ctx, p, routeRoles, (principal, requiredRoles) ->
+                principal.getRoles().containsAll(requiredRoles));
+    }
+
+    /**
+     * logic to determine if a given principal can perform the desired operation based on a predicate.
+     * Throws exception if not valid, otherwise just returns.
+     * @param ctx the context to check
+     * @param p the principal to check
+     * @param routeRoles the route roles
+     * @param authorizer the authorizer logic for the route roles
+     * @throws CwmsAuthException if the user is not authorized
+     */
+    public static void isAuthorized(Context ctx, DataApiPrincipal p, Set<RouteRole> routeRoles,
+                                    BiPredicate<DataApiPrincipal, Set<RouteRole>> authorizer) throws CwmsAuthException {
         if (routeRoles == null || routeRoles.isEmpty()) {
             logger.atFinest().log("Passthrough, no required roles defined.");
             return;
-        } else if (p != null) {
-            Set<RouteRole> specifiedRoles = p.getRoles();
-            if (specifiedRoles.containsAll(routeRoles)) {
-                logger.atFinest().log("User has required roles.");
-                return;
+        }
+
+        if (p != null && authorizer.test(p, routeRoles)) {
+            logger.atFinest().log("User is authorized.");
+        } else {
+            if (p == null) {
+                throw new CwmsAuthException("No credentials provided.", 401);
             } else {
                 throw new MissingRolesException(getMissingRoles(ctx, routeRoles, p));
             }
-        } else {
-            throw new CwmsAuthException("No credentials provided.",401);
         }
     }
 
@@ -500,6 +517,9 @@ public class AuthDao extends Dao<DataApiPrincipal> {
                     }
                     createKey.execute();
                 } catch (SQLException e) {
+                    if (e.getErrorCode() == 1) {
+                        throw new AlreadyExists("An API key with this name already exists for this user.", e);
+                    }
                     DataAccessException re = new DataAccessException(e.getMessage(), e);
                     throw JooqDao.wrapException(re);
                 }
@@ -571,11 +591,13 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         String userId = rs.getString("userid");
         String keyName = rs.getString("key_name");
 
-        ZonedDateTime created = Optional.ofNullable(rs.getObject("created", Timestamp.class))
+        // Oracle DATE has no timezone; key timestamps are stored in UTC.
+        Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        ZonedDateTime created = Optional.ofNullable(rs.getTimestamp("created", utc))
             .map(Timestamp::toInstant)
             .map(i -> i.atZone(ZoneOffset.UTC))
             .orElse(null);
-        ZonedDateTime expires = Optional.ofNullable(rs.getObject("expires", Timestamp.class))
+        ZonedDateTime expires = Optional.ofNullable(rs.getTimestamp("expires", utc))
             .map(Timestamp::toInstant)
             .map(i -> i.atZone(ZoneOffset.UTC))
             .orElse(null);

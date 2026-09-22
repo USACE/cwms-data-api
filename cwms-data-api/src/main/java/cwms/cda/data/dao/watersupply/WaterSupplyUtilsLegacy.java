@@ -87,7 +87,7 @@ final class WaterSupplyUtilsLegacy {
         LOCATION_REF_T retval = null;
         if (cwmsId != null) {
             retval = new LOCATION_REF_T();
-            String[] split = cwmsId.getName().split("-");
+            String[] split = cwmsId.getName().split("-", 2);
             retval.setBASE_LOCATION_ID(split[0]);
             if (split.length > 1) {
                 retval.setSUB_LOCATION_ID(split[1]);

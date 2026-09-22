@@ -25,6 +25,7 @@
 package cwms.cda.data.dao.location.kind;
 
 import cwms.cda.api.enums.Nation;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.helpers.DTOMatch;
@@ -98,5 +99,72 @@ final class LocationUtilTest {
                 .withPublishedLongitude(50.0)
                 .withDescription("for testing")
                 .build();
+    }
+
+    @Test
+    void getLocationRefWithBaseLocationOnly() {
+        LOCATION_REF_T ref = LocationUtil.getLocationRef("Okatibbee", "SAM");
+
+        assertEquals("Okatibbee", ref.getBASE_LOCATION_ID());
+        assertNull(ref.getSUB_LOCATION_ID());
+        assertEquals("SAM", ref.getOFFICE_ID());
+    }
+
+    @Test
+    void getLocationRefWithSubLocation() {
+        LOCATION_REF_T ref =
+              LocationUtil.getLocationRef("Okatibbee-Spillway", "SAM");
+
+        assertEquals("Okatibbee", ref.getBASE_LOCATION_ID());
+        assertEquals("Spillway", ref.getSUB_LOCATION_ID());
+        assertEquals("SAM", ref.getOFFICE_ID());
+    }
+
+    @Test
+    void getLocationRefWithHyphenatedSubLocation() {
+        LOCATION_REF_T ref =
+              LocationUtil.getLocationRef("Okatibbee-Spillway-Gate2", "SAM");
+
+        assertEquals("Okatibbee", ref.getBASE_LOCATION_ID());
+        assertEquals("Spillway-Gate2", ref.getSUB_LOCATION_ID());
+        assertEquals("SAM", ref.getOFFICE_ID());
+    }
+
+    @Test
+    void getLocationRefFromCwmsIdPreservesHyphenatedSubLocation() {
+        CwmsId cwmsId = new CwmsId.Builder()
+              .withName("Okatibbee-Spillway-Gate2")
+              .withOfficeId("SAM")
+              .build();
+
+        LOCATION_REF_T ref = LocationUtil.getLocationRef(cwmsId);
+
+        assertEquals("Okatibbee", ref.getBASE_LOCATION_ID());
+        assertEquals("Spillway-Gate2", ref.getSUB_LOCATION_ID());
+        assertEquals("SAM", ref.getOFFICE_ID());
+    }
+
+    @Test
+    void getLocationRefWithNullCwmsIdReturnsNull() {
+        assertNull(LocationUtil.getLocationRef(null));
+    }
+
+    @Test
+    void getLocationRefWithNullLocationIdReturnsNull() {
+        assertNull(LocationUtil.getLocationRef((String) null, "SAM"));
+    }
+
+    @Test
+    void getLocationRefWithEmptyLocationIdReturnsNull() {
+        assertNull(LocationUtil.getLocationRef("", "SAM"));
+    }
+
+    @Test
+    void locationRefRoundTripPreservesHyphenatedSubLocation() {
+        String locationId = "Okatibbee-Spillway-Gate2";
+
+        LOCATION_REF_T ref = LocationUtil.getLocationRef(locationId, "SAM");
+
+        assertEquals(locationId, LocationUtil.getLocationId(ref));
     }
 }

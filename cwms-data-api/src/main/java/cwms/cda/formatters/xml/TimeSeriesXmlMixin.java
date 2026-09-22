@@ -27,12 +27,11 @@ package cwms.cda.formatters.xml;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import cwms.cda.data.dto.TimeSeries;
-
 import java.util.List;
 
 @JsonIgnoreProperties({"interval-minutes"})
 abstract class TimeSeriesXmlMixin {
     //XML serialization doesn't optimize the same as JSON and needs to list the element names
-    @JsonFormat(shape=JsonFormat.Shape.OBJECT)
+    @JsonFormat(shape = JsonFormat.Shape.OBJECT)
     abstract List<TimeSeries.Record> getValues();
 }

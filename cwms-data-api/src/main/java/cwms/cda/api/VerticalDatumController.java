@@ -21,12 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
@@ -38,9 +35,15 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.LocationController.LOCATIONS_TAG;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.VerticalDatumDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.VerticalDatumInfo;
@@ -55,11 +58,10 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
-
-import static cwms.cda.api.LocationController.LOCATIONS_TAG;
 
 public final class VerticalDatumController implements CrudHandler {
 
@@ -115,9 +117,18 @@ public final class VerticalDatumController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, info);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Vertical Datum Info", ex);
+            logger.atSevere().withCause(ex).log("Failed to process request to retrieve Vertical Datum Info");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

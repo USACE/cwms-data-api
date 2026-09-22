@@ -14,6 +14,11 @@ public class FormattingException extends ApplicationException {
             HttpServletResponse.SC_NOT_ACCEPTABLE, LOG_LEVEL, new HashMap<>(), null);
     }
 
+    /**
+     * Formatting Exception with Message and Cause.
+     * @param message Additional message details.
+     * @param err specific cause of this exception.
+     */
     public FormattingException(String message, Throwable err) {
         super(message, PARSER_SOURCE, "Formatting error:" + message,
             ((err instanceof IOException)

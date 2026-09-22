@@ -32,12 +32,17 @@ import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.api.Controllers;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
+import cwms.cda.datasource.LrtsSessionPreparer;
+import cwms.cda.datasource.SessionOfficePreparer;
 import cwms.cda.helpers.DatabaseHelpers.SCHEMA_VERSION;
 import cwms.cda.security.CwmsAuthException;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.ResultSetMetaData;
@@ -50,11 +55,15 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
@@ -98,6 +107,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)");
     private static final Pattern REGEX_META_CHARS_EXCEPT_DOT = Pattern.compile("[\\\\^$|?+()\\[\\]{}]");
+    private static final Pattern ORA_CODE = Pattern.compile("^ORA-\\d+: ERROR: .*");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -133,14 +143,37 @@ public abstract class JooqDao<T> extends Dao<T> {
      * @return A DSLContext for the current request.
      */
     public static DSLContext getDslContext(Context ctx) {
+        return getDslContext(ctx, null);
+    }
+
+    /**
+     * Creates a DSL context whose checked-out connections use the supplied CWMS
+     * session office. Callers should only supply an office when the endpoint's
+     * database behavior requires it; setting it globally changes legacy access
+     * checks for unrelated endpoints.
+     *
+     * @param ctx The current request context.
+     * @param office The session office to prepare, or null to leave it unchanged.
+     * @return A DSLContext for the current request.
+     */
+    public static DSLContext getDslContext(Context ctx, String office) {
         DSLContext retVal;
 
         final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null
+            && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
 
+        // Snapshot client-info and the requested office up front so the per-checkout
+        // preparer lambdas don't capture the Javalin Context — async work (e.g. the
+        // total-count future in TimeSeriesDaoImpl) can outlive the request facade.
+        final String module = (ctx.handlerType() == HandlerType.BEFORE)
+                ? "BEFORE-HANDLER" : ctx.endpointHandlerPath();
+        final String action = ctx.method();
+        final String clientId = ctx.url().replace(ctx.path(), "") + ctx.contextPath();
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
-                connection -> setClientInfo(ctx, connection),
-                new cwms.cda.datasource.LrtsSessionPreparer(isNewLRTS));
+                connection -> setClientInfo(connection, module, action, clientId),
+                new LrtsSessionPreparer(isNewLRTS),
+                new SessionOfficePreparer(office));
         DataSource wrappedDataSource = new ConnectionPreparingDataSource(preparer, dataSource);
         retVal = DSL.using(wrappedDataSource, SQLDialect.ORACLE18C);
 
@@ -148,7 +181,6 @@ public abstract class JooqDao<T> extends Dao<T> {
 
         return retVal;
     }
-
 
     protected static Timestamp buildTimestamp(Instant date) {
         return date != null ? Timestamp.from(date) : null;
@@ -169,19 +201,15 @@ public abstract class JooqDao<T> extends Dao<T> {
         return dsl;
     }
 
-    private static Connection setClientInfo(Context ctx, Connection connection) {
+    private static Connection setClientInfo(Connection connection, String module, String action, String clientId) {
         try {
             final String apiVersion = ApiServlet.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
                     ApiServlet.APPLICATION_TITLE + " "
                             + apiVersion.substring(0, Math.min(ORACLE_ECID_MAX_LENGTH, apiVersion.length())));
-            if (ctx.handlerType() == HandlerType.BEFORE) {
-                connection.setClientInfo("OCSID.MODULE", "BEFORE-HANDLER");
-            } else {
-                connection.setClientInfo("OCSID.MODULE", ctx.endpointHandlerPath());
-            }
-            connection.setClientInfo("OCSID.ACTION", ctx.method());
-            connection.setClientInfo("OCSID.CLIENTID", ctx.url().replace(ctx.path(), "") + ctx.contextPath());
+            connection.setClientInfo("OCSID.MODULE", module);
+            connection.setClientInfo("OCSID.ACTION", action);
+            connection.setClientInfo("OCSID.CLIENTID", clientId);
         } catch (SQLClientInfoException ex) {
             logger.atFinest() // this is usually useless information
                     .withCause(ex)
@@ -270,7 +298,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         } else if (isSimpleGlobPattern(regex)) {
             condition = DSL.upper(field).like(toSqlLikePattern(regex).toUpperCase(), '\\');
         } else {
-            condition = DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.inline(regex));
+            condition = DSL.condition("{regexp_like}({0}, {1}, 'i')", field, DSL.val(regex));
         }
         return negate ? condition.not() : condition;
     }
@@ -338,6 +366,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildFieldLengthExceededException(input);
         } else if (isTSIDInvalidIntervalException(input)) {
             retVal = buildInvalidTSIDIntervalException(input);
+        } else if (isBadRequest(input)) {
+            retVal = buildBadRequest(input);
         }
 
         return retVal;
@@ -380,6 +410,45 @@ public abstract class JooqDao<T> extends Dao<T> {
     // See link for a more complete list of CWMS Error codes:
     // https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database_origin_teamcity_work/browse/src/buildSqlScripts.py#4866
 
+    public static boolean isBadRequest(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+            if (!sqlException.getLocalizedMessage().contains("CAN_NOT_DELETE")) {
+                List<Integer> codes = IntStream.range(20000, 20999).boxed().collect(Collectors.toList());
+
+                retVal = hasCodeOrMessage(sqlException, codes, new ArrayList<>());
+            }
+        }
+        return retVal;
+    }
+
+    public static BadRequestResponse buildBadRequest(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            String errorMessage = parts[0].replace("'", "");
+            if (ORA_CODE.matcher(errorMessage).matches()) {
+                errorMessage = errorMessage.substring(errorMessage.indexOf("ERROR: ") + 7);
+            }
+            errorMessage = sanitizeOrNull(errorMessage);
+            Map<String, String> errorDetails = new HashMap<>();
+            errorDetails.put("message", errorMessage);
+            return new BadRequestResponse("", errorDetails);
+        }
+        return new BadRequestResponse();
+    }
+
+
     public static boolean isNotFound(RuntimeException input) {
         boolean retVal = false;
 
@@ -387,7 +456,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         if (optional.isPresent()) {
             SQLException sqlException = optional.get();
 
-            List<Integer> codes = Arrays.asList(20001, 20025, 20034);
+            List<Integer> codes = Arrays.asList(20001, 20025, 20034, 1403);
             List<String> segments = Arrays.asList("_DOES_NOT_EXIST", "_NOT_FOUND",
                     " does not exist.");
 
@@ -471,15 +540,51 @@ public abstract class JooqDao<T> extends Dao<T> {
             cause = dae.getCause();
         }
 
-        NotFoundException exception = new NotFoundException(cause);
+        NotFoundException exception;
+        if (input.getMessage().contains("ASSIGN_LOC_GROUPS")) {
+            Map<String, Serializable> errorDetails = new HashMap<>();
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    localizedMessage = parts[0];
+                    if (localizedMessage.startsWith("ORA-")) {
+                        localizedMessage = localizedMessage
+                            .substring(localizedMessage.indexOf("LOCATION_ID_NOT_FOUND:") + 23);
+                    }
+                }
+            }
+            errorDetails.put("missing-locations", localizedMessage);
+            exception = new NotFoundException("Location group contains assigned locations that do not exist.",
+                errorDetails, cause);
+        } else if (input.getMessage().contains("ASSIGN_TS_GROUPS")) {
+            Map<String, Serializable> errorDetails = new HashMap<>();
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    localizedMessage = parts[0];
+                    if (localizedMessage.startsWith("ORA-")) {
+                        localizedMessage = localizedMessage
+                            .substring(localizedMessage.indexOf("TS_ID_NOT_FOUND:") + 17);
+                    }
+                }
+            }
+            errorDetails.put("missing-time-series", localizedMessage);
+            exception = new NotFoundException("Time series group contains assigned time series that do not exist.",
+                errorDetails, cause);
+        } else {
+            exception = new NotFoundException(cause);
 
-        String localizedMessage = cause.getLocalizedMessage();
-        if (localizedMessage != null) {
-            String[] parts = localizedMessage.split("\n");
-            if (parts.length > 1) {
-                exception = new NotFoundException(parts[0], cause);
+            String localizedMessage = cause.getLocalizedMessage();
+            if (localizedMessage != null) {
+                String[] parts = localizedMessage.split("\n");
+                if (parts.length > 1) {
+                    exception = new NotFoundException(parts[0], cause);
+                }
             }
         }
+
         return exception;
     }
 
@@ -781,7 +886,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new UnsupportedOperationException("CWMS currently does not support the requested operation", cause);
     }
 
-    private static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
+    protected static @Nullable String sanitizeOrNull(@Nullable String localizedMessage) {
         if (localizedMessage != null && !localizedMessage.isEmpty()) {
             int length = localizedMessage.length();
             PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();

@@ -12,9 +12,6 @@ jobs:
     uses: ./.github/workflows/release.yml
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
-      registry: ${{ secrets.HEC_PUB_REGISTRY}}
-      registry_user: ${{ secrets.ALT_REG_USER }}
-      registry_password: ${{ secrets.ALT_REG_PASSWORD }}
     with:
       branch: "develop"
       nightly: true
@@ -29,13 +26,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: deploy
-        uses: ./.github/actions/deploy-cda
+        uses: usace/cwms-data-api/.github/actions/deploy-cda@develop
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: develop-nightly
-          api_image: ${{needs.develop.outputs.api_image}}
-          migration_image: ${{needs.develop.outputs.migration_image}}
-          region: ${{env.REGION}}
-          iam_role: ${{env.DEPLOY_ROLE}}
-          activation_tag: ${{env.ACTIVATION_TAG}}
+          region: ${{secrets.REGION}}
+          iam_role: ${{secrets.DEPLOY_ROLE}}
+          activation_tag: ${{secrets.ACTIVATION_TAG}}
           activate: true

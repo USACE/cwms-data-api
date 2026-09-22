@@ -27,15 +27,6 @@
 package cwms.cda.data.dto.locationlevel;
 
 import cwms.cda.data.dto.catalog.LocationAlias;
-import java.math.BigDecimal;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -56,8 +47,15 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 import io.swagger.v3.oas.annotations.media.Schema;
-import hec.data.level.ILocationLevelRef;
-import hec.data.level.JDomLocationLevelImpl;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 @JsonRootName("LocationLevel")
 @JsonDeserialize(builder = LocationLevel.Builder.class)
@@ -82,7 +80,7 @@ public abstract class LocationLevel extends CwmsDTO {
 
     @Schema(description = "The expiration date of the location level.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
-    private final ZonedDateTime expirationDate;
+    private final Instant expirationDate;
 
     @Schema(description = "Data Type such as Stage, Elevation, or others.")
 
@@ -99,10 +97,11 @@ public abstract class LocationLevel extends CwmsDTO {
     @Schema(description = "Units the provided levels are in")
 
     private final String levelUnitsId;
-    @Schema(description = "The date/time at which this location level configuration takes effect.")
+    @Schema(description = "The date/time at which this location level configuration takes effect. "
+        + "Must be limited to minute precision.")
     @JsonFormat(shape = JsonFormat.Shape.STRING)
 
-    private final ZonedDateTime levelDate;
+    private final Instant levelDate;
 
     private final String levelComment;
     @Schema(description = "0 if parameterTypeId is Inst. Otherwise duration indicating the time "
@@ -158,11 +157,11 @@ public abstract class LocationLevel extends CwmsDTO {
         return levelUnitsId;
     }
 
-    public ZonedDateTime getLevelDate() {
+    public Instant getLevelDate() {
         return levelDate;
     }
 
-    public ZonedDateTime getExpirationDate() {
+    public Instant getExpirationDate() {
         return expirationDate;
     }
 
@@ -221,7 +220,7 @@ public abstract class LocationLevel extends CwmsDTO {
         String parameterTypeId;
         String parameterId;
         String levelUnitsId;
-        ZonedDateTime levelDate;
+        Instant levelDate;
         String levelComment;
         String durationId;
         BigDecimal attributeValue;
@@ -233,13 +232,13 @@ public abstract class LocationLevel extends CwmsDTO {
         String locationId;
         String officeId;
         String interpolateString;
-        ZonedDateTime expirationDate;
+        Instant expirationDate;
         List<LocationAlias> aliases = new ArrayList<>();
         final Map<String, Consumer<Object>> propertyFunctionMap = new HashMap<>();
 
         @JsonCreator
         protected Builder(@JsonProperty(value = "location-level-id", required = true) String name,
-                @JsonProperty(value = "level-date", required = true) ZonedDateTime lvlDate) {
+                @JsonProperty(value = "level-date", required = true) Instant lvlDate) {
             locationId = name;
             levelDate = lvlDate;
         }
@@ -292,7 +291,7 @@ public abstract class LocationLevel extends CwmsDTO {
             return self();
         }
 
-        public T withExpirationDate(ZonedDateTime expirationDate) {
+        public T withExpirationDate(Instant expirationDate) {
             this.expirationDate = expirationDate;
             return self();
         }
@@ -302,7 +301,7 @@ public abstract class LocationLevel extends CwmsDTO {
             return self();
         }
 
-        public T withLevelDate(ZonedDateTime levelDate) {
+        public T withLevelDate(Instant levelDate) {
             this.levelDate = levelDate;
             return self();
         }
@@ -371,7 +370,7 @@ public abstract class LocationLevel extends CwmsDTO {
     }
 
     public static LocationLevel getUpdatedLocationLevel(LocationLevel existingLevel,
-            LocationLevel updatedLevel, ZonedDateTime unmarshalledDate) {
+            LocationLevel updatedLevel, Instant unmarshalledDate) {
 
         String specifiedLevelId = (updatedLevel.getSpecifiedLevelId() == null
                 ? existingLevel.getSpecifiedLevelId() : updatedLevel.getSpecifiedLevelId());
@@ -450,7 +449,7 @@ public abstract class LocationLevel extends CwmsDTO {
             SeasonalLocationLevel seasonalLevel = (SeasonalLocationLevel) existingLevel;
             SeasonalLocationLevel updatedSeasonalLevel = (SeasonalLocationLevel) updatedLevel;
 
-            ZonedDateTime intervalOrigin = (updatedSeasonalLevel.getIntervalOrigin() == null
+            Instant intervalOrigin = (updatedSeasonalLevel.getIntervalOrigin() == null
                     ? seasonalLevel.getIntervalOrigin() : updatedSeasonalLevel.getIntervalOrigin());
             Integer intervalMinutes = (updatedSeasonalLevel.getIntervalMinutes() == null
                     ? seasonalLevel.getIntervalMinutes() : updatedSeasonalLevel.getIntervalMinutes());
@@ -504,5 +503,13 @@ public abstract class LocationLevel extends CwmsDTO {
         validator.required(getOfficeId(), "office-id");
         validator.required(getLocationLevelId(), "location-level-id");
         validator.required(getLevelDate(), "level-date");
+    }
+
+    public static ZonedDateTime truncateDate(ZonedDateTime date) {
+        return date.truncatedTo(ChronoUnit.MINUTES);
+    }
+
+    public static Instant truncateDate(Instant date) {
+        return date.truncatedTo(ChronoUnit.MINUTES);
     }
 }

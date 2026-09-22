@@ -38,9 +38,11 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.LocationsDao;
 import cwms.cda.data.dto.CwmsIdLocationKind;
-import cwms.cda.data.dto.Location;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
@@ -51,12 +53,14 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public class LocationKindController implements Handler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     public static final String TAG = "REGI";
 
     private final Histogram requestResultSize;
@@ -95,25 +99,35 @@ public class LocationKindController implements Handler {
     )
     @Override
     public void handle(@NotNull Context ctx) {
-        DSLContext dsl = getDslContext(ctx);
+        try {
+            DSLContext dsl = getDslContext(ctx);
 
-        LocationsDao locationsDao = getLocationsDao(dsl);
+            LocationsDao locationsDao = getLocationsDao(dsl);
 
-        String names = ctx.queryParam(NAMES);
-        String kindRegexMask = ctx.queryParam(LOCATION_KIND_LIKE);
-        String office = ctx.queryParam(OFFICE);
+            String names = ctx.queryParam(NAMES);
+            String kindRegexMask = ctx.queryParam(LOCATION_KIND_LIKE);
+            String office = ctx.queryParam(OFFICE);
 
-        String formatHeader = ctx.header(Header.ACCEPT);
-        ContentType contentType = Formats.parseHeader(formatHeader, CwmsIdLocationKind.class);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, CwmsIdLocationKind.class);
 
-        String results;
+            String results;
 
-        List<CwmsIdLocationKind> locationKinds = locationsDao.getLocationKinds(names, kindRegexMask, office);
-        results = Formats.format(contentType, locationKinds, CwmsIdLocationKind.class);
-        ctx.result(results);
-        requestResultSize.update(results.length());
+            List<CwmsIdLocationKind> locationKinds = locationsDao.getLocationKinds(names, kindRegexMask, office);
+            results = Formats.format(contentType, locationKinds, CwmsIdLocationKind.class);
+            requestResultSize.update(results.length());
 
-        ctx.contentType(contentType.toString());
-        ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = results.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Location Kind", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Location Kind");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        }
     }
 }

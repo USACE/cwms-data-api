@@ -5,10 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import cwms.cda.api.auth.userlists.UserListController;
 import io.javalin.http.Handler;
 import io.javalin.http.HandlerEntry;
 import io.javalin.http.HandlerType;
 import io.javalin.http.PathMatcher;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,29 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 public class ApiServletTest {
+
+    @Test
+    void test_user_list_operations_are_grouped_under_user_management() {
+        PathItem path = new PathItem()
+                .get(new Operation())
+                .post(new Operation())
+                .delete(new Operation());
+
+        ApiServlet.setUserListTags("/user/list/{user-list-id}/members", path);
+
+        path.readOperations().forEach(operation ->
+                assertEquals(List.of(UserListController.TAG), operation.getTags()));
+    }
+
+    @Test
+    void test_other_operations_are_not_retagged_as_user_management() {
+        Operation operation = new Operation().addTagsItem("Other");
+        PathItem path = new PathItem().get(operation);
+
+        ApiServlet.setUserListTags("/users/{user-name}", path);
+
+        assertEquals(List.of("Other"), operation.getTags());
+    }
 
     @Test
     public void test_office_from_context_hq(){
@@ -116,5 +142,4 @@ public class ApiServletTest {
 
 
 }
-
 

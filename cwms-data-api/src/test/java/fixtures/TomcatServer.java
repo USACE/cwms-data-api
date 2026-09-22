@@ -44,7 +44,7 @@ public class TomcatServer {
                         final int port,
                         final String contextName
     ) throws Exception {
-
+        System.setProperty("org.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH", "true");
         tomcatInstance = new Tomcat();
         tomcatInstance.setBaseDir(baseDir);
         Host host = tomcatInstance.getHost();

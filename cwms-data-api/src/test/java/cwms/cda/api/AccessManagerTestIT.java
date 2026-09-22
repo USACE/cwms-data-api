@@ -69,6 +69,20 @@ final class AccessManagerTestIT extends DataApiTestIT {
                                 .render();
         assertNotNull(json);
 
+        //ensure the location doesn't exist before creation
+        try {
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType("application/json")
+                .queryParam("office", user.getOperatingOffice())
+                .spec(authSpec)
+            .when()
+                .delete(  "/locations/LOC_TEST")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true);
+        } catch (Exception ex) {}
+
+        //try to create the location
         given()
 			.log().ifValidationFails(LogDetail.ALL,true)
             .contentType("application/json")
@@ -82,6 +96,20 @@ final class AccessManagerTestIT extends DataApiTestIT {
 			.log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
 			.statusCode(is(HttpServletResponse.SC_CREATED));
+
+        //cleanup location after creation
+        try {
+            given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType("application/json")
+                .queryParam("office", user.getOperatingOffice())
+                .spec(authSpec)
+            .when()
+                .delete(  "/locations/LOC_TEST")
+            .then()
+                .log().ifValidationFails(LogDetail.ALL,true);
+        } catch (Exception ex) {}
+
     }
 
     @ParameterizedTest

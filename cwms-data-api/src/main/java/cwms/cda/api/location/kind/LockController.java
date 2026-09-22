@@ -38,7 +38,6 @@ import static cwms.cda.api.Controllers.RESULTS;
 import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.STATUS_201;
-import static cwms.cda.api.Controllers.STATUS_204;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
@@ -48,8 +47,11 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.enums.UnitSystem;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.location.kind.LockDao;
 import cwms.cda.data.dto.CwmsId;
@@ -66,12 +68,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class LockController implements CrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
+    private static final String ERROR_MSG = "Failed to process request to retrieve Locks";
     static final String TAG = "Locks";
     private final MetricRegistry metrics;
 
@@ -118,9 +123,16 @@ public final class LockController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, locks, Lock.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, ERROR_MSG, ex);
+            LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -162,9 +174,17 @@ public final class LockController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, lock);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, ERROR_MSG, ex);
+            LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

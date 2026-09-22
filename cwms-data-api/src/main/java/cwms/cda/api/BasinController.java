@@ -40,8 +40,10 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.basinconnectivity.BasinDao;
 import cwms.cda.data.dto.CwmsId;
@@ -57,10 +59,10 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
-import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -140,11 +142,19 @@ public class BasinController implements CrudHandler {
                 List<cwms.cda.data.dto.basin.Basin> basins = basinDao.getAllBasins(office, units);
                 result = Formats.format(contentType, basins, cwms.cda.data.dto.basin.Basin.class);
             }
-            ctx.result(result);
+            ctx.contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (SQLException ex) {
-            CdaError error = new CdaError("Error retrieving all basins");
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Error retrieving all basins", ex);
             LOGGER.atSevere().withCause(ex).log("Error retrieving all basins");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Basins", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
@@ -211,8 +221,16 @@ public class BasinController implements CrudHandler {
                 cwms.cda.data.dto.basin.Basin basin = basinDao.getBasin(basinId, units);
                 result = Formats.format(contentType, basin);
             }
-            ctx.result(result);
+            ctx.contentType(contentType.toString());
             ctx.status(HttpServletResponse.SC_OK);
+
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Basin", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basin");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

@@ -1,30 +1,27 @@
 package cwms.cda.security;
 
 import com.google.auto.service.AutoService;
+import com.google.common.flogger.FluentLogger;
+import cwms.auth.CwmsUserPrincipal;
 import cwms.cda.spi.IdentityProvider;
 import io.javalin.core.security.RouteRole;
 import io.javalin.http.Context;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
 import io.swagger.v3.oas.models.security.SecurityScheme.Type;
-
 import java.security.Principal;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import com.google.common.flogger.FluentLogger;
-
 import org.jetbrains.annotations.NotNull;
-
-import cwms.auth.CwmsUserPrincipal;
 
 @AutoService(IdentityProvider.class)
 public class CwmsAaaIdentityProvider implements IdentityProvider {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
-    private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";    
+    private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";
 
     private DataApiPrincipal getApiPrincipal(Context ctx) {
         Optional<String> user = getUser(ctx);

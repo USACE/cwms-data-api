@@ -24,10 +24,7 @@
 
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
-import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
-import com.codahale.metrics.Timer;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.DIVERTS_FROM_STREAM_ID_MASK;
@@ -48,6 +45,14 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.STREAM_ID_MASK;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StreamDao;
@@ -64,15 +69,15 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.io.IOException;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
 public final class StreamController implements CrudHandler {
+
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
 
     static final String TAG = "Streams";
 
@@ -126,9 +131,17 @@ public final class StreamController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Stream.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, streams, Stream.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve streams", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve streams");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -165,9 +178,18 @@ public final class StreamController implements CrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Stream.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, stream);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             requestResultSize.update(serialized.length());
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve stream", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve stream");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 

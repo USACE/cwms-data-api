@@ -24,15 +24,34 @@
 
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
+import static cwms.cda.api.Controllers.CATEGORY_ID;
+import static cwms.cda.api.Controllers.CATEGORY_ID_MASK;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DEFAULT_VALUE;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.NAME_MASK;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.OFFICE_MASK;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.data.dao.JooqDao.getDslContext;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.flogger.FluentLogger;
+import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.PropertyDao;
 import cwms.cda.data.dto.Property;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -42,17 +61,13 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
-
+import java.io.IOException;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-
-import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
-import static cwms.cda.data.dao.JooqDao.getDslContext;
-
 public final class PropertyController extends BaseCrudHandler {
+    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     
     static final String TAG = "Properties";
 
@@ -90,9 +105,18 @@ public final class PropertyController extends BaseCrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, properties, Property.class);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             updateResultSize(serialized.length());
+            ctx.contentType(contentType.toString());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Properties", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Properties");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -134,9 +158,17 @@ public final class PropertyController extends BaseCrudHandler {
             ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             ctx.contentType(contentType.toString());
             String serialized = Formats.format(contentType, property);
-            ctx.result(serialized);
             ctx.status(HttpServletResponse.SC_OK);
             updateResultSize(serialized.length());
+
+            byte[] bytes = serialized.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
+        } catch (IOException ex) {
+            CdaError error = ExceptionTraceSupport.buildError(ctx,
+                "Failed to process request to retrieve Property", ex);
+            LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Property");
+            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
