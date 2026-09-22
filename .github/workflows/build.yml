@@ -16,10 +16,10 @@ jobs:
   compile:
     runs-on: ubuntu-latest
     steps:
-      - name: Clean up disk space, so we don't run out.
-        uses: ./.github/actions/clean-disk-space
       - name: checkout code
         uses: actions/checkout@v7.0.1
+      - name: Clean up disk space, so we don't run out.
+        uses: ./.github/actions/clean-disk-space
       - name: setup java
         uses: actions/setup-java@v6.0.1
         with:
@@ -56,6 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
         # place holder for now and leaving commented but in place. General scheme target tests again the current release, the next release, the previous release, and latest development.
         # at this time every possible instance of concern is on 25.07.01, once 26.02.17 is finalized it becomes release and 25.07.01 becomes previous.
         # next-release will be comment out until such time as a RC gets made
@@ -69,10 +70,10 @@ jobs:
           - env: previous
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
     steps:
-      - name: cleanup
-        uses: ./github/actions/clean-disk-space
       - name: checkout code
         uses: actions/checkout@v7.0.1
+      - name: cleanup
+        uses: ./github/actions/clean-disk-space
       - name: setup java
         uses: actions/setup-java@v6.0.1
         with:
