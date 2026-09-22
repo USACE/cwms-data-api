@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge, Button, Input, Modal, Strong, Text } from "@usace/groundwork";
 import {
-  OfficeDropdown,
   useCdaRoles,
   useCdaUsers,
   useUpdateCdaUserRoles,
 } from "@usace-watermanagement/groundwork-water";
 import PropTypes from "prop-types";
 import { Notice } from "../user-lists/components/StatusMessages";
+import { ManagedOfficeSelect } from "./ManagedOfficeSelect";
 import { filterUsers, onboardingUsers, rolesForOffice } from "./role-state";
 import { CWMS_USER_ROLE_PRESETS, resolveCwmsUserRolePreset } from "./role-presets";
 
@@ -167,16 +167,12 @@ export function OnboardingDialog({ cdaUrl, token, offices, initialOffice, onClos
                 <label htmlFor="onboarding-office">
                   <Strong>Office to assign</Strong>
                 </label>
-                <OfficeDropdown
+                <ManagedOfficeSelect
                   id="onboarding-office"
-                  cdaUrl={cdaUrl}
-                  includeOffices={offices}
+                  offices={offices}
                   value={office}
                   disabled={working}
                   onChange={setOffice}
-                  initOverrides={{
-                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-                  }}
                 />
               </div>
               <div>

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CWMS_USER_ROLE_DESCRIPTIONS,
-  OfficeDropdown,
   useAuth,
   useCdaRoles,
   useCdaUsers,
@@ -29,6 +28,7 @@ import {
 import { HelpTip } from "../../components/HelpTip";
 import { AssignOfficeDialog } from "./AssignOfficeDialog";
 import { OnboardingDialog } from "./OnboardingDialog";
+import { ManagedOfficeSelect } from "./ManagedOfficeSelect";
 import { EmptyState, Notice } from "../user-lists/components/StatusMessages";
 import {
   filterUsers,
@@ -301,15 +301,10 @@ export default function UserRoles() {
           {auth.isLoading ? (
             <Skeleton className="h-10 w-full" />
           ) : adminOffices.length ? (
-            <OfficeDropdown
-              cdaUrl={cdaUrl}
-              includeOffices={adminOffices}
+            <ManagedOfficeSelect
+              id="role-office"
+              offices={adminOffices}
               value={office}
-              initOverrides={{
-                headers: auth.token
-                  ? { Authorization: `Bearer ${auth.token}` }
-                  : undefined,
-              }}
               onChange={changeOffice}
             />
           ) : (
