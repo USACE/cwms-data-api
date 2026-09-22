@@ -14,6 +14,9 @@ Setup the project by running:
 To run the project in dev:
 `npm run dev`
 
+This starts Vite in `localhost` mode using `.env.localhost` and displays **Local**
+in the header.
+
 ## Production Files
 
 To build the project:
@@ -31,6 +34,27 @@ Build CWBI development with `npm run build:development` and test with
 `npm run build:test`. WAR builds select the equivalent mode with
 `-PcdaGuiMode=development` / `-PcdaGuiMode=test` or `CDA_GUI_MODE`; the default is
 `production`.
+
+### GitHub Actions releases and deployments
+
+The reusable release workflow selects the GUI mode from the branch or release tag
+being built and passes it to both the WAR build and the Docker build:
+
+| Release branch or tag                                   | Vite mode     | Header      | Deployment environment |
+| ------------------------------------------------------- | ------------- | ----------- | ---------------------- |
+| `develop`, `YYYY.MM.DD-dev` (including letter suffixes) | `development` | Development | Dev                    |
+| `test`, `YYYY.MM.DD-test` (including letter suffixes)   | `test`        | Test        | Test                   |
+| Other refs, including `YYYY.MM.DD` and `YYYY.MM.DD-a`   | `production`  | Production  | Prod                   |
+
+The nightly workflow builds `develop-nightly` from `develop` and deploys it to
+Dev. Tagged releases and manually dispatched release builds use the same mapping.
+The Deploy workflow copies an already-built image from GHCR to ECR; selecting a
+GitHub deployment environment does not rebuild the GUI. Select the matching image
+tag and deployment environment when deploying. Existing images need a new build
+to pick up the environment badge and mode selection.
+
+For a direct Docker build, use `--build-arg CDA_GUI_MODE=development` or
+`--build-arg CDA_GUI_MODE=test`; Docker builds default to `production`.
 
 ## UI Tests and Development
 

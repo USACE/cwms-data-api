@@ -12,7 +12,8 @@ SHELL ["/bin/bash", "-c"]
 RUN . "$NVM_DIR/nvm.sh" && nvm install $NODE_VERSION && nvm use $NODE_VERSION
 ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
-RUN gradle prepareDockerBuild --info --no-daemon
+ARG CDA_GUI_MODE=production
+RUN gradle prepareDockerBuild --info --no-daemon -PcdaGuiMode="$CDA_GUI_MODE"
 
 FROM alpine:3.23.5 AS tomcat_base
 RUN apk --no-cache upgrade && \

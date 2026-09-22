@@ -24,6 +24,7 @@ task buildGuiVite(type:NpxTask) {
     dependsOn npmInstall
     command = "vite"
     args = ["build", "--mode", cdaGuiViteMode.get()]
+    inputs.property('cdaGuiMode', cdaGuiViteMode)
     inputs.files('package.json', 'package-lock.json', 'vite.config.js', 'index.html',
             '.env.development', '.env.localhost', '.env.production', '.env.test')
     inputs.dir('src')
