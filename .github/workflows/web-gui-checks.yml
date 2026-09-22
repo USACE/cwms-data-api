@@ -58,6 +58,10 @@ jobs:
         working-directory: ./cda-gui
         run: npm run test-storybook -- --run
 
+      - name: run Data Query browser tests
+        working-directory: ./cda-gui
+        run: npm run test:data-query
+
       - name: run API key unit and browser tests
         working-directory: ./cda-gui
         run: |

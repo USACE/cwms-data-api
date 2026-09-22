@@ -11,6 +11,7 @@
     "build:test": "vite build --mode test && node scripts/generate-sitemap.mjs",
     "test:unit": "node --test src/utils/auth-config.test.js src/pages/user-roles/role-state.test.js src/pages/api-keys/api.test.js",
     "test:api-keys": "playwright test --config playwright.api-keys.config.js",
+    "test:data-query": "playwright test --config playwright.data-query.config.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
