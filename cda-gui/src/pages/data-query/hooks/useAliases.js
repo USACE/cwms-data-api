@@ -56,6 +56,7 @@ export default function useAliases({
       const aliasMap = {};
 
       data?.entries
+        .filter((loc) => loc.active !== false)
         .sort((a, b) =>
           a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
         )
