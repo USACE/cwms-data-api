@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode localhost",
+    "dev:onboarding": "node scripts/onboarding-demo.mjs",
+    "test:user-roles": "playwright test --config playwright.user-roles.config.js",
     "test": "vitest",
     "build": "vite build --mode production && node scripts/generate-sitemap.mjs",
     "build:development": "vite build --mode development && node scripts/generate-sitemap.mjs",
