@@ -1,18 +1,17 @@
-import PropTypes from "prop-types";
-import { Strong, Text } from "@usace/groundwork";
+import { Link, Strong, Text } from "@usace/groundwork";
 
-export default function KeyUsageExample({ office }) {
-  const endpoint = new URL(
-    `${import.meta.env.BASE_URL.replace(/\/$/, "")}/timeseries`,
+export default function KeyUsageExample() {
+  const apiRoot = new URL(
+    `${import.meta.env.BASE_URL.replace(/\/$/, "")}/`,
     window.location.origin,
   ).href;
   const example = [
-    "curl --get \\",
-    '  --header "Authorization: apikey $CWMS_API_KEY" \\',
-    '  --header "Accept: application/json;version=2" \\',
-    `  --data-urlencode "office=${office || "YOUR_OFFICE"}" \\`,
-    '  --data-urlencode "name=KEYS.elev.inst.1hour.0.ccp-rev" \\',
-    `  "${endpoint}"`,
+    'curl --header "Authorization: apikey $CDA_API_KEY" \\',
+    `  "${apiRoot}roles"`,
+  ].join("\n");
+  const cliExample = [
+    `export CDA_API_ROOT="${apiRoot}"`,
+    "cwms-cli users roles list-all",
   ].join("\n");
 
   return (
@@ -27,7 +26,8 @@ export default function KeyUsageExample({ office }) {
         <Strong>Try a request (Bash / curl)</Strong>
       </div>
       <Text>
-        Load your saved key into the <code>CWMS_API_KEY</code> environment variable.
+        Export your saved key as <code>CDA_API_KEY</code>. These examples list available
+        roles.
       </Text>
       <pre
         aria-label="curl example"
@@ -35,12 +35,24 @@ export default function KeyUsageExample({ office }) {
       >
         <code>{example}</code>
       </pre>
+      <div>
+        <Strong>Try a request (Bash / cwms-cli)</Strong>
+      </div>
       <Text>
-        The example uses {office || "YOUR_OFFICE"}. Use the office required by the
-        endpoint you are calling.
+        Set <code>CDA_API_ROOT</code> to this CDA URL. cwms-cli also reads your exported{" "}
+        <code>CDA_API_KEY</code>.
+      </Text>
+      <pre
+        aria-label="cwms-cli example"
+        className="whitespace-pre-wrap break-all rounded-lg bg-zinc-100 p-4 text-sm leading-6"
+      >
+        <code>{cliExample}</code>
+      </pre>
+      <Text>
+        <Link href="https://cwms-cli.readthedocs.io/en/latest/cli.html#cwms-cli-users-roles-list-all">
+          cwms-cli roles command documentation
+        </Link>
       </Text>
     </div>
   );
 }
-
-KeyUsageExample.propTypes = { office: PropTypes.string.isRequired };
