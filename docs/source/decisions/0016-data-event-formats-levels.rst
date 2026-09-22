@@ -14,7 +14,7 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for forecast-related events.
+Summary: Use the structure described below for location level-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 

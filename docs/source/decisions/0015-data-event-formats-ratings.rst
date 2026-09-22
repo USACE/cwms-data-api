@@ -6,7 +6,7 @@ Data Event Formats - Ratings
 Summary
 =======
 
-CWMS needs an message structure to notify clients of rating-related events.
+CWMS needs a message structure to notify clients of rating-related events.
 
 Opinions
 ========
