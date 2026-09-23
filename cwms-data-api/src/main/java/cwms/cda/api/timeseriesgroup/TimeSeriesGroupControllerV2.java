@@ -27,6 +27,7 @@ package cwms.cda.api.timeseriesgroup;
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.COLLECTION_MERGE_STRATEGY;
 import static cwms.cda.api.Controllers.CWMS_OFFICE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GROUP_ID;
@@ -43,6 +44,7 @@ import static cwms.cda.api.Controllers.UPDATE;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.enums.CollectionPatchStrategy;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.AssignedTimeSeries;
@@ -209,7 +211,13 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                 + "a time series to assign does not exist. Default is false"),
             @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class, description = "Ignore null values in the request body. "
                 + IGNORE_NULLS + " is not used to unassign time series. Unassignment must be explicitly specified in the request body. "
-                + "Default: true")
+                + "Default: true"),
+            @OpenApiParam(name = COLLECTION_MERGE_STRATEGY, type = CollectionPatchStrategy.class,
+                description = "Controls how the assign list in the request body is applied. OVERWRITE: all "
+                    + "time series currently assigned to the group for this office are unassigned and only the "
+                    + "time series in the request body are assigned. MERGE: the time series in the request body "
+                    + "are added to the group's existing assignments. Explicit unassignments in the request body "
+                    + "are applied after assignments are stored in either case. Default: MERGE")
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
@@ -236,7 +244,16 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             }
 
             boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
-            List<AssignedTimeSeries> newAndExistingAssignedTimeSeries = mergeAssigned(existingGroup, membership);
+            String mergeStrategyVal = ctx.queryParamAsClass(COLLECTION_MERGE_STRATEGY, String.class).getOrDefault(CollectionPatchStrategy.MERGE.name());
+            CollectionPatchStrategy mergeStrategy = CollectionPatchStrategy.strategyFor(mergeStrategyVal);
+
+            List<AssignedTimeSeries> newAndExistingAssignedTimeSeries;
+            if (mergeStrategy == CollectionPatchStrategy.OVERWRITE) {
+                dao.unassignForOffice(categoryId, oldGroupId, patch.getOfficeId(), office);
+                newAndExistingAssignedTimeSeries = requestedAssigned(membership);
+            } else {
+                newAndExistingAssignedTimeSeries = mergeAssigned(existingGroup, membership);
+            }
             // Store metadata/assignments against the group's CURRENT id - renaming (if requested) is
             // a separate step below. Targeting patch.getId() here would create a second row under
             // the new id before the rename call runs, and the rename would then collide with it.
@@ -269,6 +286,16 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
 
             respondToMissingTimeSeries(ctx, missingTimeSeries, ignoreMissing);
         }
+    }
+
+    private static List<AssignedTimeSeries> requestedAssigned(TimeSeriesGroupMembership membership) {
+        Map<String, AssignedTimeSeries> byKey = new LinkedHashMap<>();
+        if (membership != null && membership.getAssign() != null) {
+            for (AssignedTimeSeries ts : membership.getAssign()) {
+                byKey.put(key(ts.getOfficeId(), ts.getTimeseriesId()), ts);
+            }
+        }
+        return new ArrayList<>(byKey.values());
     }
 
     private static List<AssignedTimeSeries> mergeAssigned(TimeSeriesGroup existingGroup, TimeSeriesGroupMembership membership) {
