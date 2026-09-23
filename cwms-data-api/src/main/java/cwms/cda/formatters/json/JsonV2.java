@@ -34,10 +34,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import cwms.cda.data.dto.CwmsDTOBase;
-import cwms.cda.data.dto.measurement.Measurement;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import cwms.cda.formatters.OutputFormatter;
+import cwms.cda.formatters.ObjectMapperFormatter;
 import cwms.cda.formatters.json.adapters.FlexibleInstantDeserializer;
 import cwms.cda.formatters.json.adapters.ZoneIdDeserializer;
 import java.io.IOException;
@@ -50,7 +49,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Formatter for CDA generated JSON.
  */
-public class JsonV2 implements OutputFormatter {
+public class JsonV2 implements ObjectMapperFormatter {
 
     private static final ObjectMapper OBJECT_MAPPER = buildObjectMapper();
     private final ObjectMapper om;
@@ -137,5 +136,10 @@ public class JsonV2 implements OutputFormatter {
         } catch (IOException e) {
             throw new FormattingException(String.format(DESERIALIZE_CONTENT_MESSAGE, content, type), e);
         }
+    }
+
+    @Override
+    public ObjectMapper getObjectMapper() {
+        return om;
     }
 }

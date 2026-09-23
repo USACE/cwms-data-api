@@ -33,23 +33,23 @@
     <tbody>
       <tr>
         <td>Latest</td>
-        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg"></td>
-        <td><img alt="Latest Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest-coverage.svg"></td>
+        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/latest.svg"></td>
+        <td><img alt="Latest Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/latest-coverage.svg"></td>
       </tr>
       <tr>
         <td>Current Release</td>
-        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg"></td>
-        <td><img alt="Current Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release-coverage.svg"></td>
+        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/release.svg"></td>
+        <td><img alt="Current Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Next Release</td>
-        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg"></td>
-        <td><img alt="Next Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release-coverage.svg"></td>
+        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/next-release.svg"></td>
+        <td><img alt="Next Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/next-release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Previous Release - NOTE: Not applicable yet</td>
-        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg"></td>
-        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous-coverage.svg"></td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/previous.svg"></td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/previous-coverage.svg"></td>
       </tr>
     </tbody>
   </table>
@@ -80,6 +80,30 @@ Generated SDKs live alongside the API source:
 - [cwmsjs](clients/typescript/README.md): TypeScript SDK.
 
 Development and runtime currently requires java 11. JDKs and JREs greater than 11 should work, please report if they don't.
+
+### Dev Container
+
+The repository includes a [Dev Container](https://containers.dev/) with Java 11, Node.js 22,
+Python 3.13, and Docker Compose. It supports the Gradle build, CDA GUI and client development,
+documentation builds, the local Docker Compose stack, and Docker-backed integration tests.
+
+To use it locally:
+
+1. Install Docker and the Visual Studio Code Dev Containers extension.
+2. Open the cloned repository in Visual Studio Code.
+3. Run **Dev Containers: Reopen in Container** from the command palette.
+
+GitHub Codespaces also detects the same configuration automatically. The first container creation
+downloads the development image and initializes the Gradle wrapper. After it completes, run the
+normal project commands from the container terminal, for example:
+
+```bash
+./gradlew build
+docker compose up -d --force-recreate
+```
+
+The integration tests use the host Docker engine through the forwarded Docker socket. Their database
+setup has the same resource and startup-time requirements described in [Testing](#testing).
 
 
 To build the war:

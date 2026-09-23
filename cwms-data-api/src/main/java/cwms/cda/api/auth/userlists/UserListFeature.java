@@ -23,7 +23,7 @@ public final class UserListFeature {
      * @return true when user-list tables are available
      */
     public static boolean requireSupported(Context ctx, DSLContext dsl) {
-        int version = Dao.versionAsInteger(Dao.getVersion(dsl));
+        int version = Dao.getDbVersion(dsl);
         if (version < V2026_07_16.numeric()) {
             ctx.status(HttpURLConnection.HTTP_NOT_IMPLEMENTED)
                     .json(new CdaError(UNSUPPORTED_MESSAGE));

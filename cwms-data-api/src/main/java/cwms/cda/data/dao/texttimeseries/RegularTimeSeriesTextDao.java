@@ -237,4 +237,26 @@ public final class RegularTimeSeriesTextDao extends JooqDao {
         });
     }
 
+    public void updateRows(TextTimeSeries tts, String textMask,
+                       @NotNull Instant startTime, @NotNull Instant endTime, Instant versionDate, boolean replaceExisting) {
+        connection(dsl, connection -> {
+            DSLContext dslContext = getDslContext(connection, tts.getOfficeId());
+            dslContext.transaction((Configuration trx) -> {
+                Configuration config = trx.dsl().configuration();
+                CWMS_TEXT_PACKAGE.call_DELETE_TS_TEXT(config, tts.getName(), textMask,
+                        Timestamp.from(startTime),
+                        Timestamp.from(endTime),
+                        versionDate == null ? null : Timestamp.from(versionDate),
+                        "UTC", "T", null,
+                        null, tts.getOfficeId());
+                Collection<RegularTextTimeSeriesRow> regRows = tts.getRegularTextValues();
+                if(regRows != null) {
+                    for (RegularTextTimeSeriesRow regRow : regRows) {
+                        storeRow(config, tts.getOfficeId(), tts.getName(), replaceExisting, regRow, tts.getVersionDate());
+                    }
+                }
+            });
+        });
+    }
+
 }

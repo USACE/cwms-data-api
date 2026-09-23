@@ -15,6 +15,7 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
+from unittest.mock import ANY
 import project
 from config import ProjectConfig
 
@@ -24,7 +25,7 @@ def test_stage_projects(mocker):
 
     project.stage_projects(projects)
 
-    mock_execute.assert_called_once_with(project._download_one_project, [["SWT", "TestProj"]])
+    mock_execute.assert_called_once_with(project._download_one_project, [["SWT", "TestProj"]], label=ANY)
 
 
 def test_publish_staged_projects(mocker):
@@ -33,7 +34,7 @@ def test_publish_staged_projects(mocker):
 
     project.publish_staged_projects(projects)
 
-    mock_execute.assert_called_once_with(project._upload_one_project, [["SWT", "TestProj"]])
+    mock_execute.assert_called_once_with(project._upload_one_project, [["SWT", "TestProj"]], label=ANY)
 
 def test_stage_projects_empty_input(mocker):
     mock_execute = mocker.patch("utils.threading_util.execute_tasks")

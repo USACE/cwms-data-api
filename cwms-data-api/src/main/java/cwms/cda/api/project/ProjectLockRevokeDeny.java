@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,48 +30,38 @@ import static cwms.cda.api.Controllers.requiredParam;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
-import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dto.project.ProjectLock;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectLockRevokeDeny implements Handler {
+
+public abstract class ProjectLockRevokeDeny<T extends ProjectLock> implements Handler {
     public static final String TAGS = "Project Locks";
-    public static final String PATH = "/project-locks/deny";
     private final MetricRegistry metrics;
 
-    private Timer.Context markAndTime(String subject) {
+    protected Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public ProjectLockRevokeDeny(MetricRegistry metrics) {
+    protected ProjectLockRevokeDeny(MetricRegistry metrics) {
         this.metrics = metrics;
-
     }
 
-    @OpenApi(
-            description = "Deny a Lock revoke request.",
-            queryParams = {
-                @OpenApiParam(name = LOCK_ID, required = true,
-                        description = "The id of the lock."),
-            },
-            method = HttpMethod.POST,
-            tags = {TAGS},
-            path = PATH
-    )
+    protected abstract ProjectLockDao<T> getDao(Context ctx);
+
+    protected abstract String getOffice(Context ctx);
+
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
 
         String lockId = requiredParam(ctx, LOCK_ID);
+        String office = getOffice(ctx);
 
         try (final Timer.Context ignored = markAndTime("deny")) {
-            ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-            lockDao.denyLockRevocation(lockId);
+            getDao(ctx).denyLockRevocation(office, lockId);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }

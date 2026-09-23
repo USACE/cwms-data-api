@@ -55,12 +55,13 @@ import cwms.cda.api.StateController;
 import cwms.cda.api.StreamController;
 import cwms.cda.api.StreamLocationController;
 import cwms.cda.api.StreamReachController;
-import cwms.cda.api.TextTimeSeriesController;
-import cwms.cda.api.TextTimeSeriesValueController;
+import cwms.cda.api.texttimeseries.TextTimeSeriesControllerV1;
+import cwms.cda.api.texttimeseries.TextTimeSeriesControllerV2;
+import cwms.cda.api.texttimeseries.TextTimeSeriesValueController;
 import cwms.cda.api.TimeSeriesCategoryController;
 import cwms.cda.api.TimeSeriesController;
 import cwms.cda.api.TimeSeriesFilteredController;
-import cwms.cda.api.TimeSeriesGroupController;
+import cwms.cda.api.timeseriesgroup.TimeSeriesGroupControllerV1;
 import cwms.cda.api.TimeSeriesIdentifierDescriptorController;
 import cwms.cda.api.TimeSeriesRecentController;
 import cwms.cda.api.TimeSeriesVersionsController;
@@ -99,12 +100,18 @@ import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.api.project.LockRevokerRightsCatalog;
 import cwms.cda.api.project.ProjectChildLocationHandler;
-import cwms.cda.api.project.ProjectLockCatalog;
-import cwms.cda.api.project.ProjectLockGetOne;
-import cwms.cda.api.project.ProjectLockRelease;
-import cwms.cda.api.project.ProjectLockRequest;
-import cwms.cda.api.project.ProjectLockRevoke;
-import cwms.cda.api.project.ProjectLockRevokeDeny;
+import cwms.cda.api.project.ProjectLockCatalogV1;
+import cwms.cda.api.project.ProjectLockCatalogV2;
+import cwms.cda.api.project.ProjectLockGetOneV1;
+import cwms.cda.api.project.ProjectLockGetOneV2;
+import cwms.cda.api.project.ProjectLockReleaseV1;
+import cwms.cda.api.project.ProjectLockReleaseV2;
+import cwms.cda.api.project.ProjectLockRequestV1;
+import cwms.cda.api.project.ProjectLockRequestV2;
+import cwms.cda.api.project.ProjectLockRevokeDenyV1;
+import cwms.cda.api.project.ProjectLockRevokeDenyV2;
+import cwms.cda.api.project.ProjectLockRevokeV1;
+import cwms.cda.api.project.ProjectLockRevokeV2;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
@@ -131,6 +138,7 @@ import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCatalogController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserCreateController;
 import cwms.cda.api.timeseriesprofile.TimeSeriesProfileParserDeleteController;
+import cwms.cda.api.timeseriesgroup.TimeSeriesGroupControllerV2;
 import cwms.cda.api.watersupply.AccountingCatalogController;
 import cwms.cda.api.watersupply.AccountingCreateController;
 import cwms.cda.api.watersupply.WaterContractCatalogController;
@@ -236,11 +244,17 @@ public final class ApiServletRouteConfiguration {
         cdaCrudCache(format("/standard-text-id/{%s}", Controllers.STANDARD_TEXT_ID),
                 new StandardTextController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
-        String textTsPath = format("/timeseries/text/{%s}", NAME);
-        cdaCrudCache(textTsPath, new TextTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        String textTsPathTemplate = "/timeseries/text/{%s}";
+        String textTsPath = format(textTsPathTemplate, NAME);
+        cdaCrudCache(textTsPath, new TextTimeSeriesControllerV1(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(formatV2(textTsPathTemplate, NAME),
+                new TextTimeSeriesControllerV2(metrics), requiredRoles, 5, TimeUnit.MINUTES);
         String textValuePath = textTsPath + "/value";
         get(textValuePath, new TextTimeSeriesValueController(metrics));
         addCacheControl(textValuePath, 1, TimeUnit.DAYS);
+        String textValuePathV2 = formatV2(textTsPathTemplate, NAME) + "/value";
+        get(textValuePathV2, new TextTimeSeriesValueController(metrics));
+        addCacheControl(textValuePathV2, 1, TimeUnit.DAYS);
 
         String binTsPath = format("/timeseries/binary/{%s}", NAME);
         cdaCrudCache(binTsPath, new BinaryTimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
@@ -281,8 +295,13 @@ public final class ApiServletRouteConfiguration {
                 new TimeSeriesCategoryController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache(String.format("/timeseries/identifier-descriptor/{%s}", Controllers.TIMESERIES_ID),
                 new TimeSeriesIdentifierDescriptorController(metrics), requiredRoles,5, TimeUnit.MINUTES);
-        cdaCrudCache("/timeseries/group/{group-id}",
-                new TimeSeriesGroupController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        //------- Time Series Group --------//
+        String timeSeriesGroupPath = "/timeseries/group/{group-id}";
+        cdaCrudCache(timeSeriesGroupPath,
+                new TimeSeriesGroupControllerV1(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(formatV2(timeSeriesGroupPath, Controllers.GROUP_ID),
+                new TimeSeriesGroupControllerV2(metrics), requiredRoles, 5, TimeUnit.MINUTES);
+        //----------------------------------//
         cdaCrudCache("/timeseries/{timeseries}",
                 new TimeSeriesController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         addRatingHandlers(requiredRoles, metrics, cdaAccessManager);
@@ -382,7 +401,9 @@ public final class ApiServletRouteConfiguration {
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
-        addProjectLocksHandlers("/project-locks/{name}", requiredRoles, metrics);
+        String projectLockPath = "/project-locks/{%s}";
+        addProjectLocksHandlers(format(projectLockPath, Controllers.NAME), requiredRoles, metrics);
+        addProjectLocksHandlersV2(formatV2(projectLockPath, Controllers.NAME), requiredRoles, metrics);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles, metrics);
 
         addUserManagementHandlers(metrics, cdaAccessManager);
@@ -508,12 +529,23 @@ public final class ApiServletRouteConfiguration {
     private static void addProjectLocksHandlers(String path, RouteRole[] requiredRoles, MetricRegistry metrics) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
 
-        get(path, new ProjectLockGetOne(metrics), requiredRoles);
-        get(pathWithoutResource, new ProjectLockCatalog(metrics), requiredRoles);
-        post(pathWithoutResource + "deny", new ProjectLockRevokeDeny(metrics), requiredRoles);
-        post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
-        post(pathWithoutResource + "release", new ProjectLockRelease(metrics), requiredRoles);
-        delete(path, new ProjectLockRevoke(metrics), requiredRoles);
+        get(path, new ProjectLockGetOneV1(metrics), requiredRoles);
+        get(pathWithoutResource, new ProjectLockCatalogV1(metrics), requiredRoles);
+        post(pathWithoutResource + "deny", new ProjectLockRevokeDenyV1(metrics), requiredRoles);
+        post(pathWithoutResource, new ProjectLockRequestV1(metrics), requiredRoles);
+        post(pathWithoutResource + "release", new ProjectLockReleaseV1(metrics), requiredRoles);
+        delete(path, new ProjectLockRevokeV1(metrics), requiredRoles);
+    }
+
+    private static void addProjectLocksHandlersV2(String path, RouteRole[] requiredRoles, MetricRegistry metrics) {
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+
+        get(path, new ProjectLockGetOneV2(metrics), requiredRoles);
+        get(pathWithoutResource, new ProjectLockCatalogV2(metrics), requiredRoles);
+        post(pathWithoutResource + "deny", new ProjectLockRevokeDenyV2(metrics), requiredRoles);
+        post(pathWithoutResource, new ProjectLockRequestV2(metrics), requiredRoles);
+        post(pathWithoutResource + "release", new ProjectLockReleaseV2(metrics), requiredRoles);
+        delete(path, new ProjectLockRevokeV2(metrics), requiredRoles);
     }
 
     private static void addProjectLockRightsHandlers(String path, RouteRole[] requiredRoles, MetricRegistry metrics) {

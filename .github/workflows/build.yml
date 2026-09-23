@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [11]
+        jdk: [17]
         # place holder for now and leaving commented but in place. General scheme target tests again the current release, the next release, the previous release, and latest development.
         # at this time every possible instance of concern is on 25.07.01, once 26.02.17 is finalized it becomes release and 25.07.01 becomes previous.
         # next-release will be comment out until such time as a RC gets made
@@ -43,11 +43,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{matrix.jdk}}
-          cache: 'gradle'
       - name: setup python
         uses: actions/setup-python@v6
         with:
           python-version: '3.10'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: wrapper
       - name: build and test
         id: thebuild
         run: ./gradlew clean build --info --init-script init.gradle
@@ -111,7 +114,7 @@ jobs:
         uses: actions/setup-java@v5.2.0
         with:
           distribution: 'temurin'
-          java-version: 11
+          java-version: 17
           cache: 'gradle'
       - name: build and test
         id: thebuild

@@ -64,12 +64,15 @@ jobs:
         uses: actions/setup-java@v5.2.0
         with:
           distribution: 'temurin'
-          java-version: '11'
-          cache: 'gradle'
+          java-version: '17'
       - name: setup python
         uses: actions/setup-python@v6
         with:
           python-version: '3.10'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: wrapper
       - name: Set version
         id: version
         env:
