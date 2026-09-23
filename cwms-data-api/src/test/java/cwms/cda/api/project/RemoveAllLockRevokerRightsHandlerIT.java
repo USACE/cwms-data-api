@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.project.ProjectDao;
-import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dao.project.ProjectLockDaoV1;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.formatters.Formats;
@@ -76,7 +76,7 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
     void tearDown() throws SQLException {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
             lockDao.removeAllLockRevokerRights(OFFICE, appId, TestAccounts.KeyUser.SPK_NORMAL.getName());
             deleteProject(dsl, projId, OFFICE, appId);
         });
@@ -103,7 +103,7 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
 
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
             // Add an allow
             lockDao.updateLockRevokerRights(OFFICE, projId, appId, TestAccounts.KeyUser.SPK_NORMAL.getName(), true);
@@ -134,7 +134,7 @@ public class RemoveAllLockRevokerRightsHandlerIT extends DataApiTestIT {
 
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
             // make sure its gone.
             List<LockRevokerRights> lockRevokerRights = lockDao.catLockRevokerRights(OFFICE, projId, appId);

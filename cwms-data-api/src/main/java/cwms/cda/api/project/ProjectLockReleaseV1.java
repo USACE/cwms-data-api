@@ -25,45 +25,52 @@
 package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.LOCK_ID;
+import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import cwms.cda.api.Controllers;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
-import cwms.cda.data.dto.project.ProjectLock;
+import cwms.cda.data.dao.project.ProjectLockDaoV1;
+import cwms.cda.data.dto.project.ProjectLockV1;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import org.jetbrains.annotations.NotNull;
 
+public final class ProjectLockReleaseV1 extends ProjectLockRelease<ProjectLockV1> {
+    public static final String PATH = "/project-locks/release";
 
-public abstract class ProjectLockRevokeDeny<T extends ProjectLock> implements Handler {
-    public static final String TAGS = "Project Locks";
-    private final MetricRegistry metrics;
-
-    protected Timer.Context markAndTime(String subject) {
-        return Controllers.markAndTime(metrics, getClass().getName(), subject);
+    public ProjectLockReleaseV1(MetricRegistry metrics) {
+        super(metrics);
     }
-
-    protected ProjectLockRevokeDeny(MetricRegistry metrics) {
-        this.metrics = metrics;
-    }
-
-    protected abstract ProjectLockDao<T> getDao(Context ctx);
-
-    protected abstract String getOffice(Context ctx);
 
     @Override
+    protected ProjectLockDao<ProjectLockV1> getDao(Context ctx) {
+        return new ProjectLockDaoV1(JooqDao.getDslContext(ctx));
+    }
+
+    @Override
+    protected String getOffice(Context ctx) {
+        return requiredParam(ctx, OFFICE);
+    }
+
+    @OpenApi(
+            description = "Releases a project lock",
+            queryParams = {
+                @OpenApiParam(name = OFFICE, required = true,
+                        description = "The user's office."),
+                @OpenApiParam(name = LOCK_ID, required = true,
+                        description = "The id of the lock to release."),
+            },
+            method = HttpMethod.PUT,
+            tags = {TAGS},
+            path = PATH
+    )
+    @Override
     public void handle(@NotNull Context ctx) throws Exception {
-
-        String lockId = requiredParam(ctx, LOCK_ID);
-        String office = getOffice(ctx);
-
-        try (final Timer.Context ignored = markAndTime("deny")) {
-            getDao(ctx).denyLockRevocation(office, lockId);
-        }
-        ctx.status(HttpServletResponse.SC_OK);
+        super.handle(ctx);
     }
 
 }

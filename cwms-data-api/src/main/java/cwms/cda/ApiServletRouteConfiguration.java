@@ -99,12 +99,18 @@ import cwms.cda.api.location.kind.VirtualOutletController;
 import cwms.cda.api.location.kind.VirtualOutletCreateController;
 import cwms.cda.api.project.LockRevokerRightsCatalog;
 import cwms.cda.api.project.ProjectChildLocationHandler;
-import cwms.cda.api.project.ProjectLockCatalog;
-import cwms.cda.api.project.ProjectLockGetOne;
-import cwms.cda.api.project.ProjectLockRelease;
-import cwms.cda.api.project.ProjectLockRequest;
-import cwms.cda.api.project.ProjectLockRevoke;
-import cwms.cda.api.project.ProjectLockRevokeDeny;
+import cwms.cda.api.project.ProjectLockCatalogV1;
+import cwms.cda.api.project.ProjectLockCatalogV2;
+import cwms.cda.api.project.ProjectLockGetOneV1;
+import cwms.cda.api.project.ProjectLockGetOneV2;
+import cwms.cda.api.project.ProjectLockReleaseV1;
+import cwms.cda.api.project.ProjectLockReleaseV2;
+import cwms.cda.api.project.ProjectLockRequestV1;
+import cwms.cda.api.project.ProjectLockRequestV2;
+import cwms.cda.api.project.ProjectLockRevokeDenyV1;
+import cwms.cda.api.project.ProjectLockRevokeDenyV2;
+import cwms.cda.api.project.ProjectLockRevokeV1;
+import cwms.cda.api.project.ProjectLockRevokeV2;
 import cwms.cda.api.project.ProjectPublishStatusUpdate;
 import cwms.cda.api.project.RemoveAllLockRevokerRights;
 import cwms.cda.api.project.UpdateLockRevokerRights;
@@ -388,7 +394,9 @@ public final class ApiServletRouteConfiguration {
         cdaCrudCache(format("/lookup-types/{%s}", Controllers.NAME),
                 new LookupTypeController(metrics), requiredRoles,1, TimeUnit.DAYS);
 
-        addProjectLocksHandlers("/project-locks/{name}", requiredRoles, metrics);
+        String projectLockPath = "/project-locks/{%s}";
+        addProjectLocksHandlers(format(projectLockPath, Controllers.NAME), requiredRoles, metrics);
+        addProjectLocksHandlersV2(formatV2(projectLockPath, Controllers.NAME), requiredRoles, metrics);
         addProjectLockRightsHandlers("/project-lock-rights/{project-id}", requiredRoles, metrics);
 
         addUserManagementHandlers(metrics, cdaAccessManager);
@@ -514,12 +522,23 @@ public final class ApiServletRouteConfiguration {
     private static void addProjectLocksHandlers(String path, RouteRole[] requiredRoles, MetricRegistry metrics) {
         String pathWithoutResource = path.replace(getResourceId(path), "");
 
-        get(path, new ProjectLockGetOne(metrics), requiredRoles);
-        get(pathWithoutResource, new ProjectLockCatalog(metrics), requiredRoles);
-        post(pathWithoutResource + "deny", new ProjectLockRevokeDeny(metrics), requiredRoles);
-        post(pathWithoutResource, new ProjectLockRequest(metrics), requiredRoles);
-        post(pathWithoutResource + "release", new ProjectLockRelease(metrics), requiredRoles);
-        delete(path, new ProjectLockRevoke(metrics), requiredRoles);
+        get(path, new ProjectLockGetOneV1(metrics), requiredRoles);
+        get(pathWithoutResource, new ProjectLockCatalogV1(metrics), requiredRoles);
+        post(pathWithoutResource + "deny", new ProjectLockRevokeDenyV1(metrics), requiredRoles);
+        post(pathWithoutResource, new ProjectLockRequestV1(metrics), requiredRoles);
+        post(pathWithoutResource + "release", new ProjectLockReleaseV1(metrics), requiredRoles);
+        delete(path, new ProjectLockRevokeV1(metrics), requiredRoles);
+    }
+
+    private static void addProjectLocksHandlersV2(String path, RouteRole[] requiredRoles, MetricRegistry metrics) {
+        String pathWithoutResource = path.replace(getResourceId(path), "");
+
+        get(path, new ProjectLockGetOneV2(metrics), requiredRoles);
+        get(pathWithoutResource, new ProjectLockCatalogV2(metrics), requiredRoles);
+        post(pathWithoutResource + "deny", new ProjectLockRevokeDenyV2(metrics), requiredRoles);
+        post(pathWithoutResource, new ProjectLockRequestV2(metrics), requiredRoles);
+        post(pathWithoutResource + "release", new ProjectLockReleaseV2(metrics), requiredRoles);
+        delete(path, new ProjectLockRevokeV2(metrics), requiredRoles);
     }
 
     private static void addProjectLockRightsHandlers(String path, RouteRole[] requiredRoles, MetricRegistry metrics) {
