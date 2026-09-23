@@ -44,7 +44,11 @@ class SpaErrorStatusFilterTest {
         "/swagger-ui",
         "/swagger-ui/",
         "/timestamps",
-        "/user-lists"
+        "/user-lists",
+        "/user-roles",
+        "/user-roles/swt",
+        "/user-roles/HQ",
+        "/user-roles/mvsc/"
     })
     void returnsOkForClientRoutes(String route) throws ServletException, IOException {
         HttpServletRequest request = buildRequest("GET", "/cwms-data" + route);
