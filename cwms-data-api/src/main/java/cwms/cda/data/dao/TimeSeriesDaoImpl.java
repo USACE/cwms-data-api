@@ -24,7 +24,6 @@ import static org.jooq.impl.DSL.noCondition;
 import static org.jooq.impl.DSL.partitionBy;
 import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectDistinct;
-import static org.jooq.impl.DSL.selectOne;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
@@ -77,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -90,7 +90,6 @@ import mil.army.usace.hec.metadata.IntervalOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.*;
-import org.jooq.Record;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -148,6 +147,11 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 return thread;
             }
     );
+
+    /**
+     * Eat some JVM memory so we don't have to constantly requery for static information.
+     */
+    private static final ConcurrentHashMap<String, Set<String>> validUnitConversions = new ConcurrentHashMap<>();
 
     public static final String VERSIONED_NAME = "isVersioned";
     private static final long UTC_OFFSET_IRREGULAR = -2147483648L;
@@ -237,7 +241,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
         condition = condition.and(AV_CWMS_TS_ID2.ALIASED_ITEM.isNull());
 
-        Record tsRecord = dsl.select(AV_CWMS_TS_ID2.TS_CODE, AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.CWMS_TS_ID)
+        org.jooq.Record tsRecord = dsl.select(AV_CWMS_TS_ID2.TS_CODE, AV_CWMS_TS_ID2.DB_OFFICE_ID, AV_CWMS_TS_ID2.CWMS_TS_ID)
                 .from(AV_CWMS_TS_ID2)
                 .where(condition)
                 .fetchOne();
@@ -282,7 +286,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .and(pagingCondition)
                 .orderBy(AV_TS_EXTENTS_UTC.VERSION_TIME.desc().nullsFirst());
 
-        Result<? extends Record> results;
+        Result<? extends org.jooq.Record> results;
         if (pageSize > -1) {
             results = query.limit(pageSize).fetch();
         } else {
@@ -298,7 +302,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .withPageSize(pageSize)
                 .withTotal(total);
 
-        for (Record row : results) {
+        for (org.jooq.Record row : results) {
             builder.addVersion(new TimeSeriesExtents.Builder()
                     .withVersionTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.VERSION_TIME)))
                     .withEarliestTime(DateUtils.toZdt(row.get(AV_TS_EXTENTS_UTC.EARLIEST_TIME)))
@@ -308,7 +312,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         if (results.size() == pageSize) {
-            Record lastRecord = results.get(results.size() - 1);
+            org.jooq.Record lastRecord = results.get(results.size() - 1);
             Timestamp lastVersionTime = lastRecord.get(AV_TS_EXTENTS_UTC.VERSION_TIME);
             if (lastVersionTime != null) {
                 builder.withNextPage(CwmsDTOPaginated.encodeCursor(lastVersionTime.toInstant(), pageSize, total));
@@ -329,7 +333,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 timezone.getId(), office);
     }
 
-    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildTsvDquQuery(
+    private ResultQuery<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> buildTsvDquQuery(
             long tsCode, String officeId, String units,
             TimeSeriesRequestParameters requestParameters,
             boolean includeEntryDate) {
@@ -359,7 +363,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .and(DSL.condition("{0} <= to_date({1}, 'yyyy-mm-dd\"T\"hh24:mi:ss')",
                         dateTimeField, DSL.val(endTimestampText)));
 
-        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
+        ResultQuery<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> query;
         if (versionDate != null) {
             query = buildVersionedRowsQuery(
                     view,
@@ -401,7 +405,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         String officeResolved = metadata.officeId;
         String resolvedUnits = metadata.units;
 
-        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved,
+        ResultQuery<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeResolved,
                 resolvedUnits, requestParameters, includeDataEntryDate);
 
         logger.atFine().log("%s", lazy(query::getSQL));
@@ -419,7 +423,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         ZonedDateTime versionDate = requestParameters.getVersionDate();
         Timestamp versionTs = versionDate != null ? Timestamp.from(versionDate.toInstant()) : null;
 
-        try (Cursor<? extends Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query.fetchLazy()) {
+        try (Cursor<? extends org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query.fetchLazy()) {
             CsvV1 csvFormatter = new CsvV1();
 
             CsvOnDemandInputStream stream = new CsvOnDemandInputStream(
@@ -551,7 +555,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
         final Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names), officeId);
 
-        Table<Record3<BigDecimal, String, String>> validTs =
+        Table<org.jooq.Record3<BigDecimal, String, String>> validTs =
                 select(tsCode.as("tscode"),
                         tsId.as("tsid"),
                         officeId.as("office_id")
@@ -582,7 +586,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         Field<BigDecimal> ival = CWMS_TS_PACKAGE.call_GET_TS_INTERVAL__2(validTs.field("tsid", String.class));
 
         // put all those columns together as "valid"
-        CommonTableExpression<Record7<BigDecimal, String, String, String, String, BigDecimal,
+        CommonTableExpression<org.jooq.Record7<BigDecimal, String, String, String, String, BigDecimal,
                 String>> valid =
                 name("valid").fields("tscode", "tsid", "office_id", "loc_part", "units",
                                 "interval", "parm_part")
@@ -643,7 +647,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             // Total is only an estimate, as it can change if fetching current data,
             // or the timeseries otherwise changes between queries.
 
-            SelectConditionStep<Record3<Timestamp, Double, Integer>> retrieveSelectCount = select(
+            SelectConditionStep<org.jooq.Record3<Timestamp, Double, Integer>> retrieveSelectCount = select(
                     dateTimeCol, valueCol, qualityCol
             ).from(DSL.sql(
                     "table(cwms_20.cwms_ts.retrieve_ts_out_tab(?,?,"
@@ -694,7 +698,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
 
-        Record tsMetadata = metadataQuery.fetchOne();
+        org.jooq.Record tsMetadata = metadataQuery.fetchOne();
 
         if (pageSize == 0) {
             Integer resolvedTotal = resolveTotalQueryFuture(totalQueryFuture, totalQueryDeadlineNanos,
@@ -728,7 +732,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         TimeSeries retVal = null;
         if (pageSize != 0) {
-            SelectConditionStep<Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
+            SelectConditionStep<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> query2 = dsl.select(
                             dateTimeCol,
                             valueCol,
                             qualityNormCol,
@@ -737,7 +741,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .from(retrieveSelectData)
                     .where(filterConditions);
 
-            SelectConditionStep<Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
+            SelectConditionStep<org.jooq.Record3<Timestamp, Double, BigDecimal>> query = dsl.select(
                             dateTimeCol,
                             valueCol,
                             qualityNormCol
@@ -765,8 +769,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             List<TimeSeries.Record> retrievedPoints = new ArrayList<>();
             if (requestParameters.isIncludeEntryDate()) {
                 logger.atFine().log("%s", lazy(() -> query2.getSQL(ParamType.INLINED)));
-                try (Cursor<Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
-                    for (Record tsRecord: recCursor) {
+                try (Cursor<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> recCursor = query2.fetchLazy()) {
+                    for (org.jooq.Record tsRecord: recCursor) {
                         retrievedPoints.add(new TimeSeries.Record(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
@@ -776,8 +780,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 }
             } else {
                 logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
-                try (Cursor<Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
-                    for (Record tsRecord: recCursor) {
+                try (Cursor<org.jooq.Record3<Timestamp, Double, BigDecimal>> recCursor = query.fetchLazy()) {
+                    for (org.jooq.Record tsRecord: recCursor) {
                         retrievedPoints.add(new TimeSeries.Record(
                                 tsRecord.getValue(dateTimeCol),
                                 tsRecord.getValue(valueCol),
@@ -855,7 +859,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     @NotNull
-    private TimeSeries buildTimeSeriesFromMetadata(Record tsMetadata, @Nullable Integer resolvedTotal,
+    private TimeSeries buildTimeSeriesFromMetadata(org.jooq.Record tsMetadata, @Nullable Integer resolvedTotal,
                                                    String names, String office,
                                                    ZonedDateTime beginTime, ZonedDateTime endTime,
                                                    String units, ZonedDateTime versionDate,
@@ -941,8 +945,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (shouldFetchVerticalDatum(parmPart)) {
             verticalDatumInfo = fetchVerticalDatumInfoSeparately(locPart, requestedUnits, office);
         }
-        validateRequestedUnits(nativeUnits, metadataUnits);
-
         VersionType finalDateVersionType = getDirectReadVersionType(
                 metadata.versionFlag, versionDate != null);
 
@@ -1000,9 +1002,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         final Field<String> tsId = CWMS_TS_PACKAGE.call_GET_TS_ID__2(DSL.val(names), officeId);
         final Field<BigDecimal> tsCode = CWMS_TS_PACKAGE.call_GET_TS_CODE__2(DSL.val(names), officeId);
 
-        validateUnits(units, tsCode, officeId, names);
-
-        Table<Record3<BigDecimal, String, String>> validTs =
+        Table<org.jooq.Record3<BigDecimal, String, String>> validTs =
                 select(tsCode.as("tscode"),
                         tsId.as("tsid"),
                         officeId.as("office_id"))
@@ -1049,7 +1049,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         logger.atFine().log("%s", lazy(() -> metadataQuery.getSQL(ParamType.INLINED)));
 
-        return metadataQuery.fetchOne(record -> new DirectReadMetadata(
+        DirectReadMetadata metadata = metadataQuery.fetchOne(record -> new DirectReadMetadata(
                 record.getValue("tscode", BigDecimal.class).longValue(),
                 record.getValue("tsid", String.class),
                 record.getValue("office_id", String.class),
@@ -1065,39 +1065,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                         ? UTC
                         : record.getValue("time_zone_id", String.class),
                 record.getValue("version_flag", String.class)));
-    }
-
-    private void validateUnits(String units, Field<BigDecimal> tsCode, Field<String> officeId, String name) {
-        if(!units.equalsIgnoreCase("SI") && !units.equalsIgnoreCase("EN")) {
-
-            boolean tsExists = dsl.fetchExists(
-                    selectOne()
-                            .from(AV_TSV_DQU.AV_TSV_DQU)
-                            .where(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(tsCode.cast(Long.class)))
-                            .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(officeId))
-            );
-            if(tsExists) {
-                boolean unitRequestedExists = dsl.fetchExists(
-                        selectOne()
-                                .from(AV_TSV_DQU.AV_TSV_DQU)
-                                .where(AV_TSV_DQU.AV_TSV_DQU.TS_CODE.eq(tsCode.cast(Long.class)))
-                                .and(AV_TSV_DQU.AV_TSV_DQU.OFFICE_ID.eq(officeId))
-                                .and(AV_TSV_DQU.AV_TSV_DQU.UNIT_ID.equalIgnoreCase(units))
-                );
-
-                if (!unitRequestedExists) {
-                    String msg = sanitizeOrNull(units + " is not a valid unit for time series " + name);
-                    throw new InvalidItemException(msg, new IllegalArgumentException(msg));
-                }
-            }
+        if (metadata != null) {
+            validateRequestedUnits(metadata.nativeUnits, metadata.units, names);
         }
+        return metadata;
     }
 
     private List<TimeSeries.Record> fetchRequestedTimeSeriesRows(long tsCode, String officeId,
                                                                  String requestedUnits,
                                                                  TimeSeriesRequestParameters requestParameters,
                                                                  boolean includeEntryDate) {
-        ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeId,
+        ResultQuery<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> query = buildTsvDquQuery(tsCode, officeId,
                 requestedUnits, requestParameters, includeEntryDate);
 
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
@@ -1122,7 +1100,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         return (int) quality;
     }
 
-    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
+    private ResultQuery<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> buildVersionedRowsQuery(
             AV_TSV_DQU view,
             Field<Timestamp> dateTime,
             Field<Timestamp> versionDateField,
@@ -1152,7 +1130,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .orderBy(dateTime.asc());
     }
 
-    private ResultQuery<Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
+    private ResultQuery<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(
             AV_TSV_DQU view,
             Field<Timestamp> dateTime,
             Field<Timestamp> versionDateField,
@@ -1187,9 +1165,33 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .orderBy(dateTimeCol.asc());
     }
 
-    private void validateRequestedUnits(String nativeUnits, String requestedUnits) {
-        if (nativeUnits != null && requestedUnits != null) {
+    /**
+     * Validation check of the requested units.
+     * @param nativeUnits as stored units to pass to convert_units call.
+     * @param requestedUnits desired units.
+     * @param name Time series Name, used for caching and reporting.
+     */
+    private void validateRequestedUnits(String nativeUnits, String requestedUnits, String name) {
+
+        if (nativeUnits == null || requestedUnits == null) {
+            return;
+        }
+        var valid = validUnitConversions.computeIfAbsent(name, key -> new HashSet<>());
+        if (valid.contains(requestedUnits)) {
+            return;
+        }
+
+        try {
             CWMS_UTIL_PACKAGE.call_CONVERT_UNITS(dsl.configuration(), 0.0D, nativeUnits, requestedUnits);
+            valid.add(requestedUnits);
+        } catch (InvalidItemException ex) {
+            // I was considering a negative cache here; however, I realized the query parameters are freeform
+            // and that the range of invalid units is rather unbounded. So decided against as that would
+            // be a risk of denial of service. So instead eat the somewhat reasonable cost of
+            // quering the database for those.
+            String message = sanitizeOrNull(requestedUnits
+                    + " is not a valid unit for time series " + name);
+            throw new InvalidItemException(message, new IllegalArgumentException(message, ex));
         }
     }
 
@@ -1483,7 +1485,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
     public void validateEntryDateSupport(boolean includeEntryDate) {
         if (includeEntryDate) {
-            Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
+            org.jooq.Record entryDateSupport = dsl.select(asterisk()).from(table("ALL_TYPES"))
                     .where(field("TYPE_NAME").eq("ZTSV_ENTRY_TYPE"))
                     .and(field("OWNER").eq("CWMS_20")).fetchOne();
 
@@ -1583,7 +1585,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (page == null || page.isEmpty()) {
             CommonTableExpression<?> limiter = buildWithClause(cwmsTsIdFields, inputParams, buildWhereConditions(inputParams),
                     new ArrayList<>(), pageSize, true);
-            SelectJoinStep<Record1<Integer>> totalQuery = dsl.with(limiter)
+            SelectJoinStep<org.jooq.Record1<Integer>> totalQuery = dsl.with(limiter)
                     .select(countDistinct(limiter.field(cwmsTsIdFields.getTsCode())))
                     .from(limiter);
             logger.atFine().log("%s", lazy(() -> totalQuery.getSQL(ParamType.INLINED)));
@@ -1733,7 +1735,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
     }
 
-    private void updateAliasMapping(Map<String, Set<TimeSeriesAlias>> tsCodeAliasMap, Map<String, String> tsIdToCodeMap, Record row, String officeTsId) {
+    private void updateAliasMapping(Map<String, Set<TimeSeriesAlias>> tsCodeAliasMap, Map<String, String> tsIdToCodeMap, org.jooq.Record row, String officeTsId) {
         boolean isAlias = row.get(AV_CWMS_TS_ID2.ALIASED_ITEM) != null;
         String tsCode = row.get(AV_CWMS_TS_ID2.TS_CODE).toString();
         if (isAlias) {
@@ -1811,7 +1813,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         selectFields.add(fromTable.field(cwmsTsIdFields.getDbOfficeId()));
 
         selectFields.add(fromTable.field(cwmsTsIdFields.getCwmsTsId()));
-        TableOnConditionStep<Record> on = null;
+        TableOnConditionStep<org.jooq.Record> on = null;
         Table<?> table = params.includeAliases() ? AV_CWMS_TS_ID2 : AV_CWMS_TS_ID.AV_CWMS_TS_ID;
         if (params.needs(tsGroupView)) {
             on = table
@@ -1984,13 +1986,13 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
 
-        SelectHavingStep<Record1<Timestamp>> maxSelect =
+        SelectHavingStep<org.jooq.Record1<Timestamp>> maxSelect =
                 dsl.select(max(view.DATE_TIME).as(MAX_DATE_TIME))
                         .from(view)
                         .where(nestedCondition)
                         .groupBy(view.TS_CODE);
 
-        Record dquRecord = dsl.select(asterisk())
+        org.jooq.Record dquRecord = dsl.select(asterisk())
                 .from(view)
                 .where(view.DATE_TIME.in(maxSelect))
                 .and(view.CWMS_TS_ID.eq(tsId))
@@ -2086,25 +2088,25 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
             // helper subquery for SELECT ts_code FROM base_ids
-            Select<Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
+            Select<org.jooq.Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
                     .from(baseIds);
 
             // references to appropriate year tables, current year and past year
             Table<?> AT_TSV_PREV_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year1));
             Table<?> AT_TSV_CURR_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year2));
 
-            Select<Record> prevYearSelect = select(asterisk())
+            Select<org.jooq.Record> prevYearSelect = select(asterisk())
                     .from(AT_TSV_PREV_YEAR_TABLE)
                     .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
                     .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
 
-            Select<Record> currYearSelect = select(asterisk())
+            Select<org.jooq.Record> currYearSelect = select(asterisk())
                     .from(AT_TSV_CURR_YEAR_TABLE)
                     .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
                     .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
 
             // union tables if start and end date are not in the same year
-            Select<Record> combinedSelect = (year1 == year2)
+            Select<org.jooq.Record> combinedSelect = (year1 == year2)
                     ? prevYearSelect
                     : prevYearSelect.unionAll(currYearSelect);
 
@@ -2159,7 +2161,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             );
 
             // Final query
-            SelectConditionStep<Record10<String, java.sql.Date, java.sql.Date, java.sql.Date, Integer, java.sql.Date, java.sql.Date, String, java.sql.Date, Double>> query = dsl.with(baseIds)
+            SelectConditionStep<org.jooq.Record10<String, java.sql.Date, java.sql.Date, java.sql.Date, Integer, java.sql.Date, java.sql.Date, String, java.sql.Date, Double>> query = dsl.with(baseIds)
                     .with(tsvLimited)
                     .with(maxValues)
                     .select(
@@ -2237,25 +2239,25 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
 
         // helper subquery for SELECT ts_code FROM base_ids
-        Select<Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
+        Select<org.jooq.Record1<BigDecimal>> tsCodeSubquery = select(baseIds.field(AV_CWMS_TS_ID2.TS_CODE))
                 .from(baseIds);
 
         // references to appropriate year tables, current year and past year
         Table<?> AT_TSV_PREV_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year1));
         Table<?> AT_TSV_CURR_YEAR_TABLE = table(name(CWMS_20, "AT_TSV_" + year2));
 
-        Select<Record> prevYearSelect = select(asterisk())
+        Select<org.jooq.Record> prevYearSelect = select(asterisk())
                 .from(AT_TSV_PREV_YEAR_TABLE)
                 .where(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
                 .and(field(name(AT_TSV_PREV_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
 
-        Select<Record> currYearSelect = select(asterisk())
+        Select<org.jooq.Record> currYearSelect = select(asterisk())
                 .from(AT_TSV_CURR_YEAR_TABLE)
                 .where(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), DATE_TIME), java.sql.Date.class).between(startDate, endDate))
                 .and(field(name(AT_TSV_CURR_YEAR_TABLE.getName(), TS_CODE), BigDecimal.class).in(tsCodeSubquery));
 
         // union tables if start and end date are not in the same year
-        Select<Record> combinedSelect = (year1 == year2)
+        Select<org.jooq.Record> combinedSelect = (year1 == year2)
                 ? prevYearSelect
                 : prevYearSelect.unionAll(currYearSelect);
 
@@ -2311,7 +2313,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         );
 
         // Final query
-        SelectConditionStep<Record10<String, java.sql.Date, java.sql.Date, java.sql.Date, Integer, java.sql.Date, java.sql.Date, String, java.sql.Date, Double>> query = dsl.with(baseIds)
+        SelectConditionStep<org.jooq.Record10<String, java.sql.Date, java.sql.Date, java.sql.Date, Integer, java.sql.Date, java.sql.Date, String, java.sql.Date, Double>> query = dsl.with(baseIds)
                 .with(tsvLimited)
                 .with(maxValues)
                 .selectDistinct(

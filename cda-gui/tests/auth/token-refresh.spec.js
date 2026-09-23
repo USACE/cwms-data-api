@@ -330,7 +330,7 @@ async function mockDeployment(page, flow, signedIn = true) {
     route.fulfill({
       json: {
         "user-name": "Test User",
-        roles: { SWT: ["CWMS User Admins"] },
+        roles: { SWT: ["CWMS User Admins", "CWMS PD Users"] },
       },
     }),
   );

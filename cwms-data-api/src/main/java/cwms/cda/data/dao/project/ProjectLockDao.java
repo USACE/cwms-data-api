@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,18 +28,17 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.ProjectLock;
 import java.math.BigInteger;
-import java.time.Instant;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.Configuration;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.SQLDialect;
-import org.jooq.exception.TooManyRowsException;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_PROJECT_PACKAGE;
 
-public class ProjectLockDao extends JooqDao<ProjectLock> {
+
+public abstract class ProjectLockDao<T extends ProjectLock> extends JooqDao<T> {
     public static final String OFFICE_ID = "OFFICE_ID";
     public static final String PROJECT_ID = "PROJECT_ID";
     public static final String APPLICATION_ID = "APPLICATION_ID";
@@ -50,29 +49,40 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
     public static final String SESSION_MACHINE = "SESSION_MACHINE";
     public static final String USER_ID = "USER_ID";
 
-    public ProjectLockDao(DSLContext dsl) {
+    protected ProjectLockDao(DSLContext dsl) {
         super(dsl);
     }
 
     /**
      * Requests a lock for a project.
      *
-     * @param request        The ProjectLock object representing the lock request
+     * @param request        The lock DTO representing the lock request
      * @param revokeExisting True if existing locks should be revoked, false otherwise
      * @param revokeTimeout  The time in seconds to wait for existing locks to be revoked
      * @return The lockId if the request was successful, null otherwise
      */
-    public String requestLock(ProjectLock request, boolean revokeExisting, int revokeTimeout) {
+    public abstract String requestLock(T request, boolean revokeExisting, int revokeTimeout);
 
-        String office = request.getOfficeId();
-        return connectionResult(dsl, c -> {
-            Configuration configuration = getDslContext(c, office).configuration();
-            return CWMS_PROJECT_PACKAGE.call_REQUEST_LOCK(configuration, request.getProjectId(),
-                request.getApplicationId(), formatBool(revokeExisting), BigInteger.valueOf(revokeTimeout),
-                office, request.getSessionUser(), request.getOsUser(), request.getSessionProgram(),
-                request.getSessionMachine());
-        });
-    }
+    /**
+     * Returns the list of project locks based on the given office mask, project mask, and application mask.
+     *
+     * @param officeMask the office mask
+     * @param projMask the project mask
+     * @param appMask the application mask
+     * @return the list of project locks
+     */
+    public abstract List<T> retrieveLocks(String officeMask, String projMask, String appMask);
+
+    /**
+     * Returns the requested lock based on given office, project, and application.
+     *
+     * @param office the office
+     * @param projectName the project
+     * @param applicationName the application
+     * @return the matching project lock or null
+     * @throws org.jooq.exception.TooManyRowsException if the provided arguments match more than one row.
+     */
+    public abstract T retrieveLock(String office, String projectName, String applicationName);
 
     /**
      * Determines if a project lock is active for the given parameters.
@@ -89,62 +99,6 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
                     projectId, appId, office);
                 });
         return parseBool(s);
-    }
-
-    /**
-     * Returns the list of project locks based on the given office mask, project mask, and application mask.
-     *
-     * @param officeMask the office mask
-     * @param projMask the project mask
-     * @param appMask the application mask
-     * @return the list of project locks
-     */
-    public List<ProjectLock> retrieveLocks(String officeMask, String projMask, String appMask) {
-        return CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
-                        projMask, appMask, "UTC", officeMask)
-                .map(ProjectLockDao::buildLockFromCatLocksRecord);
-    }
-
-    /**
-     * Returns the requested lock based on given office, project, and application.
-     *
-     * @param office the office
-     * @param projectName the project
-     * @param applicationName the application
-     * @return the matching project lock or null
-     * @throws TooManyRowsException if the provided arguments match more then one row.
-     */
-    public ProjectLock retrieveLock(String office, String projectName, String applicationName) {
-        ProjectLock retval = null;
-
-        List<ProjectLock> locks = CWMS_PROJECT_PACKAGE.call_CAT_LOCKS(dsl.configuration(),
-                        projectName, applicationName, "UTC", office)
-                .map(ProjectLockDao::buildLockFromCatLocksRecord);
-        if (locks.size() > 1) {
-            throw new TooManyRowsException("Provided arguments matched " + locks.size() + " rows");
-        } else if (locks.size() == 1) {
-            retval = locks.get(0);
-        }
-
-        return retval;
-    }
-
-    private static @NotNull ProjectLock buildLockFromCatLocksRecord(Record catRecord) {
-        String officeId = catRecord.getValue(OFFICE_ID, String.class);
-        String projectId = catRecord.getValue(PROJECT_ID, String.class);
-        String applicationId = catRecord.getValue(APPLICATION_ID, String.class);
-
-        String acquireStr = catRecord.getValue(ACQUIRE_TIME, String.class);
-        Instant acquireTime = acquireStr != null ? Instant.parse(acquireStr) : null;
-
-        return new ProjectLock.Builder(officeId, projectId, applicationId)
-                .withAcquireTime(acquireTime)
-                .withSessionUser(catRecord.getValue(SESSION_USER, String.class))
-                .withOsUser(catRecord.getValue(OS_USER, String.class))
-                .withSessionProgram(catRecord.getValue(SESSION_PROGRAM, String.class))
-                .withSessionMachine(catRecord.getValue(SESSION_MACHINE, String.class))
-                .build()
-                ;
     }
 
     /**
@@ -180,13 +134,15 @@ public class ProjectLockDao extends JooqDao<ProjectLock> {
 
 
     /**
-     * Denies the revocation of a lock.
+     * Denies the revocation of a lock, scoped to the given office's session context.
      *
+     * @param sessionOffice the office to use for the session, or null to leave the session
+     *                      office unrestricted
      * @param lockId the ID of the lock to deny revocation for
      */
-    public void denyLockRevocation(String lockId) {
+    public void denyLockRevocation(String sessionOffice, String lockId) {
         connection(dsl, c -> {
-            Configuration conf = DSL.using(c, SQLDialect.ORACLE18C).configuration();
+            Configuration conf = getDslContext(c, sessionOffice).configuration();
             CWMS_PROJECT_PACKAGE.call_DENY_LOCK_REVOCATION(conf, lockId);
         });
     }

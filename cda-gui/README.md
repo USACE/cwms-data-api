@@ -11,10 +11,35 @@ Setup the project by running:
 
 ## Development
 
+For user registration, office assignment, and the required Admin and PD roles,
+see the [user onboarding guide](../docs/source/user-onboarding.md).
+
 To run the project in dev:
 `npm run dev`
 
-## Production Files
+## Local onboarding demo
+
+Run `npm run dev:onboarding` and open
+http://127.0.0.1:18742/cwms-data/user-roles. Click **Log in** to use the sample
+administrator, then **Onboard users**. No Docker, real identity provider, or
+database is needed. This development script serves an in-memory API; it does not
+validate real database authorization and is not included in production builds.
+
+| Sample user        | Starting state                                         |
+| ------------------ | ------------------------------------------------------ |
+| `alex.hq`          | HQ with All Users and CWMS Users; onboarding candidate |
+| `blair.unassigned` | No office; onboarding candidate                        |
+| `casey.baseline`   | HQ with All Users only; onboarding candidate           |
+| `devon.tulsa`      | Existing SWT read/write user                           |
+| `ellis.multi`      | Existing HQ, SWT, and SPK memberships                  |
+| `frankie.hq.admin` | Established HQ administrator; excluded from onboarding |
+| `gray.sacramento`  | Existing SPK read-only user                            |
+
+The sample administrator has Admin and PD in SWT and SPK. Saves update the sample
+users until the server restarts. **Reset sample users** restores the initial data.
+Run `npm run test:user-roles` to exercise onboarding in Chromium with these fixtures.
+
+## Production build
 
 To build the project:
 `npm run build`
