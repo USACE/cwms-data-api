@@ -110,7 +110,7 @@ jobs:
             gradle-build-cache-${{ runner.os }}-${{ github.run_id }}-
             gradle-build-cache-${{ runner.os }}-
       - name: integration tests   
-        run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
+        run: ./gradlew -x test integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
       - name: Create matrix job badge
         if: success() || failure() # always run even if the previous step fails
         uses: ./.github/actions/badge
