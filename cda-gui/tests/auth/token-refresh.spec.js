@@ -1,5 +1,43 @@
 import { expect, test } from "@playwright/test";
 
+for (const pattern of [".*", "CHARLES.*", "^CHARLES\\.G.*$", "CHARLES"]) {
+  test(`assign office preserves the username regex ${pattern}`, async ({ page }) => {
+    await mockDeployment(page, "pkce");
+    const users = [{ "user-name": "CHARLES.GRAHAM", roles: {} }];
+    await page.route("**/cwms-data/offices*", (route) =>
+      route.fulfill({ json: [{ name: "SWT", "long-name": "Tulsa" }] }),
+    );
+    await page.route("**/cwms-data/roles", (route) =>
+      route.fulfill({ json: ["All Users", "CWMS Users"] }),
+    );
+    await page.route("**/cwms-data/users?*", (route) => {
+      const params = new URL(route.request().url()).searchParams;
+      const search = params.get("username-like");
+      const matches = search
+        ? users.filter((user) => new RegExp(search, "i").test(user["user-name"]))
+        : [];
+      return route.fulfill({ json: { users: matches, total: matches.length } });
+    });
+    await page.goto("/cwms-data/user-roles");
+    await page.getByRole("button", { name: "Assign office", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("textbox", { name: "Username", exact: true }).fill(pattern);
+    const searchRequest = page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return (
+        url.pathname === "/cwms-data/users" && url.searchParams.has("username-like")
+      );
+    });
+    await dialog.getByRole("button", { name: "Search", exact: true }).click();
+    const params = new URL((await searchRequest).url()).searchParams;
+    expect(params.get("username-like")).toBe(pattern);
+    expect(params.has("office")).toBe(false);
+    await expect(
+      dialog.getByRole("button", { name: "CHARLES.GRAHAM", exact: true }),
+    ).toBeVisible();
+  });
+}
+
 test("published user hooks search across offices, assign membership, and save a preset", async ({
   page,
 }) => {
@@ -23,7 +61,9 @@ test("published user hooks search across offices, assign membership, and save a 
   await page.route("**/cwms-data/users?*", (route) => {
     const params = new URL(route.request().url()).searchParams;
     searches.push(params);
-    const users = !params.has("office") || user.roles.SWT ? [user] : [];
+    const pattern = params.get("username-like");
+    const matches = !pattern || new RegExp(pattern, "i").test(user["user-name"]);
+    const users = matches && (!params.has("office") || user.roles.SWT) ? [user] : [];
     return route.fulfill({ json: { users, total: users.length } });
   });
   await page.route("**/cwms-data/user/new.staff/roles/SWT", (route) => {
@@ -69,8 +109,7 @@ test("published user hooks search across offices, assign membership, and save a 
   ]);
   expect(
     searches.some(
-      (params) =>
-        params.get("username-like") === "new\\.staff" && !params.has("office"),
+      (params) => params.get("username-like") === "new.staff" && !params.has("office"),
     ),
   ).toBe(true);
   expect(user.roles.HQ).toEqual(["All Users"]);
