@@ -51,11 +51,9 @@ import io.javalin.http.HttpCode;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiFormParam;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -66,6 +64,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class BlobControllerV2 extends BlobController {
+    private static final String REASON = "Query parameter used instead";
 
     public BlobControllerV2(MetricRegistry metrics) {
         super(metrics);
@@ -87,19 +86,13 @@ public final class BlobControllerV2 extends BlobController {
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
-        formParams = {
-            @OpenApiFormParam(name = "office-id", required = true),
-            @OpenApiFormParam(name = "id", required = true),
-            @OpenApiFormParam(name = "description"),
-            @OpenApiFormParam(name = "media-type-id"),
-            @OpenApiFormParam(name = "value", type = File.class, required = true)
-        },
         method = HttpMethod.POST,
         tags = {TAG}
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
+            logUnusedPathParameter(ctx, OFFICE, REASON);
             DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -139,20 +132,13 @@ public final class BlobControllerV2 extends BlobController {
                 + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
                 + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
         },
-        formParams = {
-            @OpenApiFormParam(name = "office-id"),
-            @OpenApiFormParam(name = "id"),
-            @OpenApiFormParam(name = "description"),
-            @OpenApiFormParam(name = "media-type-id"),
-            @OpenApiFormParam(name = "value", type = File.class)
-        },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
         logUnusedPathParameter(ctx, BLOB_ID, "Body contains information");
-
+        logUnusedPathParameter(ctx, OFFICE, "Body contains information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
@@ -203,9 +189,7 @@ public final class BlobControllerV2 extends BlobController {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
         queryParams = {
-            @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "owning office of the blob to be deleted"),
-            @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+            @OpenApiParam(name = BLOB_ID, required = false, description = "If this _query_ parameter is provided the id _path_ parameter "
                 + "is ignored and the value of the query parameter is used.   "
                 + "Note: this query parameter is necessary for id's that contain '/' or other special "
                 + "characters. This is due to limitations in path pattern matching. "
@@ -217,7 +201,8 @@ public final class BlobControllerV2 extends BlobController {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
-        super.delete(ctx, blobId);
+        String office = ctx.queryParam(OFFICE);
+        super.delete(ctx, blobId, office);
     }
 
     @OpenApi(
@@ -258,6 +243,7 @@ public final class BlobControllerV2 extends BlobController {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
+        logUnusedPathParameter(ctx, OFFICE, REASON);
         super.getAll(ctx);
     }
 
@@ -274,8 +260,7 @@ public final class BlobControllerV2 extends BlobController {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
         queryParams = {
-            @OpenApiParam(name = OFFICE, description = "Specifies the owning office."),
-            @OpenApiParam(name = BLOB_ID, description = "If this _query_ parameter is provided the id _path_ parameter "
+            @OpenApiParam(name = BLOB_ID, required = false, description = "If this _query_ parameter is provided the id _path_ parameter "
                 + "is ignored and the value of the query parameter is used.   "
                 + "Note: this query parameter is necessary for id's that contain '/' or other special "
                 + "characters. This is due to limitations in path pattern matching. "
@@ -293,7 +278,8 @@ public final class BlobControllerV2 extends BlobController {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
-        super.getOne(ctx, blobId);
+        String office = ctx.pathParam(OFFICE);
+        super.getOne(ctx, blobId, office);
     }
 
     private Blob parseMultipartBlob(Context ctx) {

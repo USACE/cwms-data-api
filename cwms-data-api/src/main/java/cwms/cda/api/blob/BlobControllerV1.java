@@ -34,6 +34,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.data.dto.Blob;
@@ -126,7 +127,8 @@ public class BlobControllerV1 extends BlobController {
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
-        super.getOne(ctx, blobId);
+        String office = ctx.queryParam(OFFICE);
+        super.getOne(ctx, blobId, office);
     }
 
 
@@ -196,6 +198,7 @@ public class BlobControllerV1 extends BlobController {
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
-        super.delete(ctx, blobId);
+        String office = requiredParam(ctx, OFFICE);
+        super.delete(ctx, blobId, office);
     }
 }

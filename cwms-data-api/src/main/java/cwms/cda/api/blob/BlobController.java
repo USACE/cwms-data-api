@@ -40,7 +40,6 @@ import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -147,8 +146,7 @@ public abstract class BlobController extends BaseCrudHandler {
         }
     }
 
-    @Override
-    public void getOne(@NotNull Context ctx, @NotNull String blobId) {
+    public void getOne(@NotNull Context ctx, @NotNull String blobId, String officeId) {
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             String idQueryParam = ctx.queryParam(BLOB_ID);
@@ -158,8 +156,7 @@ public abstract class BlobController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
 
             BlobAccess dao = chooseBlobAccess(dsl);
-            String officeQP = ctx.queryParam(OFFICE);
-            Optional<String> office = Optional.ofNullable(officeQP);
+            Optional<String> office = Optional.ofNullable(officeId);
 
 
             final Long offset;
@@ -250,15 +247,13 @@ public abstract class BlobController extends BaseCrudHandler {
         }
     }
 
-    @Override
-    public void delete(@NotNull Context ctx, @NotNull String blobId) {
+    public void delete(@NotNull Context ctx, @NotNull String blobId, String office) {
         try (Timer.Context ignored = markAndTime(DELETE)) {
             String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
             DSLContext dsl = getDslContext(ctx);
-            String office = requiredParam(ctx, OFFICE);
             BlobAccess dao = chooseBlobAccess(dsl);
             dao.delete(office, blobId);
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
