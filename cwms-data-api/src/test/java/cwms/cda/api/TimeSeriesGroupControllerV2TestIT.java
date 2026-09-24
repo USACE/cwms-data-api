@@ -27,12 +27,14 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
+import static cwms.cda.api.Controllers.COLLECTION_PATCH_STRATEGY;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
@@ -635,6 +637,324 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .log().ifValidationFails()
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
+                .body("assigned-time-series[0].timeseries-id", equalTo(TS1));
+    }
+
+    @Test
+    void test_v2_patch_merge_strategy_keeps_existing_assignments() throws Exception {
+        String officeId = user.getOperatingOffice();
+        TimeSeriesCategory cat = createCategory(officeId, "test_v2_strategy_merge");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_v2_strategy_merge",
+                "IntegrationTesting", "sharedTsAliasId", TS1);
+        group.getAssignedTimeSeries().add(new AssignedTimeSeries(officeId, TS1, "AliasId1", TS1, 1));
+        groupsToCleanup.add(group);
+        createGroup(group);
+
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
+                .withAssign(Collections.singletonList(new AssignedTimeSeries(officeId, TS2, "AliasId2", TS2, 2)))
+                .withUnassign(Collections.emptyList())
+                .build();
+
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+                .withOfficeId(officeId)
+                .withId(group.getId())
+                .withTimeSeriesCategory(cat)
+                .withDescription(group.getDescription())
+                .withSharedAliasId(group.getSharedAliasId())
+                .withSharedRefTsId(group.getSharedRefTsId())
+                .withMembership(membership)
+                .build();
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(patchBody(patch))
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(COLLECTION_PATCH_STRATEGY, "merge")
+        .when()
+                .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // MERGE: TS2 is added alongside the existing TS1.
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+                .get(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("assigned-time-series.size()", is(2))
+                .body("assigned-time-series.timeseries-id", hasItem(TS1))
+                .body("assigned-time-series.timeseries-id", hasItem(TS2))
+                .body("assigned-time-series.alias-id", hasItem("AliasId1"))
+                .body("assigned-time-series.alias-id", hasItem("AliasId2"));
+    }
+
+    @Test
+    void test_v2_patch_overwrite_strategy_replaces_existing_assignments() throws Exception {
+        String officeId = user.getOperatingOffice();
+        TimeSeriesCategory cat = createCategory(officeId, "test_v2_strategy_overwrite");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_v2_strategy_overwrite",
+                "IntegrationTesting", "sharedTsAliasId", TS1);
+        List<AssignedTimeSeries> assigned = group.getAssignedTimeSeries();
+        assigned.add(new AssignedTimeSeries(officeId, TS1, "AliasId1", TS1, 1));
+        assigned.add(new AssignedTimeSeries(officeId, TS2, "AliasId2", TS2, 2));
+        groupsToCleanup.add(group);
+        createGroup(group);
+
+        // Re-assign TS1 with a new alias and add TS3. TS2 is not named, so OVERWRITE should drop it.
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
+                .withAssign(Arrays.asList(
+                        new AssignedTimeSeries(officeId, TS1, "NewAliasId1", TS1, 1),
+                        new AssignedTimeSeries(officeId, TS3, "AliasId3", TS3, 3)))
+                .withUnassign(Collections.emptyList())
+                .build();
+
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+                .withOfficeId(officeId)
+                .withId(group.getId())
+                .withTimeSeriesCategory(cat)
+                .withDescription(group.getDescription())
+                .withSharedAliasId(group.getSharedAliasId())
+                .withSharedRefTsId(group.getSharedRefTsId())
+                .withMembership(membership)
+                .build();
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(patchBody(patch))
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(COLLECTION_PATCH_STRATEGY, "overwrite")
+        .when()
+                .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+                .get(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("assigned-time-series.size()", is(2))
+                .body("assigned-time-series.timeseries-id", hasItem(TS1))
+                .body("assigned-time-series.timeseries-id", hasItem(TS3))
+                .body("assigned-time-series.timeseries-id", not(hasItem(TS2)))
+                .body("assigned-time-series.alias-id", hasItem("NewAliasId1"))
+                .body("assigned-time-series.alias-id", not(hasItem("AliasId1")));
+    }
+
+    @Test
+    void test_v2_patch_overwrite_strategy_with_rename() throws Exception {
+        String officeId = user.getOperatingOffice();
+        TimeSeriesCategory cat = createCategory(officeId, "test_v2_strategy_rename");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_v2_strategy_rename_orig",
+                "IntegrationTesting", "sharedTsAliasId", TS1);
+        List<AssignedTimeSeries> assigned = group.getAssignedTimeSeries();
+        assigned.add(new AssignedTimeSeries(officeId, TS1, "AliasId1", TS1, 1));
+        assigned.add(new AssignedTimeSeries(officeId, TS2, "AliasId2", TS2, 2));
+        createGroup(group);
+
+        String newGroupId = "test_v2_strategy_rename_new";
+        groupsToCleanup.add(new TimeSeriesGroup(cat, officeId, newGroupId,
+                "IntegrationTesting", "sharedTsAliasId", TS1));
+
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
+                .withAssign(Collections.singletonList(new AssignedTimeSeries(officeId, TS3, "AliasId3", TS3, 3)))
+                .withUnassign(Collections.emptyList())
+                .build();
+
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+                .withOfficeId(officeId)
+                .withId(newGroupId)
+                .withTimeSeriesCategory(cat)
+                .withDescription(group.getDescription())
+                .withSharedAliasId(group.getSharedAliasId())
+                .withSharedRefTsId(group.getSharedRefTsId())
+                .withMembership(membership)
+                .build();
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(patchBody(patch))
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(COLLECTION_PATCH_STRATEGY, "overwrite")
+        .when()
+                .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Renamed group carries only the overwritten assignment.
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+                .get(V2_GROUP_PATH + "/" + officeId + "/" + newGroupId)
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("id", equalTo(newGroupId))
+                .body("assigned-time-series.size()", is(1))
+                .body("assigned-time-series[0].timeseries-id", equalTo(TS3));
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+                .get(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
+    @Test
+    void test_v2_patch_overwrite_strategy_applies_explicit_unassign() throws Exception {
+        String officeId = user.getOperatingOffice();
+        TimeSeriesCategory cat = createCategory(officeId, "test_v2_strategy_ow_unassign");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_v2_strategy_ow_unassign",
+                "IntegrationTesting", "sharedTsAliasId", TS1);
+        List<AssignedTimeSeries> assigned = group.getAssignedTimeSeries();
+        assigned.add(new AssignedTimeSeries(officeId, TS1, "AliasId1", TS1, 1));
+        assigned.add(new AssignedTimeSeries(officeId, TS2, "AliasId2", TS2, 2));
+        groupsToCleanup.add(group);
+        createGroup(group);
+
+        // Overwrite with TS2 + TS3 while explicitly unassigning TS1 (already removed by the
+        // overwrite, so this must not fail).
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
+                .withAssign(Arrays.asList(
+                        new AssignedTimeSeries(officeId, TS2, "AliasId2", TS2, 2),
+                        new AssignedTimeSeries(officeId, TS3, "AliasId3", TS3, 3)))
+                .withUnassign(Collections.singletonList(CwmsId.buildCwmsId(officeId, TS1)))
+                .build();
+
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+                .withOfficeId(officeId)
+                .withId(group.getId())
+                .withTimeSeriesCategory(cat)
+                .withDescription(group.getDescription())
+                .withSharedAliasId(group.getSharedAliasId())
+                .withSharedRefTsId(group.getSharedRefTsId())
+                .withMembership(membership)
+                .build();
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(patchBody(patch))
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(COLLECTION_PATCH_STRATEGY, "overwrite")
+        .when()
+                .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+                .get(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("assigned-time-series.size()", is(2))
+                .body("assigned-time-series.timeseries-id", hasItem(TS2))
+                .body("assigned-time-series.timeseries-id", hasItem(TS3))
+                .body("assigned-time-series.timeseries-id", not(hasItem(TS1)));
+    }
+
+    @Test
+    void test_v2_patch_invalid_strategy_is_rejected() throws Exception {
+        String officeId = user.getOperatingOffice();
+        TimeSeriesCategory cat = createCategory(officeId, "test_v2_strategy_invalid");
+        TimeSeriesGroup group = new TimeSeriesGroup(cat, officeId, "test_v2_strategy_invalid",
+                "IntegrationTesting", "sharedTsAliasId", TS1);
+        group.getAssignedTimeSeries().add(new AssignedTimeSeries(officeId, TS1, "AliasId1", TS1, 1));
+        groupsToCleanup.add(group);
+        createGroup(group);
+
+        TimeSeriesGroupMembership membership = new TimeSeriesGroupMembership.Builder()
+                .withAssign(Collections.singletonList(new AssignedTimeSeries(officeId, TS2, "AliasId2", TS2, 2)))
+                .withUnassign(Collections.emptyList())
+                .build();
+
+        // CollectionPatchStrategy.strategyFor throws UnsupportedOperationException, which the
+        // API maps to 501.
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+                .withOfficeId(officeId)
+                .withId(group.getId())
+                .withTimeSeriesCategory(cat)
+                .withDescription(group.getDescription())
+                .withSharedAliasId(group.getSharedAliasId())
+                .withSharedRefTsId(group.getSharedRefTsId())
+                .withMembership(membership)
+                .build();
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .contentType(Formats.JSON)
+                .body(patchBody(patch))
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(COLLECTION_PATCH_STRATEGY, "not-a-strategy")
+        .when()
+                .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_NOT_IMPLEMENTED));
+
+        given()
+                .log().ifValidationFails()
+                .accept(Formats.JSON)
+                .queryParam(OFFICE, officeId)
+                .queryParam(CATEGORY_OFFICE_ID, officeId)
+                .queryParam(CATEGORY_ID, cat.getId())
+        .when()
+                .get(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
+        .then()
+                .log().ifValidationFails()
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("assigned-time-series.size()", is(1))
                 .body("assigned-time-series[0].timeseries-id", equalTo(TS1));
     }
 }
