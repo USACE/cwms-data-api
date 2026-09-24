@@ -247,13 +247,12 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             String mergeStrategyVal = ctx.queryParamAsClass(COLLECTION_PATCH_STRATEGY, String.class).getOrDefault(CollectionPatchStrategy.MERGE.name());
             CollectionPatchStrategy mergeStrategy = CollectionPatchStrategy.strategyFor(mergeStrategyVal);
 
-            List<AssignedTimeSeries> newAndExistingAssignedTimeSeries;
-            if (mergeStrategy == CollectionPatchStrategy.OVERWRITE) {
-                dao.unassignForOffice(categoryId, oldGroupId, patch.getOfficeId(), office);
-                newAndExistingAssignedTimeSeries = requestedAssigned(membership);
-            } else {
-                newAndExistingAssignedTimeSeries = mergeAssigned(existingGroup, membership);
-            }
+            // OVERWRITE: the DAO unassigns the office's existing assignments and stores only the
+            // assignments in the request body, in one transaction. MERGE: keep existing and merge.
+            boolean replaceAssigned = mergeStrategy == CollectionPatchStrategy.OVERWRITE;
+            List<AssignedTimeSeries> newAndExistingAssignedTimeSeries = replaceAssigned
+                    ? requestedAssigned(membership)
+                    : mergeAssigned(existingGroup, membership);
             // Store metadata/assignments against the group's CURRENT id - renaming (if requested) is
             // a separate step below. Targeting patch.getId() here would create a second row under
             // the new id before the rename call runs, and the rename would then collide with it.
@@ -263,7 +262,8 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                     patch.getDescription(),
                     patch.getSharedAliasId(),
                     patch.getSharedRefTsId()), newAndExistingAssignedTimeSeries);
-            List<CwmsId> missingTimeSeries = dao.create(groupWithAssignment, false, ignoreNulls, ignoreMissing);
+            List<CwmsId> missingTimeSeries = dao.create(groupWithAssignment, false, ignoreNulls, ignoreMissing,
+                    replaceAssigned);
 
             //Handle rename
             String currentGroupId = oldGroupId;
