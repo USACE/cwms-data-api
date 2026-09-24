@@ -84,7 +84,10 @@ export default function KeyUsageExample() {
         </code>
       </pre>
       <Text>
-        <Link href="https://cwms-cli.readthedocs.io/en/latest/cli.html#cwms-cli-users-roles-list-all">
+        <Link
+          className="text-blue-700 underline underline-offset-2"
+          href="https://cwms-cli.readthedocs.io/en/latest/cli.html#cwms-cli-users-roles-list-all"
+        >
           cwms-cli roles command documentation
         </Link>
       </Text>
