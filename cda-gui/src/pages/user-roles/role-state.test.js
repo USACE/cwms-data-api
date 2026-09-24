@@ -45,11 +45,44 @@ test("admin includes paired-data and acquisition access and reports unavailable 
 
 import {
   filterUsers,
+  onboardingUsers,
+  officeAssignmentOffices,
   paginateUsers,
   rolesForOffice,
   sameRoles,
   usersForOffice,
 } from "./role-state.js";
+
+test("onboarding includes unassigned and basic HQ-only users across the full office map", () => {
+  const candidates = [
+    { "user-name": "no-map" },
+    { "user-name": "no-office", roles: {} },
+    { "user-name": "empty-office", roles: { SWT: [] } },
+    { "user-name": "hq-baseline", roles: { HQ: ["All Users"] } },
+    { "user-name": "hq-user", roles: { HQ: ["All Users", "CWMS Users"], SWT: [] } },
+    { "user-name": "lowercase", roles: { hq: ["cwms users"] } },
+  ];
+  const assigned = [
+    { roles: { SWT: ["All Users"] } },
+    { roles: { HQ: ["CWMS Users"], SWT: ["All Users"] } },
+    { roles: { HQ: ["All Users", "CWMS Users", "CWMS User Admins"] } },
+    { roles: { HQ: ["CWMS PD Users"] } },
+  ];
+  assert.deepEqual(onboardingUsers([...candidates, ...assigned]), candidates);
+});
+
+test("office assignment requires both Admin and PD in the same office", () => {
+  assert.deepEqual(
+    officeAssignmentOffices({
+      HQ: ["CWMS User Admins"],
+      SPK: ["CWMS PD Users"],
+      SWT: ["CWMS User Admins", "CWMS PD Users"],
+      NWD: ["cwms user admins", "cwms pd users"],
+    }),
+    ["NWD", "SWT"],
+  );
+  assert.deepEqual(officeAssignmentOffices(), []);
+});
 
 const users = [
   {

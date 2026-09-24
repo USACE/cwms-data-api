@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -37,7 +37,7 @@ import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
-import cwms.cda.data.dto.project.ProjectLock;
+import cwms.cda.data.dto.project.ProjectLockV1;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -67,7 +67,7 @@ class ProjectLockDaoTest {
 
         DSLContext dsl = getDslContext(OFFICE);
         ProjectDao prjDao = new ProjectDao(dsl);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
         String projId = "needsRevoke";
         String appId = "needsRevoke_test";
@@ -80,7 +80,7 @@ class ProjectLockDaoTest {
             int revokeTimeout = 10;
             boolean revokeExisting = false;
 
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+            ProjectLockV1 req1 = new ProjectLockV1.Builder(OFFICE, projId, appId).build();
             String lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
             try {
                 assertNotNull(lockId);
@@ -106,7 +106,7 @@ class ProjectLockDaoTest {
     @Test
     void test_has_rights_must_exist() throws SQLException {
         DSLContext dsl = getDslContext(OFFICE);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
         String projId = "ANonProject";
         String appId = "dont_exist";
@@ -123,7 +123,7 @@ class ProjectLockDaoTest {
 
         DSLContext dsl = getDslContext(OFFICE);
         ProjectDao prjDao = new ProjectDao(dsl);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
         String projId = "hasRights";
         String appId = "unitest";
@@ -147,7 +147,7 @@ class ProjectLockDaoTest {
     @Test
     void test_can_update_rights_for_project_that_dont_exist() throws SQLException {
         DSLContext dsl = getDslContext(OFFICE);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
         String projId = "AAnoProj";
         String appId = "dont_exist";
@@ -167,7 +167,7 @@ class ProjectLockDaoTest {
     @Test
     void test_cat_lock_revoke_rights() throws SQLException {
         DSLContext dsl = getDslContext(OFFICE);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
         ProjectDao prjDao = new ProjectDao(dsl);
 
         String projId = "catRights";
@@ -210,7 +210,7 @@ class ProjectLockDaoTest {
 
         DSLContext dsl = getDslContext(OFFICE);
         ProjectDao prjDao = new ProjectDao(dsl);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
         String projId = "canUnset";
         String appId = "revoke_test";
@@ -221,7 +221,7 @@ class ProjectLockDaoTest {
             int revokeTimeout = 10;
             boolean revokeExisting = false;
 
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+            ProjectLockV1 req1 = new ProjectLockV1.Builder(OFFICE, projId, appId).build();
             String lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
             try {
                 assertNotNull(lockId);
@@ -270,12 +270,12 @@ class ProjectLockDaoTest {
 
     }
 
-    private void deleteProject(ProjectDao prjDao, String projId, ProjectLockDao lockDao, String appId) {
+    private void deleteProject(ProjectDao prjDao, String projId, ProjectLockDao<ProjectLockV1> lockDao, String appId) {
         try {
             prjDao.delete(OFFICE, projId, DeleteRule.DELETE_ALL);
         } catch (Exception e) {
             logger.at(Level.WARNING).withCause(e).log("Failed to delete project: %s", projId);
-            List<ProjectLock> locks = lockDao.retrieveLocks(OFFICE, projId, appId);
+            List<ProjectLockV1> locks = lockDao.retrieveLocks(OFFICE, projId, appId);
             locks.forEach(lock -> {
                 logger.atFine().log("Remaining Locks: %s %s %s %s %s %s %s",
                        lock.getProjectId(), lock.getApplicationId(), lock.getAcquireTime(),
@@ -289,7 +289,7 @@ class ProjectLockDaoTest {
 
         DSLContext dsl = getDslContext(OFFICE);
         ProjectDao prjDao = new ProjectDao(dsl);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
         String projId = "isLockd";
         String appId = "isLocked_test";
@@ -301,7 +301,7 @@ class ProjectLockDaoTest {
             boolean revokeExisting = true;
 
             lockDao.updateLockRevokerRights(OFFICE, projId, appId, USER_ID, true);
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
+            ProjectLockV1 req1 = new ProjectLockV1.Builder(OFFICE, projId, appId).build();
             lockId = lockDao.requestLock(req1, revokeExisting, revokeTimeout);
 
             assertNotNull(lockId);
@@ -331,7 +331,7 @@ class ProjectLockDaoTest {
 
         DSLContext dsl = getDslContext(OFFICE);
         ProjectDao prjDao = new ProjectDao(dsl);
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
         String projId = "catLocks";
         String projId1 = "catLocks1";
@@ -348,16 +348,16 @@ class ProjectLockDaoTest {
             lockDao.updateLockRevokerRights(OFFICE, projId1, appId, USER_ID, true);
             lockDao.updateLockRevokerRights(OFFICE, projId2, appId, USER_ID, true);
 
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId1, appId).build();
+            ProjectLockV1 req1 = new ProjectLockV1.Builder(OFFICE, projId1, appId).build();
             String lock1 = lockDao.requestLock(req1, true, revokeTimeout);
             assertTrue(lock1.length() > 8);
 
-            ProjectLock req2 = new ProjectLock.Builder(OFFICE, projId2, appId).build();
+            ProjectLockV1 req2 = new ProjectLockV1.Builder(OFFICE, projId2, appId).build();
             String lock2 = lockDao.requestLock(req2, false, revokeTimeout);
             assertTrue(lock2.length() > 8);
             assertNotEquals(lock1, lock2);
 
-            List<ProjectLock> locks = lockDao.retrieveLocks(OFFICE, projId + "*", appId);
+            List<ProjectLockV1> locks = lockDao.retrieveLocks(OFFICE, projId + "*", appId);
             assertNotNull(locks);
             assertFalse(locks.isEmpty());
 
