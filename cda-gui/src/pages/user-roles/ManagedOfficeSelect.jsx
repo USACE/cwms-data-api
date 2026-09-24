@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { useCdaOffices } from "@usace-watermanagement/groundwork-water";
 
 // Groundwork's current Dropdown keeps its own selection and overrides `value`.
 // Office grants must always display the same office that the form will submit.
@@ -9,6 +10,11 @@ export function ManagedOfficeSelect({
   onChange,
   disabled = false,
 }) {
+  const { data = [] } = useCdaOffices({
+    cdaUrl: import.meta.env.VITE_CDA_API_ROOT,
+  });
+  const names = new Map(data.map((office) => [office.name, office.longName]));
+  if (!names.get("HQ")) names.set("HQ", "Headquarters");
   return (
     <select
       id={id}
@@ -19,11 +25,13 @@ export function ManagedOfficeSelect({
       onChange={(event) => onChange(event.target.value)}
     >
       {!value && <option value="">Select an office</option>}
-      {offices.map((office) => (
-        <option key={office} value={office}>
-          {office}
-        </option>
-      ))}
+      {[...offices]
+        .sort((left, right) => left.localeCompare(right))
+        .map((office) => (
+          <option key={office} value={office}>
+            {names.get(office) ? `${office} - ${names.get(office)}` : office}
+          </option>
+        ))}
     </select>
   );
 }
