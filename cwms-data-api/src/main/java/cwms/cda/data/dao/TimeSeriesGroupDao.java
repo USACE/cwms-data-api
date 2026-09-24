@@ -475,6 +475,18 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls, boolean ignoreMissing) {
+        return create(group, failIfExists, ignoreNulls, ignoreMissing, false);
+    }
+
+    /**
+     * Stores the group and assigns its time series in a single transaction.
+     *
+     * @param replaceAssigned when true, all time series currently assigned to the group by the
+     *                        group's office are unassigned before the group's time series are
+     *                        assigned. If the assignment fails, the unassignment is rolled back.
+     */
+    public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls,
+            boolean ignoreMissing, boolean replaceAssigned) {
         return connectionResult(dsl, c -> {
             Configuration configuration = getDslContext(c, group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
@@ -484,6 +496,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                     group.getId(), group.getDescription(), formatBool(failIfExists),
                     formatBool(ignoreNulls), group.getSharedAliasId(),
                     group.getSharedRefTsId(), group.getOfficeId());
+                if (replaceAssigned) {
+                    unassignForOffice(configuration, categoryId, group.getId(),
+                        group.getOfficeId(), group.getOfficeId());
+                }
                 return assignTs(configuration, group, group.getOfficeId(), ignoreNulls, ignoreMissing);
             });
         });
