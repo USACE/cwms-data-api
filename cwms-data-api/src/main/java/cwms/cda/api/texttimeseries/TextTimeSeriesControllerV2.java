@@ -134,7 +134,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                 + "field. Each entry in regular-text-values must include date-time. Additionally, to patch a specific "
                 + "existing row, data-entry-date must also be provided -- that's what identifies which entry is being patched; "
                 + "every other row field may be omitted. "
-                + Controllers.COLLECTION_MERGE_STRATEGY + " controls how "
+                + Controllers.COLLECTION_PATCH_STRATEGY + " controls how "
                 + "regular-text-values is applied. Data outside the " + BEGIN + "/" + END + " window is never read or "
                 + "written, regardless of strategy. An omitted regular-text-values, or one given "
                 + "as an empty array, leaves the collection entirely untouched under every "
@@ -156,7 +156,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                     + "the default time zone of UTC shall be used."),
             @OpenApiParam(name = VERSION_DATE, description = "Specifies the version date of the "
                     + "text timeseries. If not specified, the latest version will be used."),
-            @OpenApiParam(name = Controllers.COLLECTION_MERGE_STRATEGY, type = CollectionPatchStrategy.class,
+            @OpenApiParam(name = Controllers.COLLECTION_PATCH_STRATEGY, type = CollectionPatchStrategy.class,
                     description = CollectionPatchStrategy.DESCRIPTION)
         },
         requestBody = @OpenApiRequestBody(
@@ -172,7 +172,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
     public void update(@NotNull Context ctx, @NotNull String tsId) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             CollectionPatchStrategy mergeStrategy = CollectionPatchStrategy.strategyFor(
-                    ctx.queryParam(Controllers.COLLECTION_MERGE_STRATEGY));
+                    ctx.queryParam(Controllers.COLLECTION_PATCH_STRATEGY));
             String office = getOffice(ctx);
             Instant begin = requiredInstant(ctx, BEGIN);
             Instant end = requiredInstant(ctx, END);

@@ -27,7 +27,7 @@ package cwms.cda.api.timeseriesgroup;
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
-import static cwms.cda.api.Controllers.COLLECTION_MERGE_STRATEGY;
+import static cwms.cda.api.Controllers.COLLECTION_PATCH_STRATEGY;
 import static cwms.cda.api.Controllers.CWMS_OFFICE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.GROUP_ID;
@@ -212,7 +212,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class, description = "Ignore null values in the request body. "
                 + IGNORE_NULLS + " is not used to unassign time series. Unassignment must be explicitly specified in the request body. "
                 + "Default: true"),
-            @OpenApiParam(name = COLLECTION_MERGE_STRATEGY, type = CollectionPatchStrategy.class,
+            @OpenApiParam(name = COLLECTION_PATCH_STRATEGY, type = CollectionPatchStrategy.class,
                 description = "Controls how the assign list in the request body is applied. OVERWRITE: all "
                     + "time series currently assigned to the group for this office are unassigned and only the "
                     + "time series in the request body are assigned. MERGE: the time series in the request body "
@@ -244,7 +244,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             }
 
             boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
-            String mergeStrategyVal = ctx.queryParamAsClass(COLLECTION_MERGE_STRATEGY, String.class).getOrDefault(CollectionPatchStrategy.MERGE.name());
+            String mergeStrategyVal = ctx.queryParamAsClass(COLLECTION_PATCH_STRATEGY, String.class).getOrDefault(CollectionPatchStrategy.MERGE.name());
             CollectionPatchStrategy mergeStrategy = CollectionPatchStrategy.strategyFor(mergeStrategyVal);
 
             List<AssignedTimeSeries> newAndExistingAssignedTimeSeries;

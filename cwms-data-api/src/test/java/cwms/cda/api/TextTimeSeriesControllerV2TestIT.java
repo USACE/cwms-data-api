@@ -67,7 +67,7 @@ final class TextTimeSeriesControllerV2TestIT extends TextTimeSeriesControllerTes
         // 1) retrieve and verify baseline state -- 5 rows, all sharing the same text-value
         //    (see store_reg_text_timeseries.sql)
         // 2) PATCH one row's text-value via the v2 endpoint with a minimal, partial body and
-        //    collection-merge-strategy=overwrite (the default; passed explicitly here for
+        //    collection-patch-strategy=overwrite (the default; passed explicitly here for
         //    clarity)
         // 3) retrieve and verify: per ADR-0017, OVERWRITE means the collection
         //    becomes exactly what the body named, within the begin/end window -- so the 4 rows
@@ -114,7 +114,7 @@ final class TextTimeSeriesControllerV2TestIT extends TextTimeSeriesControllerTes
             .accept(Formats.JSON)
             .queryParam(Controllers.BEGIN, startStr)
             .queryParam(Controllers.END, endStr)
-            .queryParam(Controllers.COLLECTION_MERGE_STRATEGY, "overwrite")
+            .queryParam(Controllers.COLLECTION_PATCH_STRATEGY, "overwrite")
             .contentType(Formats.JSON)
             .body(partialBody)
             .header(AUTHORIZATION, user.toHeaderValue())
@@ -160,7 +160,7 @@ final class TextTimeSeriesControllerV2TestIT extends TextTimeSeriesControllerTes
         // test reads the target row's actual data-entry-date back from the initial GET and builds
         // the PATCH body around it, instead of loading the fixture file.
         //
-        // collection-merge-strategy=merge instead of overwrite. Per ADR-0017, MERGE matches the
+        // collection-patch-strategy=merge instead of overwrite. Per ADR-0017, MERGE matches the
         // named row by that composite identity and updates just that row in place, leaving every
         // other existing row -- in or out of the window -- untouched. So unlike OVERWRITE, the
         // other 4 rows in the window survive.
@@ -198,7 +198,7 @@ final class TextTimeSeriesControllerV2TestIT extends TextTimeSeriesControllerTes
                 .orElseThrow(() -> new AssertionError(
                         "Could not find a row at " + startStr + " in the initial GET response"));
 
-        // 2) partial PATCH on v2 with collection-merge-strategy=merge. Names the target row's
+        // 2) partial PATCH on v2 with collection-patch-strategy=merge. Names the target row's
         // full identity -- date-time and data-entry-date -- and its new text-value; no
         // office-id/name, no other row field.
         String partialBody = "{\"regular-text-values\":[{\"date-time\":\"" + targetDateTimeMillis
@@ -211,7 +211,7 @@ final class TextTimeSeriesControllerV2TestIT extends TextTimeSeriesControllerTes
             .accept(Formats.JSON)
             .queryParam(Controllers.BEGIN, startStr)
             .queryParam(Controllers.END, endStr)
-            .queryParam(Controllers.COLLECTION_MERGE_STRATEGY, "merge")
+            .queryParam(Controllers.COLLECTION_PATCH_STRATEGY, "merge")
             .contentType(Formats.JSON)
             .body(partialBody)
             .header(AUTHORIZATION, user.toHeaderValue())

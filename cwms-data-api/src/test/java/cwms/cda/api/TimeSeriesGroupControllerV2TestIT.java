@@ -27,7 +27,7 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
-import static cwms.cda.api.Controllers.COLLECTION_MERGE_STRATEGY;
+import static cwms.cda.api.Controllers.COLLECTION_PATCH_STRATEGY;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
 import static cwms.cda.api.Controllers.OFFICE;
 import static io.restassured.RestAssured.given;
@@ -671,7 +671,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .contentType(Formats.JSON)
                 .body(patchBody(patch))
                 .header("Authorization", user.toHeaderValue())
-                .queryParam(COLLECTION_MERGE_STRATEGY, "merge")
+                .queryParam(COLLECTION_PATCH_STRATEGY, "merge")
         .when()
                 .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
         .then()
@@ -735,7 +735,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .contentType(Formats.JSON)
                 .body(patchBody(patch))
                 .header("Authorization", user.toHeaderValue())
-                .queryParam(COLLECTION_MERGE_STRATEGY, "overwrite")
+                .queryParam(COLLECTION_PATCH_STRATEGY, "overwrite")
         .when()
                 .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
         .then()
@@ -799,7 +799,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .contentType(Formats.JSON)
                 .body(patchBody(patch))
                 .header("Authorization", user.toHeaderValue())
-                .queryParam(COLLECTION_MERGE_STRATEGY, "overwrite")
+                .queryParam(COLLECTION_PATCH_STRATEGY, "overwrite")
         .when()
                 .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
         .then()
@@ -875,7 +875,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .contentType(Formats.JSON)
                 .body(patchBody(patch))
                 .header("Authorization", user.toHeaderValue())
-                .queryParam(COLLECTION_MERGE_STRATEGY, "overwrite")
+                .queryParam(COLLECTION_PATCH_STRATEGY, "overwrite")
         .when()
                 .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
         .then()
@@ -934,7 +934,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .contentType(Formats.JSON)
                 .body(patchBody(patch))
                 .header("Authorization", user.toHeaderValue())
-                .queryParam(COLLECTION_MERGE_STRATEGY, "not-a-strategy")
+                .queryParam(COLLECTION_PATCH_STRATEGY, "not-a-strategy")
         .when()
                 .patch(V2_GROUP_PATH + "/" + officeId + "/" + group.getId())
         .then()
