@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-for (const pattern of [".*", "CHARLES.*", "^CHARLES\\.G.*$", "CHARLES"]) {
+for (const pattern of [".*", "USER.*", "^USER\\.E.*$", "USER"]) {
   test(`assign office preserves the username regex ${pattern}`, async ({ page }) => {
     await mockDeployment(page, "pkce");
-    const users = [{ "user-name": "CHARLES.GRAHAM", roles: {} }];
+    const users = [{ "user-name": "USER.EXAMPLE", roles: {} }];
     await page.route("**/cwms-data/offices*", (route) =>
       route.fulfill({ json: [{ name: "SWT", "long-name": "Tulsa" }] }),
     );
@@ -33,7 +33,7 @@ for (const pattern of [".*", "CHARLES.*", "^CHARLES\\.G.*$", "CHARLES"]) {
     expect(params.get("username-like")).toBe(pattern);
     expect(params.has("office")).toBe(false);
     await expect(
-      dialog.getByRole("button", { name: "CHARLES.GRAHAM", exact: true }),
+      dialog.getByRole("button", { name: "USER.EXAMPLE", exact: true }),
     ).toBeVisible();
   });
 }

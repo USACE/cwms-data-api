@@ -100,8 +100,8 @@ export function AssignOfficeDialog({
         </Button>
       </form>
       <Text id="office-user-search-help" className="mt-2 text-sm">
-        Search is case-insensitive. Use .* for all users or CHARLES.* for usernames
-        containing CHARLES. Use {"\\."} to match a literal period.
+        Search is case-insensitive. Use .* for all users or USER.* for usernames
+        containing USER. Use {"\\."} to match a literal period.
       </Text>
       {usersQuery.error && <Notice kind="error">{usersQuery.error.message}</Notice>}
       {error && <Notice kind="error">{error}</Notice>}
