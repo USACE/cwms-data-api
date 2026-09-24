@@ -146,9 +146,10 @@ public abstract class BlobController extends BaseCrudHandler {
         }
     }
 
-    public void getOne(@NotNull Context ctx, @NotNull String blobId, String officeId) {
-
+    @Override
+    public void getOne(@NotNull Context ctx, @NotNull String blobId) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
+            String officeId = ctx.attribute(OFFICE);
             String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
@@ -247,7 +248,9 @@ public abstract class BlobController extends BaseCrudHandler {
         }
     }
 
-    public void delete(@NotNull Context ctx, @NotNull String blobId, String office) {
+    @Override
+    public void delete(@NotNull Context ctx, @NotNull String blobId) {
+        String office = ctx.attribute(OFFICE);
         try (Timer.Context ignored = markAndTime(DELETE)) {
             String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {

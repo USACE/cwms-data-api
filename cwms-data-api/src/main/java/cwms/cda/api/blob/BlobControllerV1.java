@@ -128,7 +128,8 @@ public class BlobControllerV1 extends BlobController {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
         String office = ctx.queryParam(OFFICE);
-        super.getOne(ctx, blobId, office);
+        ctx.attribute(OFFICE, office);
+        super.getOne(ctx, blobId);
     }
 
 
@@ -199,6 +200,7 @@ public class BlobControllerV1 extends BlobController {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
         String office = requiredParam(ctx, OFFICE);
-        super.delete(ctx, blobId, office);
+        ctx.attribute(OFFICE, office);
+        super.delete(ctx, blobId);
     }
 }

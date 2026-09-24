@@ -202,7 +202,8 @@ public final class BlobControllerV2 extends BlobController {
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
         String office = ctx.queryParam(OFFICE);
-        super.delete(ctx, blobId, office);
+        ctx.attribute(OFFICE, office);
+        super.delete(ctx, blobId);
     }
 
     @OpenApi(
@@ -279,7 +280,8 @@ public final class BlobControllerV2 extends BlobController {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
         String office = ctx.pathParam(OFFICE);
-        super.getOne(ctx, blobId, office);
+        ctx.attribute(OFFICE, office);
+        super.getOne(ctx, blobId);
     }
 
     private Blob parseMultipartBlob(Context ctx) {
