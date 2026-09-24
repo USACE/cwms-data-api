@@ -40,6 +40,7 @@ export default [
   },
   {
     id: "users",
+    requiresAuth: true,
     text: "Users",
     href: "/users",
     children: [

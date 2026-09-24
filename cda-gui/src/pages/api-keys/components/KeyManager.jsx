@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { useSearchParams } from "react-router-dom";
-import { useAuth } from "@usace-watermanagement/groundwork-water";
+import { useSessionAuth } from "../../../components/use-session-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@usace/groundwork";
 import { Notice } from "../../user-lists/components/StatusMessages";
@@ -25,9 +25,13 @@ import KeyAccessWarning from "./KeyAccessWarning";
 const cdaUrl = import.meta.env.VITE_CDA_API_ROOT;
 export default function KeyManager({ token }) {
   const [params] = useSearchParams();
-  const { profile } = useAuth();
+  const { profile } = useSessionAuth();
   const queryClient = useQueryClient();
-  const api = useMemo(() => createApiKeyClient(cdaUrl, token), [token]);
+  const tokenRef = useRef(token);
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+  const api = useMemo(() => createApiKeyClient(cdaUrl, () => tokenRef.current), []);
   const controller = useRef(null);
   const [keys, setKeys] = useState([]);
   const [loading, setLoading] = useState(true);

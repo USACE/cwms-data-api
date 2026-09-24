@@ -1,7 +1,7 @@
 // Routes are defined here to allow building a sitemap dynamically
 export const routePaths = [
-  { id: "api-keys", path: "api-keys" },
-  { id: "api-key-help", path: "api-keys/help" },
+  { id: "api-keys", path: "api-keys", requiresAuth: true },
+  { id: "api-key-help", path: "api-keys/help", requiresAuth: true },
   {
     id: "home",
     index: true,
@@ -34,16 +34,19 @@ export const routePaths = [
   },
   {
     id: "users",
+    requiresAuth: true,
     path: "users",
     sitemapPath: "users",
   },
   {
     id: "user-lists",
+    requiresAuth: true,
     path: "user-lists",
     sitemapPath: "user-lists",
   },
   {
     id: "user-roles",
+    requiresAuth: true,
     path: "user-roles",
     sitemapPath: "user-roles",
   },

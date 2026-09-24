@@ -205,6 +205,7 @@ test("rotation reports failures, cancellation and successful completion without 
   );
   expect(state.requests).not.toContain("DELETE");
   state.failure = null;
+  await page.getByRole("button", { name: "Dismiss notification" }).click();
   await page.getByRole("button", { name: "Generate replacement" }).click();
   await expect(toast(page)).toContainText("Replacement created");
   await dialog(page).getByRole("button", { name: "Close", exact: true }).click();

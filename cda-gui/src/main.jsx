@@ -31,6 +31,7 @@ import ApiKeyHelp from "./pages/api-keys/help.jsx";
 import { routePaths } from "./route-paths";
 import AppAuthProvider from "./components/AppAuthProvider.jsx";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary.jsx";
+import RequireSignIn from "./components/RequireSignIn.jsx";
 
 const queryClient = new QueryClient();
 const routeComponents = {
@@ -56,11 +57,16 @@ const router = createBrowserRouter(
       element: <Layout />,
       errorElement: <ErrorFallback />,
       children: [
-        ...routePaths.map(({ id, index, path }) => {
+        ...routePaths.map(({ id, index, path, requiresAuth }) => {
           const Component = routeComponents[id];
-          return index
-            ? { index: true, element: <Component /> }
-            : { path, element: <Component /> };
+          const element = requiresAuth ? (
+            <RequireSignIn>
+              <Component />
+            </RequireSignIn>
+          ) : (
+            <Component />
+          );
+          return index ? { index: true, element } : { path, element };
         }),
         { path: "*", element: <NotFound /> },
       ],

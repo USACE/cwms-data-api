@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CWMS_USER_ROLE_DESCRIPTIONS,
-  useAuth,
   useCdaRoles,
   useCdaUsers,
   useUpdateCdaUserRoles,
@@ -26,6 +25,7 @@ import {
 } from "react-icons/fa";
 
 import { HelpTip } from "../../components/HelpTip";
+import { useSessionAuth } from "../../components/use-session-auth";
 import { AssignOfficeDialog } from "./AssignOfficeDialog";
 import { OnboardingDialog } from "./OnboardingDialog";
 import { ManagedOfficeSelect } from "./ManagedOfficeSelect";
@@ -67,7 +67,7 @@ function updateSummary(userName, additions, removals) {
 }
 
 export default function UserRoles() {
-  const auth = useAuth();
+  const auth = useSessionAuth();
   const [office, setOffice] = useState("");
   const [selectedUserName, setSelectedUserName] = useState("");
   const [search, setSearch] = useState("");
@@ -101,12 +101,19 @@ export default function UserRoles() {
     cdaUrl,
     token: auth.token,
     office,
-    queryOptions: { enabled: auth.isAuth && Boolean(office) },
+    queryOptions: {
+      enabled: auth.isAuth && Boolean(office),
+      placeholderData: (data, query) =>
+        query?.queryKey[3] === office ? data : undefined,
+    },
   });
   const rolesQuery = useCdaRoles({
     cdaUrl,
     token: auth.token,
-    queryOptions: { enabled: auth.isAuth && adminOffices.length > 0 },
+    queryOptions: {
+      enabled: auth.isAuth && adminOffices.length > 0,
+      placeholderData: (data) => data,
+    },
   });
   const updateRoles = useUpdateCdaUserRoles({ cdaUrl, token: auth.token });
 
@@ -155,10 +162,23 @@ export default function UserRoles() {
     if (pagination.currentPage !== userPage) setUserPage(pagination.currentPage);
   }, [pagination.currentPage, userPage]);
 
+  const previousSelection = useRef(null);
   useEffect(() => {
-    setDraftRoles(currentRoles);
-    setRoleMode(matchCwmsUserRolePreset(currentRoles) ?? "custom");
-  }, [currentRoles]);
+    const previous = previousSelection.current;
+    const changedUser =
+      previous?.office !== office || previous?.userName !== selectedUserName;
+    if (changedUser || (previous && sameRoles(draftRoles, previous.roles))) {
+      if (!sameRoles(draftRoles, currentRoles) || changedUser) {
+        setDraftRoles(currentRoles);
+        setRoleMode(matchCwmsUserRolePreset(currentRoles) ?? "custom");
+      }
+    }
+    previousSelection.current = {
+      office,
+      userName: selectedUserName,
+      roles: currentRoles,
+    };
+  }, [currentRoles, office, selectedUserName, draftRoles]);
 
   function changeOffice(nextOffice) {
     setOffice(nextOffice);
@@ -233,24 +253,6 @@ export default function UserRoles() {
     } catch (error) {
       setMutationError(error?.message ?? "Unable to update this user's roles.");
     }
-  }
-
-  if (!auth.isAuth) {
-    return (
-      <Card className="mx-auto my-12 max-w-2xl p-8 text-center">
-        <div className="mx-auto mb-4 w-fit rounded-full bg-blue-50 p-4 text-blue-700">
-          <FaUserShield aria-hidden="true" className="h-8 w-8" />
-        </div>
-        <H1>User Roles</H1>
-        <Text className="mx-auto mt-3 max-w-lg">
-          Sign in with a CWMS User Administrator account to review staff and manage
-          office-scoped role assignments.
-        </Text>
-        <Button className="mt-6" type="button" onClick={auth.login}>
-          Log in
-        </Button>
-      </Card>
-    );
   }
 
   return (

@@ -9,19 +9,24 @@ export function createApiKeyClient(basePath, token, fetchApi = fetch) {
     new Configuration({
       basePath: basePath.replace(/\/$/, ""),
       fetchApi,
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      headers: { Accept: "application/json" },
     }),
   );
-  const options = { cache: "no-store" };
+  const options = () => ({
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${typeof token === "function" ? token() : token}`,
+    },
+  });
   return {
     async list(signal) {
-      const response = await api.getAuthKeysRaw({ ...options, signal });
+      const response = await api.getAuthKeysRaw({ ...options(), signal });
       return response.raw.json();
     },
     async get(keyName, signal) {
       const response = await api.getAuthKeysWithKeyNameRaw(
         { keyName },
-        { ...options, signal },
+        { ...options(), signal },
       );
       return response.raw.json();
     },
@@ -45,12 +50,12 @@ export function createApiKeyClient(basePath, token, fetchApi = fetch) {
             expires: expiration ?? undefined,
           },
         },
-        { ...options, signal },
+        { ...options(), signal },
       );
       return response.raw.json();
     },
     async revoke(keyName, signal) {
-      await api.deleteAuthKeysWithKeyNameRaw({ keyName }, { ...options, signal });
+      await api.deleteAuthKeysWithKeyNameRaw({ keyName }, { ...options(), signal });
     },
   };
 }

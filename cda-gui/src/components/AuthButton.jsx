@@ -19,6 +19,6 @@ export default function AuthButton() {
       Log out
     </button>
   ) : (
-    <LoginButton onClick={auth.login} />
+    <LoginButton onClick={() => auth.login({ redirectUri: window.location.href })} />
   );
 }
