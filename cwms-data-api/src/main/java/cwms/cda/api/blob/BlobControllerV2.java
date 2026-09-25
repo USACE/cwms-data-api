@@ -125,26 +125,28 @@ public final class BlobControllerV2 extends BlobController {
             },
             required = true),
         queryParams = {
-            @OpenApiParam(name = BLOB_ID, required = false, description = "If this _query_ parameter is provided the id _path_ parameter "
+            @OpenApiParam(name = BLOB_ID, required = false,
+                description = "If this _query_ parameter is provided the id _path_ parameter "
                 + "is ignored and the value of the query parameter is used.   "
                 + "Note: this query parameter is necessary for id's that contain '/' or other special "
                 + "characters. This is due to limitations in path pattern matching. "
-                + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+                + "We will likely add support for encoding the ID in the path in the future. "
+                + "For now use the id field for those IDs. "
+                + "Client libraries should detect slashes and choose the appropriate field. "
+                + "\"ignored\" is suggested for the path endpoint."),
         },
         method = HttpMethod.PATCH,
         tags = {TAG}
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
-        logUnusedPathParameter(ctx, BLOB_ID, "Body contains information");
+        ctx.pathParam(BLOB_ID); // included for openapi tests to recognize the path param as in-use
         logUnusedPathParameter(ctx, OFFICE, "Body contains information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
                 blobId = idQueryParam;
             }
-            DSLContext dsl = getDslContext(ctx);
 
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -171,11 +173,12 @@ public final class BlobControllerV2 extends BlobController {
             }
 
             if (!blob.getId().equals(blobId)) {
-                throw new FormattingException("The blob id parameter does not match the blob id in the body. " +
-                    "The blob end-point does not support renaming blobs.  " +
-                    "Create a new blob with the new id and delete the old one.");
+                throw new FormattingException("The blob id parameter does not match the blob id in the body. "
+                    + "The blob end-point does not support renaming blobs.  "
+                    + "Create a new blob with the new id and delete the old one.");
             }
 
+            DSLContext dsl = getDslContext(ctx);
             BlobAccess dao = chooseBlobAccess(dsl);
             dao.update(blob, false);
             ctx.status(HttpServletResponse.SC_OK);
@@ -189,19 +192,23 @@ public final class BlobControllerV2 extends BlobController {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
         queryParams = {
-            @OpenApiParam(name = BLOB_ID, required = false, description = "If this _query_ parameter is provided the id _path_ parameter "
+            @OpenApiParam(name = BLOB_ID, required = false,
+                description = "If this _query_ parameter is provided the id _path_ parameter "
                 + "is ignored and the value of the query parameter is used.   "
                 + "Note: this query parameter is necessary for id's that contain '/' or other special "
                 + "characters. This is due to limitations in path pattern matching. "
-                + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+                + "We will likely add support for encoding the ID in the path in the future. "
+                + "For now use the id field for those IDs. "
+                + "Client libraries should detect slashes and choose the appropriate field. "
+                + "\"ignored\" is suggested for the path endpoint."),
         },
         method = HttpMethod.DELETE,
         tags = {TAG}
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
-        String office = ctx.queryParam(OFFICE);
+        String office = ctx.pathParam(OFFICE);
+        ctx.pathParam(BLOB_ID); // included for openapi tests to recognize the path param as in-use
         ctx.attribute(OFFICE, office);
         super.delete(ctx, blobId);
     }
@@ -256,17 +263,22 @@ public final class BlobControllerV2 extends BlobController {
                 + "is ignored and the value of the query parameter is used.   "
                 + "Note: the _query_ parameter is necessary for id's that contain '/' or other special "
                 + "characters. This is due to limitations in path pattern matching. "
-                + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
+                + "We will likely add support for encoding the ID in the path in the future. "
+                + "For now use the id field for those IDs. "
+                + "Client libraries should detect slashes and choose the appropriate field. "
+                + "\"ignored\" is suggested for the path endpoint."),
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
         queryParams = {
-            @OpenApiParam(name = BLOB_ID, required = false, description = "If this _query_ parameter is provided the id _path_ parameter "
+            @OpenApiParam(name = BLOB_ID, required = false,
+                description = "If this _query_ parameter is provided the id _path_ parameter "
                 + "is ignored and the value of the query parameter is used.   "
                 + "Note: this query parameter is necessary for id's that contain '/' or other special "
                 + "characters. This is due to limitations in path pattern matching. "
-                + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
-                + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint.")
+                + "We will likely add support for encoding the ID in the path in the future."
+                + " For now use the id field for those IDs. "
+                + "Client libraries should detect slashes and choose the appropriate field."
+                + " \"ignored\" is suggested for the path endpoint.")
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -280,6 +292,7 @@ public final class BlobControllerV2 extends BlobController {
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
         String office = ctx.pathParam(OFFICE);
+        ctx.pathParam(BLOB_ID); // included for openapi tests to recognize the path param as in-use
         ctx.attribute(OFFICE, office);
         super.getOne(ctx, blobId);
     }
