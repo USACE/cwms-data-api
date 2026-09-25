@@ -76,3 +76,17 @@ The Gradle build passes the CDA project version into the client package step. Wh
   `./gradlew :clients:typescript:build`
 
 All generated files (source, library, and docs) will be in `[repo]/clients/typescript/cwmsjs`
+
+## Hosted documentation
+
+The [CDA SDK site](https://usace.github.io/cwms-data-api/sdk/javascript/) hosts
+TypeDoc and the custom examples extracted from passing tests. CDA release builds
+publish matching versioned docs, while `develop` publishes separately under
+[/development/sdk/javascript/](https://usace.github.io/cwms-data-api/development/sdk/javascript/).
+These URLs become available after the SDK Pages workflow is deployed.
+
+The Gradle build runs the documentation examples before generating their pages.
+Run `:clients:typescript:testTypeScriptExamples` to test them directly. The
+private-server authorization template is excluded from public examples.
+See [the SDK Pages workflow guide](../../scripts/sdk-docs/README.md) for setup,
+release retention, and local validation.
