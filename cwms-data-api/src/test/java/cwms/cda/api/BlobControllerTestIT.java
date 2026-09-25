@@ -1,5 +1,13 @@
 package cwms.cda.api;
 
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.data.dto.Blob;
@@ -8,26 +16,19 @@ import cwms.cda.formatters.json.JsonV2;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.Response;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.stream.Stream;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-
-import static io.restassured.RestAssured.given;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTimeout;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("integration")
 public class BlobControllerTestIT extends DataApiTestIT {
@@ -37,7 +38,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
     private static final String EXISTING_BLOB_VALUE = "test value";
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         createExistingBlob();
     }
 
@@ -70,8 +71,9 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_CREATED));
     }
 
-    @Test
-    void test_getOne_not_found() throws UnsupportedEncodingException {
+    @ParameterizedTest
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_getOne_not_found(String path) {
         String blobId = "TEST";
         String urlencoded = URLEncoder.encode(blobId, StandardCharsets.UTF_8);
 
@@ -80,7 +82,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + urlencoded)
+            .get(path + urlencoded)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -88,8 +90,9 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
 
-    @Test
-    void test_create_getOne()
+    @ParameterizedTest
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_create_getOne(String path)
     {
         /* There is an issue with how javalin handles / in the path that are actually part
         of the object name (NOTE: good candidate for actually having a GUID or other "code"
@@ -101,7 +104,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .accept(Formats.JSONV2)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
@@ -109,15 +112,16 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .body(is(EXISTING_BLOB_VALUE));
     }
 
-    @Test
-    void test_blob_get_one_default()
+    @ParameterizedTest
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_blob_get_one_default(String path)
     {
         given()
             .log()
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + EXISTING_BLOB_ID)
+            .get(path + EXISTING_BLOB_ID)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
@@ -125,67 +129,69 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .body(is(EXISTING_BLOB_VALUE));
     }
 
-    @Test
-    void test_blob_range()
+    @ParameterizedTest
+    @ValueSource(strings = { "/blobs/", "/v2/blobs/SPK/" })
+    void test_blob_range(String path)
     {
         // We can now do Range requests!
         // Our example blob above has a value "test value"
 
         // If we ask for byte 0 to the _end_ that is like a normal request for the whole file, we should get "test value"
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(Controllers.OFFICE, SPK)
-                .header("Range", " bytes=0-")
-                .when()
-                .get("/blobs/" + EXISTING_BLOB_ID)
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
-                .body( is(EXISTING_BLOB_VALUE));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Range", " bytes=0-")
+        .when()
+            .get(path + EXISTING_BLOB_ID)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+            .body( is(EXISTING_BLOB_VALUE));
 
         // Our test value is 10 bytes so if we ask for 0-9 we should get the whole value
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(Controllers.OFFICE, SPK)
-                .header("Range", " bytes=0-9")
-                .when()
-                .get("/blobs/" + EXISTING_BLOB_ID)
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
-                .body( is(EXISTING_BLOB_VALUE));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Range", " bytes=0-9")
+        .when()
+            .get(path + EXISTING_BLOB_ID)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+            .body( is(EXISTING_BLOB_VALUE));
 
         // If we ask for byte 3 to the end we should get "t value"
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(Controllers.OFFICE, SPK)
-                .header("Range", " bytes=3-")
-                .when()
-                .get("/blobs/" + EXISTING_BLOB_ID)
-                .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Range", " bytes=3-")
+        .when()
+            .get(path + EXISTING_BLOB_ID)
+        .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .assertThat()
+        .assertThat()
             .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
             .body( is("t value"));
 
         // If we ask for byte 3 to 7 we should get "t val"
         given()
-                .log().ifValidationFails(LogDetail.ALL, true)
-                .queryParam(Controllers.OFFICE, SPK)
-                .header("Range", " bytes=3-7")
-                .when()
-                .get("/blobs/" + EXISTING_BLOB_ID)
-                .then()
-                .log().ifValidationFails(LogDetail.ALL,true)
-                .assertThat()
-                .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
-                .body( is("t val"));
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+            .header("Range", " bytes=3-7")
+        .when()
+            .get(path + EXISTING_BLOB_ID)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_PARTIAL_CONTENT))
+            .body( is("t val"));
     }
 
-    @Test
-    void testCreateUpdateDelete() throws Exception
+    @ParameterizedTest
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void testCreateUpdateDelete(String path) throws Exception
     {
         String blobId = "TEST_BLOBIT_ID";
         String blobValue = "testing value";
@@ -209,7 +215,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/blobs/")
+            .post(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -221,7 +227,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -243,7 +249,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .patch("/blobs/" + blobId)
+            .patch(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -255,7 +261,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -269,7 +275,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Authorization", user.toHeaderValue())
         .when()
-            .delete("/blobs/" + blobId)
+            .delete(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -281,15 +287,16 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @Test
-    void testIdCase() throws Exception
+    @ParameterizedTest
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void testIdCase(String path) throws Exception
     {
         String blobId = "test_blob_id_case";
         String blobValue = "testing value";
@@ -313,7 +320,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/blobs/")
+            .post(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -325,7 +332,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -339,7 +346,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.OFFICE, SPK)
             .header("Authorization", user.toHeaderValue())
         .when()
-            .delete("/blobs/" + blobId)
+            .delete(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -351,7 +358,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/" + blobId)
+            .get(path + blobId)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -359,15 +366,15 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @EnumSource(GetAllTest.class)
-    void test_blob_get_all_default_alias(GetAllTest test)
+    @MethodSource("provideBlobGetAllArgs")
+    void test_blob_get_all_default_alias(GetAllTest test, String path)
     {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(test._accept)
             .queryParam(Controllers.OFFICE, SPK)
         .when()
-            .get("/blobs/")
+            .get(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
@@ -375,8 +382,15 @@ public class BlobControllerTestIT extends DataApiTestIT {
             .contentType(is(test._expectedContentType));
     }
 
-    @Test
-    void test_create_too_long_name() throws Exception
+    private static Stream<Arguments> provideBlobGetAllArgs() {
+        return Stream.of(GetAllTest.values())
+            .flatMap(test -> Stream.of("/blobs/", String.format("/v2/blobs/%s/", SPK))
+                .map(version -> Arguments.of(test, version)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void test_create_too_long_name(String path) throws Exception
     {
         String blobId = RandomStringUtils.randomAlphabetic(300);
         String blobValue = "test value";
@@ -399,7 +413,7 @@ public class BlobControllerTestIT extends DataApiTestIT {
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/blobs/")
+            .post(path)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
@@ -408,8 +422,9 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
 
-    @Test
-    void test_pagination_works() {
+    @ParameterizedTest
+    @ValueSource(strings = {"/blobs/", "/v2/blobs/SPK/"})
+    void test_pagination_works(String path) {
         int count = 11;
         String prefix = "test_blob_pagination_";
         assertTimeout(Duration.ofMinutes(5), () -> {
@@ -419,18 +434,18 @@ public class BlobControllerTestIT extends DataApiTestIT {
             final int pageSize = 5;
             Response initialResponse =
                     given()
-                            .log()
-                            .ifValidationFails(LogDetail.ALL, true)
-                            .queryParam(Controllers.OFFICE, SPK)
-                            .queryParam(Controllers.PAGE_SIZE, pageSize)
-                            .queryParam(Controllers.LIKE, prefix + ".+")
-                            .when()
-                            .get("/blobs/" )
-                            .then()
-                            .log().ifValidationFails(LogDetail.ALL, true)
-                            .assertThat()
-                            .statusCode(is(HttpServletResponse.SC_OK))
-                            .extract().response();
+                        .log()
+                        .ifValidationFails(LogDetail.ALL, true)
+                        .queryParam(Controllers.OFFICE, SPK)
+                        .queryParam(Controllers.PAGE_SIZE, pageSize)
+                        .queryParam(Controllers.LIKE, prefix + ".+")
+                    .when()
+                        .get(path)
+                    .then()
+                        .log().ifValidationFails(LogDetail.ALL, true)
+                    .assertThat()
+                        .statusCode(is(HttpServletResponse.SC_OK))
+                        .extract().response();
 
             String nextPage = initialResponse.path("next-page");
             assertNotNull(nextPage, "Expected a next page to be returned");
@@ -440,17 +455,17 @@ public class BlobControllerTestIT extends DataApiTestIT {
             do {
                 Response pageN =
                         given()
-                                .log()
-                                .ifValidationFails(LogDetail.ALL, true)
-                                .queryParam(Controllers.OFFICE, SPK)
-                                .queryParam("page", nextPage)
-                                .when()
-                                .get("/blobs/" )
-                                .then()
-                                .log().ifValidationFails(LogDetail.ALL, true)
-                                .assertThat()
-                                .statusCode(is(HttpServletResponse.SC_OK))
-                                .extract().response();
+                            .log()
+                            .ifValidationFails(LogDetail.ALL, true)
+                            .queryParam(Controllers.OFFICE, SPK)
+                            .queryParam("page", nextPage)
+                        .when()
+                            .get(path)
+                        .then()
+                            .log().ifValidationFails(LogDetail.ALL, true)
+                        .assertThat()
+                            .statusCode(is(HttpServletResponse.SC_OK))
+                            .extract().response();
 
                 nextPage = pageN.path("next-page");
                 int pageTotal = pageN.path("blobs.size()");
@@ -467,7 +482,6 @@ public class BlobControllerTestIT extends DataApiTestIT {
     }
 
     private static void createBlobs(int count, String prefix) throws JsonProcessingException {
-        //
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         String mediaType = "application/octet-stream";
         ObjectMapper om = JsonV2.buildObjectMapper();
@@ -493,6 +507,127 @@ public class BlobControllerTestIT extends DataApiTestIT {
         }
     }
 
+    //---------------------//
+    // V2 Only tests below //
+    //---------------------//
+
+    @Test
+    void testCreateMultipartFormData() {
+        String blobId = "TEST_BLOBIT_CREATE_MULTIPART_ID";
+        String description = "multipart create description";
+        String blobValue = "multipart create blob value";
+        String mediaType = "application/octet-stream";
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .contentType(Formats.MULTIPART_FORM_DATA)
+            .queryParam(Controllers.FAIL_IF_EXISTS, false)
+            .multiPart("office-id", SPK)
+            .multiPart("id", blobId)
+            .multiPart("description", description)
+            .multiPart("media-type-id", mediaType)
+            .multiPart("value", "blob.bin", blobValue.getBytes(), mediaType)
+        .when()
+            .post(String.format("/v2/blobs/%s/", SPK))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get(String.format("/v2/blobs/%s/%s/", SPK, blobId))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(blobValue));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .delete(String.format("/v2/blobs/%s/%s", SPK, blobId))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @Test
+    void testUpdateMultipartFormData() throws Exception
+    {
+        String blobId = "TEST_BLOBIT_MULTIPART_ID";
+        String blobValue = "initial value";
+        String origDesc = "testing description";
+        byte[] origBytes = blobValue.getBytes();
+
+        String mediaType = "application/octet-stream";
+        Blob blob = new Blob(SPK, blobId, origDesc, mediaType, origBytes);
+        ObjectMapper om = JsonV2.buildObjectMapper();
+        String serializedBlob = om.writeValueAsString(blob);
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV2)
+            .body(serializedBlob)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+            .queryParam(Controllers.FAIL_IF_EXISTS, false)
+        .when()
+            .post(String.format("/v2/blobs/%s/", SPK))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        String newDescription = "multipart description";
+        String newBlobValue = "multipart blob value";
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .contentType("multipart/form-data")
+            .multiPart("office-id", SPK)
+            .multiPart("id", blobId)
+            .multiPart("description", newDescription)
+            .multiPart("media-type-id", mediaType)
+            .multiPart("value", "blob.bin", newBlobValue.getBytes(), mediaType)
+        .when()
+            .patch(String.format("/v2/blobs/%s/%s/", SPK, blobId))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .get(String.format("/v2/blobs/%s/%s/", SPK, blobId))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body(is(newBlobValue));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(Controllers.OFFICE, SPK)
+        .when()
+            .delete(String.format("/v2/blobs/%s/%s", SPK, blobId))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
 
     enum GetAllTest
     {
