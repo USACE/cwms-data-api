@@ -44,7 +44,7 @@ export const routePaths = [
   },
   {
     id: "user-roles",
-    path: "user-roles",
+    path: "user-roles/:officeId?",
     sitemapPath: "user-roles",
   },
   {
