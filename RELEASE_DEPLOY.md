@@ -8,6 +8,10 @@ release for that manual deployment.
 Releases are anything publish to the (releases)[https://github.com/usace/cwms-data-api/releases] page and can be uses for a local 
 deployment or testing.
 
+GitHub's latest release is the production update channel used by `update_cda.sh`. The release workflow automatically marks nightly,
+`-dev`, and `-test` versions as pre-releases so they cannot replace that production target. Only tags that follow the production
+format are published as full releases and are eligible to become latest.
+
 Deployments are specific to USACE's official CWMS dev,test, and prod environments and are controlled by authorized USACE staff.
 Additionally deployments are made from a specific release, except for the dev environment and develop branch a deployment cannot be 
 made without a release.
@@ -58,7 +62,8 @@ To create a release perform the following steps
 1. If deploying/releasing develop directly, skip the following steps. The process is different.
 2. Select "draft new release"
 3. If tagging the current state of develop follow github release procedures to create a tag in the CalVer format and select "create new tag" and use the same name for the release as the tag.
-4. Publish release. Unless a prod release, check the pre-release box.
+4. Publish release. Unless a prod release, check the pre-release box. The release workflow also enforces this classification from the
+   tag format.
 5. NOTE: the details will be filled in by the triggered github actions.
 
 
@@ -126,4 +131,3 @@ You can monitor the progress of the action from the new instances that will show
 As this is just pushing images to the registry it *should* be fast. However, the actual activation by the environment is not
 deterministic, this action only pushes the images. It does not verify if anything actually changed or worked. You will have to use the
 monitoring tools appropriate to the given environment to determine if the new version is getting used.
-

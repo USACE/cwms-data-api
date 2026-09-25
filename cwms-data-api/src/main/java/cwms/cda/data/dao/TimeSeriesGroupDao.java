@@ -34,7 +34,7 @@ import cwms.cda.data.dao.timeseriesgroup.DELETE_TS_GROUP_CASCADE;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.TimeSeriesCategory;
-import cwms.cda.data.dto.TimeSeriesGroup;
+import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -377,6 +377,21 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
 
+    public void unassignTsIds(String categoryId, String groupId, String office, List<CwmsId> tsIds) {
+        if (tsIds == null || tsIds.isEmpty()) {
+            throw new IllegalArgumentException("At least one time series id must be provided to unassign.");
+        }
+
+        connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
+            dslContext.transaction((Configuration config) -> {
+                for (CwmsId tsId : tsIds) {
+                    CWMS_TS_PACKAGE.call_UNASSIGN_TS_GROUP(config, categoryId, groupId, tsId.getName(), "F", office);
+                }
+            });
+        });
+    }
+
     public void unassignAll(String categoryId, String groupId, String office) {
         dsl.transaction((Configuration config) ->
             unassignAll(config, categoryId, groupId, office)
@@ -460,6 +475,18 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     }
 
     public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls, boolean ignoreMissing) {
+        return create(group, failIfExists, ignoreNulls, ignoreMissing, false);
+    }
+
+    /**
+     * Stores the group and assigns its time series in a single transaction.
+     *
+     * @param replaceAssigned when true, all time series currently assigned to the group by the
+     *                        group's office are unassigned before the group's time series are
+     *                        assigned. If the assignment fails, the unassignment is rolled back.
+     */
+    public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls,
+            boolean ignoreMissing, boolean replaceAssigned) {
         return connectionResult(dsl, c -> {
             Configuration configuration = getDslContext(c, group.getOfficeId()).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
@@ -469,6 +496,10 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                     group.getId(), group.getDescription(), formatBool(failIfExists),
                     formatBool(ignoreNulls), group.getSharedAliasId(),
                     group.getSharedRefTsId(), group.getOfficeId());
+                if (replaceAssigned) {
+                    unassignForOffice(configuration, categoryId, group.getId(),
+                        group.getOfficeId(), group.getOfficeId());
+                }
                 return assignTs(configuration, group, group.getOfficeId(), ignoreNulls, ignoreMissing);
             });
         });

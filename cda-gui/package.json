@@ -5,12 +5,21 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode localhost",
+    "dev:onboarding": "node scripts/onboarding-demo.mjs",
+    "test:user-roles": "playwright test --config playwright.user-roles.config.js",
+    "test": "vitest",
     "build": "vite build --mode production && node scripts/generate-sitemap.mjs",
     "build:development": "vite build --mode development && node scripts/generate-sitemap.mjs",
     "build:test": "vite build --mode test && node scripts/generate-sitemap.mjs",
-    "test": "node --test src/utils/auth-config.test.js",
+    "test:unit": "node --test src/utils/auth-config.test.js src/pages/user-roles/role-state.test.js src/pages/api-keys/api.test.js",
+    "test:api-keys": "playwright test --config playwright.api-keys.config.js",
+    "test:data-query": "playwright test --config playwright.data-query.config.js",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "test-storybook": "vitest --project=storybook",
+    "test:auth": "playwright test --config playwright.auth.config.js",
+    "build-storybook": "storybook build",
     "prepare": "cd .. && husky cda-gui/.husky",
     "format:check": "prettier --check ."
   },
@@ -26,7 +35,7 @@
     "@headlessui/react": "^2.2.10",
     "@tanstack/react-query": "^5.64.1",
     "@tanstack/react-virtual": "^3.14.3",
-    "@usace-watermanagement/groundwork-water": "^3.9.0",
+    "@usace-watermanagement/groundwork-water": "^4.2.0",
     "@usace/groundwork": "^3.14.18",
     "cwmsjs": "^2.3.2-2025.3.19",
     "dayjs": "^1.11.13",
@@ -38,9 +47,16 @@
     "use-debounce": "^10.0.5"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^4.1.3",
+    "@playwright/test": "^1.62.1",
+    "@storybook/addon-a11y": "^10.5.7",
+    "@storybook/addon-docs": "^10.5.7",
+    "@storybook/addon-vitest": "^10.5.7",
+    "@storybook/react-vite": "^10.5.7",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
     "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/browser-playwright": "^4.1.10",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.1",
@@ -48,9 +64,12 @@
     "eslint-plugin-react-refresh": "^0.4.6",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6",
+    "playwright": "^1.62.1",
     "postcss": "^8.5.15",
     "prettier": "^3.6.2",
+    "storybook": "^10.5.7",
     "tailwindcss": "^3.4.3",
-    "vite": "^7.3.3"
+    "vite": "^7.3.3",
+    "vitest": "^4.1.10"
   }
 }

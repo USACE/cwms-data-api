@@ -241,16 +241,16 @@ final class JooqDaoTest {
         }
 
         @Test
-        @DisplayName("regex value is inlined, not bound")
-        void regexValueIsInlinedNotBound() {
+        @DisplayName("regex value is bound, not inlined")
+        void regexValueIsBoundNotInlined() {
             Condition condition = JooqDao.caseInsensitiveLikeRegex(
                 locationLevelId,
                 "^APP\\.Stor\\..*");
 
             String sql = render(condition);
 
-            assertFalse(sql.contains("?"), sql);
-            assertTrue(sql.contains("'^APP\\.Stor\\..*'"), sql);
+            assertTrue(sql.contains("?"), sql);
+            assertFalse(sql.contains("^APP\\.Stor\\..*"), sql);
         }
 
         @Test
@@ -260,7 +260,7 @@ final class JooqDaoTest {
                 locationLevelId,
                 "^APP.Stor.*Dam$");
 
-            String sql = render(condition);
+            String sql = renderInlined(condition);
 
             assertTrue(sql.contains("'^APP.Stor.*Dam$'"), sql);
         }
@@ -312,7 +312,7 @@ final class JooqDaoTest {
                 locationLevelId,
                 "NOT:^APP\\.Stor\\..*");
 
-            String sql = render(condition);
+            String sql = renderInlined(condition);
 
             assertContainsIgnoringWhitespace(
                 sql,
@@ -355,7 +355,7 @@ final class JooqDaoTest {
                 locationLevelId,
                 "^APP\\.Stor\\..*");
 
-            String sql = render(condition);
+            String sql = renderInlined(condition);
 
             assertContainsIgnoringWhitespace(
                 sql,

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,155 +24,19 @@
 
 package cwms.cda.data.dto.project;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.data.dto.CwmsDTO;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.annotations.FormattableWith;
-import cwms.cda.formatters.json.JsonV2;
 import java.time.Instant;
 
-@JsonDeserialize(builder = ProjectLock.Builder.class)
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-@FormattableWith(contentType = Formats.JSONV1, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
-public class ProjectLock extends CwmsDTO {
-    // officeId held by CwmsDTO
-    private final String projectId;
-    private final String applicationId;
-    private final Instant acquireTime;
-    private final String sessionUser;
-    private final String osUser;
-    private final String sessionProgram;
-    private final String sessionMachine;
+public interface ProjectLock {
 
-    private ProjectLock(Builder builer) {
-        super(builer.officeId);
-        this.projectId = builer.projectId;
-        this.applicationId = builer.applicationId;
-        this.acquireTime = builer.acquireTime;
-        this.sessionUser = builer.sessionUser;
-        this.osUser = builer.osUser;
-        this.sessionProgram = builer.sessionProgram;
-        this.sessionMachine = builer.sessionMachine;
-    }
+    String getApplicationId();
 
-    public String getProjectId() {
-        return projectId;
-    }
+    Instant getAcquireTime();
 
-    public String getApplicationId() {
-        return applicationId;
-    }
+    String getSessionUser();
 
-    public Instant getAcquireTime() {
-        return acquireTime;
-    }
+    String getOsUser();
 
-    public String getSessionUser() {
-        return sessionUser;
-    }
+    String getSessionProgram();
 
-    public String getOsUser() {
-        return osUser;
-    }
-
-    public String getSessionProgram() {
-        return sessionProgram;
-    }
-
-    public String getSessionMachine() {
-        return sessionMachine;
-    }
-
-    @JsonPOJOBuilder
-    @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
-    public static class Builder {
-        private String officeId;
-        private String projectId;
-        private String applicationId;
-        private Instant acquireTime;
-        private String sessionUser;
-        private String osUser;
-        private String sessionProgram;
-        private String sessionMachine;
-
-        public Builder() {
-        }
-
-        public Builder(ProjectLock lock) {
-            this.officeId = lock.officeId;
-            this.projectId = lock.projectId;
-            this.applicationId = lock.applicationId;
-            this.acquireTime = lock.acquireTime;
-            this.sessionUser = lock.sessionUser;
-            this.osUser = lock.osUser;
-            this.sessionProgram = lock.sessionProgram;
-            this.sessionMachine = lock.sessionMachine;
-        }
-
-        public Builder(String officeId, String projectId, String applicationId) {
-            this.officeId = officeId;
-            this.projectId = projectId;
-            this.applicationId = applicationId;
-        }
-
-        public Builder withOfficeId(String officeId) {
-            this.officeId = officeId;
-            return this;
-        }
-
-        public Builder withProjectId(String projectId) {
-            this.projectId = projectId;
-            return this;
-        }
-
-        public Builder withApplicationId(String applicationId) {
-            this.applicationId = applicationId;
-            return this;
-        }
-
-        public Builder withAcquireTime(Instant acquireTime) {
-            this.acquireTime = acquireTime;
-            return this;
-        }
-
-        public Builder withSessionUser(String sessionUser) {
-            this.sessionUser = sessionUser;
-            return this;
-        }
-
-        public Builder withOsUser(String osUser) {
-            this.osUser = osUser;
-            return this;
-        }
-
-        public Builder withSessionProgram(String sessionProgram) {
-            this.sessionProgram = sessionProgram;
-            return this;
-        }
-
-        public Builder withSessionMachine(String sessionMachine) {
-            this.sessionMachine = sessionMachine;
-            return this;
-        }
-
-        public Builder from(ProjectLock lock) {
-            return this.withOfficeId(lock.officeId)
-                    .withProjectId(lock.projectId)
-                    .withApplicationId(lock.applicationId)
-                    .withAcquireTime(lock.acquireTime)
-                    .withSessionUser(lock.sessionUser)
-                    .withOsUser(lock.osUser)
-                    .withSessionProgram(lock.sessionProgram)
-                    .withSessionMachine(lock.sessionMachine);
-        }
-
-        public ProjectLock build() {
-            return new ProjectLock(this);
-        }
-    }
+    String getSessionMachine();
 }

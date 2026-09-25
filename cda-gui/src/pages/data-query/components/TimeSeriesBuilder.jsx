@@ -25,8 +25,15 @@ const TSID_PART_HELP = {
     "Duration identifies the length of time represented by each value. Instantaneous values commonly use 0.",
   Interval:
     "Interval is the time step for regular data, such as 15Minutes, 1Hour, or 1Day. A leading ~ means irregular.",
-  Location:
-    "Location is the CWMS location identifier where the time series is measured or computed.",
+  Location: (
+    <>
+      Location is the CWMS location identifier where the time series is measured or
+      computed.
+      <p className="mt-2 rounded border border-amber-300 bg-amber-50 p-2 font-semibold text-amber-950">
+        Inactive locations (active: false) are excluded from guided search.
+      </p>
+    </>
+  ),
   "Location Kind":
     "Location Kind narrows the location list to projects, gages, locks, sites, outlets, or all locations.",
   Parameter:
@@ -447,7 +454,7 @@ function LabelWithHelp({ helpText, label }) {
 }
 
 LabelWithHelp.propTypes = {
-  helpText: PropTypes.string,
+  helpText: PropTypes.node,
   label: PropTypes.string.isRequired,
 };
 
@@ -537,7 +544,7 @@ function LocationCombobox({
 
 LocationCombobox.propTypes = {
   disabled: PropTypes.bool,
-  helpText: PropTypes.string,
+  helpText: PropTypes.node,
   loading: PropTypes.bool,
   locationKind: PropTypes.string.isRequired,
   noOptionsMessage: PropTypes.string,

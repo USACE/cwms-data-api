@@ -13,7 +13,7 @@ const MIN_ALIAS_SEARCH_LENGTH = 2;
 async function getCatalogPages(request) {
   const firstPage = await cataApi.getCatalogWithDataset(request);
   const entries = firstPage?.entries || [];
-  let nextPage = firstPage?.["next-page"];
+  let nextPage = firstPage?.nextPage;
   let pageCount = 1;
 
   while (nextPage && pageCount < MAX_ALIAS_PAGES) {
@@ -22,7 +22,7 @@ async function getCatalogPages(request) {
       page: nextPage,
     });
     entries.push(...(page?.entries || []));
-    nextPage = page?.["next-page"];
+    nextPage = page?.nextPage;
     pageCount += 1;
   }
 
@@ -56,6 +56,7 @@ export default function useAliases({
       const aliasMap = {};
 
       data?.entries
+        .filter((loc) => loc.active !== false)
         .sort((a, b) =>
           a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
         )

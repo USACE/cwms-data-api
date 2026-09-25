@@ -44,6 +44,63 @@ def test_execute_tasks_raises_after_all_items_processed_when_one_fails():
     assert "1 of 3 task(s) failed" in str(exc_info.value)
 
 
+def test_a_label_replaces_the_internal_work_item_shape(caplog):
+    """
+    Without a label the log falls back to comma-joining the work item, which put
+    the shape of a private data structure into the output - and in a different
+    format from the identifier the same item was announced under.
+    """
+    import logging
+    caplog.set_level(logging.DEBUG)
+    threading_util.init_executor(2)
+
+    def task(item):
+        raise FileNotFoundError("No staged data found")
+
+    threading_util.execute_tasks(
+        task,
+        [["SWT", "EUFA.Opening.Inst.0.0.MANUAL", "2026-06-01", "2026-08-03"]],
+        label=lambda item: f"{item[1]} [{item[2]} to {item[3]}]",
+    )
+
+    skip_line = next(r.getMessage() for r in caplog.records if "Skipped '" in r.getMessage())
+
+    assert "SWT, EUFA.Opening" not in skip_line
+
+
+def test_a_clean_batch_raises_nothing():
+    threading_util.init_executor(2)
+
+    threading_util.execute_tasks(lambda item: None, ["a", "b"])
+
+
+def test_a_skip_message_does_not_repeat_the_item(caplog):
+    """
+    The item identifiers are rendered once, so the exception text must not restate
+    them. The original line said the office, id and window twice, and "skipped"
+    three times.
+    """
+    import logging
+    caplog.set_level(logging.DEBUG)
+    threading_util.init_executor(2)
+
+    def task(item):
+        raise FileNotFoundError("No staged data found")
+
+    threading_util.execute_tasks(
+        task,
+        [["SWT", "EUFA.Precip-Alt.Total.1Day.1Day.Decodes-Raw", "2026-06-01", "2026-08-03"]],
+        label=lambda item: f"{item[0]}/{item[1]} [{item[2]} to {item[3]}]",
+    )
+
+    skip_line = next(r.getMessage() for r in caplog.records if "Skipped '" in r.getMessage())
+
+    assert skip_line.count("EUFA.Precip-Alt.Total.1Day.1Day.Decodes-Raw") == 1
+    assert skip_line.count("SWT") == 1
+    assert skip_line.lower().count("skipped") == 1
+    assert "Run staging first" not in skip_line
+
+
 def test_execute_tasks_raises_with_summary_of_multiple_failures():
     def task(item):
         raise RuntimeError(f"failure for {item}")
