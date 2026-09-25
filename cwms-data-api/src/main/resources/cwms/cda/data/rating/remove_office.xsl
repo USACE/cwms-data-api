@@ -18,8 +18,20 @@
 		</xsl:copy>
 	</xsl:template>
 
+    <xsl:template match="*[./office]">
+        <xsl:copy>
+            <xsl:attribute name='office-id'>
+                <xsl:value-of select="./office"/>
+            </xsl:attribute>
+            <xsl:apply-templates/>
+        </xsl:copy>
+    </xsl:template>
+
 	<!--	drop office-id elements-->
 	<xsl:template match="office-id"/>
+
+    <!--	drop office elements-->
+    <xsl:template match="office"/>
 
 	<!--	drop noNamespaceSchemaLocation elements-->
 	<xsl:template match="noNamespaceSchemaLocation"/>
