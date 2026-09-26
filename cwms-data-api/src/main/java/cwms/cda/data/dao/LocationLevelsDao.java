@@ -24,13 +24,13 @@
 
 package cwms.cda.data.dao;
 
+import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevelRefs;
 import cwms.cda.data.dto.locationlevel.LocationLevels;
-import cwms.cda.data.dto.TimeSeries;
 import hec.data.level.ILocationLevelRef;
-import mil.army.usace.hec.metadata.Interval;
 import java.time.Instant;
+import mil.army.usace.hec.metadata.Interval;
 
 public interface LocationLevelsDao {
     void deleteLocationLevel(String locationLevelName, Instant date, String officeId,
@@ -56,4 +56,6 @@ public interface LocationLevelsDao {
 
     LocationLevelRefs retrieveLocationLevelRefs(String cursor, int pageSize, String levelIdMask, String office,
         Instant beginZdt, Instant endZdt, boolean includeAliases);
+
+    boolean supportsLargeInterval(String office);
 }
