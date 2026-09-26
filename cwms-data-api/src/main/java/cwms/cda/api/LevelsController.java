@@ -25,7 +25,36 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.api.Controllers.*;
+import static cwms.cda.api.Controllers.BEGIN;
+import static cwms.cda.api.Controllers.CASCADE_DELETE;
+import static cwms.cda.api.Controllers.CREATE;
+import static cwms.cda.api.Controllers.DATE;
+import static cwms.cda.api.Controllers.DATUM;
+import static cwms.cda.api.Controllers.DELETE;
+import static cwms.cda.api.Controllers.EFFECTIVE_DATE;
+import static cwms.cda.api.Controllers.EFFECTIVE_DATE_EXACT;
+import static cwms.cda.api.Controllers.END;
+import static cwms.cda.api.Controllers.FORMAT;
+import static cwms.cda.api.Controllers.GET_ALL;
+import static cwms.cda.api.Controllers.GET_ONE;
+import static cwms.cda.api.Controllers.INCLUDE_ALIASES;
+import static cwms.cda.api.Controllers.LEVEL_ID;
+import static cwms.cda.api.Controllers.LEVEL_ID_MASK;
+import static cwms.cda.api.Controllers.NAME;
+import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PAGE;
+import static cwms.cda.api.Controllers.PAGE_SIZE;
+import static cwms.cda.api.Controllers.RESULTS;
+import static cwms.cda.api.Controllers.SIZE;
+import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.TIMEZONE;
+import static cwms.cda.api.Controllers.UNIT;
+import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.Controllers.VERSION;
+import static cwms.cda.api.Controllers.addDeprecatedContentTypeWarning;
+import static cwms.cda.api.Controllers.queryParamAsClass;
+import static cwms.cda.api.Controllers.queryParamAsInstant;
+import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -75,7 +104,6 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,6 +160,17 @@ public class LevelsController implements CrudHandler {
 
             DSLContext dsl = getDslContext(ctx);
             LocationLevelsDao levelsDao = getLevelsDao(dsl);
+
+            // interval support verification
+            if (level instanceof SeasonalLocationLevel) {
+                SeasonalLocationLevel seasonal = (SeasonalLocationLevel) level;
+                // check whether interval is > 2 digits (> 99 years)
+                if (seasonal.getIntervalMonths() > 1200 && !levelsDao.supportsLargeInterval(level.getOfficeId())) {
+                        throw new BadRequestResponse("Database does not support intervals of more than 99 years");
+                    }
+
+            }
+
             levelsDao.storeLocationLevel(level);
             StatusResponse re = new StatusResponse(level.getOfficeId(),
                 "Created Location Level", level.getLocationLevelId());
