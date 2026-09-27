@@ -9,6 +9,7 @@ import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
 import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.USERNAME_LIKE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
@@ -95,12 +96,16 @@ public class UsersController implements CrudHandler {
                     allowEmptyValue = true,
                     description = "Include roles in the response. Default false.")
         },
-        responses = @OpenApiResponse(
-                    content = {
-                        @OpenApiContent(from = Users.class, type = Formats.JSON)
-                    },
-                    status = STATUS_200
-        ),
+        responses = {
+            @OpenApiResponse(
+                content = {
+                    @OpenApiContent(from = Users.class, type = Formats.JSON)
+                },
+                status = STATUS_200
+            ),
+            @OpenApiResponse(status = STATUS_400, description = "The page or page-size parameter is invalid."),
+            @OpenApiResponse(status = "500", description = "The users could not be retrieved.")
+        },
         security = {
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
@@ -163,7 +168,8 @@ public class UsersController implements CrudHandler {
                     },
                     status = STATUS_200
             ),
-            @OpenApiResponse(status = STATUS_404, description = "User not found.")
+            @OpenApiResponse(status = STATUS_404, description = "User not found."),
+            @OpenApiResponse(status = "500", description = "The user could not be retrieved.")
         },
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
