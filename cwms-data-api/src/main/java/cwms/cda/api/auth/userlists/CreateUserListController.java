@@ -2,6 +2,9 @@ package cwms.cda.api.auth.userlists;
 
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.STATUS_201;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -34,8 +37,11 @@ public final class CreateUserListController implements Handler {
         responses = {
             @OpenApiResponse(status = STATUS_201,
                 content = @OpenApiContent(from = UserList.class, type = Formats.JSON)),
+            @OpenApiResponse(status = STATUS_400, description = "The request body is missing or invalid."),
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
-            @OpenApiResponse(status = "409", description = "The office already has this list ID.")
+            @OpenApiResponse(status = STATUS_404, description = "Office not found."),
+            @OpenApiResponse(status = "409", description = "The office already has this list ID."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Create an office-scoped user list owned by the authenticated user.",
