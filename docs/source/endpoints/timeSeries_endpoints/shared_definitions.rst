@@ -11,6 +11,19 @@ If the parameter is only used by a single endpoint, please refer to that endpoin
 If a shared parameter has endpoint-specific behavior or constraints, those details will be noted in the individual
 endpoint documentation.
 
+
+.. _def-name:
+
+name
+  Name of the time series in `<Location>.<Parameter>.<Parameter Type>.<Interval>.<Duration>.<version>` format.
+
+  Example
+
+  .. code-block::
+
+    Alder Springs.Temp-Air.Inst.15Minutes.0.GOES-Raw
+
+
 .. _def-end:
 
 end
