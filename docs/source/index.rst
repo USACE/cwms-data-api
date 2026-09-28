@@ -1,6 +1,7 @@
 Welcome to CWMS Data API documentation!
 =======================================
 
+I am a teapot, here to test the read the docs integration.
 
 * Swagger
 * Wiki
