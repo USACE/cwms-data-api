@@ -165,10 +165,9 @@ public class LevelsController implements CrudHandler {
             if (level instanceof SeasonalLocationLevel) {
                 SeasonalLocationLevel seasonal = (SeasonalLocationLevel) level;
                 // check whether interval is > 2 digits (> 99 years)
-                if (seasonal.getIntervalMonths() > 1200 && !levelsDao.supportsLargeInterval(level.getOfficeId())) {
-                        throw new BadRequestResponse("Database does not support intervals of more than 99 years");
-                    }
-
+                if (seasonal.getIntervalMonths() > 1200 && !levelsDao.supportsLargeInterval()) {
+                    throw new BadRequestResponse("Database does not support intervals of more than 99 years");
+                }
             }
 
             levelsDao.storeLocationLevel(level);

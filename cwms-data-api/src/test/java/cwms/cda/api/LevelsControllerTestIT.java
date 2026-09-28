@@ -1998,7 +1998,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("total", is(1));
     }
 
-    @MinimumSchema(20261010)
+    @MinimumSchema(20261001)
     @Test
     void testSeasonalLevelIntervalSupportA() throws Exception {
         String locName = "seasonalLoc29";

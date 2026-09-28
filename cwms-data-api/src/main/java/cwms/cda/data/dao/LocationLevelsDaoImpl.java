@@ -1452,12 +1452,10 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     /**
      * Determines if the database supports intervals of more than 99 years.
-     * @param office the office to use for the check
      * @return boolean true if the database supports intervals of more than 99 years.
      */
-    public boolean supportsLargeInterval(String office) {
+    public boolean supportsLargeInterval() {
         try {
-            CWMS_ENV_PACKAGE.call_SET_SESSION_OFFICE_ID(dsl.configuration(), office);
             CWMS_UTIL_PACKAGE.call_MONTHS_TO_YMINTERVAL(dsl.configuration(), BigInteger.valueOf(1250L));
             return true;
         } catch (Exception ex) {

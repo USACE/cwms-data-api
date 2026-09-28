@@ -57,5 +57,5 @@ public interface LocationLevelsDao {
     LocationLevelRefs retrieveLocationLevelRefs(String cursor, int pageSize, String levelIdMask, String office,
         Instant beginZdt, Instant endZdt, boolean includeAliases);
 
-    boolean supportsLargeInterval(String office);
+    boolean supportsLargeInterval();
 }
