@@ -4,13 +4,12 @@ import { CountiesApi, Configuration } from "cwmsjs";
 import fetch from "node-fetch";
 global.fetch = fetch;
 
-// TODO: Why does the query fail when you do not specify version 2 in the headers?
-const c_config = new Configuration({
-  headers: {
-    accept: "application/json;version=2",
-  },
-});
 test("Test Counties", async () => {
+  const c_config = new Configuration({
+    headers: {
+      accept: "application/json;version=2",
+    },
+  });
   const c_api = new CountiesApi(c_config);
   await c_api
     .getCounties()

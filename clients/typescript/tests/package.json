@@ -20,12 +20,14 @@
         "docs": "node ../scripts/tests2exampledocs.js",
         "smoke": "node smoke.js",
         "test:ts": "npm run jest-modules Timeseries.v2.test.js",
-        "link": "cd ../cwmsjs && npm link && cd ../tests && npm link cwmsjs"
+        "link": "cd ../cwmsjs && npm link && cd ../tests && npm link cwmsjs",
+        "test:docs": "node ../scripts/testExamples.js"
     },
     "jest": {
         "clearMocks": true,
         "testMatch": [
-            "**/endpoints/**/*.test.js"
+            "**/endpoints/**/*.test.js",
+            "**/generator/**/*.test.js"
         ],
         "coverageDirectory": "coverage",
         "testEnvironment": "node",
@@ -35,7 +37,10 @@
         "transformIgnorePatterns": [
             "node_modules/(?!(chalk)/)",
             "node_modules/(?!(node-fetch)/)"
-        ]
+        ],
+        "moduleNameMapper": {
+            "^cwmsjs$": "<rootDir>/../cwmsjs/dist/index.js"
+        }
     },
     "dependencies": {
         "chalk": "^5.3.0",
