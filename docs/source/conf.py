@@ -28,6 +28,11 @@ extensions = [
     # "sphinxcontrib.redoc",
 ]
 
+# Since we share files, and sometimes those files define labels, we don't
+# want to directly process them. This is an attempt at clearing the "duplicate label" warning.
+# It does not appear to do so; however, it also doesn't appear to count in the warning-as-error situtation.
+exclude_patterns = ["**/*.inc"]
+
 # Recognize both .rst and .md files
 source_suffix = {
     ".rst": "restructuredtext",
