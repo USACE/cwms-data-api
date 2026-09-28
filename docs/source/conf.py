@@ -66,7 +66,6 @@ html_theme_options = {
     "includehidden": False, #avoid pulling anchors/hidden items into the sidebar
 }
 
-
 # -- Options for EPUB output
 epub_show_urls = "footnote"
 
