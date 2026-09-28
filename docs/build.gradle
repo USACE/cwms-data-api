@@ -39,8 +39,10 @@ tasks.register('installReqs', Exec) { t ->
 tasks.register('buildDocsHtml', Exec) { t ->
     t.dependsOn 'installReqs'
     t.executable = pythonCmd
-    // Remove -W so warnings do not fail the build; use CI to enforce if needed
-    t.args '-m', 'sphinx', /*'-W', */ '-b', 'html', 'source', new File(buildDir, 'html').absolutePath
+    // Encorce warnings as error locally. Sometimes the CI with Read-The-Docs fails
+    // and then several "warnings" creep in. Also, failing here fails faster and leaves
+    // responsibility with the instagator of the problem.
+    t.args '-m', 'sphinx', '-W', '-b', 'html', 'source', new File(buildDir, 'html').absolutePath
     t.workingDir = projectDir
     environment 'SPHINXOPTS', (System.getenv('SPHINXOPTS') ?: '') + ' -n'
 

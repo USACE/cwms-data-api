@@ -25,7 +25,7 @@ Proposed Changes
 ================
 
 Vertical Datum Identification in CDA
------------------------------
+------------------------------------
 
 * **NATIVE**: Specifies the vertical datum that elevations are stored in for a location (whether that datum is ``NGVD29``, ``NAVD88``, or ``OTHER``). It is critical that all elevations for a location are stored in the same datum to ensure consistency and allow for proper datum conversion during storage or retrieval.
 * **OTHER**: An outward-facing synonym for custom datums (represented as ``LOCAL`` in the database).

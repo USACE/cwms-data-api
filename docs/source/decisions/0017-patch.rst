@@ -1,12 +1,15 @@
-#####
+###################################
 PATCH Handling Across CDA Endpoints
-#####
+###################################
 
 
 Summary
 =======
 
-This ADR defines a standardized approach for implementing HTTP PATCH across CDA endpoints. PATCH operations SHALL identify the target resource using path parameters and include only the fields to be modified in the request body. Existing DTOs will be reused by retrieving the current resource representation and applying the incoming JSON using Jackson's ``ObjectMapper.readerForUpdating()``.
+This ADR defines a standardized approach for implementing HTTP PATCH across CDA endpoints. PATCH operations SHALL
+identify the target resource using path parameters and include only the fields to be modified in the request body.
+Existing DTOs will be reused by retrieving the current resource representation and applying the incoming JSON using
+Jackson's ``ObjectMapper.readerForUpdating()``.
 
 
 Opinions
@@ -20,7 +23,10 @@ Opinion 1
 Summary
 ~~~~~~~
 
-PATCH requests should represent both partial and total updates. Resource identifiers belong in the request path, while the request body contains only the properties to be modified. To preserve the distinction between omitted properties and properties explicitly set to ``null``, PATCH operations will retrieve the existing resource and apply the incoming JSON onto that object using Jackson's update capabilities.
+PATCH requests should represent both partial and total updates. Resource identifiers belong in the request path,
+while the request body contains only the properties to be modified. To preserve the distinction between omitted
+properties and properties explicitly set to ``null``, PATCH operations will retrieve the existing resource and
+apply the incoming JSON onto that object using Jackson's update capabilities.
 
 That mechanism covers scalar fields well: Jackson's tree merge (``ObjectMapper.readerForUpdating()``)
 naturally leaves an omitted scalar field unchanged and overwrites one that's present, because it
@@ -36,7 +42,7 @@ PATCH endpoints whose body may include a collection field SHALL expose a
 ``collection-merge-strategy`` query parameter so the caller picks between wholesale replacement
 and an identity-aware merge -- see OVERWRITE and MERGE below.
 
-For endpoints scoped by a time window (``begin``/``end``, as the time-series endpoints are), that
+For endpoints scoped by a time window (``begin`` / ``end``, as the time-series endpoints are), that
 window bounds the entire operation: it's what determines which existing rows are retrieved prior
 to the merge, and consequently the only rows that can ever be read or affected by the PATCH at
 all. Data outside the window is never touched, regardless of merge strategy.
@@ -86,10 +92,9 @@ Key points
        parameter with values ``OVERWRITE`` (default) and ``MERGE``
      - Names the operation precisely rather than reusing a bare "replace" that could be misread as
        describing HTTP semantics rather than this specific per-row behavior.
-   * - OVERWRITE
-     - The colle#####
+  
 PATCH Handling Across CDA Endpoints
-#####
+###################################
 
 
 Summary
@@ -366,88 +371,119 @@ Jackson ``ObjectMapper.readerForUpdating()``
 
 RFC 5789 - PATCH Method for HTTP
 
-RFC 7396 - JSON Merge Patchction becomes exactly the set of items named in the request body. Any existing
-       item that falls within the request's time window but isn't named in the body is removed.
-     - Matches "replace" as most callers mean it for a bounded window: the window's collection now
-       looks exactly like what was sent, not like what was sent plus leftovers.
-   * - MERGE
-     - Items named in the request body are matched against existing items by that collection's
-       identity field(s), then updated in place -- preserving that one item's own fields the
-       body omits, the same way a top-level PATCH preserves an omitted scalar field. An unmatched
-       identity is added as new. Every other existing item, in or out of the request's time
-       window, is left exactly as it was.
-     - The precise, surgical option: change just the named item(s) without disturbing anything
-       else in the collection, including items in-window that OVERWRITE would otherwise remove.
-   * - MERGE's identity
-     - An item's identity is whichever field(s) of its class are annotated ``@Identifier``,
-       taken together as one composite key -- e.g. both ``date-time`` and ``data-entry-date`` on a
-       text-timeseries row, since two rows can share the same ``date-time`` and are only
-       distinguished by ``data-entry-date``. When an element type has no ``@Identifier`` field
-       at all, identity falls back to whichever field(s) are marked
-       ``@JsonProperty(required = true)`` instead -- e.g. just ``date-time``, for a type with no
-       need of a composite key. ``Formats.parsePatchContent`` finds either via ordinary Jackson
-       bean introspection on the collection's declared element type, generically for any
-       ``CwmsDTOBase``. A null or absent identity field on the incoming item never matches
-       anything, even an existing item whose own value for that field is also null.
-     - A single field isn't always enough to say two items are "the same" one -- text-timeseries
-       rows are the concrete case: ``date-time`` alone can't tell two rows at the same time apart,
-       but the pair can. ``@Identifier`` lets a DTO opt into a composite key for exactly that
-       case while every other DTO keeps the simpler, existing ``@JsonProperty(required = true)``
-       behavior unchanged. Treating a null identity field as "never matches" rather than "ignore
-       this field" matters specifically for a field like ``data-entry-date`` that a client
-       wouldn't normally supply at all (the database assigns it) -- omitting it means "add this as
-       a new row," not "match whatever's at this date-time." A collection whose element type has
-       neither kind of field can't use MERGE (the request fails outright rather than guessing at a
-       key).
-   * - Time window scope
-     - The ``begin``/``end`` window bounds what is retrieved as "existing" prior to the merge and
-       what gets deleted-and-restored by the storage step (see Storage implementation below),
-       under every strategy. Data outside the window is never read or written, regardless of
-       strategy.
-     - The window is what the existing resource retrieval is already scoped to; keeping the
-       storage step's reach to that same scope (and no further) keeps the window's meaning
-       consistent between GET and PATCH.
-   * - Superseding replace-all (query parameter)
-     - The old ``replace-all`` boolean query parameter is removed from the text-timeseries PATCH
-       endpoint (it remains as-is for POST). ``collection-merge-strategy`` now fully determines,
-       per row, whether a value at an already-populated date-time is overwritten or left in place
-       alongside the new one.
-     - The old ``replace-all`` and the new ``collection-merge-strategy`` were overlapping,
-       similarly-named knobs answering the same underlying question at different layers
-       (store-call collision handling vs. body-level merge behavior); keeping both invited the two
-       being set inconsistently with each other.
-   * - Storage implementation
-     - Storage is uniform across both strategies: the controller deletes everything in the
-       ``begin``/``end`` window and stores exactly the merged collection's rows with
-       ``replaceAll=true``, both within a single transaction (``TimeSeriesTextDao.update``, backed
-       by one checked-out connection) -- not a per-strategy delete/diff path, and not two
-       independent DAO calls.
-     - The merge already computes the correct final row set per strategy -- OVERWRITE's named
-       items only, MERGE's matched-and-updated items plus every untouched existing item carried
-       through, plus any unmatched incoming item added as new (possibly sharing a date-time with
-       an existing item it didn't match, since its identity -- date-time and data-entry-date
-       together -- differs) -- so uniformly clearing and restoring the window reaches the right
-       end state regardless of strategy. The store call can't do this alone: it only ever touches
-       the date-times it's given, never removing one it isn't, which is why the delete is still
-       required. Running both in one transaction also means a failure partway through can't leave
-       the window deleted but not repopulated, the way two independent calls could. Because the
-       window is fully cleared first, a new row that happens to share a date-time with something
-       already there is stored into an empty slot rather than colliding with anything, so
-       ``replaceAll=true`` is safe for every strategy -- there's nothing left in the window for it
-       to overwrite by the time any row is stored.
-   * - Absent or empty collection
-     - A PATCH body that omits the collection field entirely, or names it with an empty array,
-       still goes through the same delete-and-restore -- but the merge carries the existing rows
-       through unchanged, so the window's observable content afterward is identical to what it was
-       before.
-     - The merge already resolves this without a separate check: an absent or empty collection
-       field never changes what the merged DTO says the window should contain, so the same
-       uniform storage step reaches the correct (unchanged) result. The tradeoff is that every row
-       in the window is still deleted and re-stored even when nothing about the collection was
-       named in the body, rather than being left alone entirely.
+RFC 7396 - 
+
+.. list-table::
+    :header-rows: 1
+    :widths: 20 25 55
+
+    * - Operation
+      - Description
+      - Usage
+ 
+    * - JSON Merge Patch action becomes exactly the set of items named in the request body. Any existing
+        item that falls within the request\'s time window but isn't named in the body is removed.
+
+      - Matches \"replace\" as most callers mean it for a bounded window: the window\'s collection now
+        looks exactly like what was sent, not like what was sent plus leftovers.
+
+      - 
+
+    * - MERGE
+
+      - Items named in the request body are matched against existing items by that collection's
+        identity field(s), then updated in place -- preserving that one item's own fields the
+        body omits, the same way a top-level PATCH preserves an omitted scalar field. An unmatched
+        identity is added as new. Every other existing item, in or out of the request's time
+        window, is left exactly as it was.
+
+      - The precise, surgical option: change just the named item(s) without disturbing anything
+        else in the collection, including items in-window that OVERWRITE would otherwise remove.
+
+    * - MERGE's identity
+
+      - An item's identity is whichever field(s) of its class are annotated ``@Identifier``,
+        taken together as one composite key -- e.g. both ``date-time`` and ``data-entry-date`` on a
+        text-timeseries row, since two rows can share the same ``date-time`` and are only
+        distinguished by ``data-entry-date``. When an element type has no ``@Identifier`` field
+        at all, identity falls back to whichever field(s) are marked
+        ``@JsonProperty(required = true)`` instead -- e.g. just ``date-time``, for a type with no
+        need of a composite key. ``Formats.parsePatchContent`` finds either via ordinary Jackson
+        bean introspection on the collection's declared element type, generically for any
+        ``CwmsDTOBase``. A null or absent identity field on the incoming item never matches
+        anything, even an existing item whose own value for that field is also null.
+
+      - A single field isn't always enough to say two items are "the same" one -- text-timeseries
+        rows are the concrete case: ``date-time`` alone can't tell two rows at the same time apart,
+        but the pair can. ``@Identifier`` lets a DTO opt into a composite key for exactly that
+        case while every other DTO keeps the simpler, existing ``@JsonProperty(required = true)``
+        behavior unchanged. Treating a null identity field as "never matches" rather than "ignore
+        this field" matters specifically for a field like ``data-entry-date`` that a client
+        wouldn't normally supply at all (the database assigns it) -- omitting it means "add this as
+        a new row," not "match whatever's at this date-time." A collection whose element type has
+        neither kind of field can't use MERGE (the request fails outright rather than guessing at a
+        key).
+
+    * - Time window scope
+    
+      - The ``begin``/``end`` window bounds what is retrieved as "existing" prior to the merge and
+        what gets deleted-and-restored by the storage step (see Storage implementation below),
+        under every strategy. Data outside the window is never read or written, regardless of
+        strategy.
+
+      - The window is what the existing resource retrieval is already scoped to; keeping the
+        storage step's reach to that same scope (and no further) keeps the window's meaning
+        consistent between GET and PATCH.
+
+    * - Superseding replace-all (query parameter)
+
+      - The old ``replace-all`` boolean query parameter is removed from the text-timeseries PATCH
+        endpoint (it remains as-is for POST). ``collection-merge-strategy`` now fully determines,
+        per row, whether a value at an already-populated date-time is overwritten or left in place
+        alongside the new one.
+
+      - The old ``replace-all`` and the new ``collection-merge-strategy`` were overlapping,
+        similarly-named knobs answering the same underlying question at different layers
+        (store-call collision handling vs. body-level merge behavior); keeping both invited the two
+        being set inconsistently with each other.
+
+    * - Storage implementation
+
+      - Storage is uniform across both strategies: the controller deletes everything in the
+        ``begin``/``end`` window and stores exactly the merged collection's rows with
+        ``replaceAll=true``, both within a single transaction (``TimeSeriesTextDao.update``, backed
+        by one checked-out connection) -- not a per-strategy delete/diff path, and not two
+        independent DAO calls.
+
+      - The merge already computes the correct final row set per strategy -- OVERWRITE's named
+        items only, MERGE's matched-and-updated items plus every untouched existing item carried
+        through, plus any unmatched incoming item added as new (possibly sharing a date-time with
+        an existing item it didn't match, since its identity -- date-time and data-entry-date
+        together -- differs) -- so uniformly clearing and restoring the window reaches the right
+        end state regardless of strategy. The store call can't do this alone: it only ever touches
+        the date-times it's given, never removing one it isn't, which is why the delete is still
+        required. Running both in one transaction also means a failure partway through can't leave
+        the window deleted but not repopulated, the way two independent calls could. Because the
+        window is fully cleared first, a new row that happens to share a date-time with something
+        already there is stored into an empty slot rather than colliding with anything, so
+        ``replaceAll=true`` is safe for every strategy -- there's nothing left in the window for it
+        to overwrite by the time any row is stored.
+
+    * - Absent or empty collection
+  
+      - A PATCH body that omits the collection field entirely, or names it with an empty array,
+        still goes through the same delete-and-restore -- but the merge carries the existing rows
+        through unchanged, so the window's observable content afterward is identical to what it was
+        before.
+
+      - The merge already resolves this without a separate check: an absent or empty collection
+        field never changes what the merged DTO says the window should contain, so the same
+        uniform storage step reaches the correct (unchanged) result. The tradeoff is that every row
+        in the window is still deleted and re-stored even when nothing about the collection was
+        named in the body, rather than being left alone entirely.
 
 Example
-~~~~~~~
+-------
 
 Example endpoint:
 

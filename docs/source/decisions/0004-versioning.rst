@@ -44,15 +44,16 @@ After X years the root URLs will redirect to the latest version.
 
 e.g.
 
-  .. code-block:: bash
-        # now
-        curl "https://cwms-data.usace.army/cwms-data/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
-        # will redirect to
-        curl "https://cwms-data.usace.army/cwms-data/v1/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
-        # after transition period, *IF* there is a new version
-        # will redirect to
-        curl "https://cwms-data.usace.army/cwms-data/v<next>/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
-        # if possible, query parameters can be updated on behalf of the user
+.. code-block:: bash
+
+    # now
+    curl "https://cwms-data.usace.army/cwms-data/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
+    # will redirect to
+    curl "https://cwms-data.usace.army/cwms-data/v1/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
+    # after transition period, *IF* there is a new version
+    # will redirect to
+    curl "https://cwms-data.usace.army/cwms-data/v<next>/timeseries/Black Butte.Stor.Inst.~1Day.0.Calc-val?units=ft"
+    # if possible, query parameters can be updated on behalf of the user
 
 
 Opinions
