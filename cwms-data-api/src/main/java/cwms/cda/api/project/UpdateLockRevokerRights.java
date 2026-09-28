@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dao.project.ProjectLockDaoV1;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -86,7 +86,7 @@ public class UpdateLockRevokerRights implements Handler {
         Boolean allow = requiredParamAs(ctx, Controllers.ALLOW, Boolean.class);
 
         try (final Timer.Context ignored = markAndTime("updateRights")) {
-            ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(JooqDao.getDslContext(ctx));
             lockDao.updateLockRevokerRights(office, projMask, appId, userId, allow);
         }
         ctx.status(HttpServletResponse.SC_OK);

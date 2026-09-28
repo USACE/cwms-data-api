@@ -265,7 +265,7 @@ Existing endpoints that support PATCH
 Decision Status
 ===============
 
-(Status: accepted)
+(Status: Superseded by 0017-patch.rst)
 
 
 References

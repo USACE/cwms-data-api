@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,9 +28,6 @@ import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.Histogram;
@@ -40,78 +37,53 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectLockGetOne implements Handler {
+
+public abstract class ProjectLockGetOne<T extends CwmsDTOBase & ProjectLock> implements Handler {
     private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
     public static final String TAGS = "Project Locks";
 
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
-    private Timer.Context markAndTime(String subject) {
+    protected Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public ProjectLockGetOne(MetricRegistry metrics) {
+    protected ProjectLockGetOne(MetricRegistry metrics, Class<?> metricsIdentity) {
         this.metrics = metrics;
         requestResultSize = this.metrics.histogram((
-                name(ProjectLockGetOne.class, Controllers.RESULTS, Controllers.SIZE)));
+                name(metricsIdentity, Controllers.RESULTS, Controllers.SIZE)));
     }
 
-    @OpenApi(
-            description = "Return a lock if the specified project is locked. Otherwise 404",
-            queryParams = {
-                @OpenApiParam(name = OFFICE, required = true,
-                        description = "The office id."),
-                @OpenApiParam(name = APPLICATION_ID, required = true,
-                        description = "The application-id"),
-            },
-            pathParams = {
-                @OpenApiParam(name = NAME, required = true,
-                        description = "The id of the project."),
-            },
-            responses = {
-                @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(type = Formats.JSON, from = ProjectLock.class)}
-                ),
-                @OpenApiResponse(status = STATUS_404, description = "No matching Lock was found.")
-            },
-            security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
-            },
-            tags = {TAGS},
-            method = HttpMethod.GET
-    )
+    protected abstract ProjectLockDao<T> getDao(Context ctx);
+
+    protected abstract Class<T> lockClass();
+
+    protected abstract String getOffice(Context ctx);
+
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
+        String office = getOffice(ctx);
         String prjId = ctx.pathParam(NAME);
-
-        String office = requiredParam(ctx, OFFICE);
         String appId = requiredParam(ctx, APPLICATION_ID);
 
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-            ProjectLock lock = lockDao.retrieveLock(office, prjId, appId);
+            T lock = getDao(ctx).retrieveLock(office, prjId, appId);
             if (lock != null) {
                 String acceptHeader = ctx.header(Header.ACCEPT);
-                ContentType acceptType = Formats.parseHeader(acceptHeader, ProjectLock.class);
+                ContentType acceptType = Formats.parseHeader(acceptHeader, lockClass());
                 String result = Formats.format(acceptType, lock);
                 ctx.contentType(acceptType.toString());
                 requestResultSize.update(result.length());

@@ -1,0 +1,37 @@
+{
+  "project-id": {
+    "office-id": "SWT",
+    "name": "KEYS"
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "KEYS-LF1",
+    "latitude": 36.1506371,
+    "longitude": -96.2525088,
+    "active": true,
+    "public-name": "LF1",
+    "long-name": "LF1",
+    "timezone-name": "US/Central",
+    "location-kind": "OUTLET",
+    "nation": "US",
+    "state-initial": "OK",
+    "county-name": "Tulsa",
+    "nearest-city": "Sand Springs, OK",
+    "horizontal-datum": "NAD83",
+    "published-longitude": 0.0,
+    "published-latitude": 0.0,
+    "vertical-datum": "NGVD29",
+    "elevation": 0.0,
+    "bounding-office-id": "SWT",
+    "elevation-units": "m"
+  },
+  "rating-group-id": {
+    "office-id": "SWT",
+    "name": "KEYS-LOW flow pipes"
+  },
+  "rating-spec-id": "KEYS.Opening-Sluice_Gates,Elev;Flow-Sluice_Gates.Standard.Production",
+  "rating-category-id": {
+    "office-id": "SWT",
+    "name": "Rating"
+  }
+}

@@ -17,12 +17,17 @@ import LocationSearch from "./pages/LocationSearch.jsx";
 
 // Styles
 import "@usace/groundwork/dist/groundwork.css";
+import "@usace-watermanagement/groundwork-water/dist/style.css";
 import "./css/index.css";
 import ErrorFallback from "./pages/ErrorFallback";
 import FilterExpressions from "./pages/rsql";
 import Timestamps from "./pages/timestamps";
 import LegacyFormat from "./pages/legacy-format/index.jsx";
 import UserLists from "./pages/user-lists/index.jsx";
+import Users from "./pages/users/index.jsx";
+import UserRoles from "./pages/user-roles/index.jsx";
+import ApiKeys from "./pages/api-keys/index.jsx";
+import ApiKeyHelp from "./pages/api-keys/help.jsx";
 import { routePaths } from "./route-paths";
 import AppAuthProvider from "./components/AppAuthProvider.jsx";
 import GlobalErrorBoundary from "./components/GlobalErrorBoundary.jsx";
@@ -38,6 +43,10 @@ const routeComponents = {
   "legacy-format": LegacyFormat,
   "location-search": LocationSearch,
   "user-lists": UserLists,
+  users: Users,
+  "user-roles": UserRoles,
+  "api-keys": ApiKeys,
+  "api-key-help": ApiKeyHelp,
 };
 
 const router = createBrowserRouter(

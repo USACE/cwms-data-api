@@ -26,6 +26,7 @@ Welcome to CWMS Data API documentation!
    Endpoints <./endpoints/index.rst>
    Endpoint Parameters <./parameters/index.rst>
    API References <./api-references.rst>
+   User Onboarding <./user-onboarding.md>
 
 
 .. toctree::

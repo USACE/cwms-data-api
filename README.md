@@ -33,23 +33,23 @@
     <tbody>
       <tr>
         <td>Latest</td>
-        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest.svg"></td>
-        <td><img alt="Latest Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/latest-coverage.svg"></td>
+        <td><img alt="Latest Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/latest.svg"></td>
+        <td><img alt="Latest Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/latest-coverage.svg"></td>
       </tr>
       <tr>
         <td>Current Release</td>
-        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release.svg"></td>
-        <td><img alt="Current Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/release-coverage.svg"></td>
+        <td><img alt="Current Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/release.svg"></td>
+        <td><img alt="Current Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Next Release</td>
-        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release.svg"></td>
-        <td><img alt="Next Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/next-release-coverage.svg"></td>
+        <td><img alt="Next Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/next-release.svg"></td>
+        <td><img alt="Next Coverage, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/next-release-coverage.svg"></td>
       </tr>
       <tr>
         <td>Previous Release - NOTE: Not applicable yet</td>
-        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous.svg"></td>
-        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/11/previous-coverage.svg"></td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/previous.svg"></td>
+        <td><img alt="Previous Status, Svg" src="https://raw.githubusercontent.com/USACE/cwms-data-api/refs/heads/badges/build/17/previous-coverage.svg"></td>
       </tr>
     </tbody>
   </table>

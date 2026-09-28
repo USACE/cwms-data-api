@@ -6,11 +6,13 @@ import externalLinks from "../links/external-links";
 import Breadcrumbs from "./Breadcrumbs";
 import { FaGithub } from "react-icons/fa";
 import AuthButton from "./AuthButton";
+import { useAuth } from "@usace-watermanagement/groundwork-water";
 
 export default function Layout() {
+  const { isAuth } = useAuth();
   return (
     <SiteWrapper
-      links={headerLinks}
+      links={headerLinks.filter((link) => !link.requiresAuth || isAuth)}
       usaBanner
       army250Logo
       subtitle="CWMS Restful API for Data Retrieval"

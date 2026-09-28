@@ -3,6 +3,9 @@ package cwms.cda.formatters;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import cwms.cda.api.enums.CollectionPatchStrategy;
+import cwms.cda.api.enums.VersionType;
+import cwms.cda.api.errors.RequiredFieldException;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
 import cwms.cda.data.dto.Catalog;
@@ -17,10 +20,17 @@ import cwms.cda.data.dto.State;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.data.dto.project.Project;
+import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
+import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2Office;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -29,6 +39,230 @@ import org.junit.jupiter.params.provider.EnumSource;
 class FormatsTest {
 
     public static final String FIREFOX_HEADER = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
+
+    @Test
+    void testParsePatchContentPreservesFieldsOmittedFromBody() {
+        TextTimeSeries existing = new TextTimeSeries.Builder()
+                .withOfficeId("SPK")
+                .withName("TsTestLoc.Flow.Inst.1Hour.0.raw")
+                .withTimeZone("UTC")
+                .withDateVersionType(VersionType.UNVERSIONED)
+                .build();
+
+        // Body only contains rows -- no office-id, name, time-zone, or date-version-type.
+        String patchBody = "{\"regular-text-values\":[{\"date-time\":\"2024-01-01T00:00:00Z\","
+                + "\"text-value\":\"updated\"}]}";
+
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class);
+
+        assertEquals("SPK", patched.getOfficeId(), "office-id omitted from body should be preserved");
+        assertEquals("TsTestLoc.Flow.Inst.1Hour.0.raw", patched.getName(), "name omitted from body should be preserved");
+        assertEquals("UTC", patched.getTimeZone(), "time-zone omitted from body should be preserved");
+        assertEquals(VersionType.UNVERSIONED, patched.getDateVersionType());
+        assertNotNull(patched.getRegularTextValues());
+        assertEquals(1, patched.getRegularTextValues().size());
+        assertEquals("updated", patched.getRegularTextValues().iterator().next().getTextValue());
+    }
+
+    @Test
+    void testParsePatchContentArrayReplacedWithOverwrite() {
+        List<RegularTextTimeSeriesRow> existingRows = new ArrayList<>();
+        existingRows.add(new RegularTextTimeSeriesRow.Builder()
+                .withDateTime(Instant.parse("2024-01-01T00:00:00Z"))
+                .withTextValue("original one")
+                .build());
+        existingRows.add(new RegularTextTimeSeriesRow.Builder()
+                .withDateTime(Instant.parse("2024-01-01T01:00:00Z"))
+                .withTextValue("original two")
+                .build());
+        TextTimeSeries existing = new TextTimeSeries.Builder()
+                .withOfficeId("SPK")
+                .withName("TsTestLoc.Flow.Inst.1Hour.0.raw")
+                .withTimeZone("UTC")
+                .withDateVersionType(VersionType.UNVERSIONED)
+                .withRegularTextValues(existingRows)
+                .build();
+
+        // Body only contains rows -- no office-id, name, time-zone, or date-version-type.
+        String patchBody = "{\"regular-text-values\":[{\"date-time\":\"2024-01-01T00:00:00Z\","
+                + "\"text-value\":\"updated\"}]}";
+
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class, CollectionPatchStrategy.OVERWRITE);
+
+        assertEquals("SPK", patched.getOfficeId(), "office-id omitted from body should be preserved");
+        assertEquals("TsTestLoc.Flow.Inst.1Hour.0.raw", patched.getName(), "name omitted from body should be preserved");
+        assertEquals("UTC", patched.getTimeZone(), "time-zone omitted from body should be preserved");
+        assertEquals(VersionType.UNVERSIONED, patched.getDateVersionType());
+        assertNotNull(patched.getRegularTextValues());
+        assertEquals(1, patched.getRegularTextValues().size());
+        assertEquals("updated", patched.getRegularTextValues().iterator().next().getTextValue());
+    }
+
+    @Test
+    void testParsePatchContentExplicitNullClearsField() {
+        TextTimeSeries existing = new TextTimeSeries.Builder()
+                .withOfficeId("SPK")
+                .withName("TsTestLoc.Flow.Inst.1Hour.0.raw")
+                .withTimeZone("UTC")
+                .withVersionDate(Instant.parse("2024-01-01T00:00:00Z"))
+                .build();
+
+        // Explicitly clears version-date while leaving time-zone untouched.
+        String patchBody = "{\"version-date\":null}";
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class);
+
+        assertNull(patched.getVersionDate(), "explicit null in the body should clear the field");
+        assertEquals("UTC", patched.getTimeZone(), "fields omitted from the body should remain unchanged");
+    }
+
+    @Test
+    void testParsePatchContentFullPayloadBehavesLikeANormalParse() {
+        TextTimeSeries existing = new TextTimeSeries.Builder().build();
+
+        String patchBody = "{\"office-id\":\"SPK\",\"name\":\"TsTestLoc.Flow.Inst.1Hour.0.raw\","
+                + "\"time-zone\":\"UTC\",\"regular-text-values\":["
+                + "{\"date-time\":\"2024-01-01T00:00:00Z\",\"text-value\":\"v\"}]}";
+
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class);
+
+        assertEquals("SPK", patched.getOfficeId());
+        assertEquals("TsTestLoc.Flow.Inst.1Hour.0.raw", patched.getName());
+        assertEquals("UTC", patched.getTimeZone());
+        assertEquals(1, Objects.requireNonNull(patched.getRegularTextValues()).size());
+    }
+
+    @Test
+    void testParsePatchContentMissingRequiredFieldFailsValidation() {
+        // No office-id anywhere -- not on existing, and not in the body.
+        TextTimeSeries existing = new TextTimeSeries.Builder().withName("SomeName").build();
+
+        String patchBody = "{\"time-zone\":\"UTC\"}";
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+
+        assertThrows(RequiredFieldException.class,
+                () -> Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class));
+    }
+
+    @Test
+    void testParsePatchContentMergeUpdatesMatchedItemPreservingOthers() {
+        // MERGE matches a patch item to an existing one by the field(s) marked @Identifier on
+        // the element type -- both date-time and data-entry-date together, for
+        // RegularTextTimeSeriesRow, since two rows can share a date-time and are only
+        // distinguished by data-entry-date -- and updates just that item in place, unlike
+        // OVERWRITE (see testParsePatchContentReplacesArrayInsteadOfAppending above), which would
+        // drop the row the body doesn't mention.
+        Instant firstDataEntryDate = Instant.parse("2023-12-31T00:00:00Z");
+        Instant secondDataEntryDate = Instant.parse("2023-12-31T01:00:00Z");
+        TextTimeSeries existing = new TextTimeSeries.Builder()
+                .withOfficeId("SPK")
+                .withName("TsTestLoc.Flow.Inst.1Hour.0.raw")
+                .withTimeZone("UTC")
+                .withRegRow(new RegularTextTimeSeriesRow.Builder()
+                        .withDateTime(Instant.parse("2024-01-01T00:00:00Z"))
+                        .withDataEntryDate(firstDataEntryDate)
+                        .withTextValue("original one")
+                        .build())
+                .withRegRow(new RegularTextTimeSeriesRow.Builder()
+                        .withDateTime(Instant.parse("2024-01-01T01:00:00Z"))
+                        .withDataEntryDate(secondDataEntryDate)
+                        .withTextValue("original two")
+                        .build())
+                .build();
+
+        // Names the first row's full identity -- date-time and data-entry-date -- and its new
+        // text-value.
+        String patchBody = "{\"regular-text-values\":[{\"date-time\":\"2024-01-01T00:00:00Z\","
+                + "\"data-entry-date\":\"" + firstDataEntryDate + "\",\"text-value\":\"patched\"}]}";
+
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class,
+                CollectionPatchStrategy.MERGE);
+
+        assertNotNull(patched.getRegularTextValues());
+        assertEquals(2, patched.getRegularTextValues().size(),
+                "MERGE should update the matched row in place, not drop the row the body doesn't mention");
+        Map<Instant, String> byDate = patched.getRegularTextValues().stream()
+                .collect(Collectors.toMap(RegularTextTimeSeriesRow::getDateTime, RegularTextTimeSeriesRow::getTextValue));
+        assertEquals("patched", byDate.get(Instant.parse("2024-01-01T00:00:00Z")));
+        assertEquals("original two", byDate.get(Instant.parse("2024-01-01T01:00:00Z")),
+                "the row not named in the body should be untouched");
+    }
+
+    @Test
+    void testParsePatchContentMergeWithoutAllIdentifiersMatching() {
+        TextTimeSeries existing = new TextTimeSeries.Builder()
+                .withOfficeId("SPK")
+                .withName("TsTestLoc.Flow.Inst.1Hour.0.raw")
+                .withTimeZone("UTC")
+                .withRegRow(new RegularTextTimeSeriesRow.Builder()
+                        .withDateTime(Instant.parse("2024-01-01T00:00:00Z"))
+                        .withDataEntryDate(Instant.parse("2023-12-31T00:00:00Z"))
+                        .withTextValue("original one")
+                        .build())
+                .build();
+
+        // Same date-time as the existing row, but no data-entry-date named.
+        String patchBody = "{\"regular-text-values\":[{\"date-time\":\"2024-01-01T00:00:00Z\","
+                + "\"text-value\":\"second value at the same time\"}]}";
+
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class,
+                CollectionPatchStrategy.MERGE);
+
+        assertEquals(2, Objects.requireNonNull(patched.getRegularTextValues()).size(),
+                "a null or absent identity field on the incoming item should never match, even "
+                        + "against an existing item at the same date-time");
+    }
+
+    @Test
+    void testParsePatchContentMergeAddsUnmatchedIdentifierAsNew() {
+        TextTimeSeries existing = new TextTimeSeries.Builder()
+                .withOfficeId("SPK")
+                .withName("TsTestLoc.Flow.Inst.1Hour.0.raw")
+                .withTimeZone("UTC")
+                .withRegRow(new RegularTextTimeSeriesRow.Builder()
+                        .withDateTime(Instant.parse("2024-01-01T00:00:00Z"))
+                        .withTextValue("original one")
+                        .build())
+                .build();
+
+        // Names a date-time that doesn't match anything existing.
+        String patchBody = "{\"regular-text-values\":[{\"date-time\":\"2024-01-01T02:00:00Z\","
+                + "\"text-value\":\"brand new\"}]}";
+
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, patchBody, TextTimeSeries.class,
+                CollectionPatchStrategy.MERGE);
+
+        assertEquals(2, Objects.requireNonNull(patched.getRegularTextValues()).size(),
+                "an identifier that doesn't match anything existing should be added, not replace anything");
+    }
+
+    @Test
+    void testParsePatchContentEmptyArrayDoesNotWipeExistingCollection() {
+        TextTimeSeries existing = new TextTimeSeries.Builder()
+                .withOfficeId("SPK")
+                .withName("TsTestLoc.Flow.Inst.1Hour.0.raw")
+                .withTimeZone("UTC")
+                .withRegRow(new RegularTextTimeSeriesRow.Builder()
+                        .withDateTime(Instant.parse("2024-01-01T00:00:00Z"))
+                        .withTextValue("original one")
+                        .build())
+                .build();
+        ContentType contentType = Formats.parseHeader("application/json;version=2", TextTimeSeries.class);
+
+        String emptyBody = "{\"regular-text-values\":[]}";
+        TextTimeSeries patched = Formats.parsePatchContent(contentType, existing, emptyBody, TextTimeSeries.class,
+                CollectionPatchStrategy.OVERWRITE);
+
+        assertEquals(1, Objects.requireNonNull(patched.getRegularTextValues()).size(),
+                "an explicitly empty regular-text-values must not wipe out the existing row");
+        assertEquals("original one", patched.getRegularTextValues().iterator().next().getTextValue());
+    }
 
     @Test
     void testParseHeaderAndQueryParmJson() {

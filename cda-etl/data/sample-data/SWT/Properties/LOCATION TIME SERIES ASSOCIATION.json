@@ -1,0 +1,3676 @@
+[
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.ALTU",
+    "value": "ALTU.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.ARCA",
+    "value": "ARCA.Opening-Low_Flow_Gates.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.CANT",
+    "value": "CANT.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.CHOU",
+    "value": "CHOU.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.DENI",
+    "value": "DENI.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.EUFA",
+    "value": "EUFA.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.HEYB",
+    "value": "HEYB.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.HUDS",
+    "value": "HUDS.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.KAWL",
+    "value": "KAWL.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.KEYS",
+    "value": "KEYS.Opening-Spillway_Gates.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.PENS",
+    "value": "PENS.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.PINE",
+    "value": "PINE.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.SKIA",
+    "value": "SKIA.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.TENK",
+    "value": "TENK.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.WAUR",
+    "value": "WAUR.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_INPUT.GateSettings_gate_opening.WEBB",
+    "value": "WEBB.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.ALTU",
+    "value": "ALTU.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.ARCA",
+    "value": "ARCA.Opening-Low_Flow_Gates.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.CANT",
+    "value": "CANT.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.CHOU",
+    "value": "CHOU.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.DENI",
+    "value": "DENI.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.EUFA",
+    "value": "EUFA.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.HEYB",
+    "value": "HEYB.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.HUDS",
+    "value": "HUDS.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.KAWL",
+    "value": "KAWL.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.KEYS",
+    "value": "KEYS.Opening-Spillway_Gates.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.PENS",
+    "value": "PENS.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.PINE",
+    "value": "PINE.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.SKIA",
+    "value": "SKIA.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.TENK",
+    "value": "TENK.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.WAUR",
+    "value": "WAUR.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_OUTPUT.GateSettings_gate_opening.WEBB",
+    "value": "WEBB.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.ALTU",
+    "value": "ALTU.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.ARCA",
+    "value": "ARCA.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.CANT",
+    "value": "CANT.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.CHOU",
+    "value": "CHOU.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.DENI",
+    "value": "DENI.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.EUFA",
+    "value": "EUFA.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.HEYB",
+    "value": "HEYB.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.HUDS",
+    "value": "HUDS.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.KAWL",
+    "value": "KAWL.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.KEYS",
+    "value": "KEYS.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.PENS",
+    "value": "PENS.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.PINE",
+    "value": "PINE.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.SKIA",
+    "value": "SKIA.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.TENK",
+    "value": "TENK.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.WAUR",
+    "value": "WAUR.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_gate_PRIMARY.GateSettings_gate_opening.WEBB",
+    "value": "WEBB.Opening.Inst.0.0.MANUAL"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_INPUT.Navigation_flow_1day.%base%",
+    "value": "%base%.Flow-Navigation Out.Total.~1Day~0s.1Day.Rev-Regi-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_INPUT.Navigation_flow_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Navigation Out.Total.~1Day~0s.1Day.Rev-Regi-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_INPUT.Navigation_lockage_count_1day.%base%",
+    "value": "%base%.Count-Lockages.Total.~1Day~0s.1Day.Rev-Manual"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_INPUT.Navigation_lockage_count_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Count-Lockages.Total.~1Day~0s.1Day.Rev-Manual"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_OUTPUT.Navigation_flow_1day.%base%",
+    "value": "%base%.Flow-Navigation Out.Total.~1Day~0s.1Day.Rev-Regi-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_OUTPUT.Navigation_flow_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Navigation Out.Total.~1Day~0s.1Day.Rev-Regi-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_OUTPUT.Navigation_lockage_count_1day.%base%",
+    "value": "%base%.Count-Lockages.Total.~1Day~0s.1Day.Rev-Manual"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_OUTPUT.Navigation_lockage_count_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Count-Lockages.Total.~1Day~0s.1Day.Rev-Manual"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_PRIMARY.Navigation_flow_1day.%base%",
+    "value": "%base%.Flow-Navigation Out.Total.~1Day~0s.1Day.Rev-Regi-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_lock_PRIMARY.Navigation_lockage_count_1day.%base%",
+    "value": "%base%.Count-Lockages.Total.~1Day~0s.1Day.Rev-Manual"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_Project_Notes.%base%",
+    "value": "%base%.Text.Inst.~1Day.0.Wcds-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_Project_Notes.?GLOBAL?",
+    "value": "?GLOBAL?.Text.Inst.~1Day.0.Wcds-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_pool_raw.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_pool_raw.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_pool_rev.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_pool_rev.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_pool_rev.BEAR",
+    "value": "TORO.Elev.Inst.1Hour.0.Goes-raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_tailwater_raw.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_tailwater_raw.?GLOBAL?",
+    "value": "?GLOBAL?.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_tailwater_rev.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_elevation_tailwater_rev.?GLOBAL?",
+    "value": "?GLOBAL?.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_project_storage_raw.%base%",
+    "value": "%base%.Stor.Inst.1Hour.0.Ccp-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_project_storage_raw.?GLOBAL?",
+    "value": "?GLOBAL?.Stor.Inst.1Hour.0.Ccp-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_project_storage_rev.%base%",
+    "value": "%base%.Stor.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Elevation_project_storage_rev.?GLOBAL?",
+    "value": "?GLOBAL?.Stor.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.GateSettings_elevation_pool.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.GateSettings_elevation_pool.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.GateSettings_elevation_tailwater.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.GateSettings_elevation_tailwater.?GLOBAL?",
+    "value": "?GLOBAL?.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly Inflow and Weather Project Notes.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_adjusted_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_adjusted_inflow.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.%base%",
+    "value": "%base%.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.?GLOBAL?",
+    "value": "?GLOBAL?.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.ALTU",
+    "value": "MNSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.ARBU",
+    "value": "SLSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.CHEN",
+    "value": "MARI.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.FCOB",
+    "value": "FCSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.FOSS",
+    "value": "FCSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.KEMP",
+    "value": "TRUS.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.MCGE",
+    "value": "LNSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.MERE",
+    "value": "FRIT.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.THUN",
+    "value": "NRSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_air_temp.TOMS",
+    "value": "LWSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_area.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_barometric_pressure.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_basin_average.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_basin_average.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_computed_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_computed_inflow.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Res In.Ave.1Hour.1Hour.Regi-Rev-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_computed_inflow_daily.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_computed_inflow_daily.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_elevation.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_lake_condition.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_lake_condition.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_project_evap.%base%",
+    "value": "%base%.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_project_evap.?GLOBAL?",
+    "value": "?GLOBAL?.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_project_precip.%base%",
+    "value": "%base%.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_project_precip.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.%base%",
+    "value": "%base%.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.?GLOBAL?",
+    "value": "?GLOBAL?.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.ALTU",
+    "value": "MNSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.ARBU",
+    "value": "SLSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.CHEN",
+    "value": "MARI.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.FCOB",
+    "value": "FCSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.FOSS",
+    "value": "FCSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.KEMP",
+    "value": "TRUS.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.MCGE",
+    "value": "LNSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.MERE",
+    "value": "FRIT.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.THUN",
+    "value": "NRSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_relative_humidity.TOMS",
+    "value": "LWSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_seepage.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_storage.%base%",
+    "value": "%base%.Stor.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_storage.?GLOBAL?",
+    "value": "?GLOBAL?.Stor.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_water_temp.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_weather_condition.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_weather_condition.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.%base%",
+    "value": "%base%.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.?GLOBAL?",
+    "value": "?GLOBAL?.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.ALTU",
+    "value": "MNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.ARBU",
+    "value": "SLSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.CHEN",
+    "value": "MARI.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.EUFA",
+    "value": "EUFA.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.FCOB",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.FOSS",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.MCGE",
+    "value": "LNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.MERE",
+    "value": "FRIT.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.THUN",
+    "value": "NRSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_direction.TOMS",
+    "value": "LWSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.%base%",
+    "value": "%base%.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.?GLOBAL?",
+    "value": "?GLOBAL?.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.ALTU",
+    "value": "MNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.ARBU",
+    "value": "SLSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.CHEN",
+    "value": "MARI.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.EUFA",
+    "value": "EUFA.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.FCOB",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.FOSS",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.KEMP",
+    "value": "TRUS.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.MCGE",
+    "value": "LNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.MERE",
+    "value": "FRIT.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.THUN",
+    "value": "NRSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Hourly_wind_speed.TOMS",
+    "value": "LWSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.HydropowerSettings_elevation_pool.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.HydropowerSettings_elevation_pool.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.HydropowerSettings_elevation_tailwater.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.HydropowerSettings_elevation_tailwater.?GLOBAL?",
+    "value": "?GLOBAL?.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_adjusted_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_adjusted_inflow.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_average_project_release.%base%",
+    "value": "%base%.Flow-Res Out.Ave.~1Day~0s.1Day.Rev-Regi-Flowgroup"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_average_project_release.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Res Out.Ave.~1Day~0s.1Day.Rev-Regi-Flowgroup"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_basin_avg_precip_1day.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_basin_avg_precip_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_basin_avg_precip_1day_alt.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_basin_avg_precip_1day_alt.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_computed_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_computed_inflow.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_net_pumpage.%base%",
+    "value": "%base%.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_net_pumpage.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_elevation.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_evap_1day.%base%",
+    "value": "%base%.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_evap_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_evap_1day_alt.%base%",
+    "value": "%base%.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_evap_1day_alt.?GLOBAL?",
+    "value": "?GLOBAL?.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_precip_1day.%base%",
+    "value": "%base%.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_precip_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_precip_1day_alt.%base%",
+    "value": "%base%.Precip-Alt.Total.1Day.1Day.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_project_precip_1day_alt.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Alt.Total.1Day.1Day.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.%base%",
+    "value": "%base%.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.?GLOBAL?",
+    "value": "?GLOBAL?.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.ALTU",
+    "value": "MNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.ARBU",
+    "value": "SLSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.CHEN",
+    "value": "MARI.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.FCOB",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.FOSS",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.MCGE",
+    "value": "LNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.MERE",
+    "value": "FRIT.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.THUN",
+    "value": "NRSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous.TOMS",
+    "value": "LWSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous_alt.%base%",
+    "value": "%base%.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous_alt.?GLOBAL?",
+    "value": "?GLOBAL?.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_direction_instantaneous_alt.MCGE",
+    "value": "LNSO2.Dir-Wind Alt.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.%base%",
+    "value": "%base%.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.?GLOBAL?",
+    "value": "?GLOBAL?.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.ALTU",
+    "value": "MNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.ARBU",
+    "value": "SLSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.CHEN",
+    "value": "MARI.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.FCOB",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.FOSS",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.KEMP",
+    "value": "TRUS.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.MCGE",
+    "value": "LNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.MERE",
+    "value": "FRIT.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.THUN",
+    "value": "NRSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous.TOMS",
+    "value": "LWSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous_alt.%base%",
+    "value": "%base%.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Inflow_wind_speed_instantaneous_alt.?GLOBAL?",
+    "value": "?GLOBAL?.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Releases_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Releases_elevation.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_basin_avg_precip_1day.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed",
+    "comment": "Basin Average precip that is computed from StageIII estimates with the program Basin_rf.exe"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_basin_avg_precip_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed",
+    "comment": "Basin Average precip that is computed from StageIII estimates with the program Basin_rf.exe"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_computed_evap_1day.%base%",
+    "value": "%base%.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_computed_evap_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_lake_condition.%base%",
+    "value": "%base%.Code-Lake Condition.Inst.1Day.0.Wcds-Obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_lake_condition.?GLOBAL?",
+    "value": "?GLOBAL?.Code-Lake Condition.Inst.1Day.0.Wcds-Obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_lookup_evap_1day.%base%",
+    "value": "%base%.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_lookup_evap_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_pan_evap_1day.%base%",
+    "value": "%base%.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_pan_evap_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_pan_evap_1day_alt.%base%",
+    "value": "%base%.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_pan_evap_1day_alt.?GLOBAL?",
+    "value": "?GLOBAL?.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.%base%",
+    "value": "%base%.Temp-Air.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.?GLOBAL?",
+    "value": "?GLOBAL?.Temp-Air.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.ALTU",
+    "value": "MNSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.ARBU",
+    "value": "SLSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.CHEN",
+    "value": "MARI.Temp-Air.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.FCOB",
+    "value": "FCSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.FOSS",
+    "value": "BTSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.KEMP",
+    "value": "TRUS.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.MCGE",
+    "value": "LNSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.MERE",
+    "value": "FRIT.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.THUN",
+    "value": "NRSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_air_temperature.TOMS",
+    "value": "LWSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_baro_pres.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_elevation.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_evap_1day.%base%",
+    "value": "%base%.Evap.Total.~1Day~7h.1Day.Ccp-Rev",
+    "comment": "Description for: Weather_project_evap_1day"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_evap_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Evap.Total.~1Day~7h.1Day.Ccp-Rev",
+    "comment": "Description for: Weather_project_evap_1day"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_evap_1day.KEYS",
+    "value": "KEYS.Evap.Total.~1Day~7h.1Day.Ccp-Rev",
+    "comment": "Description for: Weather_project_evap_1day"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_evap_type.%base%",
+    "value": "%base%.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_evap_type.?GLOBAL?",
+    "value": "?GLOBAL?.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_evap_type.KEYS",
+    "value": "KEYS.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_obs_precip_1day.%base%",
+    "value": "%base%.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_obs_precip_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_precip_1day.%base%",
+    "value": "%base%.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_precip_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_precip_1day.KEYS",
+    "value": "KEYS.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.%base%",
+    "value": "%base%.%-Humidity.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.?GLOBAL?",
+    "value": "?GLOBAL?.%-Humidity.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.ALTU",
+    "value": "MNSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.ARBU",
+    "value": "SLSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.CHEN",
+    "value": "MARI.%-Humidity.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.FCOB",
+    "value": "FCSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.FOSS",
+    "value": "BTSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.KEMP",
+    "value": "TRUS.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.MCGE",
+    "value": "LNSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.MERE",
+    "value": "FRIT.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.THUN",
+    "value": "NRSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_project_relh_temperature.TOMS",
+    "value": "LWSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_weather_condition.%base%",
+    "value": "%base%.Code-Weather Condition.Inst.1Day.0.Wcds-Obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_weather_condition.?GLOBAL?",
+    "value": "?GLOBAL?.Code-Weather Condition.Inst.1Day.0.Wcds-Obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.%base%",
+    "value": "%base%.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.?GLOBAL?",
+    "value": "?GLOBAL?.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.ALTU",
+    "value": "MNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.ARBU",
+    "value": "SLSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.CHEN",
+    "value": "MARI.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.FCOB",
+    "value": "FCSO2.Dir-Wind.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.FOSS",
+    "value": "BTSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.MCGE",
+    "value": "LNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.MERE",
+    "value": "FRIT.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.THUN",
+    "value": "NRSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_direction_instantaneous.TOMS",
+    "value": "LWSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.%base%",
+    "value": "%base%.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.?GLOBAL?",
+    "value": "?GLOBAL?.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.ALTU",
+    "value": "MNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.ARBU",
+    "value": "SLSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.CHEN",
+    "value": "MARI.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.FCOB",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.FOSS",
+    "value": "BTSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.KEMP",
+    "value": "TRUS.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.MCGE",
+    "value": "LNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.MERE",
+    "value": "FRIT.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.THUN",
+    "value": "NRSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_INPUT.Weather_wind_speed_instantaneous.TOMS",
+    "value": "LWSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_Project_Notes.%base%",
+    "value": "%base%.Text.Inst.~1Day.0.Wcds-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_Project_Notes.?GLOBAL?",
+    "value": "?GLOBAL?.Text.Inst.~1Day.0.Wcds-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_elevation_pool_rev.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_elevation_pool_rev.?GLOBAL?",
+    "value": "?GLOBAL?.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_elevation_tailwater_rev.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_elevation_tailwater_rev.?GLOBAL?",
+    "value": "?GLOBAL?.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_project_storage_rev.%base%",
+    "value": "%base%.Stor.Inst.1Hour.0.Ccp-Rev",
+    "comment": "Description for: Elevation_project_storage_rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Elevation_project_storage_rev.?GLOBAL?",
+    "value": "?GLOBAL?.Stor.Inst.1Hour.0.Ccp-Rev",
+    "comment": "Description for: Elevation_project_storage_rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.ALTU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.ARBU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.CHEN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.FCOB"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.FOSS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.KEMP"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.MCGE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.MERE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.THUN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_air_temp.TOMS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_basin_average.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_computed_inflow_daily.?GLOBAL?"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_lake_condition.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.ALTU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.ARBU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.CHEN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.FCOB"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.FOSS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.KEMP",
+    "value": "TRUS.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.MCGE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.MERE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.THUN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_relative_humidity.TOMS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_water_temp.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_weather_condition.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.ALTU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.ARBU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.CHEN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.FCOB"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.FOSS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.MCGE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.MERE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.THUN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_direction.TOMS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.ALTU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.ARBU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.CHEN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.FCOB"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.FOSS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.KEMP"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.MCGE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.MERE"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.THUN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Hourly_wind_speed.TOMS"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Inflow_adjusted_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Inflow_adjusted_inflow.?GLOBAL?",
+    "value": "?GLOBAL?.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_basin_avg_precip_1day.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed",
+    "comment": "Basin Average precip that is computed from StageIII estimates with the program Basin_rf.exe"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_basin_avg_precip_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed",
+    "comment": "Basin Average precip that is computed from StageIII estimates with the program Basin_rf.exe"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_lake_condition.%base%",
+    "value": "%base%.Code-Lake Condition.Inst.1Day.0.Wcds-Obs",
+    "comment": "Description for: Weather_lake_condition"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_lake_condition.?GLOBAL?",
+    "value": "?GLOBAL?.Code-Lake Condition.Inst.1Day.0.Wcds-Obs",
+    "comment": "Description for: Weather_lake_condition"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_evap_1day.%base%",
+    "value": "%base%.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_evap_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_evap_1day.KEYS",
+    "value": "KEYS.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_evap_type.%base%",
+    "value": "%base%.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_evap_type.?GLOBAL?",
+    "value": "?GLOBAL?.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_evap_type.KEYS",
+    "value": "KEYS.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_precip_1day.%base%",
+    "value": "%base%.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_precip_1day.?GLOBAL?",
+    "value": "?GLOBAL?.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_project_precip_1day.KEYS",
+    "value": "KEYS.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_weather_condition.%base%",
+    "value": "%base%.Code-Weather Condition.Inst.1Day.0.Wcds-Obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_weather_condition.?GLOBAL?",
+    "value": "?GLOBAL?.Code-Weather Condition.Inst.1Day.0.Wcds-Obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.%base%",
+    "value": "%base%.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.?GLOBAL?",
+    "value": "?GLOBAL?.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.ALTU",
+    "value": "MNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.ARBU",
+    "value": "SLSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.CHEN",
+    "value": "CHEN.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.FCOB",
+    "value": "FCSO2.Dir-Wind.Inst.1Hour.0.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.FOSS",
+    "value": "FOSS.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.MCGE",
+    "value": "MCGE.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.MERE",
+    "value": "MERE.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.THUN",
+    "value": "NRSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_direction_instantaneous.TOMS",
+    "value": "LWSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.%base%",
+    "value": "%base%.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.?GLOBAL?",
+    "value": "?GLOBAL?.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.ALTU",
+    "value": "MNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.ARBU",
+    "value": "ARBU.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.CHEN",
+    "value": "CHEN.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.FCOB",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.FOSS",
+    "value": "FOSS.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.KEMP",
+    "value": "TRUS.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.MCGE",
+    "value": "LNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.MERE",
+    "value": "MERE.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.THUN",
+    "value": "NRSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_OUTPUT.Weather_wind_speed_instantaneous.TOMS",
+    "value": "LWSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY..%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_Project_Notes.%base%",
+    "value": "%base%.Text.Inst.~1Day.0.Wcds-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_elevation_pool_raw.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_elevation_pool_raw.JOHN",
+    "value": "JOHN.Elev.Inst.30Minutes~0.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_elevation_pool_rev.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_elevation_tailwater_raw.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_elevation_tailwater_rev.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_elevation_tailwater_rev.OOLO",
+    "value": "OOLO.Elev-Tailwater.Inst.1Hour~0s.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_project_storage_raw.%base%",
+    "value": "%base%.Stor.Inst.1Hour.0.Ccp-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Elevation_project_storage_rev.%base%",
+    "value": "%base%.Stor.Inst.1Hour.0.Ccp-Rev",
+    "comment": "Description for: Elevation_project_storage_rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Evaporation_as_flow.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.GateSettings_elevation_pool.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.GateSettings_elevation_reference.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.GateSettings_elevation_tailwater.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Gates_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly Inflow and Weather Project Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly Inflow and Weather.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_adjusted_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.%base%",
+    "value": "%base%.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.ALTU",
+    "value": "MNSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.ARBU",
+    "value": "SLSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.CHEN",
+    "value": "MARI.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.FCOB",
+    "value": "FCSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.FOSS",
+    "value": "FCSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.KEMP",
+    "value": "TRUS.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.MCGE",
+    "value": "LNSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.MERE",
+    "value": "FRIT.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.THUN",
+    "value": "NRSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_air_temp.TOMS",
+    "value": "LWSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_area.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_barometric_pressure.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_basin_average.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_computed_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.1Hour.1Hour.Rev-Regi-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_computed_inflow_daily.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day.1Day.Raw-Regi-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_lake_condition.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_lake_condition.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_project_evap.%base%",
+    "value": "%base%.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_project_precip.%base%",
+    "value": "%base%.Precip-Inc.Total.1Hour.1Hour.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.%base%",
+    "value": "%base%.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.ALTU",
+    "value": "MNSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.ARBU",
+    "value": "SLSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.CHEN",
+    "value": "MARI.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.FCOB",
+    "value": "FCSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.FOSS",
+    "value": "FCSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.KEMP",
+    "value": "TRUS.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.MCGE",
+    "value": "LNSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.MERE",
+    "value": "FRIT.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.THUN",
+    "value": "NRSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_relative_humidity.TOMS",
+    "value": "LWSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_seepage.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_storage.%base%",
+    "value": "%base%.Stor.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_water_temp.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_weather_condition.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_weather_condition.EUFA"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.%base%",
+    "value": "%base%.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.ALTU",
+    "value": "MNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.ARBU",
+    "value": "SLSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.CHEN",
+    "value": "MARI.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.EUFA",
+    "value": "EUFA.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.FCOB",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.FOSS",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.MCGE",
+    "value": "LNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.MERE",
+    "value": "FRIT.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.THUN",
+    "value": "NRSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_direction.TOMS",
+    "value": "LWSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.%base%",
+    "value": "%base%.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.ALTU",
+    "value": "MNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.ARBU",
+    "value": "SLSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.CHEN",
+    "value": "MARI.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.EUFA",
+    "value": "EUFA.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.FCOB",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.FOSS",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.KEMP",
+    "value": "TRUS.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.MCGE",
+    "value": "LNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.MERE",
+    "value": "FRIT.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.THUN",
+    "value": "NRSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Hourly_wind_speed.TOMS",
+    "value": "LWSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.HydroPower_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.HydropowerSettings_elevation_pool.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.HydropowerSettings_elevation_tailwater.%base%",
+    "value": "%base%.Elev-Tailwater.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Ice_Coverage.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_adjusted_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Adjusted"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_average_project_release.%base%",
+    "value": "%base%.Flow-Res Out.Ave.~1Day~0s.1Day.Rev-Regi-Flowgroup"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_basin_avg_precip_1day.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_basin_avg_precip_1day_alt.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day.1Day.Metvue-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_computed_inflow.%base%",
+    "value": "%base%.Flow-Res In.Ave.~1Day~0s.1Day.Regi-Rev-Computed"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_net_pumpage.%base%",
+    "value": "%base%.Flow-Net Pumpage.Ave.1Day.1Day.Regi-Rev-Flowgroup"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_project_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_project_evap_1day.%base%",
+    "value": "%base%.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_project_evap_1day_alt.%base%",
+    "value": "%base%.Evap.Total.~1Day.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_project_precip_1day.%base%",
+    "value": "%base%.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_project_precip_1day_alt.%base%",
+    "value": "%base%.Precip-Alt.Total.1Day.1Day.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.%base%",
+    "value": "%base%.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.ALTU",
+    "value": "MNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.ARBU",
+    "value": "SLSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.CHEN",
+    "value": "MARI.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.FCOB",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.FOSS",
+    "value": "FCSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.MCGE",
+    "value": "LNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.MERE",
+    "value": "FRIT.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.THUN",
+    "value": "NRSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous.TOMS",
+    "value": "LWSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous_alt.%base%",
+    "value": "%base%.Dir-Wind Alt.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_direction_instantaneous_alt.MCGE",
+    "value": "LNSO2.Dir-Wind Alt.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.%base%",
+    "value": "%base%.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.ALTU",
+    "value": "MNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.ARBU",
+    "value": "SLSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.CHEN",
+    "value": "MARI.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.FCOB",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.FOSS",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.KEMP",
+    "value": "TRUS.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.MCGE",
+    "value": "LNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.MERE",
+    "value": "FRIT.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.THUN",
+    "value": "NRSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous.TOMS",
+    "value": "LWSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Inflow_wind_speed_instantaneous_alt.%base%",
+    "value": "%base%.Speed-Wind Alt.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Navigation_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Project_Status.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Releases_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Releases_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.WaterSupply_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_basin_avg_precip_1day.%base%",
+    "value": "%base%.Precip-Mean Areal.Total.~1Day~7h.1Day.Metvue-Computed",
+    "comment": "Basin Average precip that is computed from StageIII estimates with the program Basin_rf.exe"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_computed_evap_1day.%base%",
+    "value": "%base%.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_lake_condition.%base%",
+    "value": "%base%.Code-Lake Condition.Inst.1Day.0.REGI",
+    "comment": "Description for: Weather_lake_condition"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_lookup_evap_1day.%base%",
+    "value": "%base%.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_pan_evap_1day.%base%",
+    "value": "%base%.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_pan_evap_1day_alt.%base%",
+    "value": "%base%.Evap-Pan.Total.1Day.0.wcds-obs"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.%base%",
+    "value": "%base%.Temp-Air.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.ALTU",
+    "value": "MNSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.ARBU",
+    "value": "SLSO2.Temp-Air.Inst.1Hour~0m.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.CHEN",
+    "value": "MARI.Temp-Air.Inst.1Hour~0m.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.FCOB",
+    "value": "FCSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.FOSS",
+    "value": "BTSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.KEMP",
+    "value": "TRUS.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.MCGE",
+    "value": "LNSO2.Temp-Air.Inst.1Hour~0m.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.MERE",
+    "value": "FRIT.Temp-Air.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.THUN",
+    "value": "NRSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_air_temperature.TOMS",
+    "value": "LWSO2.Temp-Air.Inst.1Hour.0.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_baro_pres.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_elevation.%base%",
+    "value": "%base%.Elev.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_evap_1day.%base%",
+    "value": "%base%.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_evap_1day.KEYS",
+    "value": "KEYS.Evap.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_evap_type.%base%",
+    "value": "%base%.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_evap_type.KEYS",
+    "value": "KEYS.Code-Evap Type.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_obs_precip_1day.%base%",
+    "value": "%base%.Precip-Cuml.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_obs_precip_1day_inc.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_obs_precip_1hour_inc.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_precip_1day.%base%",
+    "value": "%base%.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_precip_1day.KEYS",
+    "value": "KEYS.Precip-Inc.Total.~1Day~7h.1Day.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.%base%",
+    "value": "%base%.%-Humidity.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.ALTU",
+    "value": "MNSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.ARBU",
+    "value": "SLSO2.%-Humidity.Ave.1Hour~0m.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.CHEN",
+    "value": "MARI.%-Humidity.Inst.1Hour~0m.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.FCOB",
+    "value": "FCSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.FOSS",
+    "value": "BTSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.KEMP",
+    "value": "TRUS.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.MCGE",
+    "value": "LNSO2.%-Humidity.Ave.1Hour~0m.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.MERE",
+    "value": "FRIT.%-Humidity.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.THUN",
+    "value": "NRSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_relh_temperature.TOMS",
+    "value": "LWSO2.%-Humidity.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_project_temperature_at_max_depth.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_weather_condition.%base%",
+    "value": "%base%.Code-Weather Condition.Inst.1Day.0.REGI"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.%base%",
+    "value": "%base%.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.ALTU",
+    "value": "MNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.ARBU",
+    "value": "SLSO2.Dir-Wind.Ave.1Hour~0m.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.CHEN",
+    "value": "CHEN.Dir-Wind.Inst.1Hour~0m.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.FCOB",
+    "value": "FCSO2.Dir-Wind.Inst.1Hour.0.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.FOSS",
+    "value": "FOSS.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.KEMP",
+    "value": "TRUS.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.MCGE",
+    "value": "LNSO2.Dir-Wind.Inst.1Hour~0s.0.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.MERE",
+    "value": "MERE.Dir-Wind.Inst.1Hour.0.Decodes-Raw",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.THUN",
+    "value": "NRSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_direction_instantaneous.TOMS",
+    "value": "LWSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet",
+    "comment": "Description for: Weather_wind_direction_instantaneous"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.%base%",
+    "value": "%base%.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.ALTU",
+    "value": "MNSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.ARBU",
+    "value": "SLSO2.Speed-Wind.Ave.1Hour~0.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.CHEN",
+    "value": "CHEN.Speed-Wind.Inst.1Hour~0m.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.FCOB",
+    "value": "FCSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.FOSS",
+    "value": "FOSS.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.KEMP",
+    "value": "TRUS.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.MCGE",
+    "value": "LNSO2.Speed-Wind.Ave.1Hour~0m.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.MERE",
+    "value": "MERE.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.THUN",
+    "value": "NRSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_PRIMARY.Weather_wind_speed_instantaneous.TOMS",
+    "value": "LWSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY..%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_elevation_pool_raw.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_elevation_pool_raw.JOHN"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_elevation_pool_rev.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_elevation_tailwater_raw.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_elevation_tailwater_rev.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_elevation_tailwater_rev.OOLO"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_project_storage_raw.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Elevation_project_storage_rev.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Evaporation_as_flow.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.GateSettings_elevation_reference.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Gates_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Hourly Inflow and Weather Project Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Hourly Inflow and Weather.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Hourly_area.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Hourly_computed_inflow.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Hourly_computed_inflow_daily.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.HydroPower_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Ice_Coverage.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Inflow_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Inflow_adjusted_inflow.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Inflow_average_project_release.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Navigation_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Navigation_flow_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Navigation_lockage_count_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Project_Status.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Releases_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.WaterSupply_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_Project_Notes.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_basin_avg_precip_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_computed_evap_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_lake_condition.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_lookup_evap_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_pan_evap_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_pan_evap_1day_alt.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_air_temperature.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_baro_pres.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_evap_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_evap_type.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_obs_precip_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_obs_precip_1day_inc.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_obs_precip_1hour_inc.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_precip_1day.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_relh_temperature.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_relh_temperature.ARBU"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_project_temperature_at_max_depth.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_weather_condition.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_direction_instantaneous.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_direction_instantaneous.CHEN",
+    "value": "MARI.Dir-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_direction_instantaneous.FOSS",
+    "value": "BTSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_direction_instantaneous.MCGE",
+    "value": "LNSO2.Dir-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_direction_instantaneous.MERE",
+    "value": "FRIT.Dir-Wind.Inst.1Hour.0.Ccp-Rev"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_speed_instantaneous.%base%"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_speed_instantaneous.ARBU",
+    "comment": "Replace With Non Missing;false"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_speed_instantaneous.CHEN",
+    "value": "MARI.Speed-Wind.Inst.1Hour.0.Decodes-Raw"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_speed_instantaneous.FOSS",
+    "value": "BTSO2.Speed-Wind.Ave.1Hour.1Hour.Raw-Mesonet"
+  },
+  {
+    "office-id": "SWT",
+    "category": "LOCATION TIME SERIES ASSOCIATION",
+    "name": "Regi_project_SECONDARY.Weather_wind_speed_instantaneous.MERE",
+    "value": "FRIT.Speed-Wind.Inst.1Hour.0.Ccp-Rev"
+  }
+]

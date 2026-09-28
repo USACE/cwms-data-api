@@ -33,4 +33,9 @@ Some decisions may also be a proposal and marked appropriately.
     Data Event Message Formats - Forecasts <./0014-queue-messages-forecast.rst>
     Data Event Message Formats - Ratings <./0015-queue-messages-rating.rst>
     Data Event Message Formats - Levels <./0016-queue-messages-levels.rst>
-    Generated SDK Lifecycle <./0017-generated-sdk-lifecycle.rst>
+    Data Event Message Formats - Forecasts <./0014-data-event-formats-forecast.rst>
+    Data Event Message Formats - Ratings <./0015-data-event-formats-rating.rst>
+    Data Event Message Formats - Levels <./0016-data-event-formats-levels.rst>
+    PATCH Handling Across CDA Endpoints <./0017-patch.rst>
+    Duplicate Time-Series Values <./0018-duplicate-timeseries-values.rst>
+    Generated SDK Lifecycle <./0019-generated-sdk-lifecycle.rst>

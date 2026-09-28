@@ -64,7 +64,7 @@ tasks.register('runEtlUnitTests', DockerExec) {
     doFirst {
         def args = [
             'docker', 'run', '--rm',
-            '-e', 'PYTHONPATH=/app/src/cda_etl',
+            '-e', 'PYTHONPATH=/app/src/cda_etl:/app/src',
             '-v', "${projectDir}/src:/app/src"
         ]
 

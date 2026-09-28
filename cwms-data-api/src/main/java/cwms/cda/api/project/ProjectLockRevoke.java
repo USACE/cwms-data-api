@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,66 +26,50 @@ package cwms.cda.api.project;
 
 import static cwms.cda.api.Controllers.APPLICATION_ID;
 import static cwms.cda.api.Controllers.NAME;
-import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.REVOKE_TIMEOUT;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
-import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dto.project.ProjectLock;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectLockRevoke implements Handler {
-    public static final String PATH = "/project-locks/{name}";
+/**
+ * Shared logic for revoking (deleting) a project lock. V1 ({@link ProjectLockRevokeV1}) and V2
+ * ({@link ProjectLockRevokeV2}) differ only in which DAO they use and where the office comes
+ * from (a query param for V1, a path param for V2).
+ */
+public abstract class ProjectLockRevoke<T extends ProjectLock> implements Handler {
     public static final String TAGS = "Project Locks";
     private final MetricRegistry metrics;
 
-    private Timer.Context markAndTime(String subject) {
+    protected Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public ProjectLockRevoke(MetricRegistry metrics) {
+    protected ProjectLockRevoke(MetricRegistry metrics) {
         this.metrics = metrics;
     }
 
+    protected abstract ProjectLockDao<T> getDao(Context ctx);
 
-    @OpenApi(
-            description = "Revokes a project lock, if successful the lock is deleted",
-            pathParams = {
-                @OpenApiParam(name = NAME, required = true,
-                        description = "Specifies the project-id to be deleted"),
-            },
-            queryParams = {
-                @OpenApiParam(name = OFFICE, required = true,
-                        description = "Specifies the office of the lock."),
-                @OpenApiParam(name = APPLICATION_ID, required = true, description = "Specifies the application id."),
-                @OpenApiParam(name = REVOKE_TIMEOUT, type = Integer.class,
-                        description = "time in seconds to wait for existing lock to be revoked. Default: 10")
-            },
-            method = HttpMethod.DELETE,
-            path = PATH,
-            tags = {TAGS}
-    )
+    protected abstract String getOffice(Context ctx);
+
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
+        String office = getOffice(ctx);
         String projectId = ctx.pathParam(NAME);
 
-        String office = requiredParam(ctx, OFFICE);
         String appId = requiredParam(ctx, APPLICATION_ID);
         int revokeTimeout = ctx.queryParamAsClass(REVOKE_TIMEOUT, Integer.class).getOrDefault(10);
 
         try (final Timer.Context ignored = markAndTime("revoke")) {
-            ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
-
-            lockDao.revokeLock(office, projectId, appId, revokeTimeout);
+            getDao(ctx).revokeLock(office, projectId, appId, revokeTimeout);
         }
         ctx.status(HttpServletResponse.SC_OK);
     }
