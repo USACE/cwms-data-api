@@ -9,24 +9,26 @@
         <encoder class="JsonEncoder"/>
         <target>System.err</target>
     </appender>
-
-    <appender name="OTEL-STDERR" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
+    <!-- The jar is in the WAR, needs to be out of the war and in the root, or both. -->
+    <!-- <appender name="OTEL-STDERR" class="io.opentelemetry.instrumentation.logback.mdc.v1_0.OpenTelemetryAppender">
         <appender-ref ref="STDERR"/>
-    </appender>
+    </appender> -->
 
 
     <logger name="cwms.cda" level="${LOG_LEVEL}"/>
     <logger name="org.apache" level="ERROR"/>
+    <logger name="org.apache.tomcat.jdbc.pool" level="WARN"/>
 
     <logger name="org.apache.catalina" level="INFO" additivity="false">
-        <appender-ref ref="OTEL-STDERR" />
+        <!-- <appender-ref ref="OTEL-STDERR" /> -->
     </logger>
 
     <logger name="org.apache.catalina.core.ContainerBase.[Catalina]" level="INFO" additivity="false">
-        <appender-ref ref="OTEL-STDERR" />
+        <!-- <appender-ref ref="OTEL-STDERR" /> -->
     </logger>
 
     <root level="INFO">
-        <appender-ref ref="OTEL-STDERR"/>
+        <appender-ref ref="STDERR"/>
+        <!-- <appender-ref ref="OTEL-STDERR"/> -->
     </root>
 </configuration>

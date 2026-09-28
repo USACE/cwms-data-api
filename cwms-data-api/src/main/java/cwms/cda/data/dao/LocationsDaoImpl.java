@@ -811,7 +811,7 @@ public class LocationsDaoImpl extends JooqDao<Location> implements LocationsDao 
                 "CONTAINS({0}, {1})",
                 Integer.class,
                 fieldMapping.getSearchDoc(),
-                DSL.inline(escapeOracleTextQuery(textSearch))
+                DSL.val(escapeOracleTextQuery(textSearch))
             );
 
             condition = condition.and(containsScore.gt(0));

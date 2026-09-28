@@ -36,6 +36,13 @@ export default function SwaggerUI() {
   const [authError, setAuthError] = useState(null);
   const [swaggerError, setSwaggerError] = useState(null);
   const autoLoginAttemptedRef = useRef(false);
+  const appTokenRef = useRef(appAuth.token);
+  const swaggerContainerRef = useRef(null);
+  // Swagger keeps this interceptor for its lifetime. Token rotation must update
+  // requests without replacing the editor and discarding unfinished work.
+  useEffect(() => {
+    appTokenRef.current = appAuth.token;
+  }, [appAuth.token]);
   const cwmsAuthMethod = useMemo(() => {
     const basePath = getBasePath();
     return createCwmsLoginAuthMethod({
@@ -86,6 +93,7 @@ export default function SwaggerUI() {
     document.title = "CWMS Data API for Data Retrieval - Swagger UI";
 
     let cancelled = false;
+    const container = swaggerContainerRef.current;
 
     async function initSwagger() {
       let spec;
@@ -99,6 +107,7 @@ export default function SwaggerUI() {
           throw new Error(`Swagger spec request failed with HTTP ${response.status}`);
         }
         spec = await response.json();
+        if (cancelled) return;
         setSwaggerError(null);
       } catch (error) {
         if (!cancelled) {
@@ -109,7 +118,7 @@ export default function SwaggerUI() {
           setAuthUiMode("hidden");
           setAuthStatus("anonymous");
           setIsLocalOpenIdAuth(false);
-          document.querySelector("#swagger-ui").innerHTML = "";
+          container.innerHTML = "";
         }
         return;
       }
@@ -126,9 +135,7 @@ export default function SwaggerUI() {
           ? "cwms"
           : null;
 
-      if (customAuthType !== nextCustomAuthType) {
-        setCustomAuthType(nextCustomAuthType);
-      }
+      setCustomAuthType(nextCustomAuthType);
 
       if (nextCustomAuthType === "cwms") {
         setAuthUiMode("cwms-login");
@@ -159,7 +166,7 @@ export default function SwaggerUI() {
 
       const ui = SwaggerUIBundle({
         spec,
-        dom_id: "#swagger-ui",
+        domNode: container,
         deepLinking: false,
         presets: [SwaggerUIBundle.presets.apis],
         plugins: [SwaggerUIBundle.plugins.DownloadUrl],
@@ -181,7 +188,11 @@ export default function SwaggerUI() {
             req.headers = req.headers ?? {};
 
             const token =
-              customAuthType === "openid" ? appAuth.token : authMethod?.token;
+              nextCustomAuthType === "openid"
+                ? appTokenRef.current
+                : nextCustomAuthType === "cwms"
+                  ? cwmsAuthMethod.token
+                  : undefined;
             if (token) {
               req.headers.Authorization = `Bearer ${token}`;
             }
@@ -223,9 +234,9 @@ export default function SwaggerUI() {
 
     return () => {
       cancelled = true;
-      document.querySelector("#swagger-ui").innerHTML = "";
+      container.innerHTML = "";
     };
-  }, [appAuth.token, authMethod, customAuthType]);
+  }, [cwmsAuthMethod]);
 
   useEffect(() => {
     if (customAuthType !== "cwms" || !authMethod) {
@@ -265,14 +276,12 @@ export default function SwaggerUI() {
     let mounted = true;
     setAuthStatus("checking");
     setAuthError(null);
-    appAuth
-      .login()
-      .catch((error) => {
-        if (mounted) {
-          setAuthError(error?.message ?? "Automatic local sign-in failed.");
-          setAuthStatus("anonymous");
-        }
-      });
+    appAuth.login().catch((error) => {
+      if (mounted) {
+        setAuthError(error?.message ?? "Automatic local sign-in failed.");
+        setAuthStatus("anonymous");
+      }
+    });
 
     return () => {
       mounted = false;
@@ -326,8 +335,7 @@ export default function SwaggerUI() {
     customAuthType === "openid" ? appAuth.isLoading : authStatus === "checking";
   const unavailableMessage = getUnavailableMessage();
   const showAuthBar = authUiMode !== "hidden";
-  const showUnavailableMessage =
-    showAuthBar && !hasAuthMethod && !isCheckingAuth;
+  const showUnavailableMessage = showAuthBar && !hasAuthMethod && !isCheckingAuth;
 
   return (
     <>
@@ -394,7 +402,7 @@ export default function SwaggerUI() {
           {swaggerError}
         </div>
       )}
-      <div id="swagger-ui"></div>
+      <div id="swagger-ui" ref={swaggerContainerRef}></div>
     </>
   );
 }

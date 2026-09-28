@@ -40,7 +40,8 @@ auto-service = "1.1.1"
 openapi-validation = "2.44.9"
 javaparser = "3.26.2"
 togglz = "3.3.3"
-minio = "8.6.0"
+minio = "8.6.0" # for client
+s3mock = "5.2.2"
 opentelemetry = "1.63.0"
 opentelemetry-java = "2.29.0"
 opentelemetry-java-logging = "2.29.0-alpha"
@@ -101,6 +102,7 @@ jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datat
 
 togglz-core = { module = "org.togglz:togglz-core", version.ref = "togglz" }
 
+# for s3 client
 minio = { module = "io.minio:minio", version.ref = "minio"}
 
 #compile compileOnly
@@ -128,7 +130,7 @@ testcontainers-database-commons = { module = "org.testcontainers:testcontainers-
 testcontainers-jdbc = { module = "org.testcontainers:testcontainers-jdbc", version.ref = "testcontainers"}
 testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers"}
 testcontainers-cwms = { module = "mil.army.usace.hec:testcontainers-cwms", version.ref = "cwms-testcontainers"}
-testcontainers-minio = { module = "org.testcontainers:testcontainers-minio", version.ref = "testcontainers" }
+testcontainers-s3mock = { module = "com.adobe.testing:s3mock-testcontainers", version.ref = "s3mock" }
 
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 oracle-jdbc-driver = { module ="com.oracle.database.jdbc:ojdbc11", version.ref = "oracle-jdbc" }
@@ -161,7 +163,7 @@ junit = ["junit-jupiter-api", "junit-jupiter-params", "junit-jupiter-engine", "j
 tomcat-embedded = [ "tomcat-embedded-core", "tomcat-embedded-jasper" ]
 tomcat-support = [ "tomcat-jdbc" ]
 testcontainers = [ "testcontainers-base", "testcontainers-database-commons", "testcontainers-jdbc",
-                   "testcontainers-junit-jupiter", "testcontainers-cwms", "testcontainers-minio" ]
+                   "testcontainers-junit-jupiter", "testcontainers-cwms", "testcontainers-s3mock" ]
 metrics = ["metrics-core", "metrics-servlets", "metrics-prometheus-client", "metrics-prometheus-servlets" ]
 jackson = ["jackson-core", "jackson-dataformat-csv", "jackson-dataformat-xml", "jackson-datatype-jsr310" ]
 overrides = ["io-github.classgraph", "io-swagger-parser"]

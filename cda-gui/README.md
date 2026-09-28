@@ -53,6 +53,17 @@ To verify that the static Storybook site can be built:
 npm run build-storybook
 ```
 
+To verify background token refresh against the running UI and Swagger editor:
+
+```sh
+npm run test:auth
+```
+
+These Chromium tests start Vite and mock CDA and Keycloak responses. They advance
+the browser clock through five-minute refresh intervals and verify that drafts
+survive and subsequent requests use the rotated token. No live login or database
+is required.
+
 ## Formatting
 
 Formatting is done with [husky](https://typicode.github.io/husky/) and styled using [prettier](https://prettier.io/docs/). Husky requires a minimum Git version of 2.9

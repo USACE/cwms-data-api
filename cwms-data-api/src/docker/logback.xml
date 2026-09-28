@@ -19,6 +19,7 @@
 
     <logger name="cwms.cda" level="${LOG_LEVEL}"/>
     <logger name="org.apache" level="ERROR"/>
+    <logger name="org.apache.tomcat.jdbc.pool" level="WARN"/>
 
     <logger name="org.apache.catalina" level="INFO" additivity="false">
         <appender-ref ref="OTEL-STDERR" />

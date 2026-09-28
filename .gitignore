@@ -18,3 +18,4 @@ cda-etl/logs
 cda-etl/cache
 **/.venv
 cda-gui/.env.dev-cda-compose.local
+.env

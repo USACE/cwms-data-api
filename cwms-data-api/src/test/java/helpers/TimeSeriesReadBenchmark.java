@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.KeyCloakExtension;
-import fixtures.MinIOExtension;
+import fixtures.ObjectStorageExtension;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -52,7 +52,7 @@ public final class TimeSeriesReadBenchmark {
 
         try {
             new KeyCloakExtension().beforeAll(null);
-            new MinIOExtension().beforeAll(null);
+            new ObjectStorageExtension().beforeAll(null);
             new CwmsDataApiSetupCallback().beforeAll(null);
 
             System.out.println("Running benchmark...");
@@ -437,7 +437,7 @@ public final class TimeSeriesReadBenchmark {
         }
 
         try {
-            MinIOExtension.shutdown();
+            ObjectStorageExtension.shutdown();
         } catch (Exception e) {
             if (failure == null) {
                 failure = e;
