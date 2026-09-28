@@ -20,11 +20,7 @@ All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscr
 
 Author: Mike Perryman
 
-<<<<<<< HEAD
 Only "type", "office_id", "embankment_id", "project_id", and "structure_type" are required.
-=======
-Only "type", "office_id", "embankment_id", "project_id", and "structure_type_display" are required.
->>>>>>> 989c33b73b6daab07c8716a53cc00080b7139c2c
 
 +-------------------+-------------------------------------------------------------------------------------------------------+
 | Message Type      | Structure                                                                                             |
@@ -66,11 +62,7 @@ Only "type", "office_id", "embankment_id", "project_id", and "structure_type_dis
       "type": "embankment_created",
       "office_id": "SWT",
       "embankment_id": "Greenbrier Dam",
-<<<<<<< HEAD
       "project_id": "Greenbrier Reservoir",
-=======
-      "project_identifier": "Greenbrier Reservoir",
->>>>>>> 989c33b73b6daab07c8716a53cc00080b7139c2c
       "structure_type": "Rolled Earth-Filled",
       "us_protection_type": "Rock Riprap",
       "ds_protection_type": "Grass-Covered Soil",
