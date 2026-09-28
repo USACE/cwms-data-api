@@ -20,7 +20,7 @@ All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscr
 
 Author: Mike Perryman
 
-**Streams**
+**Entities**
 
 Only "type", "office_id", "entity_id", and "entity_name" values are required.
 
@@ -98,7 +98,7 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
 |               | | String     | "office_id"        | The office identifier                                                        | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
-|               | | String     | "stream_id"        | The stream identifier                                                        | |
+|               | | String     | "entity_id"        | The entity identifier                                                        | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 

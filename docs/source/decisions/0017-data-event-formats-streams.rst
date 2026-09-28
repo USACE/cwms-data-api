@@ -250,7 +250,7 @@ Only "type", "office_id", "reach_id", "stream_id", "upstream_location_id", and "
 
 **Stream Locations**
 
-Only "type", "office_id", "stream_id", "station", and "station_unit" values are required.
+Only "type", "office_id", "location_id", "stream_id", "station", and "station_unit" values are required.
 
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                                                        |
