@@ -48,13 +48,15 @@ import cwms.cda.data.dao.StreamLocationDao;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -89,10 +91,11 @@ public final class UpstreamLocationsGetController implements Handler {
                     @OpenApiParam(name = AREA_UNIT, description = "Area units."),
             },
             responses = {
-                    @OpenApiResponse(status = STATUS_200, content = {@OpenApiContent(isArray = true, type = Formats.JSONV1, from = StreamLocation.class)})
+                    @OpenApiResponse(status = STATUS_200, content = {@OpenApiContent(type = Formats.JSONV1, from = StreamLocation[].class)})
             },
             description = "Returns matching upstream stream locations.",
-            tags = {StreamLocationController.TAG}
+            tags = {StreamLocationController.TAG},
+            path = "/"
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String locationId =  ctx.pathParam(NAME);
@@ -118,7 +121,7 @@ public final class UpstreamLocationsGetController implements Handler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve upstream locations", ex);
