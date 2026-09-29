@@ -56,14 +56,14 @@ import cwms.cda.data.dto.location.kind.Turbine;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -99,12 +99,13 @@ public final class TurbineController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Turbine.class),
+                            @OpenApiContent(type = Formats.JSONV1, from = Turbine[].class),
                             @OpenApiContent(from = Turbine.class, type = Formats.JSON)
                     })
             },
             description = "Returns matching CWMS Turbine Data for a Reservoir Project.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/"
     )
     @Override
     public void getAll(Context ctx) {
@@ -123,7 +124,7 @@ public final class TurbineController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Turbines", ex);
@@ -149,7 +150,8 @@ public final class TurbineController implements CrudHandler {
                             })
             },
             description = "Returns CWMS Turbine Data",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/{name}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -167,7 +169,7 @@ public final class TurbineController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Turbine", ex);
@@ -188,16 +190,17 @@ public final class TurbineController implements CrudHandler {
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             description = "Create CWMS Turbine",
-            method = HttpMethod.POST,
+            methods = {HttpMethod.POST},
             tags = {TAG},
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Turbine successfully stored to CWMS.")
-            }
+            },
+            path = "/"
     )
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Turbine.class);
             Turbine turbine = Formats.parseContent(contentType, ctx.body(), Turbine.class);
             turbine.validate();
@@ -223,11 +226,12 @@ public final class TurbineController implements CrudHandler {
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the new turbine name. ")
             },
             description = "Rename CWMS Turbine",
-            method = HttpMethod.PATCH,
+            methods = {HttpMethod.PATCH},
             tags = {TAG},
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Turbine successfully renamed in to CWMS.")
-            }
+            },
+            path = "/{name}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
@@ -255,13 +259,14 @@ public final class TurbineController implements CrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Delete CWMS Turbine",
-            method = HttpMethod.DELETE,
+            methods = {HttpMethod.DELETE},
             tags = {TAG},
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Turbine successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the turbine was not found.")
-            }
+            },
+            path = "/{name}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
