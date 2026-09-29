@@ -124,7 +124,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         try {
             return db.connection((c) -> {
                 var ctx = JooqDao.getDslContext(c, db.getOfficeId());
-                return Dao.versionAsInteger(Dao.getVersion(ctx));
+                return Dao.getDbVersion(ctx);
             }, webUser);
         } catch (SQLException ex) {
             throw new RuntimeException(ex);

@@ -1,0 +1,31 @@
+{
+  "begin": "NaT",
+  "date-version-type": "UNVERSIONED",
+  "end": "NaT",
+  "interval": "PT0S",
+  "interval-offset": -2147483648,
+  "name": "EUFA.Flow-Res In.Ave.~1Day.1Day.Copied-Ccp-Adjusted",
+  "office-id": "SWT",
+  "page-size": 300000,
+  "time-zone": "US/Central",
+  "total": 0,
+  "units": "cfs",
+  "value-columns": [
+    {
+      "name": "date-time",
+      "ordinal": 1,
+      "datatype": "java.sql.Timestamp"
+    },
+    {
+      "name": "value",
+      "ordinal": 2,
+      "datatype": "java.lang.Double"
+    },
+    {
+      "name": "quality-code",
+      "ordinal": 3,
+      "datatype": "int"
+    }
+  ],
+  "values": []
+}

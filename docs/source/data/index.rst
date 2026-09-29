@@ -5,5 +5,5 @@ Data Overview
    :maxdepth: 1
    :caption: Data Topics
 
-   Timeseries <./timeseries.rst>
+   Timeseries <./timeseries-ref.rst>
    Location Levels <./location-levels.rst>

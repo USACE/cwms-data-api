@@ -1,6 +1,12 @@
 Shared Time Series Examples of When to Use
 ============================================
 
+.. _when_name:
+
+name
+    A time series name (also called a Time Series Identifier) is always required when refering to a specific
+    time series.
+
 .. _when_start:
 
 start/begin

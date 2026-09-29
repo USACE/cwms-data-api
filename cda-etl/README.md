@@ -13,11 +13,22 @@ If `SOURCE_CDA_URL` is not configured, the pipeline skips the download phase and
 
 ## What It Does
 
-The ETL process currently handles three CWMS resource types:
+The ETL process handles these CWMS resource types:
 
 - Locations
 - Projects
 - Timeseries data
+- Clobs
+- Location levels
+- Ratings
+- Properties (office- and project-level)
+- Outlets
+- Turbines, and turbine changes
+- Locks (physical lock structures)
+- Gate changes
+- Water users, water contracts (including pump associations and water supply accounting)
+- Location groups (with assigned locations), office-level
+- Timeseries groups (with assigned timeseries), office-level
 
 The data is organized by office, project, and resource type, then written to a filesystem staging area before being posted to the destination CDA API.
 
@@ -54,15 +65,21 @@ offices:
 ### YAML Fields
 
 - `version`: Config version. Must be `1`.
-- `settings.startTime`: Default start time used for timeseries downloads when a timeseries does not define its own download window.
-- `settings.endTime`: Default end time used for timeseries downloads when a timeseries does not define its own download window.
+- `settings.startTime`: Default start time used for timeseries/window-based downloads when an item does not define its own download window.
+- `settings.endTime`: Default end time used for timeseries/window-based downloads when an item does not define its own download window.
 - `settings.maxThreads`: Maximum number of worker threads used for staging and publishing.
 - `settings.logLevel`: Logging level for the application.
 - `settings.path`: Filesystem root used for staged JSON files.
-- `offices`: List of office definitions.
+- `offices`: List of office definitions. Each office may also declare `properties`, `locationGroups`, and `timeseriesGroups` (office-wide, not tied to one project).
 - `projects`: Projects under each office.
 - `locations`: Locations under each project.
 - `timeseries`: Timeseries under each project.
+- `clobs`, `locationLevels`, `ratings`, `properties`: Under each project, same shape as the office-level `properties`.
+- `outlets`, `turbines`, `locks`: Flat lists of `{id, enabled}` under each project - literal ids, no time window.
+- `gateChanges`, `turbineChanges`: A single `{enabled, download: {startTime, endTime}}` mapping per project (not a list) - one time-windowed feed for the whole project.
+- An outlet's effective rating spec is not stored on the outlet itself - CDA derives it from a `Rating`-category location group: the outlet carries a `rating-group-id`, and that group's `shared-loc-alias-id` is the rating spec id. Storing gate changes requires both to already exist on the destination, so neither needs to be hand-listed in `outlets`/`locationGroups`/`ratings` - staging/publishing outlets automatically discovers and stages/publishes the associated `Rating` location group and rating alongside them.
+- `waterUsers`: Under each project - a list of `{id, enabled, contracts: [...]}`. Each contract is `{id, enabled, pumps: [...], accounting: {enabled, startTime, endTime}}`. A pump is `{id, type, enabled}` (`type` is `IN`, `OUT`, or `OUT BELOW`); a pump with `enabled: false` is disassociated from the destination contract during publish rather than skipped. `accounting.enabled` defaults to `false` when the `accounting` block is omitted entirely.
+- `locationGroups`, `timeseriesGroups`: Under each office - `{categoryId, id, enabled}` entries, or `{categoryId, all: true}` for every group in a category, mirroring how `properties` categories work.
 
 ### Enabled Flags
 

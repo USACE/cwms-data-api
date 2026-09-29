@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -41,8 +41,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.api.project.ProjectLockHandlerUtil.Fixture;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
@@ -56,7 +58,8 @@ import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @Tag("integration")
 public class ProjectLockRequestHandlerIT extends DataApiTestIT {
@@ -89,25 +92,28 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
         });
     }
 
-    @Test
-    void test_request() throws SQLException {
+    @ParameterizedTest
+    @MethodSource(ProjectLockHandlerUtil.METHOD_SOURCE)
+    <T extends ProjectLock> void test_request(Fixture<T> fixture) throws SQLException {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            testCanRequest(dsl, TestAccounts.KeyUser.SPK_NORMAL, lockReqPrj, appId);
+            testCanRequest(fixture, dsl, TestAccounts.KeyUser.SPK_NORMAL, lockReqPrj, appId);
         });
     }
 
-    @Test
-    void test_request_user2() throws SQLException {
+    @ParameterizedTest
+    @MethodSource(ProjectLockHandlerUtil.METHOD_SOURCE)
+    <T extends ProjectLock> void test_request_user2(Fixture<T> fixture) throws SQLException {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            testCanRequest(dsl, TestAccounts.KeyUser.SPK_NORMAL2, lockReqPrj2, appId);
+            testCanRequest(fixture, dsl, TestAccounts.KeyUser.SPK_NORMAL2, lockReqPrj2, appId);
         });
     }
 
 
-    private static void testCanRequest(DSLContext dsl, TestAccounts.KeyUser user, String projId, String appId) {
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+    private static <T extends ProjectLock> void testCanRequest(Fixture<T> fixture, DSLContext dsl,
+            TestAccounts.KeyUser user, String projId, String appId) {
+        ProjectLockDao<T> lockDao = fixture.newDao(dsl);
 
         String userName = user.getName();
 
@@ -115,15 +121,8 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
             lockDao.removeAllLockRevokerRights(OFFICE, appId, userName); // start fresh
             lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);
 
-            ProjectLock toRequest = new ProjectLock.Builder()
-                    .withOfficeId(OFFICE)
-                    .withProjectId(projId)
-                    .withApplicationId(appId)
-                    .withOsUser("fake_osuser")
-                    .withSessionProgram("fake_program")
-                    .withSessionMachine("fake_machine")
-                    .withSessionUser(userName)
-                    .build();
+            T toRequest = fixture.full(OFFICE, projId, appId, "fake_osuser", "fake_program", "fake_machine",
+                    userName);
 
             ObjectMapper om = JsonV2.buildObjectMapper();
             String serializedProject = om.writeValueAsString(toRequest);
@@ -140,7 +139,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
-                    .post("/project-locks/")
+                    .post(fixture.requestPath(OFFICE))
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                 .assertThat()
@@ -165,8 +164,10 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
 
 
 
-    @Test
-    void test_can_request_revoke() throws SQLException, JsonProcessingException {
+    @ParameterizedTest
+    @MethodSource(ProjectLockHandlerUtil.METHOD_SOURCE)
+    <T extends ProjectLock> void test_can_request_revoke(Fixture<T> fixture)
+            throws SQLException, JsonProcessingException {
         final String[] lockId = {null};
         final String[] lockId2 = {null};
 
@@ -180,11 +181,11 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
             connectionAsWebUser(c -> {
                 DSLContext dsl = getDslContext(c, OFFICE);
 
-                ProjectLockDao lockDao = new ProjectLockDao(dsl);
+                ProjectLockDao<T> lockDao = fixture.newDao(dsl);
                 lockDao.updateLockRevokerRights(OFFICE, revPrj, appId, user1.getName(), true);
                 lockDao.updateLockRevokerRights(OFFICE, revPrj, appId, user2.getName(), true);
 
-                ProjectLock req1 = new ProjectLock.Builder(OFFICE, revPrj, appId).build();
+                T req1 = fixture.minimal(OFFICE, revPrj, appId);
                 lockId[0] = lockDao.requestLock(req1, dontRevoke, revokeTimeout);
                 assertNotNull(lockId[0]);
                 assertFalse(lockId[0].isEmpty());
@@ -193,15 +194,8 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
 
 
             // other user - try request user1 lock - this should wait until about revokeTimeout.
-            ProjectLock toRequest = new ProjectLock.Builder()
-                    .withOfficeId(OFFICE)
-                    .withProjectId(revPrj)
-                    .withApplicationId(appId)
-                    .withOsUser("fake_osuser")
-                    .withSessionProgram("fake_program")
-                    .withSessionMachine("fake_machine")
-                    .withSessionUser(user2.getName())
-                    .build();
+            T toRequest = fixture.full(OFFICE, revPrj, appId, "fake_osuser", "fake_program", "fake_machine",
+                    user2.getName());
 
             ObjectMapper om = JsonV2.buildObjectMapper();
             String serializedProject = om.writeValueAsString(toRequest);
@@ -220,7 +214,7 @@ public class ProjectLockRequestHandlerIT extends DataApiTestIT {
                 .when()
                     .redirects().follow(true)
                     .redirects().max(3)
-                    .post("/project-locks/")
+                    .post(fixture.requestPath(OFFICE))
                 .then()
                     .log().ifValidationFails(LogDetail.ALL, true)
                     .assertThat()

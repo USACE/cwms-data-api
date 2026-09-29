@@ -1,0 +1,37 @@
+{
+  "project-id": {
+    "office-id": "SWT",
+    "name": "EUFA"
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "EUFA-TG2",
+    "latitude": 35.3070416666667,
+    "longitude": -95.36275,
+    "active": true,
+    "public-name": "TG2",
+    "long-name": "TG2",
+    "timezone-name": "US/Central",
+    "location-kind": "OUTLET",
+    "nation": "US",
+    "state-initial": "OK",
+    "county-name": "Haskell",
+    "nearest-city": "Hoyt, OK",
+    "horizontal-datum": "NAD83",
+    "published-longitude": 0.0,
+    "published-latitude": 35.3069444444444,
+    "vertical-datum": "NGVD29",
+    "elevation": 0.0,
+    "bounding-office-id": "SWT",
+    "elevation-units": "m"
+  },
+  "rating-group-id": {
+    "office-id": "SWT",
+    "name": "EUFA-TainterGate"
+  },
+  "rating-spec-id": "EUFA.Opening-Spillway_Gates,Elev;Flow-Spillway_Gates.Standard.Production",
+  "rating-category-id": {
+    "office-id": "SWT",
+    "name": "Rating"
+  }
+}

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dao.project.ProjectLockDaoV1;
 import cwms.cda.data.dto.project.LockRevokerRights;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
@@ -105,7 +105,7 @@ public class LockRevokerRightsCatalog implements Handler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(JooqDao.getDslContext(ctx));
             String officeMask = requiredParam(ctx, OFFICE_MASK); // They should have to limit the office.
             String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
             String appMask = ctx.queryParamAsClass(APPLICATION_MASK, String.class).getOrDefault("*");

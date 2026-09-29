@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,10 +27,7 @@ package cwms.cda.api.project;
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.APPLICATION_MASK;
 import static cwms.cda.api.Controllers.GET_ALL;
-import static cwms.cda.api.Controllers.OFFICE_MASK;
 import static cwms.cda.api.Controllers.PROJECT_MASK;
-import static cwms.cda.api.Controllers.STATUS_200;
-import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
@@ -38,83 +35,55 @@ import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectLockCatalog implements Handler {
+
+public abstract class ProjectLockCatalog<T extends CwmsDTOBase & ProjectLock> implements Handler {
     public static final String TAGS = "Project Locks";
-    public static final String PATH = "/project-locks/";
     private final MetricRegistry metrics;
     private final Histogram requestResultSize;
 
-    private Timer.Context markAndTime(String subject) {
+    protected Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    public ProjectLockCatalog(MetricRegistry metrics) {
+    protected ProjectLockCatalog(MetricRegistry metrics, Class<?> metricsIdentity) {
         this.metrics = metrics;
-        requestResultSize = this.metrics.histogram((name(ProjectLockCatalog.class, Controllers.RESULTS,
+        requestResultSize = this.metrics.histogram((name(metricsIdentity, Controllers.RESULTS,
                 Controllers.SIZE)));
     }
 
+    protected abstract ProjectLockDao<T> getDao(Context ctx);
 
-    @OpenApi(
-            description = "Get a list of project locks",
-            queryParams = {
-                @OpenApiParam(name = OFFICE_MASK, required = true, description = "Specifies"
-                        + " the "
-                        + "office mask to be used to filter the locks. "
-                        + "Supports '*' but is typically a single office."),
-                @OpenApiParam(name = PROJECT_MASK, description =
-                        "Specifies the "
-                                + "project mask to be used to filter the locks. "
-                                + "Defaults to '*'"),
-                @OpenApiParam(name = APPLICATION_MASK, description =
-                        "Specifies the "
-                                + "application mask to be used to filter the locks. "
-                                + "Defaults to '*'"),
-            },
-            responses = {
-                @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(type = Formats.JSON, from = ProjectLock.class)}
-                )},
-                security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
-            },
-            tags = {TAGS},
-            path = PATH,
-            method = HttpMethod.GET
-    )
+    protected abstract Class<T> lockClass();
+
+    protected abstract String getOffice(Context ctx);
+
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
-            ProjectLockDao lockDao = new ProjectLockDao(JooqDao.getDslContext(ctx));
+            ProjectLockDao<T> lockDao = getDao(ctx);
             String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
             String appMask = ctx.queryParamAsClass(APPLICATION_MASK, String.class).getOrDefault(
                     "*");
-            String officeMask = requiredParam(ctx, OFFICE_MASK); // They should have to limit the
-            // office.
+            String officeMask = getOffice(ctx);
 
-            List<ProjectLock> locks = lockDao.retrieveLocks(officeMask, projMask, appMask);
+            List<T> locks = lockDao.retrieveLocks(officeMask, projMask, appMask);
+            Class<T> lockClass = lockClass();
             String formatHeader = ctx.header(Header.ACCEPT);
-            ContentType contentType = Formats.parseHeader(formatHeader, ProjectLock.class);
-            String result = Formats.format(contentType, locks, ProjectLock.class);
+            ContentType contentType = Formats.parseHeader(formatHeader, lockClass);
+            String result = Formats.format(contentType, locks, lockClass);
             requestResultSize.update(result.length());
             ctx.status(HttpServletResponse.SC_OK);
             ctx.contentType(contentType.toString());
@@ -128,6 +97,5 @@ public class ProjectLockCatalog implements Handler {
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
         }
     }
-
 
 }

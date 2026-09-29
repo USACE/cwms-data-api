@@ -15,12 +15,17 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
+"""
+The two CDA endpoints a run talks to, and the sessions opened against them.
+"""
 import cwms
 import logging
 import os
 from dataclasses import dataclass
 from contextlib import contextmanager
 from typing import Iterator
+
+import utils.log_util as log_util
 
 logger = logging.getLogger(__name__)
 
@@ -76,19 +81,27 @@ class SessionManager:
         return self.endpoints.has_source
 
     @contextmanager
-    def source_session(self) -> Iterator[None]:
+    def source_session(self, *, detail: str | None = None) -> Iterator[None]:
+        """
+        Opens the source session and marks the body as the EXTRACT phase.
+        """
         if not self.endpoints.source_cda_url:
             yield
             return
 
-        cwms.init_session(api_root=self.endpoints.source_cda_url, api_key=self.endpoints.source_cda_api_key)
-        yield
+        with log_util.phase(log_util.EXTRACT, endpoint=self.endpoints.source_cda_url, detail=detail):
+            cwms.init_session(api_root=self.endpoints.source_cda_url, api_key=self.endpoints.source_cda_api_key)
+            yield
 
     @contextmanager
-    def dest_session(self) -> Iterator[None]:
-        logger.debug(f"Initializing destination session with URL: {self.endpoints.dest_cda_url}")
-        cwms.init_session(api_root=self.endpoints.dest_cda_url, api_key=self.endpoints.dest_cda_api_key)
-        yield
+    def dest_session(self, *, detail: str | None = None) -> Iterator[None]:
+        """
+        Opens the destination session and marks the body as the LOAD phase.
+        """
+        with log_util.phase(log_util.LOAD, endpoint=self.endpoints.dest_cda_url, detail=detail):
+            logger.debug(f"Initializing destination session with URL: {self.endpoints.dest_cda_url}")
+            cwms.init_session(api_root=self.endpoints.dest_cda_url, api_key=self.endpoints.dest_cda_api_key)
+            yield
 
 
 __all__ = ["SessionEndpoints", "SessionManager"]

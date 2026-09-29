@@ -1,0 +1,1 @@
+.. include:: ./timeseries.rst.inc

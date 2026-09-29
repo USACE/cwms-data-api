@@ -1,0 +1,42 @@
+[
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId0"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId1"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId2"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId3"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId4"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId5"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId6"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId7"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId8"},
+    "application-id": "ApplicationId"
+  },
+  {
+    "id": {"office-id": "SPK", "name": "ProjectId9"},
+    "application-id": "ApplicationId"
+  }
+]

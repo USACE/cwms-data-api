@@ -16,9 +16,12 @@
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #  SOFTWARE.
 import logging
+import time
 from datetime import datetime
 from typing import Iterable
 
+import utils.cda_errors as cda_errors
+import utils.log_util as log_util
 import utils.threading_util as threading_util
 import utils.filesystem_store as filesystem_store
 import cwms
@@ -28,6 +31,32 @@ logger = logging.getLogger(__name__)
 DATE_TIME_FORMAT = "%Y-%m-%d %H.%M.%S"
 TIMESERIES_FOLDER = "Timeseries"
 
+_NOT_FOUND = "not found in the source"
+_EMPTY_WINDOW = "with no values in the window"
+_STAGED_EMPTY = "with no staged values"
+
+_tally = log_util.Tally()
+
+
+def _start_batch() -> log_util.Tally:
+    global _tally
+    _tally = log_util.Tally()
+
+    return _tally
+
+
+def _label(ts_info) -> str:
+    return f"{ts_info[1]} [{log_util.window(ts_info[2], ts_info[3])}]"
+
+
+def _value_count(data: object) -> int | None:
+    if not isinstance(data, dict) or "values" not in data:
+        return None
+
+    values = data.get("values")
+
+    return len(values) if isinstance(values, (list, tuple)) else None
+
 
 def stage_timeseries(
     office_id: str,
@@ -35,14 +64,24 @@ def stage_timeseries(
     default_start: str | None,
     default_end: str | None,
 ) -> None:
-    ts_info = _build_timeseries_work_items(office_id, timeseries, default_start, default_end)
+    configured = list(timeseries)
+    ts_info = _build_timeseries_work_items(office_id, configured, default_start, default_end)
     if not ts_info:
-        logger.warning(f"No valid time series items found for office {office_id}")
+        _report_nothing_to_do(office_id, configured, "extract")
         return
 
-    logger.info("Staging %d timeseries data item(s) for office %s", len(ts_info), office_id)
-    threading_util.execute_tasks(_download_one_ts_data, ts_info)
-    logger.info("Completed staging timeseries data for office %s", office_id)
+    tally = _start_batch()
+    started = time.monotonic()
+    threading_util.execute_tasks(_download_one_ts_data, ts_info, label=_label, tally=tally)
+    log_util.outcome(
+        logger,
+        action="Staged",
+        noun="timeseries",
+        total=len(ts_info),
+        tally=tally,
+        office_id=office_id,
+        elapsed=time.monotonic() - started,
+    )
 
 
 def publish_staged_timeseries(
@@ -51,14 +90,37 @@ def publish_staged_timeseries(
     default_start: str | None,
     default_end: str | None,
 ) -> None:
-    ts_info = _build_timeseries_work_items(office_id, timeseries, default_start, default_end)
+    configured = list(timeseries)
+    ts_info = _build_timeseries_work_items(office_id, configured, default_start, default_end)
     if not ts_info:
-        logger.warning(f"No valid time series items found for office {office_id}")
+        _report_nothing_to_do(office_id, configured, "load")
         return
 
-    logger.info("Publishing %d staged timeseries item(s) for office %s", len(ts_info), office_id)
-    threading_util.execute_tasks(_upload_one_ts_data, ts_info)
-    logger.info("Completed publishing timeseries data for office %s", office_id)
+    tally = _start_batch()
+    started = time.monotonic()
+    threading_util.execute_tasks(_upload_one_ts_data, ts_info, label=_label, tally=tally)
+    log_util.outcome(
+        logger,
+        action="Published",
+        noun="timeseries",
+        total=len(ts_info),
+        tally=tally,
+        office_id=office_id,
+        elapsed=time.monotonic() - started,
+    )
+
+
+def _report_nothing_to_do(office_id: str, configured: list, phase: str) -> None:
+    if not configured:
+        logger.debug("No timeseries configured for office %s; nothing to %s.", office_id, phase)
+        return
+
+    logger.warning(
+        "All %s configured for office %s were rejected as invalid; nothing to %s.",
+        log_util.plural(len(configured), "timeseries"),
+        office_id,
+        phase,
+    )
 
 
 def _download_one_ts_data(ts_info):
@@ -68,8 +130,20 @@ def _download_one_ts_data(ts_info):
     end = ts_info[3]
     begin_str = begin.strftime(DATE_TIME_FORMAT)
     end_str = end.strftime(DATE_TIME_FORMAT)
-    logger.info("Refreshing staged timeseries %s for office %s from %s to %s", ts_id, office_id, begin_str, end_str)
-    data = cwms.get_timeseries(ts_id, office_id, begin=begin, end=end).json
+    logger.debug("Extracting timeseries %s for office %s [%s]", ts_id, office_id, log_util.window(begin, end))
+
+    try:
+        data = cwms.get_timeseries(ts_id, office_id, begin=begin, end=end).json
+    except Exception as error:
+        if not cda_errors.is_no_data(error):
+            raise
+        _tally.record(_NOT_FOUND, ts_id)
+        return
+
+    if _value_count(data) == 0:
+        _tally.record(_EMPTY_WINDOW, ts_id)
+        return
+
     filesystem_store.write_json(data, office_id, TIMESERIES_FOLDER, ts_id, begin_str, end_str, "data")
 
 
@@ -80,14 +154,17 @@ def _upload_one_ts_data(ts_info):
     end = ts_info[3]
     begin_str = begin.strftime(DATE_TIME_FORMAT)
     end_str = end.strftime(DATE_TIME_FORMAT)
-    logger.info("Publishing timeseries %s for office %s from %s to %s", ts_id, office_id, begin_str, end_str)
+    logger.debug("Publishing timeseries %s for office %s [%s]", ts_id, office_id, log_util.window(begin, end))
 
     staged_data = filesystem_store.read_json(office_id, TIMESERIES_FOLDER, ts_id, begin_str, end_str, "data")
     if staged_data is None:
         raise FileNotFoundError(
-            f"No staged timeseries data found for {office_id}.{ts_id} "
-            f"for window {begin_str} to {end_str}. Timeseries data publish skipped for this item."
+            "No staged timeseries data found for this window."
         )
+
+    if _value_count(staged_data) == 0:
+        _tally.record(_STAGED_EMPTY, ts_id)
+        return
 
     cwms.store_timeseries(staged_data)
 
@@ -98,18 +175,40 @@ def _build_timeseries_work_items(
     default_start: str | None,
     default_end: str | None,
 ) -> list[list[object]]:
-    work_items: list[list[object]] = []
+    valid = []
 
     for timeseries in timeseries_items:
         ts_id = _normalize_timeseries_id(office_id, timeseries.id)
         if ts_id is None:
             continue
 
-        begin = _parse_timestamp(timeseries.start_time or default_start, "start")
-        end = _parse_timestamp(timeseries.end_time or default_end, "end")
-        work_items.append([office_id, ts_id, begin, end])
+        valid.append((ts_id, timeseries))
 
-    return work_items
+    unique, duplicates = log_util.dedupe(
+        valid,
+        key=lambda entry: (entry[0], entry[1].start_time or default_start, entry[1].end_time or default_end),
+    )
+
+    if duplicates:
+        logger.warning(
+            "%s in the config for office %s %s more than once; the duplicates are dropped, "
+            "leaving %s. Duplicated: %s",
+            log_util.plural(len(duplicates), "timeseries"),
+            office_id,
+            "appear" if len(duplicates) > 1 else "appears",
+            log_util.plural(len(unique), "item"),
+            ", ".join(sorted({ts_id for ts_id, _ in duplicates})),
+        )
+
+    return [
+        [
+            office_id,
+            ts_id,
+            _parse_timestamp(item.start_time or default_start, "start"),
+            _parse_timestamp(item.end_time or default_end, "end"),
+        ]
+        for ts_id, item in unique
+    ]
 
 
 def _normalize_timeseries_id(office_id: str, configured_id: str) -> str | None:
@@ -141,4 +240,6 @@ def _parse_timestamp(value: str | None, label: str) -> datetime:
             return datetime.strptime(normalized, "%Y-%m-%d")
         except ValueError:
             raise ValueError(f"Invalid {label} time '{value}'. Use ISO-8601 or YYYY-MM-DD.") from exc
+
+
 __all__ = ["publish_staged_timeseries", "stage_timeseries"]

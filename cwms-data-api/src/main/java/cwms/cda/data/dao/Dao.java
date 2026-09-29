@@ -76,16 +76,18 @@ public abstract class Dao<T> {
                 .fetchOne().component1());
     }
 
-    public int getDbVersion(DSLContext dsl) {
-        Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
-        if (cachedValue == null) {
-            String version = getVersion(dsl);
-            LOGGER.atInfo().log("Connected to CWMS Database schema version: %s", version);
-            int newValue = versionAsInteger(version);
-            versionCache.put(VERSION_NAME, newValue);
-            return newValue;
-        } else {
-            return cachedValue;
+    public static int getDbVersion(DSLContext dsl) {
+        synchronized (versionCache) {
+            Integer cachedValue = versionCache.getIfPresent(VERSION_NAME);
+            if (cachedValue == null) {
+                String version = getVersion(dsl);
+                LOGGER.atInfo().log("Connected to CWMS Database schema version: %s", version);
+                int newValue = versionAsInteger(version);
+                versionCache.put(VERSION_NAME, newValue);
+                return newValue;
+            } else {
+                return cachedValue;
+            }
         }
     }
 
