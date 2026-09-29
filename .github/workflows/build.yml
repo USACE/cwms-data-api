@@ -70,8 +70,6 @@ jobs:
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16"
           - env: previous
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17"
-    name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
-    runs-on: ubuntu-latest
     outputs:
       thewar: ${{steps.thebuild.outputs.WARFILE}}
     steps:
