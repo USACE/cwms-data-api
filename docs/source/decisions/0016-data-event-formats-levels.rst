@@ -32,9 +32,7 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | +============+======================+========================================+ |
 |                       | | String     | "type"               | "specified_level_created"              | |
 |                       | +------------+----------------------+----------------------------------------+ |
-|                       | | String     | "office_id"          | The office identifier                  | |
-|                       | +------------+----------------------+----------------------------------------+ |
-|                       | | String     | "specified_level_id" | The specified level identifier         | |
+|                       | | Object     | "specified_level_id" | The specified level identifier         | |
 |                       | +------------+----------------------+----------------------------------------+ |
 |                       | | String     | "description"        | The description of the specified level | |
 |                       | +------------+----------------------+----------------------------------------+ |
@@ -44,8 +42,10 @@ Only "type", "office_id", and "specified_level_id" values are required.
 
     {
         "type": "specified_level_created",
-        "office_id": "SWT",
-        "specified_level_id": "24-hr Surveilance",
+        "specified_level_id": {
+        	"office_id": "SWT",
+        	name: "24-hr Surveilance"
+        },
         "description": "Level at which 24-hour surveillance is required"
     }
 
@@ -57,9 +57,7 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | +============+======================+========================================+ |
 |                       | | String     | "type"               | "specified_level_updated"              | |
 |                       | +------------+----------------------+----------------------------------------+ |
-|                       | | String     | "office_id"          | The office identifier                  | |
-|                       | +------------+----------------------+----------------------------------------+ |
-|                       | | String     | "specified_level_id" | The specified level identifier         | |
+|                       | | Object     | "specified_level_id" | The specified level identifier         | |
 |                       | +------------+----------------------+----------------------------------------+ |
 |                       | | String     | "description"        | The description of the specified level | |
 |                       | +------------+----------------------+----------------------------------------+ |
@@ -69,8 +67,10 @@ Only "type", "office_id", and "specified_level_id" values are required.
 
     {
         "type": "specified_level_updated",
-        "office_id": "SWT",
-        "specified_level_id": "24-hr Surveilance",
+        "specified_level_id": {
+        	"office_id": "SWT",
+        	name: "24-hr Surveilance"
+        },
         "description": "Lowest level at which 24-hour surveillance is required"
     }
 
@@ -82,9 +82,7 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | +============+======================+========================================+ |
 |                       | | String     | "type"               | "specified_level_deleted"              | |
 |                       | +------------+----------------------+----------------------------------------+ |
-|                       | | String     | "office_id"          | The office identifier                  | |
-|                       | +------------+----------------------+----------------------------------------+ |
-|                       | | String     | "specified_level_id" | The specified level identifier         | |
+|                       | | Object     | "specified_level_id" | The specified level identifier         | |
 |                       | +------------+----------------------+----------------------------------------+ |
 +-----------------------+--------------------------------------------------------------------------------+
 
@@ -92,8 +90,10 @@ Only "type", "office_id", and "specified_level_id" values are required.
 
     {
         "type": "specified_level_deleted",
-        "office_id": "SWT",
-        "specified_level_id": "24-hr Surveilance",
+        "specified_level_id": {
+        	"office_id": "SWT",
+        	name: "24-hr Surveilance"
+        },
     }
 
 **Location Levels**
@@ -110,9 +110,7 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | +============+=======================+===================================================================================================================+ |
 |                      | | String     | "type"                | "location_level_created"                                                                                          | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
-|                      | | String     | "office_id"           | The office identifier                                                                                             | |
-|                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
-|                      | | String     | "location_level_id"   | The location level identifier                                                                                     | |
+|                      | | Object     | "location_level_id"   | The location level identifier                                                                                     | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 |                      | | String     | "attribute_id"        | The attribute identifier                                                                                          | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
@@ -148,8 +146,10 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 
     {
         "type": "location_level_created",
-        "office_id": "SWT",
-        "location_level_id": "Keystone.Elev.Inst.0.24-hr Surveillance",
+        "location_level_id": {
+        	"office_id": "SWT",
+        	name: "Keystone.Elev.Inst.0.24-hr Surveillance"
+        },
         "effective_time": 1782190800000,
         "virtual": false,
         "constant_value": 727.4,
@@ -164,9 +164,7 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | +============+=======================+===================================================================================================================+ |
 |                      | | String     | "type"                | "location_level_updated"                                                                                          | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
-|                      | | String     | "office_id"           | The office identifier                                                                                             | |
-|                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
-|                      | | String     | "location_level_id"   | The location level identifier                                                                                     | |
+|                      | | Object     | "location_level_id"   | The location level identifier                                                                                     | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 |                      | | String     | "attribute_id"        | The attribute identifier                                                                                          | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
@@ -202,8 +200,10 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 
     {
         "type": "location_level_updated",
-        "office_id": "SWT",
-        "location_level_id": "Keystone.Elev.Inst.0.24-hr Surveillance",
+        "location_level_id": {
+        	"office_id": "SWT",
+        	name: "Keystone.Elev.Inst.0.24-hr Surveillance"
+        },
         "effective_time": 1782190800000,
         "virtual": false,
         "constant_value": 727.4,
@@ -219,9 +219,7 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | +============+=======================+===================================================================================================================+ |
 |                      | | String     | "type"                | "location_level_deleted"                                                                                          | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
-|                      | | String     | "office_id"           | The office identifier                                                                                             | |
-|                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
-|                      | | String     | "location_level_id"   | The location level identifier                                                                                     | |
+|                      | | Object     | "location_level_id"   | The location level identifier                                                                                     | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 |                      | | String     | "attribute_id"        | The attribute identifier                                                                                          | |
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
@@ -239,8 +237,10 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 
     {
         "type": "location_level_deleted",
-        "office_id": "SWT",
-        "location_level_id": "Keystone.Elev.Inst.0.24-hr Surveillance",
+        "location_level_id": {
+        	"office_id": "SWT",
+        	name: "Keystone.Elev.Inst.0.24-hr Surveillance"
+        },
         "effective_time": 1782190800000,
         "virtual": false
     }

@@ -30,9 +30,7 @@ Only "type", "office_id", "embankment_id", "project_id", and "structure_type" ar
 |                   | +============+======================+===============================================================+ |
 |                   | | String     | "type"               | "embankment_created"                                          | |
 |                   | +------------+----------------------+---------------------------------------------------------------+ |
-|                   | | String     | "office_id"          | The office identifier                                         | |
-|                   | +------------+----------------------+---------------------------------------------------------------+ |
-|                   | | String     | "embankment_id"      | The embankment identifier                                     | |
+|                   | | Object     | "embankment_id"      | The embankment identifier                                     | |
 |                   | +------------+----------------------+---------------------------------------------------------------+ |
 |                   | | String     | "project_id"         | The identifier of the project to which the embankment belongs | |
 |                   | +------------+----------------------+---------------------------------------------------------------+ |
@@ -60,8 +58,10 @@ Only "type", "office_id", "embankment_id", "project_id", and "structure_type" ar
 
     {
       "type": "embankment_created",
-      "office_id": "SWT",
-      "embankment_id": "Greenbrier Dam",
+      "embankment_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier Dam"
+      },
       "project_id": "Greenbrier Reservoir",
       "structure_type": "Rolled Earth-Filled",
       "us_protection_type": "Rock Riprap",
@@ -82,9 +82,7 @@ Only "type", "office_id", "embankment_id", "project_id", and "structure_type" ar
 |                   | +============+======================+===============================================================+ |
 |                   | | String     | "type"               | "embankment_updated"                                          | |
 |                   | +------------+----------------------+---------------------------------------------------------------+ |
-|                   | | String     | "office_id"          | The office identifier                                         | |
-|                   | +------------+----------------------+---------------------------------------------------------------+ |
-|                   | | String     | "embankment_id"      | The embankment identifier                                     | |
+|                   | | Object     | "embankment_id"      | The embankment identifier                                     | |
 |                   | +------------+----------------------+---------------------------------------------------------------+ |
 |                   | | String     | "project_id"         | The identifier of the project to which the embankment belongs | |
 |                   | +------------+----------------------+---------------------------------------------------------------+ |
@@ -112,8 +110,10 @@ Only "type", "office_id", "embankment_id", "project_id", and "structure_type" ar
 
     {
       "type": "embankment_updated",
-      "office_id": "SWT",
-      "embankment_id": "Greenbrier Dam",
+      "embankment_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier Dam"
+      },
       "project_id": "Greenbrier Reservoir",
       "structure_type": "Rolled Earth-Filled",
       "us_protection_type": "Rock Riprap",
@@ -134,9 +134,7 @@ Only "type", "office_id", "embankment_id", "project_id", and "structure_type" ar
 |                   | +============+======================+==============================================================+ |
 |                   | | String     | "type"               | "embankment_deleted"                                         | |
 |                   | +------------+----------------------+--------------------------------------------------------------+ |
-|                   | | String     | "office_id"          | The office identifier                                        | |
-|                   | +------------+----------------------+--------------------------------------------------------------+ |
-|                   | | String     | "embankment_id"      | The embankment identifier                                    | |
+|                   | | Object     | "embankment_id"      | The embankment identifier                                    | |
 |                   | +------------+----------------------+--------------------------------------------------------------+ |
 +-------------------+------------------------------------------------------------------------------------------------------+
 

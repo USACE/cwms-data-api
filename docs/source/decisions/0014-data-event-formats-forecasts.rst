@@ -33,9 +33,7 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 |                 |  +============+====================+=================================================================+ |
 |                 |  | String     | "type"             | "forecast_specification_created"                                | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "office_id"        | The office identifier                                           | |
-|                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
+|                 |  | Object     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
@@ -53,8 +51,10 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 
     {
         "type": "forecast_specification_created",
-        "office_id": "SWT",
-        "specification_id": "Keystone",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Keystone"
+        },
         "designator": "CAVI",
         "location_id": "Keystone Lake",
         "entity_id": "CESWT",
@@ -70,9 +70,7 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 |                 |  +============+====================+=================================================================+ |
 |                 |  | String     | "type"             | "forecast_specification_updated"                                | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "office_id"        | The office identifier                                           | |
-|                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
+|                 |  | Object     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
@@ -90,8 +88,10 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 
     {
         "type": "forecast_specification_updated",
-        "office_id": "SWT",
-        "specification_id": "Keystone",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Keystone"
+        },
         "designator": "CAVI",
         "location_id": "Keystone Lake",
         "entity_id": "CESWT",
@@ -107,9 +107,7 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 |                 |  +============+====================+=================================================================+ |
 |                 |  | String     | "type"             | "forecast_specification_deleted"                                | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "office_id"        | The office identifier                                           | |
-|                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
+|                 |  | Object     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
@@ -119,8 +117,10 @@ Only "type", "office_id", "specification_id" and "designator" values are require
 
     {
         "type": "forecast_specification_deleted",
-        "office_id": "SWT",
-        "specification_id": "Keystone",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Keystone"
+        },
         "designator": "CAVI"
     }
 
@@ -136,9 +136,7 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 |                 |  +============+====================+=================================================================+ |
 |                 |  | String     | "type"             | "forecast_instance_created"                                     | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "office_id"        | The office identifier                                           | |
-|                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
+|                 |  | Object     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
@@ -162,8 +160,10 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 
     {
         "type": "forecast_instance_created",
-        "office_id": "SWT",
-        "specification_id": "Keystone",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Keystone"
+        },
         "designator": "CAVI",
         "forecast_time": 1787245200000,
         "issue_time": 1787158800000,
@@ -182,9 +182,7 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 |                 |  +============+====================+=================================================================+ |
 |                 |  | String     | "type"             | "forecast_instance_updated"                                     | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "office_id"        | The office identifier                                           | |
-|                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
+|                 |  | Object     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
@@ -208,8 +206,10 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 
     {
         "type": "forecast_instance_updated",
-        "office_id": "SWT",
-        "specification_id": "Keystone",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Keystone"
+        },
         "designator": "CAVI",
         "forecast_time": 1787245200000,
         "issue_time": 1787158800000,
@@ -228,9 +228,7 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 |                 |  +============+====================+=================================================================+ |
 |                 |  | String     | "type"             | "forecast_instance_deleted"                                     | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "office_id"        | The office identifier                                           | |
-|                 |  +------------+--------------------+-----------------------------------------------------------------+ |
-|                 |  | String     | "specification_id" | The forecast specification identifier                           | |
+|                 |  | Object     | "specification_id" | The forecast specification identifier                           | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
 |                 |  | String     | "designator"       | The forecast designator                                         | |
 |                 |  +------------+--------------------+-----------------------------------------------------------------+ |
@@ -244,8 +242,10 @@ Only "type", "office_id", "specification_id", "designator, "forecast_time" and "
 
     {
         "type": "forecast_instance_deleted",
-        "office_id": "SWT",
-        "specification_id": "Keystone",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Keystone"
+        },
         "designator": "CAVI",
         "forecast_time": 1787245200000,
         "issue_time": 1787158800000

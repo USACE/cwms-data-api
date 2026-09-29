@@ -35,9 +35,7 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +============+==========================+==================================+ |
 |                       | | String     | "type"                   | "rating_template_created"        | |
 |                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "office_id"              | The office identifier            | |
-|                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "template_id"            | The rating template identifier   | |
+|                       | | Object     | "template_id"            | The rating template identifier   | |
 |                       | +------------+--------------------------+----------------------------------+ |
 |                       | | String     | "description"            | The description for the template | |
 |                       | +------------+--------------------------+----------------------------------+ |
@@ -47,8 +45,10 @@ Only "type", "office_id", and "template_id" values are required.
 
     {
         "type": "rating_template_created",
-        "office_id": "SWT",
-        "template_id": "Stage;Flow.Logarithmic",
+        "template_id": {
+        	"office_id": "SWT",
+        	name: "Stage;Flow.Logarithmic"
+        },
         "description": "USGS-style stage/flow ratings"
     }
 
@@ -60,9 +60,7 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +============+==========================+==================================+ |
 |                       | | String     | "type"                   | "rating_template_updated"        | |
 |                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "office_id"              | The office identifier            | |
-|                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "template_id"            | The rating template identifier   | |
+|                       | | Object     | "template_id"            | The rating template identifier   | |
 |                       | +------------+--------------------------+----------------------------------+ |
 |                       | | String     | "description"            | The description for the template | |
 |                       | +------------+--------------------------+----------------------------------+ |
@@ -72,8 +70,10 @@ Only "type", "office_id", and "template_id" values are required.
 
     {
         "type": "rating_template_updated",
-        "office_id": "SWT",
-        "template_id": "Stage;Flow.Logarithmic",
+        "template_id": {
+        	"office_id": "SWT",
+        	name: "Stage;Flow.Logarithmic"
+        },
         "description": "USGS-style stage/flow BASE ratings"
     }
 
@@ -85,9 +85,7 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +============+==========================+==================================+ |
 |                       | | String     | "type"                   | "rating_template_deleted"        | |
 |                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "office_id"              | The office identifier            | |
-|                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "template_id"            | The rating template identifier   | |
+|                       | | Object     | "template_id"            | The rating template identifier   | |
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
 
@@ -111,9 +109,7 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +============+===========================+====================================================================================================================+ |
 |                            | | String     | "type"                    | "rating_specification_created"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "office_id"               | The office identifier                                                                                              | |
-|                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "specification_id"        | The rating specification identifier                                                                                | |
+|                            | | Object     | "specification_id"        | The rating specification identifier                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | String     | "source_agency"           | The entity that generates ratings for this specification                                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
@@ -143,8 +139,10 @@ Only "type", "office_id", and "specification_id" values are required.
 
     {
         "type": "rating_specification_created",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "source_agency": "ABRFC",
         "in_range_method": "LINEAR",
         "out_range_low_method": "NEAREST",
@@ -166,9 +164,7 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +============+===========================+====================================================================================================================+ |
 |                            | | String     | "type"                    | "rating_specification_updated"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "office_id"               | The office identifier                                                                                              | |
-|                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "specification_id"        | The rating specification identifier                                                                                | |
+|                            | | Object     | "specification_id"        | The rating specification identifier                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | String     | "source_agency"           | The entity that generates ratings for this specification                                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
@@ -198,8 +194,10 @@ Only "type", "office_id", and "specification_id" values are required.
 
     {
         "type": "rating_specification_updated",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "source_agency": "ABRFC",
         "in_range_method": "LINEAR",
         "out_range_low_method": "NULL",
@@ -221,9 +219,7 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +============+===========================+====================================================================================================================+ |
 |                            | | String     | "type"                    | "rating_specification_deleted"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "office_id"               | The office identifier                                                                                              | |
-|                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "specification_id"        | The rating specification identifier                                                                                | |
+|                            | | Object     | "specification_id"        | The rating specification identifier                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
@@ -247,9 +243,7 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +============+====================+=================================================================================================+ |
 |               | | String     | "type"             | "rating_created"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                                           | |
-|               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "specification_id" | The rating specification identifier                                                             | |
+|               | | Object     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
@@ -267,8 +261,10 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 
     {
         "type": "rating_created",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "effective_time": 1782190800000,
         "transition_time": 1780981200000,
         "creation_time": 1787140800000,
@@ -284,9 +280,7 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +============+====================+=================================================================================================+ |
 |               | | String     | "type"             | "rating_updated"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                                           | |
-|               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "specification_id" | The rating specification identifier                                                             | |
+|               | | Object     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
@@ -304,8 +298,10 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 
     {
         "type": "rating_updated",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "effective_time": 1782190800000,
         "transition_time": 1780981200000,
         "creation_time": 1787140800000,
@@ -321,9 +317,7 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +============+====================+=================================================================================================+ |
 |               | | String     | "type"             | "rating_deleted"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                                           | |
-|               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "specification_id" | The rating specification identifier                                                             | |
+|               | | Object     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
@@ -333,8 +327,10 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 
     {
         "type": "rating_deleted",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "effective_time": 1782190800000
     }
 

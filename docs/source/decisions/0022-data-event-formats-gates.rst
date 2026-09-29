@@ -32,9 +32,7 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 |                  | +============+====================+============================================================+ |
 |                  | | String     | "type"             | "gate_group_created"                                       | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
-|                  | | String     | "office_id"        | The office identifier                                      | |
-|                  | +------------+--------------------+------------------------------------------------------------+ |
-|                  | | String     | "group_id"         | The gate group identifier                                  | |
+|                  | | Object     | "group_id"         | The gate group identifier                                  | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
 |                  | | String     | "project_id"       | The project identifier                                     | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
@@ -54,8 +52,10 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 
     {
       "type": "gate_group_created",
-      "office_id": "SWT",
-      "group_id": "Greenbrier Service Gates",
+      "group_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier Service Gates"
+      },
       "project_id": "Greenbrier",
       "rating_spec_id": "Greenbrier.Opening-Service Gates,Elev;Flow.Linear.Production",
       "gate_type": "RADIAL",
@@ -72,9 +72,7 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 |                  | +============+====================+============================================================+ |
 |                  | | String     | "type"             | "gate_group_updated"                                       | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
-|                  | | String     | "office_id"        | The office identifier                                      | |
-|                  | +------------+--------------------+------------------------------------------------------------+ |
-|                  | | String     | "group_id"         | The gate group identifier                                  | |
+|                  | | Object     | "group_id"         | The gate group identifier                                  | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
 |                  | | String     | "project_id"       | The project identifier                                     | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
@@ -94,8 +92,10 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 
     {
       "type": "gate_group_updated",
-      "office_id": "SWT",
-      "group_id": "Greenbrier Service Gates",
+      "group_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier Service Gates"
+      },
       "project_id": "Greenbrier",
       "rating_spec_id": "Greenbrier.Opening-Service Gates,Elev;Flow.Linear.Production",
       "gate_type": "RADIAL",
@@ -112,9 +112,7 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 |                  | +============+====================+============================================================+ |
 |                  | | String     | "type"             | "gate_group_deleted"                                       | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
-|                  | | String     | "office_id"        | The office identifier                                      | |
-|                  | +------------+--------------------+------------------------------------------------------------+ |
-|                  | | String     | "group_id"         | The gate group identifier                                  | |
+|                  | | Object     | "group_id"         | The gate group identifier                                  | |
 |                  | +------------+--------------------+------------------------------------------------------------+ |
 +------------------+--------------------------------------------------------------------------------------------------+
 
@@ -170,9 +168,7 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 |              | +============+==============+====================================================+ |
 |              | | String     | "type"       | "gate_created"                                     | |
 |              | +------------+--------------+----------------------------------------------------+ |
-|              | | String     | "office_id"  | The office identifier                              | |
-|              | +------------+--------------+----------------------------------------------------+ |
-|              | | String     | "gate_id"    | The gate identifier                                | |
+|              | | Object     | "gate_id"    | The gate identifier                                | |
 |              | +------------+--------------+----------------------------------------------------+ |
 |              | | String     | "group_id"   | The gate group identifier                          | |
 |              | +------------+--------------+----------------------------------------------------+ |
@@ -184,8 +180,10 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 
     {
       "type": "gate_created",
-      "office_id": "SWT",
-      "gate_id": "Greenbrier-SG1",
+      "gate_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier-SG1"
+      },
       "group_id": "Greenbrier Service Gates",
       "sort_order": 1
     }
@@ -198,9 +196,7 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 |              | +============+==============+====================================================+ |
 |              | | String     | "type"       | "gate_updated"                                     | |
 |              | +------------+--------------+----------------------------------------------------+ |
-|              | | String     | "office_id"  | The office identifier                              | |
-|              | +------------+--------------+----------------------------------------------------+ |
-|              | | String     | "gate_id"    | The gate identifier                                | |
+|              | | Object     | "gate_id"    | The gate identifier                                | |
 |              | +------------+--------------+----------------------------------------------------+ |
 |              | | String     | "group_id"   | The gate group identifier                          | |
 |              | +------------+--------------+----------------------------------------------------+ |
@@ -212,8 +208,10 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 
     {
       "type": "gate_updated",
-      "office_id": "SWT",
-      "gate_id": "Greenbrier-SG1",
+      "gate_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier-SG1"
+      },
       "group_id": "Greenbrier Service Gates",
       "sort_order": 1
     }
@@ -226,9 +224,7 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 |              | +============+==============+====================================================+ |
 |              | | String     | "type"       | "gate_deleted"                                     | |
 |              | +------------+--------------+----------------------------------------------------+ |
-|              | | String     | "office_id"  | The office identifier                              | |
-|              | +------------+--------------+----------------------------------------------------+ |
-|              | | String     | "gate_id"    | The gate identifier                                | |
+|              | | Object     | "gate_id"    | The gate identifier                                | |
 |              | +------------+--------------+----------------------------------------------------+ |
 +--------------+------------------------------------------------------------------------------------+
 
@@ -252,9 +248,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                   | +============+================================+============================================================================+ |
 |                   | | String     | "type"                         | "gate_change_created"                                                      | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
-|                   | | String     | "office_id"                    | The office identifier                                                      | |
-|                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
-|                   | | String     | "project_id"                   | The project identifier                                                     | |
+|                   | | Object     | "project_id"                   | The project identifier                                                     | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 |                   | | long       | "date_time"                    | The date and time of the gate change in epoch milliseconds                 | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
@@ -286,8 +280,10 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 
     {
       "type": "gate_change_created",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "pool_elevation": 912.54,
       "tailwater_elevation": 860.4,
@@ -309,9 +305,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                   | +============+================================+============================================================================+ |
 |                   | | String     | "type"                         | "gate_change_updated"                                                      | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
-|                   | | String     | "office_id"                    | The office identifier                                                      | |
-|                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
-|                   | | String     | "project_id"                   | The project identifier                                                     | |
+|                   | | Object     | "project_id"                   | The project identifier                                                     | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 |                   | | long       | "date_time"                    | The date and time of the gate change in epoch milliseconds                 | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
@@ -343,8 +337,10 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 
     {
       "type": "gate_change_updated",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "pool_elevation": 912.54,
       "tailwater_elevation": 860.4,
@@ -366,9 +362,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                   | +============+================================+============================================================================+ |
 |                   | | String     | "type"                         | "gate_change_deleted"                                                      | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
-|                   | | String     | "office_id"                    | The office identifier                                                      | |
-|                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
-|                   | | String     | "project_id"                   | The project identifier                                                     | |
+|                   | | Object     | "project_id"                   | The project identifier                                                     | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 |                   | | long       | "date_time"                    | The date and time of the gate change in epoch milliseconds                 | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
@@ -378,8 +372,10 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 
     {
       "type": "gate_change_deleted",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000
     }
 
@@ -421,9 +417,7 @@ Only "type", "office_id", "project_id", "date_time", "gate_id", and "opening" ar
 |                    | +============+====================+=============================================================+ |
 |                    | | String     | "type"             | "gate_setting_created"                                      | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "office_id"        | The office identifier                                       | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "project_id"       | The project identifier                                      | |
+|                    | | Object     | "project_id"       | The project identifier                                      | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
 |                    | | long       | "date_time"        | The date and time of the gate setting in epoch milliseconds | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
@@ -443,8 +437,10 @@ Only "type", "office_id", "project_id", "date_time", "gate_id", and "opening" ar
 
     {
       "type": "gate_setting_created",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "gate_id": "Greenbrier-SG1",
       "opening": 1.1,
@@ -459,9 +455,7 @@ Only "type", "office_id", "project_id", "date_time", "gate_id", and "opening" ar
 |                    | +============+====================+=============================================================+ |
 |                    | | String     | "type"             | "gate_setting_updated"                                      | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "office_id"        | The office identifier                                       | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "project_id"       | The project identifier                                      | |
+|                    | | Object     | "project_id"       | The project identifier                                      | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
 |                    | | long       | "date_time"        | The date and time of the gate setting in epoch milliseconds | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
@@ -481,8 +475,10 @@ Only "type", "office_id", "project_id", "date_time", "gate_id", and "opening" ar
 
     {
       "type": "gate_setting_updated",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "gate_id": "Greenbrier-SG1",
       "opening": 1.1,
@@ -498,9 +494,7 @@ Only "type", "office_id", "project_id", "date_time", "gate_id", and "opening" ar
 |                    | +============+====================+=============================================================+ |
 |                    | | String     | "type"             | "gate_setting_deleted"                                      | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "office_id"        | The office identifier                                       | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "project_id"       | The project identifier                                      | |
+|                    | | Object     | "project_id"       | The project identifier                                      | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
 |                    | | long       | "date_time"        | The date and time of the gate changes in epoch milliseconds | |
 |                    | +------------+--------------------+-------------------------------------------------------------+ |
@@ -512,8 +506,10 @@ Only "type", "office_id", "project_id", "date_time", "gate_id", and "opening" ar
 
     {
       "type": "gate_setting_deleted",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "gate_id": "Greenbrier-SG1"
     }

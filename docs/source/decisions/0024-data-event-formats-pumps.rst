@@ -32,9 +32,7 @@ Only of "type", "office_id", and "pump_id" are required.
 |              | +============+===============+==============================+ |
 |              | | String     | "type"        |  "pump_created"              | |
 |              | +------------+---------------+------------------------------+ |
-|              | | String     | "office_id"   |  The office identifier       | |
-|              | +------------+---------------+------------------------------+ |
-|              | | String     | "pump_id"     |  The pump identifier         | |
+|              | | Object     | "pump_id"     |  The pump identifier         | |
 |              | +------------+---------------+------------------------------+ |
 |              | | String     | "description" |  The description of the pump | |
 |              | +------------+---------------+------------------------------+ |
@@ -44,8 +42,10 @@ Only of "type", "office_id", and "pump_id" are required.
 
     {
       "type": "pump_created",
-      "office_id": "SWT",
-      "pump_id": "Jonesboro-MI-1",
+      "pump_id": {
+      	"office_id": "SWT",
+      	name: "Jonesboro-MI-1"
+      },
       "description": "M+I Pump 1 for City of Jonesboro"
     }
 
@@ -57,9 +57,7 @@ Only of "type", "office_id", and "pump_id" are required.
 |              | +============+===============+==============================+ |
 |              | | String     | "type"        |  "pump_updated"              | |
 |              | +------------+---------------+------------------------------+ |
-|              | | String     | "office_id"   |  The office identifier       | |
-|              | +------------+---------------+------------------------------+ |
-|              | | String     | "pump_id"     |  The pump identifier         | |
+|              | | Object     | "pump_id"     |  The pump identifier         | |
 |              | +------------+---------------+------------------------------+ |
 |              | | String     | "description" |  The description of the pump | |
 |              | +------------+---------------+------------------------------+ |
@@ -69,8 +67,10 @@ Only of "type", "office_id", and "pump_id" are required.
 
     {
       "type": "pump_updated",
-      "office_id": "SWT",
-      "pump_id": "Jonesboro-MI-1",
+      "pump_id": {
+      	"office_id": "SWT",
+      	name: "Jonesboro-MI-1"
+      },
       "description": "M+I Pump 1 for City of Jonesboro"
     }
 
@@ -82,9 +82,7 @@ Only of "type", "office_id", and "pump_id" are required.
 |              | +============+===============+==============================+ |
 |              | | String     | "type"        |  "pump_deleted"              | |
 |              | +------------+---------------+------------------------------+ |
-|              | | String     | "office_id"   |  The office identifier       | |
-|              | +------------+---------------+------------------------------+ |
-|              | | String     | "pump_id"     |  The pump identifier         | |
+|              | | Object     | "pump_id"     |  The pump identifier         | |
 |              | +------------+---------------+------------------------------+ |
 +--------------+---------------------------------------------------------------+
 
@@ -108,9 +106,7 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 |                | +============+=======================+================================================================+ |
 |                | | String     | "type"                | "pumpage_created"                                              | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
-|                | | String     | "office_id"           | The office identifier                                          | |
-|                | +------------+-----------------------+----------------------------------------------------------------+ |
-|                | | String     | "pump_id"             | The pump identifier                                            | |
+|                | | Object     | "pump_id"             | The pump identifier                                            | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
 |                | | long       | "date_time"           | The date and time that the pumpage began in epoch milliseconds | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
@@ -132,8 +128,10 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 
     {
       "type": "pumpage_created",
-      "office_id": "SWT",
-      "pump_id": "Jonesboro-MI-1",
+      "pump_id": {
+      	"office_id": "SWT",
+      	name: "Jonesboro-MI-1"
+      },
       "date_time": 1788971820000,
       "flow": 64.3,
       "flow_unit": "mgd",
@@ -151,9 +149,7 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 |                | +============+=======================+================================================================+ |
 |                | | String     | "type"                | "pumpage_updated"                                              | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
-|                | | String     | "office_id"           | The office identifier                                          | |
-|                | +------------+-----------------------+----------------------------------------------------------------+ |
-|                | | String     | "pump_id"             | The pump identifier                                            | |
+|                | | Object     | "pump_id"             | The pump identifier                                            | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
 |                | | long       | "date_time"           | The date and time that the pumpage began in epoch milliseconds | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
@@ -175,8 +171,10 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 
     {
       "type": "pumpage_updated",
-      "office_id": "SWT",
-      "pump_id": "Jonesboro-MI-1",
+      "pump_id": {
+      	"office_id": "SWT",
+      	name: "Jonesboro-MI-1"
+      },
       "date_time": 1788971820000,
       "flow": 64.3,
       "flow_unit": "mgd",
@@ -194,9 +192,7 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 |                | +============+=======================+================================================================+ |
 |                | | String     | "type"                | "pumpage_deleted"                                              | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
-|                | | String     | "office_id"           | The office identifier                                          | |
-|                | +------------+-----------------------+----------------------------------------------------------------+ |
-|                | | String     | "pump_id"             | The pump identifier                                            | |
+|                | | Object     | "pump_id"             | The pump identifier                                            | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
 |                | | long       | "date_time"           | The date and time that the pumpage began in epoch milliseconds | |
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
@@ -206,8 +202,10 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 
     {
       "type": "pumpage_deleted",
-      "office_id": "SWT",
-      "pump_id": "Jonesboro-MI-1",
+      "pump_id": {
+      	"office_id": "SWT",
+      	name: "Jonesboro-MI-1"
+      },
       "date_time": 1788971820000
     }
 

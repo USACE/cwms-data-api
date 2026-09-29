@@ -32,9 +32,7 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 |               | +============+====================+==============================================================================+ |
 |               | | String     | "type"             | "entity_created"                                                             | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                        | |
-|               | +------------+--------------------+------------------------------------------------------------------------------+ |
-|               | | String     | "entity_id"        | The entity identifier                                                        | |
+|               | | Object     | "entity_id"        | The entity identifier                                                        | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
 |               | | String     | "entity_name"      | The name of the entity                                                       | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
@@ -49,8 +47,10 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 
     {
       "type": "entity_created",
-      "office_id": "SWT",
-      "entity_id": "KEYS_AO",
+      "entity_id": {
+      	"office_id": "SWT",
+      	name: "KEYS_AO"
+      },
       "entity_name": "Keystone Lake Area Office",
       "parent_entity_id": "CESWT",
       "category_id": "GOV"
@@ -64,9 +64,7 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 |               | +============+====================+==============================================================================+ |
 |               | | String     | "type"             | "entity_updated"                                                             | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                        | |
-|               | +------------+--------------------+------------------------------------------------------------------------------+ |
-|               | | String     | "entity_id"        | The entity identifier                                                        | |
+|               | | Object     | "entity_id"        | The entity identifier                                                        | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
 |               | | String     | "entity_name"      | The name of the entity                                                       | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
@@ -81,8 +79,10 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 
     {
       "type": "entity_updated",
-      "office_id": "SWT",
-      "entity_id": "KEYS_AO",
+      "entity_id": {
+      	"office_id": "SWT",
+      	name: "KEYS_AO"
+      },
       "entity_name": "Keystone Lake Area Office",
       "parent_entity_id": "CESWT",
       "category_id": "GOV"
@@ -96,9 +96,7 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 |               | +============+====================+==============================================================================+ |
 |               | | String     | "type"             | "entity_deleted"                                                             | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                        | |
-|               | +------------+--------------------+------------------------------------------------------------------------------+ |
-|               | | String     | "entity_id"        | The entity identifier                                                        | |
+|               | | Object     | "entity_id"        | The entity identifier                                                        | |
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 
@@ -122,9 +120,7 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 |                       | +============+===============+==================================+ |
 |                       | | String     | "type"        | "entity_location_created"        | |
 |                       | +------------+---------------+----------------------------------+ |
-|                       | | String     | "office_id"   | The office identifier            | |
-|                       | +------------+---------------+----------------------------------+ |
-|                       | | String     | "location_id" | The location identifier          | |
+|                       | | Object     | "location_id" | The location identifier          | |
 |                       | +------------+---------------+----------------------------------+ |
 |                       | | String     | "entity_id"   | The entity identifier            | |
 |                       | +------------+---------------+----------------------------------+ |
@@ -136,8 +132,10 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 
     {
       "type": "entity_location_created",
-      "office_id": "SWT",
-      "location_id": "KEYS_AO",
+      "location_id": {
+      	"office_id": "SWT",
+      	name: "KEYS_AO"
+      },
       "entity_id": "KEYS_AO",
       "comments": "Keystone Lake Area Office location"
     }
@@ -150,9 +148,7 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 |                       | +============+===============+==================================+ |
 |                       | | String     | "type"        | "entity_location_updated"        | |
 |                       | +------------+---------------+----------------------------------+ |
-|                       | | String     | "office_id"   | The office identifier            | |
-|                       | +------------+---------------+----------------------------------+ |
-|                       | | String     | "location_id" | The location identifier          | |
+|                       | | Object     | "location_id" | The location identifier          | |
 |                       | +------------+---------------+----------------------------------+ |
 |                       | | String     | "entity_id"   | The entity identifier            | |
 |                       | +------------+---------------+----------------------------------+ |
@@ -164,8 +160,10 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 
     {
       "type": "entity_location_updated",
-      "office_id": "SWT",
-      "location_id": "KEYS_AO",
+      "location_id": {
+      	"office_id": "SWT",
+      	name: "KEYS_AO"
+      },
       "entity_id": "KEYS_AO",
       "comments": "Keystone Lake Area Office location"
     }
@@ -178,9 +176,7 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 |                       | +============+===============+==================================+ |
 |                       | | String     | "type"        | "entity_location_deleted"        | |
 |                       | +------------+---------------+----------------------------------+ |
-|                       | | String     | "office_id"   | The office identifier            | |
-|                       | +------------+---------------+----------------------------------+ |
-|                       | | String     | "location_id" | The location identifier          | |
+|                       | | Object     | "location_id" | The location identifier          | |
 |                       | +------------+---------------+----------------------------------+ |
 |                       | | String     | "entity_id"   | The entity identifier            | |
 |                       | +------------+---------------+----------------------------------+ |
@@ -190,8 +186,10 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 
     {
       "type": "entity_location_deleted",
-      "office_id": "SWT",
-      "location_id": "KEYS_AO",
+      "location_id": {
+      	"office_id": "SWT",
+      	name: "KEYS_AO"
+      },
       "entity_id": "KEYS_AO"
     }
 

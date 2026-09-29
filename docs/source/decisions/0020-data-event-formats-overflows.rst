@@ -30,9 +30,7 @@ Only "type", "office_id", "overflow_id", and  "project_id" are required.
 |                 | +============+======================+============================================================+ |
 |                 | | String     | "type"               | "overflow_created"                                         | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
-|                 | | String     | "office_id"          | The office identifier                                      | |
-|                 | +------------+----------------------+------------------------------------------------------------+ |
-|                 | | String     | "overflow_id"        | The overflow identifier                                    | |
+|                 | | Object     | "overflow_id"        | The overflow identifier                                    | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
 |                 | | String     | "project_id"         | The identfier of the project to which the overflow belongs | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
@@ -56,8 +54,10 @@ Only "type", "office_id", "overflow_id", and  "project_id" are required.
 
     {
       "type": "overflow_created",
-      "office_id": "SWT",
-      "overflow_id": "Greenbrier-Emergency Spillway",
+      "overflow_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier-Emergency Spillway"
+      },
       "project_id": "Greenbrier",
       "crest_elevation": 923.5,
       "elevation_unit": "ft",
@@ -76,9 +76,7 @@ Only "type", "office_id", "overflow_id", and  "project_id" are required.
 |                 | +============+======================+============================================================+ |
 |                 | | String     | "type"               | "overflow_updated"                                         | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
-|                 | | String     | "office_id"          | The office identifier                                      | |
-|                 | +------------+----------------------+------------------------------------------------------------+ |
-|                 | | String     | "overflow_id"        | The overflow identifier                                    | |
+|                 | | Object     | "overflow_id"        | The overflow identifier                                    | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
 |                 | | String     | "project_id"         | The identfier of the project to which the overflow belongs | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
@@ -102,8 +100,10 @@ Only "type", "office_id", "overflow_id", and  "project_id" are required.
 
     {
       "type": "overflow_updated",
-      "office_id": "SWT",
-      "overflow_id": "Greenbrier-Emergency Spillway",
+      "overflow_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier-Emergency Spillway"
+      },
       "project_id": "Greenbrier",
       "crest_elevation": 923.5,
       "elevation_unit": "ft",
@@ -122,9 +122,7 @@ Only "type", "office_id", "overflow_id", and  "project_id" are required.
 |                 | +============+======================+============================================================+ |
 |                 | | String     | "type"               | "overflow_deleted"                                         | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
-|                 | | String     | "office_id"          | The office identifier                                      | |
-|                 | +------------+----------------------+------------------------------------------------------------+ |
-|                 | | String     | "overflow_id"        | The overflow identifier                                    | |
+|                 | | Object     | "overflow_id"        | The overflow identifier                                    | |
 |                 | +------------+----------------------+------------------------------------------------------------+ |
 +-----------------+----------------------------------------------------------------------------------------------------+
 

@@ -32,9 +32,7 @@ All of "type", "office_id", "turbine_id", and "project_id" are required.
 |                 | +============+==============+====================================================+ |
 |                 | | String     | "type"       | "turbine_created"                                  | |
 |                 | +------------+--------------+----------------------------------------------------+ |
-|                 | | String     | "office_id"  | The office identifier                              | |
-|                 | +------------+--------------+----------------------------------------------------+ |
-|                 | | String     | "turbine_id" | The turbine identifier                             | |
+|                 | | Object     | "turbine_id" | The turbine identifier                             | |
 |                 | +------------+--------------+----------------------------------------------------+ |
 |                 | | String     | "project_id" | The project identifier                             | |
 |                 | +------------+--------------+----------------------------------------------------+ |
@@ -44,8 +42,10 @@ All of "type", "office_id", "turbine_id", and "project_id" are required.
 
     {
       "type": "turbine_created",
-      "office_id": "SWT",
-      "turbine_id": "Greenbrier-T1",
+      "turbine_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier-T1"
+      },
       "project_id": "Greenbrier"
     }
 
@@ -57,9 +57,7 @@ All of "type", "office_id", "turbine_id", and "project_id" are required.
 |                 | +============+==============+====================================================+ |
 |                 | | String     | "type"       | "turbine_updated"                                  | |
 |                 | +------------+--------------+----------------------------------------------------+ |
-|                 | | String     | "office_id"  | The office identifier                              | |
-|                 | +------------+--------------+----------------------------------------------------+ |
-|                 | | String     | "turbine_id" | The turbine identifier                             | |
+|                 | | Object     | "turbine_id" | The turbine identifier                             | |
 |                 | +------------+--------------+----------------------------------------------------+ |
 |                 | | String     | "project_id" | The project identifier                             | |
 |                 | +------------+--------------+----------------------------------------------------+ |
@@ -69,8 +67,10 @@ All of "type", "office_id", "turbine_id", and "project_id" are required.
 
     {
       "type": "turbine_updated",
-      "office_id": "SWT",
-      "turbine_id": "Greenbrier-T1",
+      "turbine_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier-T1"
+      },
       "project_id": "Greenbrier"
     }
 
@@ -82,9 +82,7 @@ All of "type", "office_id", "turbine_id", and "project_id" are required.
 |                 | +============+==============+====================================================+ |
 |                 | | String     | "type"       | "turbine_deleted"                                  | |
 |                 | +------------+--------------+----------------------------------------------------+ |
-|                 | | String     | "office_id"  | The office identifier                              | |
-|                 | +------------+--------------+----------------------------------------------------+ |
-|                 | | String     | "turbine_id" | The turbine identifier                             | |
+|                 | | Object     | "turbine_id" | The turbine identifier                             | |
 |                 | +------------+--------------+----------------------------------------------------+ |
 +-----------------+------------------------------------------------------------------------------------+
 
@@ -108,9 +106,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                      | +============+================================+======================================================================+ |
 |                      | | String     | "type"                         | "turbine_change_created"                                             | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
-|                      | | String     | "office_id"                    | The office identifier                                                | |
-|                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
-|                      | | String     | "project_id"                   | The project identifier                                               | |
+|                      | | Object     | "project_id"                   | The project identifier                                               | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
 |                      | | long       | "date_time"                    | The date and time of the turbine changes in epoch milliseconds       | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
@@ -140,8 +136,10 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 
     {
       "type": "turbine_change_created",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "pool_elevation": 912.54,
       "tailwater_elevation": 860.4,
@@ -163,9 +161,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                      | +============+================================+======================================================================+ |
 |                      | | String     | "type"                         | "turbine_change_updated"                                             | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
-|                      | | String     | "office_id"                    | The office identifier                                                | |
-|                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
-|                      | | String     | "project_id"                   | The project identifier                                               | |
+|                      | | Object     | "project_id"                   | The project identifier                                               | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
 |                      | | long       | "date_time"                    | The date and time of the turbine changes in epoch milliseconds       | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
@@ -195,8 +191,10 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 
     {
       "type": "turbine_change_updated",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "pool_elevation": 912.54,
       "tailwater_elevation": 860.4,
@@ -218,9 +216,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                      | +============+================================+======================================================================+ |
 |                      | | String     | "type"                         | "turbine_change_deleted"                                             | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
-|                      | | String     | "office_id"                    | The office identifier                                                | |
-|                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
-|                      | | String     | "project_id"                   | The project identifier                                               | |
+|                      | | Object     | "project_id"                   | The project identifier                                               | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
 |                      | | long       | "date_time"                    | The date and time of the turbine changes in epoch milliseconds       | |
 |                      | +------------+--------------------------------+----------------------------------------------------------------------+ |
@@ -230,8 +226,10 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 
     {
       "type": "turbine_change_deleted",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000
     }
 
@@ -275,9 +273,7 @@ Only "type", "office_id", "project_id", "date_time", "turbine_id", "old_discharg
 |                       | +============+==================+================================================================+ |
 |                       | | String     | "type"           | "turbine_setting_created"                                      | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
-|                       | | String     | "office_id"      | The office identifier                                          | |
-|                       | +------------+------------------+----------------------------------------------------------------+ |
-|                       | | String     | "project_id"     | The project identifier                                         | |
+|                       | | Object     | "project_id"     | The project identifier                                         | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
 |                       | | long       | "date_time"      | The date and time of the turbine setting in epoch milliseconds | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
@@ -301,8 +297,10 @@ Only "type", "office_id", "project_id", "date_time", "turbine_id", "old_discharg
 
     {
       "type": "turbine_setting_created",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "turbine_id": "Greenbrier-T1",
       "old_discharge": 1200.0,
@@ -321,9 +319,7 @@ Only "type", "office_id", "project_id", "date_time", "turbine_id", "old_discharg
 |                       | +============+==================+================================================================+ |
 |                       | | String     | "type"           | "turbine_setting_updated"                                      | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
-|                       | | String     | "office_id"      | The office identifier                                          | |
-|                       | +------------+------------------+----------------------------------------------------------------+ |
-|                       | | String     | "project_id"     | The project identifier                                         | |
+|                       | | Object     | "project_id"     | The project identifier                                         | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
 |                       | | long       | "date_time"      | The date and time of the turbine setting in epoch milliseconds | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
@@ -347,8 +343,10 @@ Only "type", "office_id", "project_id", "date_time", "turbine_id", "old_discharg
 
     {
       "type": "turbine_setting_updated",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "turbine_id": "Greenbrier-T1",
       "old_discharge": 1200.0,
@@ -367,9 +365,7 @@ Only "type", "office_id", "project_id", "date_time", "turbine_id", "old_discharg
 |                       | +============+==================+================================================================+ |
 |                       | | String     | "type"           | "turbine_setting_deleted"                                      | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
-|                       | | String     | "office_id"      | The office identifier                                          | |
-|                       | +------------+------------------+----------------------------------------------------------------+ |
-|                       | | String     | "project_id"     | The project identifier                                         | |
+|                       | | Object     | "project_id"     | The project identifier                                         | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
 |                       | | long       | "date_time"      | The date and time of the turbine setting in epoch milliseconds | |
 |                       | +------------+------------------+----------------------------------------------------------------+ |
@@ -381,8 +377,10 @@ Only "type", "office_id", "project_id", "date_time", "turbine_id", "old_discharg
 
     {
       "type": "turbine_setting_deleted",
-      "office_id": "SWT",
-      "project_id": "Greenbrier",
+      "project_id": {
+      	"office_id": "SWT",
+      	name: "Greenbrier"
+      },
       "date_time": 1788971820000,
       "turbine_id": "Greenbrier-T1"
     }

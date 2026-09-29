@@ -32,9 +32,7 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 |              | +============+=======================+=============================================================================================+ |
 |              | | String     | "type"                | "lock_created"                                                                              | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "office_id"           | The office identifier                                                                       | |
-|              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "lock_id"             | The lock identifier                                                                         | |
+|              | | Object     | "lock_id"             | The lock identifier                                                                         | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 |              | | String     | "project_id"          | The identifier of the project to which the lock belongs                                     | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
@@ -62,8 +60,10 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 
     {
       "type": "lock_created",
-      "office_id": "SWT",
-      "lock_id": "Green LD2-Lock",
+      "lock_id": {
+      	"office_id": "SWT",
+      	name: "Green LD2-Lock"
+      },
       "project_id": "Green LD2",
       "volume_per_lockage": 42.4,
       "volume_unit": "acft",
@@ -84,9 +84,7 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 |              | +============+=======================+=============================================================================================+ |
 |              | | String     | "type"                | "lock_updated"                                                                              | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "office_id"           | The office identifier                                                                       | |
-|              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "lock_id"             | The lock identifier                                                                         | |
+|              | | Object     | "lock_id"             | The lock identifier                                                                         | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 |              | | String     | "project_id"          | The identifier of the project to which the lock belongs                                     | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
@@ -114,8 +112,10 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 
     {
       "type": "lock_updated",
-      "office_id": "SWT",
-      "lock_id": "Green LD2-Lock",
+      "lock_id": {
+      	"office_id": "SWT",
+      	name: "Green LD2-Lock"
+      },
       "project_id": "Green LD2",
       "volume_per_lockage": 42.4,
       "volume_unit": "acft",
@@ -136,9 +136,7 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 |              | +============+=======================+=============================================================================================+ |
 |              | | String     | "type"                | "lock_deleted"                                                                              | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "office_id"           | The office identifier                                                                       | |
-|              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "lock_id"             | The lock identifier                                                                         | |
+|              | | Object     | "lock_id"             | The lock identifier                                                                         | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 +--------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
@@ -162,9 +160,7 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 |                | +============+===============+=======================================================+ |
 |                | | String     | "type"        | "lockage_created"                                     | |
 |                | +------------+---------------+-------------------------------------------------------+ |
-|                | | String     | "office_id"   | The office identifier                                 | |
-|                | +------------+---------------+-------------------------------------------------------+ |
-|                | | String     | "lock_id"     | The lock identifier                                   | |
+|                | | Object     | "lock_id"     | The lock identifier                                   | |
 |                | +------------+---------------+-------------------------------------------------------+ |
 |                | | long       | "date_time"   | The date and time of the lockage in epoch millisecons | |
 |                | +------------+---------------+-------------------------------------------------------+ |
@@ -186,8 +182,10 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 
     {
       "type": "lockage_created",
-      "office_id": "SWT",
-      "lock_id": "Green LD2-Lock",
+      "lock_id": {
+      	"office_id": "SWT",
+      	name: "Green LD2-Lock"
+      },
       "date_time": 1788971820000,
       "boat_count": 1,
       "barge_count": 4,
@@ -205,9 +203,7 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 |                | +============+===============+=======================================================+ |
 |                | | String     | "type"        | "lockage_updated"                                     | |
 |                | +------------+---------------+-------------------------------------------------------+ |
-|                | | String     | "office_id"   | The office identifier                                 | |
-|                | +------------+---------------+-------------------------------------------------------+ |
-|                | | String     | "lock_id"     | The lock identifier                                   | |
+|                | | Object     | "lock_id"     | The lock identifier                                   | |
 |                | +------------+---------------+-------------------------------------------------------+ |
 |                | | long       | "date_time"   | The date and time of the lockage in epoch millisecons | |
 |                | +------------+---------------+-------------------------------------------------------+ |
@@ -229,8 +225,10 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 
     {
       "type": "lockage_updated",
-      "office_id": "SWT",
-      "lock_id": "Green LD2-Lock",
+      "lock_id": {
+      	"office_id": "SWT",
+      	name: "Green LD2-Lock"
+      },
       "date_time": 1788971820000,
       "boat_count": 1,
       "barge_count": 4,
@@ -248,9 +246,7 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 |                | +============+===============+=======================================================+ |
 |                | | String     | "type"        | "lockage_deleted"                                     | |
 |                | +------------+---------------+-------------------------------------------------------+ |
-|                | | String     | "office_id"   | The office identifier                                 | |
-|                | +------------+---------------+-------------------------------------------------------+ |
-|                | | String     | "lock_id"     | The lock identifier                                   | |
+|                | | Object     | "lock_id"     | The lock identifier                                   | |
 |                | +------------+---------------+-------------------------------------------------------+ |
 |                | | long       | "date_time"   | The date and time of the lockage in epoch millisecons | |
 |                | +------------+---------------+-------------------------------------------------------+ |
@@ -260,8 +256,10 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 
     {
       "type": "lockage_deleted",
-      "office_id": "SWT",
-      "lock_id": "Green LD2-Lock",
+      "lock_id": {
+      	"office_id": "SWT",
+      	name: "Green LD2-Lock"
+      },
       "date_time": 1788971820000
     }
 
