@@ -30,6 +30,7 @@ configurations.all {
 
 dependencies {
     annotationProcessor(libs.com.google.auto.service)
+    annotationProcessor(libs.javalin.openapi.annotation.processor)
     compileOnly(libs.com.google.auto.service.annotations)
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
@@ -118,7 +119,7 @@ dependencies {
         exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"
     }
-    implementation(libs.javalin.openapi) {
+    implementation(libs.bundles.javalin.openapi) {
         //exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"
         exclude group: "jakarta.xml.bind", module: "*"
