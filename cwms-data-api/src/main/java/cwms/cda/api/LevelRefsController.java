@@ -53,13 +53,13 @@ import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.locationlevel.LocationLevelRefs;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
@@ -119,7 +119,8 @@ public class LevelRefsController implements Handler {
                     @OpenApiContent(from = LocationLevelRefs.class, type = Formats.JSON),
                 })
             },
-            tags = LevelsController.TAG)
+            tags = LevelsController.TAG,
+            path = "/levels/ref")
     @Override
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(metrics, getClass().getName(), GET_ALL)) {
@@ -149,7 +150,7 @@ public class LevelRefsController implements Handler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve location level refs", ex);

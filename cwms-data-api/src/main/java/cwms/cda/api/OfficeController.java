@@ -21,12 +21,12 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OfficeFormatV1;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -83,11 +83,11 @@ public class OfficeController implements CrudHandler {
             @OpenApiResponse(status = STATUS_200,
                 description = "A list of offices.",
                 content = {
-                    @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSON),
-                    @OpenApiContent(from = OfficeFormatV1.class, isArray = true, type = Formats.JSONV1),
-                    @OpenApiContent(from = Office.class, isArray = true, type = Formats.JSONV2),
+                    @OpenApiContent(from = Office[].class, type = Formats.JSON),
+                    @OpenApiContent(from = OfficeFormatV1[].class, type = Formats.JSONV1),
+                    @OpenApiContent(from = Office[].class, type = Formats.JSONV2),
                 }),
-        }, tags = { "Offices" }
+        }, tags = { "Offices" }, path = "/offices"
     )
     @Override
     public void getAll(Context ctx) {
@@ -141,7 +141,8 @@ public class OfficeController implements CrudHandler {
                         @OpenApiContent(from = OfficeFormatV1.class, type = Formats.XMLV1),
                         @OpenApiContent(from = Office.class, type = Formats.XMLV2)
                     })
-            }, tags = { "Offices" })
+            }, tags = { "Offices" }
+        , path = "/office/{office}")
     @Override
     public void getOne(Context ctx, String officeId) {
         try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
@@ -167,22 +168,21 @@ public class OfficeController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(Context ctx, String officeId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void delete(Context ctx, String officeId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
-
 }

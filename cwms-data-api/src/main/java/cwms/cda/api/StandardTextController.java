@@ -53,14 +53,14 @@ import cwms.cda.data.dto.texttimeseries.StandardTextValue;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -104,8 +104,9 @@ public class StandardTextController implements CrudHandler {
                                     @OpenApiContent(type = Formats.JSONV2, from = StandardTextCatalog.class)
                             }
                     )},
-            method = HttpMethod.GET,
-            tags = {TAG}
+            methods = {HttpMethod.GET},
+            tags = {TAG},
+            path = "/text"
     )
     @Override
     public void getAll(Context ctx) {
@@ -126,7 +127,7 @@ public class StandardTextController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 TEXT_ERROR, ex);
@@ -152,8 +153,9 @@ public class StandardTextController implements CrudHandler {
                                     @OpenApiContent(type = Formats.JSONV2, from = StandardTextValue.class)
                             }
                     )},
-            method = HttpMethod.GET,
-            tags = {TAG}
+            methods = {HttpMethod.GET},
+            tags = {TAG},
+            path = "/text/{" + STANDARD_TEXT_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String stdTextId) {
@@ -170,7 +172,7 @@ public class StandardTextController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 TEXT_ERROR, ex);
@@ -190,13 +192,14 @@ public class StandardTextController implements CrudHandler {
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            tags = {TAG},
+            path = "/text/"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
 
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(false);
@@ -209,7 +212,7 @@ public class StandardTextController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldTextTimeSeriesId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -228,8 +231,9 @@ public class StandardTextController implements CrudHandler {
                     @OpenApiParam(name = METHOD, required = true, description = "Specifies the delete method used.",
                             type = JooqDao.DeleteMethod.class)
             },
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = HttpMethod.DELETE,
+            tags = {TAG},
+            path = "/text/{" + STANDARD_TEXT_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String stdTextId) {
@@ -256,5 +260,4 @@ public class StandardTextController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
-
 }
