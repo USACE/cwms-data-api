@@ -1,7 +1,7 @@
 package cwms.cda.api;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dto.forecast.ForecastInstance;
 import cwms.cda.data.dto.forecast.ForecastSpec;
 import cwms.cda.formatters.Formats;
@@ -683,7 +683,7 @@ final class ForecastInstanceControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(specJson)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

@@ -4,7 +4,7 @@ import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
 import cwms.auth.CwmsUserPrincipal;
 import cwms.cda.spi.IdentityProvider;
-import io.javalin.core.security.RouteRole;
+import io.javalin.security.RouteRole;
 import io.javalin.http.Context;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
@@ -35,8 +35,8 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
 
     private static Optional<String> getUser(Context ctx) {
         Optional<String> retval = Optional.empty();
-        if (ctx != null && ctx.req != null && ctx.req.getUserPrincipal() != null) {
-            retval = Optional.of(ctx.req.getUserPrincipal().getName());
+        if (ctx != null && ctx.req() != null && ctx.req().getUserPrincipal() != null) {
+            retval = Optional.of(ctx.req().getUserPrincipal().getName());
         } else {
             logger.atFine().log("No user principal found in request.");
         }
@@ -51,7 +51,7 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
     private static Set<RouteRole> getRoles(@NotNull Context ctx) {
         Objects.requireNonNull(ctx,"Configuration is horribly wrong. This system is not usable.");
         Set<RouteRole> retval = new LinkedHashSet<>();
-        Principal principal = ctx.req.getUserPrincipal();
+        Principal principal = ctx.req().getUserPrincipal();
 
         Set<RouteRole> specifiedRoles = getRoles(principal);
         if (!specifiedRoles.isEmpty()) {

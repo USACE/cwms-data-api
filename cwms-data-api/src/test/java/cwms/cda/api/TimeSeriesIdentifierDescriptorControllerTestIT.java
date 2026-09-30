@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.AssignedTimeSeries;
@@ -92,7 +92,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                         .queryParam("office", OFFICE)
                         .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
                         .header("Authorization", user.toHeaderValue())
-                        .header(ApiServlet.IS_NEW_LRTS, lrts)
+                        .header(CwmsDataApi.IS_NEW_LRTS, lrts)
                     .when()
                         .redirects().follow(true)
                         .redirects().max(3)
@@ -270,7 +270,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .contentType(Formats.JSONV2)
             .body(serializedTs)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam("office",OFFICE)
         .when()
             .redirects().follow(true)
@@ -296,7 +296,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             .queryParam("office", OFFICE)
             .queryParam(Controllers.METHOD,JooqDao.DeleteMethod.DELETE_ALL)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -318,7 +318,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .contentType(Formats.JSONV2)
                 .body(serializedTs)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
                 .queryParam("office",OFFICE)
             .when()
                 .redirects().follow(true)
@@ -359,7 +359,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
                 .contentType(Formats.JSONV2)
                 .body(serializedTs)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
                 .queryParam("office",OFFICE)
             .when()
                 .redirects().follow(true)
@@ -869,7 +869,7 @@ final class TimeSeriesIdentifierDescriptorControllerTestIT extends DataApiTestIT
             given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(Formats.JSONV2)
-                .header(ApiServlet.IS_NEW_LRTS, lrtsFlag)
+                .header(CwmsDataApi.IS_NEW_LRTS, lrtsFlag)
                 .queryParam(Controllers.PAGE_SIZE, pageSize)
                 .queryParam(Controllers.OFFICE, officeId)
                 .queryParam(Controllers.LIKE, likePattern)

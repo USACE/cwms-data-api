@@ -11,7 +11,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.Location;
@@ -365,7 +365,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
-            .body("message",is("Missing roles {Role{name='" + ApiServlet.CAC_USER + "'}}"));
+            .body("message",is("Missing roles {Role{name='" + CwmsDataApi.CAC_USER + "'}}"));
     }
 
     // delete api keys

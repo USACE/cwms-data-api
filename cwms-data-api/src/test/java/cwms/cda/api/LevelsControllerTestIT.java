@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.codahale.metrics.MetricRegistry;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
@@ -581,7 +581,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, true)
+                .header(CwmsDataApi.IS_NEW_LRTS, true)
                 .queryParam(Controllers.OFFICE, OFFICE)
                 .body(tsDataInput)
             .when()
@@ -599,7 +599,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header(ApiServlet.IS_NEW_LRTS, false)
+            .header(CwmsDataApi.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
             .queryParam(INTERVAL, "Week")
@@ -620,7 +620,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
             .contentType(Formats.JSONV2)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(EFFECTIVE_DATE, time.toInstant().toString())
             .queryParam(INTERVAL, "1Week")

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeriesRow;
 import cwms.cda.formatters.Formats;
@@ -452,7 +452,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -476,7 +476,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(REPLACE_ALL , true)
         .when()
             .redirects().follow(true)
@@ -498,7 +498,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
             .queryParam(Controllers.END, "2027-05-19T16:00:00Z")
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -516,7 +516,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
-            .header(ApiServlet.IS_NEW_LRTS, false)
+            .header(CwmsDataApi.IS_NEW_LRTS, false)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, legacyTsIdentifier)
             .queryParam(Controllers.BEGIN, "2004-05-01T12:00:00Z")
@@ -539,7 +539,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
         .when()
             .redirects().follow(true)
@@ -563,7 +563,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN, BEGIN_STR)

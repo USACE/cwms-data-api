@@ -27,7 +27,7 @@ public class ApiServletTest {
                 .post(new Operation())
                 .delete(new Operation());
 
-        ApiServlet.setUserListTags("/user/list/{user-list-id}/members", path);
+        CwmsDataApi.setUserListTags("/user/list/{user-list-id}/members", path);
 
         path.readOperations().forEach(operation ->
                 assertEquals(List.of(UserListController.TAG), operation.getTags()));
@@ -38,7 +38,7 @@ public class ApiServletTest {
         Operation operation = new Operation().addTagsItem("Other");
         PathItem path = new PathItem().get(operation);
 
-        ApiServlet.setUserListTags("/users/{user-name}", path);
+        CwmsDataApi.setUserListTags("/users/{user-name}", path);
 
         assertEquals(List.of("Other"), operation.getTags());
     }
@@ -47,17 +47,17 @@ public class ApiServletTest {
     public void test_office_from_context_hq(){
         String office;
 
-        office = ApiServlet.officeFromContext("/cwms-data");
+        office = CwmsDataApi.officeFromContext("/cwms-data");
         assertEquals("HQ", office, "failed to get HQ result cwms-data context");
 
-        office = ApiServlet.officeFromContext("");
+        office = CwmsDataApi.officeFromContext("");
         assertEquals("HQ", office, "failed to get HQ result on root context");
     }
 
     @ParameterizedTest
     @CsvSource( value = { "/spk-data,SPK", "/nwdm-data,NWDM", "/nww-data,NWW", "/swt-data,SWT"} )
     void test_office_from_context_district(String context, String office) {
-        String returnedOffice = ApiServlet.officeFromContext(context);
+        String returnedOffice = CwmsDataApi.officeFromContext(context);
         assertEquals(office, returnedOffice, "failed to process an office context correctly");
     }
 
