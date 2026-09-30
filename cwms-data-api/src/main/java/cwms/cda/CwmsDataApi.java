@@ -24,69 +24,37 @@
 
 package cwms.cda;
 
-import static cwms.cda.openapi.ExampleUtils.addEndpointExamples;
-
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.servlets.MetricsServlet;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.api.Controllers;
 import cwms.cda.api.auth.userlists.UserListController;
-import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.JooqDao;
-import cwms.cda.data.dao.rss.QueueManager;
-import cwms.cda.data.dto.csv.CwmsCsvDTO;
-import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.csv.CsvExampleGenerator;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.Role;
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ScanResult;
 import io.javalin.Javalin;
-import io.javalin.core.JavalinConfig;
-import io.javalin.core.security.RouteRole;
-import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
+import io.javalin.config.JavalinConfig;
+import io.javalin.config.Key;
+import io.javalin.config.RoutesConfig;
+import io.javalin.security.RouteRole;
 import io.javalin.http.BadRequestResponse;
-import io.javalin.http.JavalinServlet;
-import io.javalin.plugin.openapi.OpenApiOptions;
-import io.javalin.plugin.openapi.OpenApiPlugin;
-import io.javalin.validation.Validator;
+import io.javalin.openapi.plugin.OpenApiPlugin;
 import io.opentelemetry.api.trace.Span;
-import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.media.MediaType;
-import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.servers.Server;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.jar.Manifest;
 import javax.annotation.Resource;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.apache.http.entity.ContentType;
@@ -141,7 +109,7 @@ import org.owasp.html.PolicyFactory;
     "/rss/*",
     "/v2/*"
 })
-public class ApiServlet extends HttpServlet {
+public final class CwmsDataApi {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
@@ -165,69 +133,53 @@ public class ApiServlet extends HttpServlet {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
-    private MetricRegistry metrics;
-    private Meter totalRequests;
+    
 
-    private static final long serialVersionUID = 1L;
-
-    JavalinServlet javalin = null;
-    private final Authenticator authenticator = new Authenticator();
-    private final OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
-    private String appContext;
-
-    @Resource(name = "jdbc/CWMS3")
+    @Resource(name = "jdbc/CWMS3") // TODO: sort out
     DataSource cwms;
-    private CdaAccessManager cdaAccessManager;
 
     public static String getApiVersion() {
         return VERSION != null ? VERSION : "Not Yet Known";
     }
 
-
-    @Override
-    public void destroy() {
-        javalin.destroy();
-    }
-
-    @Override
-    public void init(ServletConfig config) throws ServletException {
-        if (VERSION == null) {
-            ApiServlet.VERSION = obtainFullVersion(config);
-        }
-        logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
-        metrics = (MetricRegistry)config.getServletContext()
-                .getAttribute(MetricsServlet.METRICS_REGISTRY);
-        totalRequests = metrics.meter("cwms.dataapi.total_requests");
-
-        super.init(config);
-    }
+    
 
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
-    @Override
-    public void init() {
+    public static void main(String[] args) {
+        
         logger.atInfo().log("Initializing Javalin.");
-
-        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
-        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-
+        final MetricRegistry metrics = new MetricRegistry();
+        // TODO: move to config
+        // JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
+        // JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+        var totalRequests = metrics.meter("cwms.dataapi.total_requests");
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
         om.registerModule(new JavaTimeModule());
 
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
-        appContext = this.getServletContext().getContextPath();
-        cdaAccessManager = new CdaAccessManager();
-        javalin = Javalin.createStandalone(config -> {
-            config.defaultContentType = "application/json";
-            getOpenApiOptions(config);
-            config.autogenerateEtags = true;
-            config.requestLogger((ctx, ms) -> logger.atFinest().log(ctx.toString()));
-            config.accessManager(cdaAccessManager);
-        })
-                .attribute("PolicyFactory", sanitizer)
-                .attribute("ObjectMapper", om)
-                .attribute("schemeProcessor", schemeProcessor)
+
+        final Authenticator authenticator = new Authenticator();
+        final OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
+
+
+        final var appContext = args.length > 0 ? args[0] : "cwms-data";
+        final var cdaAccessManager = new CdaAccessManager();
+        final var app = Javalin.create(config -> {
+            //config.defaultContentType = "application/json";
+            getOpenApiOptions(config, appContext);
+            //config.autogenerateEtags = true; // TODO: find?
+            config.requestLogger.http((ctx, ms) -> logger.atFinest().log(ctx.toString()));
+            CwmsDataApi.VERSION = obtainFullVersion();
+        
+            logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
+            config.routes.beforeMatched(cdaAccessManager);
+            config.appData(new Key<PolicyFactory>("PolicyFactory"), sanitizer);
+            config.appData(new Key<ObjectMapper>("ObjectMapper"), om);
+            config.appData(new Key<OpenApiSchemeProcessor>("SchemeProcessor"), schemeProcessor);
+            config.routes
                 .before(authenticator)
+                .before(ctx -> totalRequests.mark())
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
                     ctx.header("X-Content-Type-Options", "nosniff");
@@ -237,7 +189,7 @@ public class ApiServlet extends HttpServlet {
                 .before(ctx -> {
                     // now that we can get the generic route, update the name.
                     var span = Span.current();
-                    span.updateName(ctx.method() + " " + ctx.matchedPath());
+                    span.updateName(ctx.method() + " " + ctx.endpoint().path);
                 })
                 .exception(ApplicationException.class, (e, ctx) -> {
                     CdaError re = ExceptionTraceSupport.buildError(ctx, e.getCdaErrorMessage(),
@@ -281,7 +233,7 @@ public class ApiServlet extends HttpServlet {
                     // it is unknown if the message would be safe/appropriate for users to see.
                     CdaError errResponse = ExceptionTraceSupport.buildError(ctx, "Database Error", e);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
-                                                        errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
+                                                        errResponse.getIncidentIdentifier(), ctx.req().getRequestURI());
                     ctx.status(500);
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
                     ctx.json(errResponse);
@@ -289,129 +241,126 @@ public class ApiServlet extends HttpServlet {
                 .exception(Exception.class, (e, ctx) -> {
                     CdaError errResponse = ExceptionTraceSupport.buildError(ctx, "System Error", e);
                     logger.atWarning().withCause(e).log("error on request[%s]: %s",
-                            errResponse.getIncidentIdentifier(), ctx.req.getRequestURI());
+                            errResponse.getIncidentIdentifier(), ctx.req().getRequestURI());
                     ctx.status(500);
                     ctx.contentType(ContentType.APPLICATION_JSON.toString());
                     ctx.json(errResponse);
                 })
-                .routes(this::configureRoutes)
                 .options("/*", ctx -> {
                     // Respond with a 200 OK status for preflight checks.
                     // It is expected that the firewall in front of the API
                     // will handle any CORS headers.
                     ctx.status(200);
-                })
-                .javalinServlet();
-        QueueManager.ensureRssSubscribers(cwms);
+                });
+                configureRoutes(config.routes, metrics, cdaAccessManager);
+            });
+        app.start(7000);
+        //QueueManager.ensureRssSubscribers(cwms); //TODO: fix
         logger.atInfo().log("Javalin initialized.");
     }
 
-    private void configureRoutes() {
+    private static void configureRoutes(RoutesConfig routes, MetricRegistry metrics, CdaAccessManager cdaAccessManager) {
         RouteRole[] requiredRoles = {new Role(CWMS_USERS_ROLE)};
-        ApiServletRouteConfiguration.configureRoutes(metrics, requiredRoles, cdaAccessManager);
+        ApiServletRouteConfiguration.configureRoutes(routes, metrics, requiredRoles, cdaAccessManager);
     }
 
-    private String obtainFullVersion(ServletConfig servletConfig) throws ServletException {
-        String relativeWarPath = "/META-INF/MANIFEST.MF";
-        String absoluteDiskPath = servletConfig.getServletContext().getRealPath(relativeWarPath);
-        Path path = Paths.get(absoluteDiskPath);
-
-        try (InputStream inputStream = Files.newInputStream(path)) {
-            Manifest manifest = new Manifest(inputStream);
-            return manifest.getMainAttributes().getValue("build-version");
-        } catch (IOException e) {
-            throw new ServletException("Error obtaining servlet version", e);
-        }
+    private static String obtainFullVersion() {
+        return "99.99.99"; // TODO: actually get
     }
 
-    private void getOpenApiOptions(JavalinConfig config) {
-        Info applicationInfo = new Info().title(APPLICATION_TITLE).version(ApiServlet.getApiVersion())
+    private static void getOpenApiOptions(JavalinConfig config, String appContext) {
+        Info applicationInfo = new Info().title(APPLICATION_TITLE).version(CwmsDataApi.getApiVersion())
                 .description("CWMS REST API for Data Retrieval");
 
         String provider = CdaAccessManager.class.getSimpleName();
 
-        List<Server> servers = new ArrayList<>();
-        servers.add(new Server().url(appContext));
-        OpenApiOptions ops =
-            new OpenApiOptions(
-                () -> new OpenAPI()
-                                   .servers(servers)
-                                   .info(applicationInfo)
-                                   .addSecurityItem(new SecurityRequirement().addList(provider))
-        );
-        ops.path("/swagger-docs")
-            .responseModifier((ctx,api) -> {
-                schemeProcessor.apply(ctx, api);
-                api.getPaths().forEach((key,path) -> {
-                    setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
-                    setUserListTags(key, path);
-                    // yeah, we really need to figure out how to update everything,
-                    // this is supported as an annotation in newer versions.
-                    if (key.startsWith("/rss")) {
-                        path.getGet().getResponses().forEach((p, r) -> {
-                            var retryAfter = new io.swagger.v3.oas.models.headers.Header();
-                            retryAfter.description(
-                                "Amount of time (in seconds) to wait before making the next request.");
-                            r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
-                        });
-                    }
-                });
-                Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
-                try (ScanResult scanResult = new ClassGraph()
-                        .acceptPackages("cwms.cda.data.dto")
-                        .scan()) {
-                    List<Class<CwmsCsvDTO>> csvDtoClasses = 
-                        scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
-                                .loadClasses(CwmsCsvDTO.class);
-                    for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
-                        schemaToClass.put(clazz.getSimpleName(), clazz);
-                    }
-                }
-                api.getPaths().values().forEach(pathItem -> {
-                    for (Operation op : pathItem.readOperations()) {
-                        if (op.getResponses() != null) {
-                            for (ApiResponse resp : op.getResponses().values()) {
-                                if (resp.getContent() != null && resp.getContent().containsKey(Formats.CSV)) {
-                                    MediaType csvMedia = resp.getContent().get(Formats.CSV);
-                                    if (csvMedia.getSchema() != null && csvMedia.getSchema().get$ref() != null) {
-                                        String ref = csvMedia.getSchema().get$ref();
-                                        String schemaName = ref.substring(ref.lastIndexOf('/') + 1);
-                                        @SuppressWarnings("unchecked")
-                                        Class<? extends CwmsCsvDTO<?>> dtoClass =
-                                            (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
 
-                                        if (dtoClass != null) {
-                                            csvMedia.setExample(CsvExampleGenerator.getExample(dtoClass));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-                return api;
-            })
-            .defaultDocumentation(doc -> {
-                doc.json("500", CdaError.class);
-                doc.json("400", CdaError.class);
-                doc.json("401", CdaError.class);
-                doc.json("403", CdaError.class);
-                doc.json("404", CdaError.class);
-                doc.json("429", CdaError.class);
-                doc.header(IS_NEW_LRTS,
-                    Boolean.class,
-                    p -> p.description(
-                        "If True, will use use the new 'Local Regular Time Series" 
-                        + " naming scheme. For example 1DayLocal. Instead of the original"
-                        + " PsuedoRegular based scheme, for example ~1DayLocal."
-                        + " NOTE: this parameter only applies to the input and output of"
-                        + " Time Series names. It is added to all endpoints and will be ignored" 
-                        + " when not required. Default values is false if not set.")
-                );
-            })
-            .activateAnnotationScanningFor("cwms.cda.api");
-        addEndpointExamples(ops);
-        config.registerPlugin(new OpenApiPlugin(ops));
+        config.registerPlugin(new OpenApiPlugin(openapi -> {
+            openapi.withDefinitionConfiguration((v,builder) -> {
+                builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
+                builder.server(server -> server.url(appContext));
+            });
+        }));
+
+        
+        
+        //TODO: The rest
+              
+            //                        .addSecurityItem(new SecurityRequirement().addList(provider))
+        
+        // ops.path("/swagger-docs")
+        //     .responseModifier((ctx,api) -> {
+        //         schemeProcessor.apply(ctx, api);
+        //         api.getPaths().forEach((key,path) -> {
+        //             setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
+        //             setUserListTags(key, path);
+        //             // yeah, we really need to figure out how to update everything,
+        //             // this is supported as an annotation in newer versions.
+        //             if (key.startsWith("/rss")) {
+        //                 path.getGet().getResponses().forEach((p, r) -> {
+        //                     var retryAfter = new io.swagger.v3.oas.models.headers.Header();
+        //                     retryAfter.description(
+        //                         "Amount of time (in seconds) to wait before making the next request.");
+        //                     r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
+        //                 });
+        //             }
+        //         });
+        //         Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
+        //         try (ScanResult scanResult = new ClassGraph()
+        //                 .acceptPackages("cwms.cda.data.dto")
+        //                 .scan()) {
+        //             List<Class<CwmsCsvDTO>> csvDtoClasses = 
+        //                 scanResult.getClassesImplementing(CwmsCsvDTO.class.getName())
+        //                         .loadClasses(CwmsCsvDTO.class);
+        //             for (Class<? extends CwmsCsvDTO> clazz : csvDtoClasses) {
+        //                 schemaToClass.put(clazz.getSimpleName(), clazz);
+        //             }
+        //         }
+        //         api.getPaths().values().forEach(pathItem -> {
+        //             for (Operation op : pathItem.readOperations()) {
+        //                 if (op.getResponses() != null) {
+        //                     for (ApiResponse resp : op.getResponses().values()) {
+        //                         if (resp.getContent() != null && resp.getContent().containsKey(Formats.CSV)) {
+        //                             MediaType csvMedia = resp.getContent().get(Formats.CSV);
+        //                             if (csvMedia.getSchema() != null && csvMedia.getSchema().get$ref() != null) {
+        //                                 String ref = csvMedia.getSchema().get$ref();
+        //                                 String schemaName = ref.substring(ref.lastIndexOf('/') + 1);
+        //                                 @SuppressWarnings("unchecked")
+        //                                 Class<? extends CwmsCsvDTO<?>> dtoClass =
+        //                                     (Class<? extends CwmsCsvDTO<?>>) schemaToClass.get(schemaName);
+
+        //                                 if (dtoClass != null) {
+        //                                     csvMedia.setExample(CsvExampleGenerator.getExample(dtoClass));
+        //                                 }
+        //                             }
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         });
+        //         return api;
+        //     })
+        //     .defaultDocumentation(doc -> {
+        //         doc.json("500", CdaError.class);
+        //         doc.json("400", CdaError.class);
+        //         doc.json("401", CdaError.class);
+        //         doc.json("403", CdaError.class);
+        //         doc.json("404", CdaError.class);
+        //         doc.json("429", CdaError.class);
+        //         doc.header(IS_NEW_LRTS,
+        //             Boolean.class,
+        //             p -> p.description(
+        //                 "If True, will use use the new 'Local Regular Time Series" 
+        //                 + " naming scheme. For example 1DayLocal. Instead of the original"
+        //                 + " PsuedoRegular based scheme, for example ~1DayLocal."
+        //                 + " NOTE: this parameter only applies to the input and output of"
+        //                 + " Time Series names. It is added to all endpoints and will be ignored" 
+        //                 + " when not required. Default values is false if not set.")
+        //         );
+        //     })
+        //     .activateAnnotationScanningFor("cwms.cda.api");
+        // addEndpointExamples(ops);
+        
 
     }
 
@@ -442,28 +391,28 @@ public class ApiServlet extends HttpServlet {
         }
     }
 
-    @Override
-    protected void service(HttpServletRequest req, HttpServletResponse resp)
-            throws IOException {
-        totalRequests.mark();
-        try {
-            String office = officeFromContext(req.getContextPath());
-            req.setAttribute(OFFICE_ID, office);
-            //logger.atInfo().log("Connection user name is: %s")
-            req.setAttribute(DATA_SOURCE, cwms);
-            req.setAttribute(RAW_DATA_SOURCE,cwms);
-            javalin.service(req, resp);
-        } catch (Exception ex) {
-            CdaError re = new CdaError("Major Database Issue");
-            logger.atSevere().withCause(ex).log(re + " for url " + req.getRequestURI());
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.setContentType(ContentType.APPLICATION_JSON.toString());
-            try (PrintWriter out = resp.getWriter()) {
-                ObjectMapper om = new ObjectMapper();
-                out.println(om.writeValueAsString(re));
-            }
-        }
-    }
+    // @Override
+    // protected void service(HttpServletRequest req, HttpServletResponse resp)
+    //         throws IOException {
+    //     totalRequests.mark();
+    //     try {
+    //         String office = officeFromContext(req.getContextPath());
+    //         req.setAttribute(OFFICE_ID, office);
+    //         //logger.atInfo().log("Connection user name is: %s")
+    //         req.setAttribute(DATA_SOURCE, cwms);
+    //         req.setAttribute(RAW_DATA_SOURCE,cwms);
+    //         javalin.service(req, resp);
+    //     } catch (Exception ex) {
+    //         CdaError re = new CdaError("Major Database Issue");
+    //         logger.atSevere().withCause(ex).log(re + " for url " + req.getRequestURI());
+    //         resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    //         resp.setContentType(ContentType.APPLICATION_JSON.toString());
+    //         try (PrintWriter out = resp.getWriter()) {
+    //             ObjectMapper om = new ObjectMapper();
+    //             out.println(om.writeValueAsString(re));
+    //         }
+    //     }
+    // }
 
     /**
      * Retrieve the specific office name.

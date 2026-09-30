@@ -1,7 +1,7 @@
 package cwms.cda.security;
 
 import com.google.auto.service.AutoService;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
@@ -59,7 +59,7 @@ public class ApiKeyIdentityProvider implements IdentityProvider {
    
     private void init(Context ctx) {
         authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),
-                ctx.attribute(ApiServlet.OFFICE_ID));
+                ctx.attribute(CwmsDataApi.OFFICE_ID));
     }
 
     @Override
