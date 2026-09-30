@@ -49,14 +49,14 @@ import cwms.cda.data.dto.SpecifiedLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -105,7 +105,8 @@ public class SpecifiedLevelController implements CrudHandler {
                 }
             )
         },
-        tags = {TAG}
+        tags = {TAG},
+        path = "/level/specified"
     )
     @Override
     public void getAll(Context ctx) {
@@ -128,7 +129,7 @@ public class SpecifiedLevelController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Specified Levels", ex);
@@ -138,7 +139,7 @@ public class SpecifiedLevelController implements CrudHandler {
 
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -155,15 +156,17 @@ public class SpecifiedLevelController implements CrudHandler {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true")
         },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/levels/specified"
+
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(formatHeader, SpecifiedLevel.class);
             SpecifiedLevel deserialize = Formats.parseContent(contentType, body, SpecifiedLevel.class);
@@ -184,8 +187,9 @@ public class SpecifiedLevelController implements CrudHandler {
                 + "owning office of the specified level to be renamed"),
             @OpenApiParam(name = SPECIFIED_LEVEL_ID, required = true, description = "The new specified level id.")
         },
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = HttpMethod.PATCH,
+        tags = {TAG},
+        path = "/levels/specified/{" + SPECIFIED_LEVEL_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldSpecifiedLevelId) {
@@ -211,8 +215,9 @@ public class SpecifiedLevelController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "owning office of the timeseries identifier to be deleted"),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/levels/specified/{" + SPECIFIED_LEVEL_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String specifiedLevelId) {
@@ -225,5 +230,4 @@ public class SpecifiedLevelController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_NO_CONTENT);
         }
     }
-
 }

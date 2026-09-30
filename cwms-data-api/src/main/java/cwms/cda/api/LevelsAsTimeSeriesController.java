@@ -47,12 +47,12 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import hec.data.level.JDomLocationLevelRef;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import javax.servlet.http.HttpServletResponse;
@@ -115,7 +115,8 @@ public class LevelsAsTimeSeriesController extends BaseHandler {
                             + "implemented")
             },
             description = "Retrieves requested Location Level",
-            tags = LevelsController.TAG
+            tags = LevelsController.TAG,
+            path = "/levels/as-ts"
     )
     public void handle(Context ctx) {
         logUnusedPathParameter(ctx, LEVEL_ID, "Body contains required information");
@@ -149,6 +150,5 @@ public class LevelsAsTimeSeriesController extends BaseHandler {
             ctx.json(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         }
-
     }
 }

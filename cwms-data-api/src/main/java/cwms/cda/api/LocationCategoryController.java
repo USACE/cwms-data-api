@@ -48,14 +48,15 @@ import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -89,13 +90,13 @@ public class LocationCategoryController implements CrudHandler {
                     + "all offices shall be returned."),},
             responses = {@OpenApiResponse(status = STATUS_200,
                     content = {
-                            @OpenApiContent(isArray = true, from = LocationCategory.class, type =
-                                    Formats.JSON)
+                            @OpenApiContent(from = LocationCategory[].class, type = Formats.JSON)
                     })
             },
 
             description = "Returns CWMS Location Category Data",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/locations/category"
     )
     @Override
     public void getAll(Context ctx) {
@@ -120,7 +121,7 @@ public class LocationCategoryController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Cannot find requested location category for "
                         + "office provided: " + office);
@@ -154,7 +155,8 @@ public class LocationCategoryController implements CrudHandler {
                     )
             },
             description = "Retrieves requested Location Category",
-            tags = {TAG})
+            tags = {TAG},
+            path = "/locations/category/{" + CATEGORY_ID + "}")
     @Override
     public void getOne(Context ctx, @NotNull String categoryId) {
 
@@ -178,7 +180,7 @@ public class LocationCategoryController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Cannot find requested location category id: " + categoryId
                     + " with office: " + office);
@@ -200,15 +202,16 @@ public class LocationCategoryController implements CrudHandler {
                 @OpenApiContent(from = LocationCategory.class, type = Formats.JSON)
             },
             required = true),
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/locations/category"
     )
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(formatHeader, LocationCategory.class);
             LocationCategory deserialize = Formats.parseContent(contentType, body, LocationCategory.class);
@@ -218,7 +221,7 @@ public class LocationCategoryController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(Context ctx, @NotNull String categoryId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -235,8 +238,9 @@ public class LocationCategoryController implements CrudHandler {
             @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
                 description = "Specifies whether to delete any location groups in this location category. Default: false"),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/locations/category/{" + CATEGORY_ID + "}"
     )
     @Override
     public void delete(Context ctx, @NotNull String categoryId) {
