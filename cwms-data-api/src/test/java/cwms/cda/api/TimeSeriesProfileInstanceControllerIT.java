@@ -32,7 +32,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
@@ -203,7 +203,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, true)
+                .header(CwmsDataApi.IS_NEW_LRTS, true)
                 .queryParam(OFFICE, OFFICE_ID)
             .when()
                 .redirects().follow(true)
@@ -221,7 +221,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 .contentType(Formats.JSONV1)
                 .body(tspData3)
                 .header(AUTH_HEADER, user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, true)
+                .header(CwmsDataApi.IS_NEW_LRTS, true)
                 .queryParam(FAIL_IF_EXISTS, false)
             .when()
                 .redirects().follow(true)
@@ -279,7 +279,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, true)
+                .header(CwmsDataApi.IS_NEW_LRTS, true)
                 .queryParam(OFFICE, OFFICE_ID)
                 .queryParam(BEGIN, "2015-01-01T00:00:00Z")
                 .queryParam(END, "2026-12-31T23:59:59Z")
@@ -577,7 +577,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(VERSION_DATE, "2024-07-09T12:00:00.00Z")
             .queryParam(TIMEZONE, "UTC")
@@ -1219,7 +1219,7 @@ final class TimeSeriesProfileInstanceControllerIT extends DataApiTestIT {
             .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(VERSION_DATE, "2024-07-09T12:00:00.00Z")
             .queryParam(TIMEZONE, "UTC")

@@ -6,11 +6,12 @@ import java.util.List;
 
 import cwms.cda.security.Authenticator;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.OpenApiModelModifier;
+
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 
-public class OpenApiSchemeProcessor implements OpenApiModelModifier {
+// TODO: it works different now.
+public class OpenApiSchemeProcessor {
 
     private final Authenticator authenticator;
     private final ArrayList<SecurityRequirement> secReqs = new ArrayList<>();
@@ -20,7 +21,7 @@ public class OpenApiSchemeProcessor implements OpenApiModelModifier {
         this.authenticator = authenticator;
     }
 
-    @Override
+    
     public OpenAPI apply(Context ctx, OpenAPI api) {
         var schemes = api.getComponents().getSecuritySchemes();
         if (schemes != null)

@@ -26,7 +26,7 @@
 
 package cwms.cda.openapi;
 
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.locationlevel.ConstantLocationLevel;
 import cwms.cda.data.dto.locationlevel.LocationLevel;
@@ -34,7 +34,6 @@ import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
 import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.Formats;
-import io.javalin.plugin.openapi.OpenApiOptions;
 import io.swagger.v3.oas.models.examples.Example;
 import java.io.IOException;
 import java.io.InputStream;
@@ -76,7 +75,7 @@ public final class ExampleUtils {
     private static Example buildExample(Class<? extends CwmsDTOBase> exampleClass, String path) {
         cwms.cda.formatters.ContentType contentType = Formats.parseHeader(Formats.JSON, exampleClass);
         Example example = new Example();
-        try (InputStream stream = ApiServlet.class.getClassLoader().getResourceAsStream(path)) {
+        try (InputStream stream = CwmsDataApi.class.getClassLoader().getResourceAsStream(path)) {
             if (stream == null) {
                 throw new IllegalArgumentException("Unable to find example file: " + path);
             }
