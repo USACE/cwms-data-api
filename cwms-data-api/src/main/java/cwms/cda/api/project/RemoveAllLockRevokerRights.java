@@ -36,9 +36,9 @@ import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.project.ProjectLockDaoV1;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -67,7 +67,7 @@ public class RemoveAllLockRevokerRights implements Handler {
                 @OpenApiParam(name = USER_ID, required = true,
                         description = "Specifies the user."),
             },
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
             path = PATH,
             tags = {TAGS}
     )

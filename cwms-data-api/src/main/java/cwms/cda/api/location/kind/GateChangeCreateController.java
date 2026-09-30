@@ -32,14 +32,14 @@ import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -55,8 +55,8 @@ public class GateChangeCreateController extends BaseHandler {
     @OpenApi(
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
-                @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON)
+                @OpenApiContent(from = GateChange[].class, type = Formats.JSONV1),
+                @OpenApiContent(from = GateChange[].class, type = Formats.JSON)
             },
             required = true),
         queryParams = {
@@ -64,8 +64,9 @@ public class GateChangeCreateController extends BaseHandler {
                 description = "Create will fail if provided Gate Changes already exist. Default: true")
         },
         description = "Create CWMS Gate Changes",
-        method = HttpMethod.POST,
+        methods = HttpMethod.POST,
         tags = {OutletController.TAG},
+        path = "/gate/changes", // TODO: fix
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Gate Changes successfully stored to CWMS.")
         }
