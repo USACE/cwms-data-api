@@ -30,12 +30,12 @@ import cwms.cda.api.BaseHandler;
 import cwms.cda.api.RangeRequestUtil;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.StreamConsumer;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import org.jooq.DSLContext;
 
 import static cwms.cda.api.Controllers.*;
@@ -67,7 +67,8 @@ public class TextTimeSeriesValueController extends BaseHandler {
                                     @OpenApiContent(from = String.class)
                             }
                     )},
-            tags = {TextTimeSeriesController.TAG}
+            tags = {TextTimeSeriesController.TAG},
+            path = "/timeseries/text/value/{" + NAME + "}"
     )
     public void handle(Context ctx) {
         //Implementation will change with new CWMS schema

@@ -23,13 +23,13 @@ import cwms.cda.data.dao.RatingSpecDao;
 import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
@@ -71,7 +71,8 @@ public final class RatingEffectiveDatesController implements Handler {
                     })
             },
             description = "Returns mapping of office -> spec id -> effective date-times for all matching offices and spec ids.",
-            tags = {RatingController.TAG}
+            tags = {RatingController.TAG},
+            path = "/ratings/effectives" // TODO: check
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
@@ -93,7 +94,7 @@ public final class RatingEffectiveDatesController implements Handler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve rating effective dates", ex);

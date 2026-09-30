@@ -43,14 +43,14 @@ import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -91,7 +91,8 @@ public class RatingLatestController implements Handler {
                 @OpenApiContent(type = Formats.XMLV2)})
         },
         description = "Returns CWMS Rating Data",
-        tags = {TAG})
+        tags = {TAG},
+        path = "/ratings/latest/{" + RATING_ID + "}")
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
@@ -102,7 +103,7 @@ public class RatingLatestController implements Handler {
             String officeId = requiredParam(ctx, OFFICE);
 
             if (!contentType.toString().equals(Formats.JSONV2) && !contentType.toString().equals(Formats.XMLV2)) {
-                ctx.status(HttpCode.UNSUPPORTED_MEDIA_TYPE);
+                ctx.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
             }
 
             String body = getLatestRatingSet(ctx, officeId, rating, contentType);
@@ -112,9 +113,9 @@ public class RatingLatestController implements Handler {
 
                 byte[] bytes = body.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
-                ctx.status(HttpCode.NOT_FOUND);
+                ctx.status(HttpStatus.NOT_FOUND);
             }
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Rating", ex);
