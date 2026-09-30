@@ -49,7 +49,6 @@ import static cwms.cda.api.Controllers.STATUS_404;
 import static cwms.cda.api.Controllers.TIMEZONE;
 import static cwms.cda.api.Controllers.TIME_FORMAT_DESC;
 import static cwms.cda.api.Controllers.UNIT_SYSTEM;
-import static cwms.cda.api.Controllers.queryParamAsClass;
 import static cwms.cda.api.Controllers.queryParamAsDouble;
 import static cwms.cda.api.Controllers.queryParamAsInstant;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -69,14 +68,14 @@ import cwms.cda.data.dto.measurement.MeasurementLegacy;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -132,13 +131,14 @@ public final class MeasurementController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = "200", content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Measurement.class),
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = MeasurementLegacy.class),
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = MeasurementLegacy.class)
+                            @OpenApiContent(type = Formats.JSONV2, from = Measurement[].class),
+                            @OpenApiContent(type = Formats.JSONV1, from = MeasurementLegacy[].class),
+                            @OpenApiContent(type = Formats.JSON, from = MeasurementLegacy[].class)
                     })
             },
             description = "Returns matching measurement data.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/measurement"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -170,7 +170,7 @@ public final class MeasurementController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Measurements", ex);
@@ -179,7 +179,7 @@ public final class MeasurementController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -188,9 +188,9 @@ public final class MeasurementController implements CrudHandler {
     @OpenApi(
             requestBody = @OpenApiRequestBody(
                     content = {
-                            @OpenApiContent(isArray = true, from = Measurement.class, type = Formats.JSONV2),
-                            @OpenApiContent(isArray = true, from = MeasurementLegacy.class, type = Formats.JSONV1),
-                            @OpenApiContent(isArray = true, from = MeasurementLegacy.class, type = Formats.JSON)
+                            @OpenApiContent(from = Measurement[].class, type = Formats.JSONV2),
+                            @OpenApiContent(from = MeasurementLegacy[].class, type = Formats.JSONV1),
+                            @OpenApiContent(from = MeasurementLegacy[].class, type = Formats.JSON)
                     },
                     required = true),
             queryParams = {
@@ -198,8 +198,9 @@ public final class MeasurementController implements CrudHandler {
                             description = "Create will fail if provided Measurement(s) already exist. Default: true")
             },
             description = "Create new measurement(s).",
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             tags = {TAG},
+            path = "/measurements",
             responses = {
                     @OpenApiResponse(status = "201", description = "Measurement(s) successfully stored.")
             }
@@ -208,7 +209,7 @@ public final class MeasurementController implements CrudHandler {
     public void create(Context ctx) {
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Measurement.class);
             List<Measurement> measurements = Formats.parseContentList(contentType, ctx.body(), Measurement.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
@@ -220,7 +221,7 @@ public final class MeasurementController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -245,8 +246,9 @@ public final class MeasurementController implements CrudHandler {
                     @OpenApiParam(name = MAX_NUMBER, type = Integer.class, description = "Specifies the max number-id of the measurement to delete. Only applies to integer measurement IDs."),
             },
             description = "Delete an existing measurement.",
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
             tags = {TAG},
+            path = "/measurements/{" + LOCATION_ID + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Measurement successfully deleted."),
                     @OpenApiResponse(status = STATUS_404, description = "Measurement not found.")

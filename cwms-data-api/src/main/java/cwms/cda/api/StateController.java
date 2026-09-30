@@ -39,11 +39,11 @@ import cwms.cda.data.dto.State;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiResponse;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -79,11 +79,11 @@ public class StateController implements CrudHandler {
                 @OpenApiResponse(status = "" + HttpServletResponse.SC_OK,
                         description = "A list of states.",
                         content = {
-                            @OpenApiContent(from = State.class, isArray = true,
-                                    type = Formats.JSONV2),
+                            @OpenApiContent(from = State[].class, type = Formats.JSONV2),
                         }),
             },
-            tags = {"States"}
+            tags = {"States"},
+            path = "/states"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -101,28 +101,27 @@ public class StateController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void create(@NotNull Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context ctx, @NotNull String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void delete(@NotNull Context ctx, @NotNull String state) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
-
 }

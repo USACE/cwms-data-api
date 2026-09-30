@@ -48,14 +48,14 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -79,11 +79,12 @@ public final class LookupTypeController extends BaseCrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = LookupType.class)
+                            @OpenApiContent(type = Formats.JSON, from = LookupType[].class)
                     })
             },
             description = "Returns matching CWMS Lookup Type Data.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/lookup-type"
     )
     @Override
     public void getAll(Context ctx) {
@@ -103,7 +104,7 @@ public final class LookupTypeController extends BaseCrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Lookup Types", ex);
@@ -112,7 +113,7 @@ public final class LookupTypeController extends BaseCrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context context, @NotNull String s) {
         context.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -129,8 +130,9 @@ public final class LookupTypeController extends BaseCrudHandler {
                     },
                     required = true),
             description = "Create CWMS Lookup Type",
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             tags = {TAG},
+            path = "/lookup-type",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully stored to CWMS.")
             }
@@ -140,7 +142,7 @@ public final class LookupTypeController extends BaseCrudHandler {
         String category = requiredParam(ctx, CATEGORY);
         String prefix = requiredParam(ctx, PREFIX);
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             LookupType lookupType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             DSLContext dsl = getDslContext(ctx);
@@ -166,8 +168,9 @@ public final class LookupTypeController extends BaseCrudHandler {
                     },
                     required = true),
             description = "Update CWMS Lookup Type",
-            method = HttpMethod.PATCH,
+            methods = HttpMethod.PATCH,
             tags = {TAG},
+            path = "/lookup-type/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Updated Lookup Type")
             }
@@ -178,7 +181,7 @@ public final class LookupTypeController extends BaseCrudHandler {
         String category = requiredParam(ctx, CATEGORY);
         String prefix = requiredParam(ctx, PREFIX);
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             LookupType lookupType = Formats.parseContent(contentType, ctx.body(), LookupType.class);
             DSLContext dsl = getDslContext(ctx);
@@ -200,8 +203,9 @@ public final class LookupTypeController extends BaseCrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office of the lookup type to be deleted."),
             },
             description = "Delete CWMS Lookup Type",
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
             tags = {TAG},
+            path = "/lookup-type/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Lookup Type successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of inputs provided the lookup type was not found.")

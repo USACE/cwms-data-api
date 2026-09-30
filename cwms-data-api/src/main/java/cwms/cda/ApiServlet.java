@@ -59,6 +59,7 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.JavalinServlet;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
+import io.javalin.validation.Validator;
 import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
@@ -205,6 +206,7 @@ public class ApiServlet extends HttpServlet {
     @Override
     public void init() {
         logger.atInfo().log("Initializing Javalin.");
+
         JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
         JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
 
