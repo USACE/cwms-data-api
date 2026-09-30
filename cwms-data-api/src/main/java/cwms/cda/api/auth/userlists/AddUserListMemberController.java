@@ -17,14 +17,14 @@ import cwms.cda.data.dto.auth.userlists.UserListMemberInput;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class AddUserListMemberController implements Handler {
@@ -52,8 +52,9 @@ public final class AddUserListMemberController implements Handler {
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Add an existing CWMS user to an office-scoped user list.",
-        method = HttpMethod.POST,
-        tags = UserListController.TAG
+        methods = HttpMethod.POST,
+        tags = UserListController.TAG,
+        path = "/user-lists/add/{" + USER_LIST_ID + "}" // TODO: fix
     )
     @Override
     public void handle(Context ctx) {
@@ -68,7 +69,7 @@ public final class AddUserListMemberController implements Handler {
             UserListSupport.requireOfficeAdmin(ctx, dao, office);
             UserListMemberInput input = ctx.bodyAsClass(UserListMemberInput.class);
             String userId = UserListSupport.validateUserId(input.getUserId());
-            ctx.status(HttpCode.CREATED).json(dao.addMember(
+            ctx.status(HttpStatus.CREATED).json(dao.addMember(
                     office, UserListSupport.validateUserListId(ctx.pathParam(USER_LIST_ID)), userId,
                     UserListSupport.principal(ctx).getName()));
         }
