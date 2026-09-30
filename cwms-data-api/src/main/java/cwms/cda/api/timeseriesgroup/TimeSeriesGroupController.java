@@ -54,9 +54,9 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -106,7 +106,7 @@ public abstract class TimeSeriesGroupController extends BaseCrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failure to process request to retrieve time series groups");
             logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series groups");
@@ -138,7 +138,7 @@ public abstract class TimeSeriesGroupController extends BaseCrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find group based on parameters given");
                 logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
@@ -152,7 +152,7 @@ public abstract class TimeSeriesGroupController extends BaseCrudHandler {
     }
 
     protected TimeSeriesGroup deserializeGroup(Context ctx) {
-        ContentType contentType = Formats.parseHeader(ctx.req.getContentType(), TimeSeriesGroup.class);
+        ContentType contentType = Formats.parseHeader(ctx.contentType(), TimeSeriesGroup.class);
         return Formats.parseContent(contentType, ctx.body(), TimeSeriesGroup.class);
     }
 
@@ -187,7 +187,7 @@ public abstract class TimeSeriesGroupController extends BaseCrudHandler {
                 sb.delete(sb.length() - 2, sb.length());
                 detailsMap.put("missing-time-series", sb.toString());
                 if (ignoreMissing) {
-                    ctx.status(HttpCode.MULTI_STATUS);
+                    ctx.status(HttpStatus.MULTI_STATUS);
 
                 } else {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST);
@@ -247,7 +247,7 @@ public abstract class TimeSeriesGroupController extends BaseCrudHandler {
         sb.delete(sb.length() - 2, sb.length());
         detailsMap.put("missing-timeseries", sb.toString());
         if (ignoreMissing) {
-            ctx.status(HttpCode.MULTI_STATUS);
+            ctx.status(HttpStatus.MULTI_STATUS);
         } else {
             ctx.status(HttpServletResponse.SC_BAD_REQUEST);
             detailsMap.put("message",

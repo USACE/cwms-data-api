@@ -26,7 +26,6 @@ package cwms.cda.api;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.StreamConsumer;
@@ -46,8 +45,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class BinaryTimeSeriesValueController extends BaseHandler {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-
     public BinaryTimeSeriesValueController(MetricRegistry metrics) {
         super(metrics);
     }

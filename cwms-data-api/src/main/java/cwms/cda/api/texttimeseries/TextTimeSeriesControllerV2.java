@@ -45,14 +45,13 @@ import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.time.Instant;
-
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -93,14 +92,16 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                                     @OpenApiContent(type = Formats.JSON, from = TextTimeSeries.class)
                             }
                     )},
-            tags = {TAG}
+            tags = {TAG},
+            path = "/timeseries/text",
+            versions = "2"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
         super.getAll(ctx);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
         super.getOne(ctx, templateId);
@@ -117,8 +118,10 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                     @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to "
                             + "replace any and all existing text with the specified text for matching entries. "
                             + "Default is " + DEFAULT_CREATE_REPLACE_ALL)},
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            tags = {TAG},
+            path = "/timeseries/text",
+            versions = "2"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -165,8 +168,10 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
             },
             required = true
         ),
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = HttpMethod.PATCH,
+        tags = {TAG},
+        path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}",
+        versions = "2"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String tsId) {
@@ -178,7 +183,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
             Instant end = requiredInstant(ctx, END);
             Instant version = queryParamAsInstant(ctx, VERSION_DATE);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
             DSLContext dsl = getDslContext(ctx);
             TimeSeriesTextDao dao = getDao(dsl);
@@ -186,7 +191,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
             TextTimeSeries existing = dao.retrieveFromDao(office, tsId, "*", begin, end, version,
                     Integer.MAX_VALUE, null);
             TextTimeSeries updated = Formats.parsePatchContent(
-                    contentType, existing, ctx.bodyAsInputStream(), TextTimeSeries.class, mergeStrategy);
+                    contentType, existing, ctx.bodyInputStream(), TextTimeSeries.class, mergeStrategy);
             dao.update(updated, "*", begin, end, version, false);
         }
     }
@@ -215,8 +220,10 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                     @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
                             + "series.  If not specified, maximum version date is used.")
             },
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = HttpMethod.DELETE,
+            tags = {TAG},
+            path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}",
+            versions = "2"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String textTimeSeriesId) {

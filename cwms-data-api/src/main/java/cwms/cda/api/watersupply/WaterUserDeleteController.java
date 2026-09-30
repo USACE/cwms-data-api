@@ -41,9 +41,9 @@ import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.StatusResponse;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -70,7 +70,7 @@ public final class WaterUserDeleteController extends WaterSupplyControllerBase {
                     required = true)
         },
         description = "Deletes a water user from CWMS.",
-        method = HttpMethod.DELETE,
+        methods = HttpMethod.DELETE,
         path = "/projects/{office}/{project-id}/water-user/{water-user}",
         tags = {TAG}
     )

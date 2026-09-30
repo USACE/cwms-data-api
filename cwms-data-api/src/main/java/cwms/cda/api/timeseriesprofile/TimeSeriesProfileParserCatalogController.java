@@ -42,14 +42,14 @@ import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -76,17 +76,18 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileParser object",
                 content = {
-                    @OpenApiContent(isArray = true, from = TimeSeriesProfileParser.class, type = Formats.JSONV1),
-                    @OpenApiContent(isArray = true, from = TimeSeriesProfileParser.class, type = Formats.JSON)
+                    @OpenApiContent(from = TimeSeriesProfileParser[].class, type = Formats.JSONV1),
+                    @OpenApiContent(from = TimeSeriesProfileParser[].class, type = Formats.JSON)
                 }),
             @OpenApiResponse(status = STATUS_404, description = "The provided combination of parameters did not"
                 + " find a TimeSeriesProfileParser object"),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                 + "implemented")
         },
-        method = HttpMethod.GET,
+        methods = HttpMethod.GET,
         summary = "Retrieve a list of TimeSeries Profile Parsers that match the provided mask parameters",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/timeseries/profile/catalog"
     )
     @Override
     public void handle(@NotNull Context ctx) {
@@ -108,7 +109,7 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve time series profile parsers", ex);
