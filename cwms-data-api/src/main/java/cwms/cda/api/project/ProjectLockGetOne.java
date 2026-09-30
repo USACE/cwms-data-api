@@ -42,7 +42,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import java.io.IOException;
@@ -91,7 +91,7 @@ public abstract class ProjectLockGetOne<T extends CwmsDTOBase & ProjectLock> imp
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 ctx.status(HttpServletResponse.SC_NOT_FOUND);
             }

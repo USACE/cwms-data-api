@@ -40,7 +40,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import java.io.IOException;
@@ -75,8 +75,7 @@ public abstract class ProjectLockCatalog<T extends CwmsDTOBase & ProjectLock> im
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ProjectLockDao<T> lockDao = getDao(ctx);
             String projMask = ctx.queryParamAsClass(PROJECT_MASK, String.class).getOrDefault("*");
-            String appMask = ctx.queryParamAsClass(APPLICATION_MASK, String.class).getOrDefault(
-                    "*");
+            String appMask = ctx.queryParamAsClass(APPLICATION_MASK, String.class).getOrDefault("*");
             String officeMask = getOffice(ctx);
 
             List<T> locks = lockDao.retrieveLocks(officeMask, projMask, appMask);
@@ -90,7 +89,7 @@ public abstract class ProjectLockCatalog<T extends CwmsDTOBase & ProjectLock> im
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve project locks", ex);
