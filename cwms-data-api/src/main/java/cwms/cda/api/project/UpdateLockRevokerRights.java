@@ -34,14 +34,13 @@ import static cwms.cda.api.Controllers.requiredParamAs;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.Controllers;
-import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectLockDaoV1;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
@@ -73,7 +72,7 @@ public class UpdateLockRevokerRights implements Handler {
                 @OpenApiParam(name = Controllers.ALLOW, required = true, type = Boolean.class, description =
                         "True to add the user to the allow list, False to add to the deny list")
             },
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             tags = {TAGS},
             path = PATH
     )
