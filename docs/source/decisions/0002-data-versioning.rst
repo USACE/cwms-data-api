@@ -56,12 +56,15 @@ the requirement is now moot.
 Data, by content-types, are versioned. In the past there was some severe confusion on this part and it was treated as anything 
 new was "version=2" in the content-type. To allow this design but reduce confusion going forward
 
-1. The initial content-type of a data set *SHALL* be be the plain content-type and *SHOULD* include an additional expanded content-type
-3. *IF* is it not the first version of this data, additional information will be set in the content-type as 
+#. The initial content-type of a data set *SHALL* be be the plain content-type and *SHOULD* include an additional expanded content-type
+
+#. *IF* is it not the first version of this data, additional information will be set in the content-type as
    appropriate to the to the data. (e.g. `application/json+<something>` or `application/json;<something>`)
-   1. It will be discussed and announced when it becomes the new default data, if that decision is made.
-5. Downstream systems *SHOULD* use the specific version regardless of when implemented, and this behavior should be well documented.
-6. If a given data set includes definitions of its shape within the type there should be sufficient documentation for downstream
+
+   #. It will be discussed and announced when it becomes the new default data, if that decision is made.
+
+#. Downstream systems *SHOULD* use the specific version regardless of when implemented, and this behavior should be well documented.
+#. If a given data set includes definitions of its shape within the type there should be sufficient documentation for downstream
    developers to properly account for any changes over time. (See our TimeSeries type and discussions within #927).
 
 [comment:] <> (Status: request for comments | proposed | accepted | rejected | deprecated | superseded)
@@ -69,9 +72,9 @@ new was "version=2" in the content-type. To allow this design but reduce confusi
 References
 ==========
 
-1. https://www.youtube.com/watch?v=jmoxGJ_sLgU
-2. https://newsletter.systemdesign.one/p/api-versioning
-3. https://www.speakeasy.com/api-design/versioning
+#. https://www.youtube.com/watch?v=jmoxGJ_sLgU
+#2. https://newsletter.systemdesign.one/p/api-versioning
+#3. https://www.speakeasy.com/api-design/versioning
 
 
 Notes

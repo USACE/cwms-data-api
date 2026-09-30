@@ -35,7 +35,6 @@ Welcome to CWMS Data API documentation!
 
    Data <./data/index.rst>
    Client Libraries <libraries/index.rst>
-   RFCs <./rfc/index.rst>
 
 
 .. toctree::
@@ -51,11 +50,10 @@ Welcome to CWMS Data API documentation!
 
    Alternative Topics <./alternative-topics/index.rst>
 
+
 .. toctree::
    :maxdepth: 1
    :caption: Design Documents
    
-   Design <./introduction/design.rst>
-   Decision Records <./decisions/index.rst>
-   Design Documents <./design/index.rst>
-  
+   Decision Records <./decisions/index.rst>   
+
