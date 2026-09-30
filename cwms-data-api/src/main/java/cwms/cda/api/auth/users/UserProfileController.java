@@ -4,7 +4,7 @@ import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.UserDao;
 import cwms.cda.data.dto.auth.users.User;
@@ -12,14 +12,16 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.Role;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
@@ -42,8 +44,9 @@ public class UserProfileController implements Handler {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "View users' own information",
-        method = HttpMethod.GET,
-        tags = {"User Management"}
+        methods = HttpMethod.GET,
+        tags = {"User Management"},
+        path = "/user/profile"
     )
     @Override
     public void handle(Context ctx) throws Exception {
@@ -52,8 +55,8 @@ public class UserProfileController implements Handler {
         UserDao dao = new UserDao(dsl);
         String cac_user = p.getRoles()
                            .stream()
-                           .filter(r -> r.equals(new Role(ApiServlet.CAC_USER)))
-                           .map(r -> ApiServlet.CAC_USER)
+                           .filter(r -> r.equals(new Role(CwmsDataApi.CAC_USER)))
+                           .map(r -> CwmsDataApi.CAC_USER)
                            .findFirst().orElse(null);
         User user = dao.getByUniqueName(p.getName(), cac_user).orElse(null);
         String formatHeader = ctx.header(Header.ACCEPT);
@@ -65,7 +68,7 @@ public class UserProfileController implements Handler {
 
         byte[] bytes = result.getBytes();
         ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-        ctx.res.getOutputStream().write(bytes);
+        ctx.outputStream().write(bytes);
     }
     
 }

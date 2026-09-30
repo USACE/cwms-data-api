@@ -34,13 +34,13 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.forecast.ForecastInstanceDao;
 import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.helpers.DateUtils;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.HttpServletResponse;
@@ -95,12 +95,13 @@ public final class ForecastFileController implements Handler {
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
-            tags = {ForecastSpecController.TAG}
+            tags = {ForecastSpecController.TAG},
+            path = "/forecasts/files"
     )
     public void handle(@NotNull Context ctx) {
         String specId = ctx.pathParam(NAME);
         String office = requiredParam(ctx, OFFICE);
-        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).getOrNull();
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();

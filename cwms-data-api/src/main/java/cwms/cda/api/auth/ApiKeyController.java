@@ -45,13 +45,13 @@ import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -94,7 +94,8 @@ public class ApiKeyController implements CrudHandler {
         },
         description = "Create a new API Key for user. The randomly generated key is returned "
                 + "to the caller. A provided key will be ignored." + KEY_MANAGEMENT_HELP,
-        tags = {"Authorization"}
+        tags = {"Authorization"},
+        path = "/auth/keys"
     )
     @Override
     public void create(Context ctx) {
@@ -107,13 +108,13 @@ public class ApiKeyController implements CrudHandler {
                     .anyMatch(ref -> "expires".equals(ref.getFieldName()))) {
                 message = "expires must be a valid date/time string, for example 2030-01-01T00:00:00Z.";
             }
-            ctx.json(new CdaError(message, true)).status(HttpCode.BAD_REQUEST);
+            ctx.json(new CdaError(message, true)).status(HttpStatus.BAD_REQUEST);
             return;
         }
         if (sourceData == null || sourceData.getUserId() == null || sourceData.getUserId().isBlank()
                 || sourceData.getKeyName() == null || sourceData.getKeyName().isBlank()) {
             ctx.json(new CdaError("user-id and key-name are required and must not be blank.", true))
-                    .status(HttpCode.BAD_REQUEST);
+                    .status(HttpStatus.BAD_REQUEST);
             return;
         }
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
@@ -121,7 +122,7 @@ public class ApiKeyController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             AuthDao auth = AuthDao.getInstance(dsl);
             ApiKey key = auth.createApiKey(p, sourceData);
-            ctx.json(key).status(HttpCode.CREATED);
+            ctx.json(key).status(HttpStatus.CREATED);
         } catch (CwmsAuthException ex) {
             if (ex.getMessage().equals(AuthDao.ONLY_OWN_KEY_MESSAGE)) {
                 ctx.json(new CdaError(ex.getMessage(), true)).status(ex.getAuthFailCode());
@@ -138,7 +139,8 @@ public class ApiKeyController implements CrudHandler {
         },
         responses = @OpenApiResponse(status = STATUS_204),
         description = "Delete API key for a user." + KEY_MANAGEMENT_HELP,
-        tags = {"Authorization"}
+        tags = {"Authorization"},
+        path = "/auth/keys/{key-name}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String keyName) {
@@ -147,7 +149,7 @@ public class ApiKeyController implements CrudHandler {
 
         AuthDao auth = AuthDao.getInstance(dsl);
         auth.deleteKeyForUser(p, keyName);
-        ctx.status(HttpCode.NO_CONTENT);
+        ctx.status(HttpStatus.NO_CONTENT);
     }
 
     @OpenApi(
@@ -161,7 +163,8 @@ public class ApiKeyController implements CrudHandler {
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
         description = "View all keys for the current user." + KEY_MANAGEMENT_HELP,
-        tags = {"Authorization"}
+        tags = {"Authorization"},
+        path = "/auth/keys"
     )
     public void getAll(Context ctx) {
         DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
@@ -170,7 +173,7 @@ public class ApiKeyController implements CrudHandler {
 
         AuthDao auth = AuthDao.getInstance(dsl);
         List<ApiKey> keys = auth.apiKeysForUser(p);
-        ctx.json(keys).status(HttpCode.OK);
+        ctx.json(keys).status(HttpStatus.OK);
 
     }
 
@@ -189,7 +192,8 @@ public class ApiKeyController implements CrudHandler {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "View specific key metadata. The secret cannot be retrieved." + KEY_MANAGEMENT_HELP,
-        tags = {"Authorization"}
+        tags = {"Authorization"},
+        path = "/auth/keys/{key-name}"
     )
     @Override
     public void getOne(Context ctx, @NotNull String keyName) {
@@ -198,19 +202,20 @@ public class ApiKeyController implements CrudHandler {
         AuthDao auth = AuthDao.getInstance(dsl);
         ApiKey key = auth.apiKeyForUser(p, keyName);
         if (key != null) {
-            ctx.json(key).status(HttpCode.OK);
+            ctx.json(key).status(HttpStatus.OK);
         } else {
             CdaError msg = new CdaError(
                     "Requested Key was not found. NOTE: api key names are case-sensitive.",
                     true
             );
-            ctx.json(msg).status(HttpCode.NOT_FOUND);
+            ctx.json(msg).status(HttpStatus.NOT_FOUND);
         }
 
     }
 
     @OpenApi(
-        ignore = true // users should delete and recreate keys. There is nothing to update.
+        ignore = true, // users should delete and recreate keys. There is nothing to update.
+        path = ""
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String arg1) {

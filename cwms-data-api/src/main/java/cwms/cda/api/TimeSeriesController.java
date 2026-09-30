@@ -7,7 +7,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -204,7 +204,7 @@ public class TimeSeriesController implements CrudHandler {
         if (ctx.method() == HandlerType.GET
                 && ctx.attribute(AuthDao.DATA_API_PRINCIPAL) != null) {
             office = ctx.queryParamAsClass(OFFICE, String.class)
-                    .getOrDefault(ctx.attribute(ApiServlet.OFFICE_ID));
+                    .getOrDefault(ctx.attribute(CwmsDataApi.OFFICE_ID));
         }
         return JooqDao.getDslContext(ctx, office);
     }

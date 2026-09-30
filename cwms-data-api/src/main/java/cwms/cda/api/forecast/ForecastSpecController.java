@@ -25,7 +25,7 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import java.io.IOException;
 import java.util.List;
@@ -66,7 +66,7 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
     }
 
     protected void delete(Context ctx, String name, String office) {
-        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).getOrNull();
 
         JooqDao.DeleteMethod deleteMethod = ctx.queryParamAsClass(METHOD, JooqDao.DeleteMethod.class)
                 .getOrDefault(JooqDao.DeleteMethod.DELETE_KEY);
@@ -97,9 +97,9 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
     protected void getAll(Context ctx, String office) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String names = ctx.queryParamAsClass(ID_MASK, String.class).getOrDefault("*");
-            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).allowNullable().get();
+            String designator = ctx.queryParamAsClass(DESIGNATOR_MASK, String.class).getOrNull();
             String sourceEntity = ctx.queryParamAsClass(SOURCE_ENTITY, String.class).getOrDefault("*");
-            String entityLike = ctx.queryParamAsClass(SOURCE_ENTITY_LIKE, String.class).allowNullable().get();
+            String entityLike = ctx.queryParamAsClass(SOURCE_ENTITY_LIKE, String.class).getOrNull();
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao<T> dao = newDao(dsl);
@@ -114,7 +114,7 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
 
     protected void getOne(Context ctx, String name, String office) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
-            String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
+            String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).getOrNull();
 
             DSLContext dsl = getDslContext(ctx);
             ForecastSpecDao<T> dao = newDao(dsl);
@@ -157,7 +157,7 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
 
         byte[] bytes = result.getBytes();
         ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-        ctx.res.getOutputStream().write(bytes);
+        ctx.outputStream().write(bytes);
     }
 
     private void handleWriteFailure(Context ctx, IOException ex, String message) {
@@ -167,7 +167,7 @@ public abstract class ForecastSpecController<T extends CwmsDTOBase> extends Base
     }
 
     protected T deserializeForecastSpec(Context ctx) {
-        ContentType contentType = Formats.parseHeader(ctx.req.getContentType(), getDtoClass());
+        ContentType contentType = Formats.parseHeader(ctx.contentType(), getDtoClass());
         return Formats.parseContent(contentType, ctx.body(), getDtoClass());
     }
 }
