@@ -20,12 +20,12 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpecV2;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -58,8 +58,10 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
                     },
                     required = true
             ),
-            method = HttpMethod.POST,
-            tags = TAG
+            methods = HttpMethod.POST,
+            tags = TAG,
+            path = "/forecasts/spec",
+            versions = "2"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -87,8 +89,10 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
                     @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                             + "parameters did not find a forecast spec."),
             },
-            method = HttpMethod.DELETE,
-            tags = TAG
+            methods = HttpMethod.DELETE,
+            tags = TAG,
+            path = "/forecast/spec/{" + OFFICE + "}/{" + NAME + "}",
+            versions = "2"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
@@ -125,8 +129,10 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
-            method = HttpMethod.GET,
-            tags = TAG
+            methods = HttpMethod.GET,
+            tags = TAG,
+            path = "/forecast/spec",
+            versions = "2"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -158,8 +164,10 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
-            method = HttpMethod.GET,
-            tags = TAG
+            methods = HttpMethod.GET,
+            tags = TAG,
+            path = "/forecast/spec/{" + OFFICE + "}/{" + NAME + "}",
+            versions = "2"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -183,8 +191,10 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the forecast spec was not found.")
             },
-            method = HttpMethod.PATCH,
-            tags = TAG
+            methods = HttpMethod.PATCH,
+            tags = TAG,
+            path = "/forecasts/spec/{" + OFFICE + "}/{" + NAME + "}",
+            versions = "2"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

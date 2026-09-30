@@ -12,12 +12,12 @@ import cwms.cda.data.dto.auth.userlists.UserListCandidates;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class UserListCandidatesController implements Handler {
@@ -42,8 +42,9 @@ public final class UserListCandidatesController implements Handler {
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Search existing CWMS users for user-list membership.",
-        method = HttpMethod.GET,
-        tags = UserListController.TAG
+        methods = HttpMethod.GET,
+        tags = UserListController.TAG,
+        path = "/user-lists/candidates" // TODO: fix
     )
     @Override
     public void handle(Context ctx) {

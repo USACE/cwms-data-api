@@ -13,11 +13,11 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.security.DataApiPrincipal;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 
 public class GetRolesController implements Handler {
     private final MetricRegistry metrics;
@@ -37,14 +37,15 @@ public class GetRolesController implements Handler {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "View all roles",
-        tags = {"User Management"}
+        tags = {"User Management"},
+        path = "/roles"
     )
     @Override
     public void handle(Context ctx) throws Exception {
         final DataApiPrincipal p = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
         UserDao dao = new UserDao(getDslContext(ctx));
         List<String> roles = dao.getRoles();
-        ctx.json(roles).status(HttpCode.OK);
+        ctx.json(roles).status(HttpStatus.OK);
     }
     
 }
