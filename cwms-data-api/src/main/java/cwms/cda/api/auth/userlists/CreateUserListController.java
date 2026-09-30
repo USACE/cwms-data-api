@@ -15,13 +15,13 @@ import cwms.cda.data.dto.auth.userlists.UserListInput;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class CreateUserListController implements Handler {
@@ -45,8 +45,9 @@ public final class CreateUserListController implements Handler {
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Create an office-scoped user list owned by the authenticated user.",
-        method = HttpMethod.POST,
-        tags = UserListController.TAG
+        methods = HttpMethod.POST,
+        tags = UserListController.TAG,
+        path = "/user-lists"
     )
     @Override
     public void handle(Context ctx) {
@@ -64,7 +65,7 @@ public final class CreateUserListController implements Handler {
             UserListSupport.requireOfficeAdmin(ctx, dao, office);
             UserList created = dao.createUserList(office, userListId, description,
                     UserListSupport.principal(ctx).getName());
-            ctx.status(HttpCode.CREATED).json(created);
+            ctx.status(HttpStatus.CREATED).json(created);
         }
     }
 }
