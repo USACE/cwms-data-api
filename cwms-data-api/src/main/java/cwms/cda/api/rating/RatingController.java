@@ -78,17 +78,17 @@ import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.helpers.DateUtils;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
+import io.javalin.http.Header;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
@@ -96,6 +96,8 @@ import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.metadata.VerticalDatumException;
+import usace.cwms.db.jooq.codegen.udt.RATING_SPEC_T;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -106,10 +108,11 @@ public class RatingController extends BaseCrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Ratings";
 
-    static {
-        JavalinValidation.register(RatingSet.DatabaseLoadMethod.class,
-                RatingController::getDatabaseLoadMethod);
-    }
+    // TODO: moves to config
+    // static {
+    //     JavalinValidation.register(RatingSet.DatabaseLoadMethod.class,
+    //             RatingController::getDatabaseLoadMethod);
+    // }
 
     public RatingController(MetricRegistry metrics) {
         super(metrics);
@@ -148,7 +151,7 @@ public class RatingController extends BaseCrudHandler {
                         + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                         + "and should be converted to the as-stored datum before being saved.")
             },
-            method = HttpMethod.POST, path = "/ratings", tags = {TAG},
+            methods = HttpMethod.POST, path = "/ratings", tags = {TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_201, description = "Rating Set successfully stored to CWMS.")
             })
@@ -235,8 +238,9 @@ public class RatingController extends BaseCrudHandler {
                 + BEGIN + ", " + END + ", or " + VERSION_DATE + " parameters do not include "
                     + "offset or time zone information. Defaults to UTC."),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/ratings/{" + RATING_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String ratingSpecId) {
@@ -311,7 +315,8 @@ public class RatingController extends BaseCrudHandler {
                             + "parameters did not find a rating table."),
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")},
-            tags = {TAG})
+            tags = {TAG},
+            path = "/ratings")
     @Override
     public void getAll(@NotNull Context ctx) {
 
@@ -358,7 +363,7 @@ public class RatingController extends BaseCrudHandler {
 
             byte[] bytes = results.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException e) {
             CdaError re = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Ratings", e);
@@ -406,7 +411,8 @@ public class RatingController extends BaseCrudHandler {
                     @OpenApiContent(type = Formats.XMLV2)})},
             description = "Returns CWMS Rating Data. Supports accept header formatting. "
                 + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
-            tags = {TAG})
+            tags = {TAG},
+        path = "/ratings/{" + RATING_ID + "}")
 
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String rating) {
@@ -434,10 +440,10 @@ public class RatingController extends BaseCrudHandler {
 
             String body = getRatingSetString(ctx, method, officeId, rating, beginInstant, endInstant, verticalDatum);
             if (body != null) {
-                ctx.status(HttpCode.OK);
+                ctx.status(HttpStatus.OK);
                 byte[] bytes = body.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             }
         } catch (IOException e) {
             CdaError re = ExceptionTraceSupport.buildError(ctx,
@@ -507,7 +513,7 @@ public class RatingController extends BaseCrudHandler {
                             retval = RatingXmlFactory.toXml(ratingSet, " ");
                         }
                     } else {
-                        ctx.status(HttpCode.NOT_FOUND);
+                        ctx.status(HttpStatus.NOT_FOUND);
                     }
                 } catch (RatingException e) {
                     CdaError re = ExceptionTraceSupport.buildError(ctx,
@@ -574,7 +580,7 @@ public class RatingController extends BaseCrudHandler {
                             + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                             + "and should be converted to the as-stored datum before being saved.")
             },
-            method = HttpMethod.PATCH, path = "/ratings", tags = {TAG})
+            methods = HttpMethod.PATCH, path = "/ratings", tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
         logUnusedPathParameter(ctx, RATING_ID, "Body contains required information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
