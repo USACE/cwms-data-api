@@ -40,14 +40,14 @@ import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -114,7 +114,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "implemented")},
             description = "Returns CWMS timeseries identifier descriptor"
                     + "Data. Currently includes aliased items in results.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/timeseries/identifier"
     )
     @Override
     public void getAll(Context ctx) {
@@ -149,7 +150,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve timeseries identifiers", ex);
@@ -180,7 +181,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/timeseries/identifier/{timeseriesId}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String timeseriesId) {
@@ -210,7 +212,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find identifier based on parameters "
                         + "given");
@@ -237,15 +239,16 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = {HttpMethod.POST},
+            tags = {TAG},
+            path = "/timeseries/identifier"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
 
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptor.class);
@@ -288,7 +291,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "that data will be considered to be on time."),
                     @OpenApiParam(name = ACTIVE, type = Boolean.class,
                             description = "'True' or 'true' if the time series is active")
-            }, tags = {TAG}
+            }, tags = {TAG},
+            path = "/timeseries/identitifer/{name}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
@@ -341,8 +345,9 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = {HttpMethod.DELETE},
+            tags = {TAG},
+            path = "/timeseries/identifier/{timeseriesId}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {

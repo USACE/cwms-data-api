@@ -49,14 +49,14 @@ import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -118,7 +118,7 @@ public class TimeSeriesRecentController implements Handler {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(isArray = true, from = RecentValue.class, type = Formats.JSON)}),
+                    @OpenApiContent(from = RecentValue[].class, type = Formats.JSON)}),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the timeseries group(s) were not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
@@ -127,15 +127,15 @@ public class TimeSeriesRecentController implements Handler {
             path = "/timeseries/recent",
             description = "Returns CWMS Timeseries Groups Data",
             tags = TimeSeriesController.TAG,
-            method = HttpMethod.GET
+            methods = {HttpMethod.GET}
     )
     public void handle(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("getRecent")) {
             String office = ctx.queryParam(OFFICE);
-            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get();
-            String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).allowNullable().get();
-            String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).allowNullable().get();
+            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).getOrNull();
+            String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).getOrNull();
+            String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).getOrNull();
             UnitSystem unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, UnitSystem.class)
                     .getOrDefault(UnitSystem.EN);
 
@@ -194,7 +194,7 @@ public class TimeSeriesRecentController implements Handler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Timeseries Recents", ex);
