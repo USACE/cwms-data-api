@@ -106,7 +106,7 @@ public class LocationGroupController implements CrudHandler {
                 })
         },
         description = "Returns CWMS Location Groups Data", tags = {TAG},
-        path = "/"
+        path = "/location/group"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -185,7 +185,7 @@ public class LocationGroupController implements CrudHandler {
             + Formats.GEOJSON + "."
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG},
-        path = "/"
+        path = "/location/group/{"  + GROUP_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {
@@ -255,7 +255,7 @@ public class LocationGroupController implements CrudHandler {
         },
         methods = {HttpMethod.POST},
         tags = {TAG},
-        path = "/"
+        path = "/location/group"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -324,7 +324,7 @@ public class LocationGroupController implements CrudHandler {
         },
         methods = {HttpMethod.PATCH},
         tags = {TAG},
-        path = "/"
+        path = "/locatiton/group/{" + GROUP_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String groupId) {
@@ -378,7 +378,7 @@ public class LocationGroupController implements CrudHandler {
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/{location-id}"
+        path = "/location/group/{location-id}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {

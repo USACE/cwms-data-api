@@ -1,7 +1,7 @@
 package cwms.cda.api;
 
 import com.google.common.flogger.FluentLogger;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,7 @@ public class RangeRequestUtil {
 
         if (ctx.header(Header.RANGE) == null) {
             // Not a range request.
-            ctx.res.setContentType(mediaType);
+            ctx.contentType(mediaType);
 
             if(isPostion > 0){
                 throw new IllegalArgumentException("Input stream position must be 0 for non-range requests");
@@ -53,7 +53,7 @@ public class RangeRequestUtil {
             // Chunked is a worse experience overall, seems like we should just set the length if we know it.
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(totalBytes));
 
-            IOUtils.copyLarge(is, (OutputStream) ctx.res.getOutputStream(), 0, totalBytes);
+            IOUtils.copyLarge(is, (OutputStream) ctx.outputStream(), 0, totalBytes);
         } else {
             String rangeHeader = ctx.header(Header.RANGE);
 
@@ -79,7 +79,7 @@ public class RangeRequestUtil {
             ctx.header(Header.ACCEPT_RANGES, "bytes");
             ctx.header(Header.CONTENT_RANGE, "bytes " + from + "-" + to + "/" + totalBytes);
 
-            ctx.res.setContentType(mediaType);
+            ctx.contentType(mediaType);
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(Math.min(to - from + 1, totalBytes)));
 
             if(isPostion < from){
@@ -97,7 +97,7 @@ public class RangeRequestUtil {
             // stream from Oracle Blobs).
 
             // We do our own skipping and then have IOUtils copy.
-            IOUtils.copyLarge(is, (OutputStream) ctx.res.getOutputStream(), 0, len);
+            IOUtils.copyLarge(is, (OutputStream) ctx.outputStream(), 0, len);
         }
     }
 
@@ -115,7 +115,7 @@ public class RangeRequestUtil {
 
         if (ctx.header(Header.RANGE) == null) {
             // Not a range request.
-            ctx.res.setContentType(mediaType);
+            ctx.contentType(mediaType);
 
             if(isPostion > 0){
                 throw new IllegalArgumentException("Input stream position must be 0 for non-range requests");
@@ -123,7 +123,7 @@ public class RangeRequestUtil {
 
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(totalBytes));
 
-            IOUtils.copyLarge(reader, ctx.res.getWriter(), 0, totalBytes);
+            IOUtils.copyLarge(reader, ctx.res().getWriter(), 0, totalBytes);
         } else {
             String rangeHeader = ctx.header(Header.RANGE);
 
@@ -149,15 +149,15 @@ public class RangeRequestUtil {
             ctx.header(Header.ACCEPT_RANGES, "bytes");
             ctx.header(Header.CONTENT_RANGE, "bytes " + from + "-" + to + "/" + totalBytes);
 
-            ctx.res.setContentType(mediaType);
+            ctx.contentType(mediaType);
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(Math.min(to - from + 1, totalBytes)));
 
-            if(isPostion < from){
+            if (isPostion < from) {
                 skip(reader, from-isPostion);
             }
             long len = Math.min(to, totalBytes - 1) - from + 1;
 
-            IOUtils.copyLarge(reader, ctx.res.getWriter(), 0, len);
+            IOUtils.copyLarge(reader, ctx.res().getWriter(), 0, len);
         }
     }
 
@@ -174,5 +174,4 @@ public class RangeRequestUtil {
             toSkip -= skipped;
         }
     }
-
 }

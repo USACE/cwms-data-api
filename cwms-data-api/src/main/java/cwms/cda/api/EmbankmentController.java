@@ -56,14 +56,14 @@ import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -99,12 +99,13 @@ public final class EmbankmentController  implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Embankment.class),
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = Embankment.class)
+                            @OpenApiContent(type = Formats.JSONV1, from = Embankment[].class),
+                            @OpenApiContent(type = Formats.JSON, from = Embankment[].class)
                     })
             },
             description = "Returns matching CWMS Embankment Data for a Reservoir Project.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/embankment"
     )
     @Override
     public void getAll(Context ctx) {
@@ -123,7 +124,7 @@ public final class EmbankmentController  implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Embankments", ex);
@@ -144,12 +145,13 @@ public final class EmbankmentController  implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Embankment.class),
-                                    @OpenApiContent(isArray = true, type = Formats.JSON, from = Embankment.class)
+                                    @OpenApiContent(type = Formats.JSONV1, from = Embankment[].class),
+                                    @OpenApiContent(type = Formats.JSON, from = Embankment[].class)
                             })
             },
             description = "Returns CWMS Embankment Data",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/embankment/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -168,7 +170,7 @@ public final class EmbankmentController  implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Embankment", ex);
@@ -188,8 +190,9 @@ public final class EmbankmentController  implements CrudHandler {
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             description = "Create CWMS Embankment",
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             tags = {TAG},
+            path = "/embankment",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Embankment successfully stored to CWMS.")
             }
@@ -197,7 +200,7 @@ public final class EmbankmentController  implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Embankment.class);
             Embankment embankment = Formats.parseContent(contentType, ctx.body(), Embankment.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
@@ -208,7 +211,6 @@ public final class EmbankmentController  implements CrudHandler {
                     "Embankment successfully stored to CWMS", embankment.getLocation().getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
-
     }
 
     @OpenApi(
@@ -222,8 +224,9 @@ public final class EmbankmentController  implements CrudHandler {
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the new embankment name. ")
             },
             description = "Rename CWMS Embankment",
-            method = HttpMethod.PATCH,
+            methods = HttpMethod.PATCH,
             tags = {TAG},
+            path = "/embankment/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Embankment successfully renamed in CWMS.")
             }
@@ -254,8 +257,9 @@ public final class EmbankmentController  implements CrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Delete CWMS Embankment",
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
             tags = {TAG},
+            path = "/embankment/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Embankment successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
