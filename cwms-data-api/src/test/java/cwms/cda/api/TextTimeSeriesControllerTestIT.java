@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dto.texttimeseries.RegularTextTimeSeriesRow;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.Formats;
@@ -230,7 +230,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .queryParam(Controllers.NAME, tsIdentifier)
                 .queryParam(Controllers.BEGIN,startStr)
                 .queryParam(Controllers.END,endStr)
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)
@@ -257,7 +257,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header(AUTHORIZATION, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -271,7 +271,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN,startStr)
@@ -294,7 +294,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .header(AUTHORIZATION, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.TEXT_MASK, "*")
@@ -312,7 +312,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(Controllers.NAME, tsIdentifier)
             .queryParam(Controllers.BEGIN,startStr)
@@ -337,7 +337,7 @@ public class TextTimeSeriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsData)
                 .header(AUTHORIZATION, user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)

@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
@@ -310,7 +310,7 @@ class TimeSeriesCategoryControllerTestIT extends DataApiTestIT
             .contentType(Formats.JSON)
             .body(xml)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

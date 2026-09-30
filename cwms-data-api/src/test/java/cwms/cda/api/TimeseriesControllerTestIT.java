@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
@@ -165,7 +165,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(CREATE_AS_LRTS, true)
         .when()
@@ -182,7 +182,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT,"F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -205,7 +205,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
             .queryParam(END, "2025-05-19T11:00:00+00:00")
@@ -228,7 +228,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
                 .queryParam(OFFICE, officeId)
                 .queryParam(CREATE_AS_LRTS, true)
                 .body(tsData)
@@ -715,7 +715,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsDataPsuedoOff)
                 .header("Authorization",user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
                 .queryParam("office",officeId)
             .when()
                 .redirects().follow(true)

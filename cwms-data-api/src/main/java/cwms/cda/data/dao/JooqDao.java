@@ -27,7 +27,7 @@ package cwms.cda.data.dao;
 import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
@@ -159,16 +159,16 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static DSLContext getDslContext(Context ctx, String office) {
         DSLContext retVal;
 
-        final DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
-        final boolean isNewLRTS = ctx.header(ApiServlet.IS_NEW_LRTS) != null
-            && Boolean.parseBoolean(ctx.header(ApiServlet.IS_NEW_LRTS));
+        final DataSource dataSource = ctx.attribute(CwmsDataApi.DATA_SOURCE);
+        final boolean isNewLRTS = ctx.header(CwmsDataApi.IS_NEW_LRTS) != null
+            && Boolean.parseBoolean(ctx.header(CwmsDataApi.IS_NEW_LRTS));
 
         // Snapshot client-info and the requested office up front so the per-checkout
         // preparer lambdas don't capture the Javalin Context — async work (e.g. the
         // total-count future in TimeSeriesDaoImpl) can outlive the request facade.
-        final String module = (ctx.handlerType() == HandlerType.BEFORE)
-                ? "BEFORE-HANDLER" : ctx.endpointHandlerPath();
-        final String action = ctx.method();
+        final String module = (ctx.method() == HandlerType.BEFORE)
+                ? "BEFORE-HANDLER" : ctx.path();
+        final String action = ctx.method().name();
         final String clientId = ctx.url().replace(ctx.path(), "") + ctx.contextPath();
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
                 connection -> setClientInfo(connection, module, action, clientId),
@@ -203,9 +203,9 @@ public abstract class JooqDao<T> extends Dao<T> {
 
     private static Connection setClientInfo(Connection connection, String module, String action, String clientId) {
         try {
-            final String apiVersion = ApiServlet.getApiVersion();
+            final String apiVersion = CwmsDataApi.getApiVersion();
             connection.setClientInfo("OCSID.ECID",
-                    ApiServlet.APPLICATION_TITLE + " "
+                    CwmsDataApi.APPLICATION_TITLE + " "
                             + apiVersion.substring(0, Math.min(ORACLE_ECID_MAX_LENGTH, apiVersion.length())));
             connection.setClientInfo("OCSID.MODULE", module);
             connection.setClientInfo("OCSID.ACTION", action);

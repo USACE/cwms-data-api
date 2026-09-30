@@ -11,7 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.VersionType;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
@@ -978,7 +978,7 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             .queryParam(Controllers.TRIM, trim)
             .queryParam(Controllers.INCLUDE_ENTRY_DATE, includeEntryDate);
         if (lrtsFormatting != null) {
-            request = request.header(ApiServlet.IS_NEW_LRTS, lrtsFormatting);
+            request = request.header(CwmsDataApi.IS_NEW_LRTS, lrtsFormatting);
         }
         if (versionDate != null) {
             request = request.queryParam(Controllers.VERSION_DATE, versionDate.toString());

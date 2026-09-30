@@ -27,7 +27,7 @@
 package cwms.cda.data.dao;
 
 import com.codahale.metrics.MetricRegistry;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dto.CdaVersion;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,7 +51,7 @@ public final class CdaVersionDao extends JooqDao<CdaVersion> {
      */
     public CdaVersion getCdaVersion() {
         return new CdaVersion.Builder()
-                .withVersion(ApiServlet.getApiVersion())
+                .withVersion(CwmsDataApi.getApiVersion())
                 .withFeatures(buildFeatures())
                 .build();
     }

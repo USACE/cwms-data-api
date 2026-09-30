@@ -2,7 +2,7 @@ package cwms.cda.security;
 
 import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
@@ -114,7 +114,7 @@ public final class OpenIdConnectIdentityProvider implements IdentityProvider {
             final String issuer = claims.getIssuer();
             final String subject = claims.getSubject();
             final String oidcPrincipal = issuer + "::" + subject;
-            AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx), ctx.attribute(ApiServlet.OFFICE_ID));
+            AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx), ctx.attribute(CwmsDataApi.OFFICE_ID));
             Optional<DataApiPrincipal> principal = dao.getPrincipalFromPrincipal(oidcPrincipal);
             if (principal.isPresent()) {
                 return principal.get();

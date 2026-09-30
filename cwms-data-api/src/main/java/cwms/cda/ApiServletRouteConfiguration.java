@@ -1,7 +1,7 @@
 package cwms.cda;
 
-import static cwms.cda.ApiServlet.CAC_USER;
-import static cwms.cda.ApiServlet.CWMS_USERS_ROLE;
+import static cwms.cda.CwmsDataApi.CAC_USER;
+import static cwms.cda.CwmsDataApi.CWMS_USERS_ROLE;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.LOCATION_ID;
 import static cwms.cda.api.Controllers.NAME;
@@ -162,11 +162,11 @@ import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
 import io.javalin.Javalin;
-import io.javalin.apibuilder.CrudFunction;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.apibuilder.CrudHandlerKt;
-import io.javalin.core.security.RouteRole;
-import io.javalin.core.util.Header;
+import io.javalin.config.RoutesConfig;
+import io.javalin.security.RouteRole;
+import io.javalin.http.Header;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import org.jetbrains.annotations.NotNull;
@@ -185,8 +185,11 @@ public final class ApiServletRouteConfiguration {
         throw new AssertionError("Utility class - do not instantiate");
     }
 
-    public static void configureRoutes(MetricRegistry metrics, RouteRole[] requiredRoles, CdaAccessManager cdaAccessManager) {
+    public static void configureRoutes(RoutesConfig routes, MetricRegistry metrics, RouteRole[] requiredRoles, CdaAccessManager cdaAccessManager) {
 
+        routes.apiBuilder(() ->{
+
+        
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
         // Even view on this one requires authorization
@@ -410,6 +413,7 @@ public final class ApiServletRouteConfiguration {
 
         get("/version/", new CdaVersionHandler(metrics), requiredRoles);
         get(format("/rss/{%s}/{%s}", Controllers.OFFICE, Controllers.NAME), new RssHandler(metrics));
+        });
     }
 
     private static void addUserManagementHandlers(MetricRegistry metrics, CdaAccessManager cdaAccessManager) {
@@ -666,10 +670,10 @@ public final class ApiServletRouteConfiguration {
     private static void addCacheControl(@NotNull String path, long duration, TimeUnit timeUnit) {
         if (timeUnit != null && duration > 0) {
             staticInstance().after(path, ctx -> {
-                String method = ctx.req.getMethod();  // "GET"
-                if (ctx.status() == HttpServletResponse.SC_OK
+                String method = ctx.method().name();  // "GET"
+                if (ctx.status() == HttpStatus.OK
                         && "GET".equals(method)
-                        && (!ctx.res.containsHeader(Header.CACHE_CONTROL))) {
+                        && (!ctx.res().containsHeader(Header.CACHE_CONTROL))) {
                     // only set the cache control header if it is not already set.
                     ctx.header(Header.CACHE_CONTROL, "max-age=" + timeUnit.toSeconds(duration));
                 }
@@ -706,24 +710,25 @@ public final class ApiServletRouteConfiguration {
         String fullPath = prefixPath(path);
         String resourceId = getResourceId(fullPath);
 
+        // TODO. methods used below no longer exist
         //noinspection KotlinInternalInJava
-        Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
+        // Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
 
-        Javalin instance = staticInstance();
-        // getOne and getAll are assumed not to need authorization
-        String pathWithoutResource = fullPath.replace(resourceId, "");
-        if (getRequiresAuth) {
-            instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE), roles);
-            instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL), roles);
-        } else {
-            instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
-            instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL));
-        }
+        // Javalin instance = staticInstance();
+        // // getOne and getAll are assumed not to need authorization
+        // String pathWithoutResource = fullPath.replace(resourceId, "");
+        // if (getRequiresAuth) {
+        //     instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE), roles);
+        //     instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL), roles);
+        // } else {
+        //     instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
+        //     instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL));
+        // }
 
-        // create, update and delete need authorization.
-        instance.post(pathWithoutResource, crudFunctions.get(CrudFunction.CREATE), roles);
-        instance.patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
-        instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
+        // // create, update and delete need authorization.
+        // instance.post(pathWithoutResource, crudFunctions.get(CrudFunction.CREATE), roles);
+        // instance.patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
+        // instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
     }
 
     /**
