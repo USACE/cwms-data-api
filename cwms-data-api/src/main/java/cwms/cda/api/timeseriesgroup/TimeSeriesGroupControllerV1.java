@@ -52,15 +52,13 @@ import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.util.List;
-import java.util.Map;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.Strings;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -95,14 +93,15 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
-                        content = {@OpenApiContent(isArray = true, from =
-                                TimeSeriesGroup.class, type = Formats.JSON)
+                        content = {@OpenApiContent(from = TimeSeriesGroup[].class, type = Formats.JSON)
                         }),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the timeseries group(s) were not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
-            tags = {TAG})
+            tags = {TAG},
+            path = "/timeseries/groups",
+            versions = "1")
     @Override
     public void getAll(@NotNull Context ctx) {
         String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
@@ -132,7 +131,10 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
                     @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
                 })
             },
-            description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
+            description = "Retrieves requested timeseries group",
+            tags = {"Timeseries Groups"},
+            path = "/timeseries/group/{" + GROUP_ID + "}",
+            versions = "1")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {
         String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
@@ -162,8 +164,10 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
                                 + "with an empty list."
                                 + "Default: true")
         },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/timeseries/groups",
+        versions = "1"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -193,14 +197,16 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
                 + "belong to. If the group and/or category belong to the CWMS office, "
                 + "this only identifies the timeseries."),
         },
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = HttpMethod.PATCH,
+        tags = {TAG},
+        path = "/timeseries/groups/{" + GROUP_ID + "}",
+        versions = "1"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
             String office = requiredParam(ctx, OFFICE);
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
@@ -241,8 +247,10 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
                         description = "Specifies whether to unassign time series in this group before deleting. "
                             + "Default: false"),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/timeseries/group/{" + GROUP_ID + "}",
+        versions = "1"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {

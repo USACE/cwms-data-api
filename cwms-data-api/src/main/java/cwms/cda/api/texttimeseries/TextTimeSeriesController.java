@@ -44,7 +44,7 @@ import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -120,7 +120,7 @@ public abstract class TextTimeSeriesController extends BaseCrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (URISyntaxException | IOException ex) {
             CdaError re = ExceptionTraceSupport.buildError(ctx,
                     "Failed to process request: " + ex.getLocalizedMessage(), ex);
@@ -140,10 +140,10 @@ public abstract class TextTimeSeriesController extends BaseCrudHandler {
         try (Timer.Context ignored = markAndTime(Controllers.CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
 
             ContentType contentType = Formats.parseHeader(formatHeader, TextTimeSeries.class);
-            TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyAsInputStream(), TextTimeSeries.class);
+            TextTimeSeries tts = Formats.parseContent(contentType, ctx.bodyInputStream(), TextTimeSeries.class);
             TimeSeriesTextDao dao = getDao(dsl);
 
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class)

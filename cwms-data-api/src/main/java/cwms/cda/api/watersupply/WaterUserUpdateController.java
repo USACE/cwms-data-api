@@ -44,15 +44,13 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -87,7 +85,7 @@ public final class WaterUserUpdateController extends WaterSupplyControllerBase {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Updates a water user in CWMS.",
-        method = HttpMethod.PATCH,
+        methods = HttpMethod.PATCH,
         path = "/projects/{office}/{project-id}/water-user/{water-user}",
         tags = {TAG}
     )
@@ -95,7 +93,7 @@ public final class WaterUserUpdateController extends WaterSupplyControllerBase {
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
             String newName = requiredParam(ctx, NAME);
