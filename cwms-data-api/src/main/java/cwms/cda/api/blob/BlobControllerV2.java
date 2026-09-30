@@ -36,10 +36,14 @@ import static cwms.cda.api.Controllers.PAGE;
 import static cwms.cda.api.Controllers.PAGE_SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.UPDATE;
+import static cwms.cda.api.MultipartParser.parseMultipart;
+import static cwms.cda.api.MultipartParser.readMultipartValue;
 import static cwms.cda.formatters.Formats.MULTIPART_FORM_DATA;
+import static org.apache.commons.lang3.StringUtils.firstNonBlank;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import cwms.cda.api.MultipartParser;
 import cwms.cda.data.dao.BlobAccess;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
@@ -54,18 +58,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
 public final class BlobControllerV2 extends BlobController {
-    private static final String REASON = "Query parameter used instead";
-
     public BlobControllerV2(MetricRegistry metrics) {
         super(metrics);
     }
@@ -74,7 +72,6 @@ public final class BlobControllerV2 extends BlobController {
         description = "Create new Blob",
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
                 @OpenApiContent(from = Blob.class, type = Formats.JSON),
                 @OpenApiContent(from = Blob.class, type = MULTIPART_FORM_DATA)
             },
@@ -92,7 +89,7 @@ public final class BlobControllerV2 extends BlobController {
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
-            logUnusedPathParameter(ctx, OFFICE, REASON);
+            String office = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
             String reqContentType = ctx.req.getContentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
@@ -100,7 +97,7 @@ public final class BlobControllerV2 extends BlobController {
 
             Blob blob;
             if (formatHeader.toLowerCase(Locale.ROOT).startsWith(MULTIPART_FORM_DATA)) {
-                blob = parseMultipartBlob(ctx);
+                blob = parseMultipartBlob(ctx, office, null);
             } else {
                 ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
                 blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
@@ -119,7 +116,6 @@ public final class BlobControllerV2 extends BlobController {
         },
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = Blob.class, type = Formats.JSONV2),
                 @OpenApiContent(from = Blob.class, type = Formats.JSON),
                 @OpenApiContent(from = Blob.class, type = MULTIPART_FORM_DATA)
             },
@@ -141,7 +137,7 @@ public final class BlobControllerV2 extends BlobController {
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
         ctx.pathParam(BLOB_ID); // included for openapi tests to recognize the path param as in-use
-        logUnusedPathParameter(ctx, OFFICE, "Body contains information");
+        String office = ctx.pathParam(OFFICE);
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             String idQueryParam = ctx.queryParam(BLOB_ID);
             if (idQueryParam != null) {
@@ -153,7 +149,7 @@ public final class BlobControllerV2 extends BlobController {
 
             Blob blob;
             if (formatHeader.toLowerCase(Locale.ROOT).startsWith(MULTIPART_FORM_DATA)) {
-                blob = parseMultipartBlob(ctx);
+                blob = parseMultipartBlob(ctx, office, blobId);
             } else {
                 ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
                 blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
@@ -251,7 +247,7 @@ public final class BlobControllerV2 extends BlobController {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        logUnusedPathParameter(ctx, OFFICE, REASON);
+        logUnusedPathParameter(ctx, OFFICE, "Query parameter used instead");
         super.getAll(ctx);
     }
 
@@ -297,15 +293,10 @@ public final class BlobControllerV2 extends BlobController {
         super.getOne(ctx, blobId);
     }
 
-    private Blob parseMultipartBlob(Context ctx) {
-        ParsedMultipart parsedMultipart = parseMultipart(ctx);
+    private Blob parseMultipartBlob(Context ctx, String office, String blobId) {
+        MultipartParser.ParsedMultipart parsedMultipart = parseMultipart(ctx);
 
-        String officeId = firstNonBlank(
-            parsedMultipart.field("office-id"),
-            parsedMultipart.field(OFFICE));
-        String id = firstNonBlank(
-            parsedMultipart.field("id"),
-            parsedMultipart.field(BLOB_ID));
+        String id = firstNonBlank(blobId, parsedMultipart.field("id"));
         String description = parsedMultipart.field("description");
         String mediaTypeId = parsedMultipart.field("media-type-id");
 
@@ -313,195 +304,6 @@ public final class BlobControllerV2 extends BlobController {
         if (value == null) {
             value = readMultipartValue(ctx);
         }
-        return new Blob(officeId, id, description, mediaTypeId, value);
-    }
-
-    private ParsedMultipart parseMultipart(Context ctx) {
-        String contentType = ctx.req.getContentType();
-        if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(MULTIPART_FORM_DATA)) {
-            return new ParsedMultipart(Map.of(), null);
-        }
-
-        String boundaryToken = null;
-        for (String part : contentType.split(";")) {
-            String token = part.trim();
-            if (token.toLowerCase(Locale.ROOT).startsWith("boundary=")) {
-                boundaryToken = token.substring("boundary=".length());
-                break;
-            }
-        }
-
-        if (boundaryToken == null || boundaryToken.isBlank()) {
-            throw new FormattingException("Unable to parse multipart form data: missing boundary");
-        }
-
-        String boundary = boundaryToken;
-        if (boundary.startsWith("\"") && boundary.endsWith("\"") && boundary.length() > 1) {
-            boundary = boundary.substring(1, boundary.length() - 1);
-        }
-
-        try {
-            byte[] bodyBytes = ctx.bodyAsInputStream().readAllBytes();
-            return parseMultipartBody(bodyBytes, boundary);
-        } catch (IOException e) {
-            throw new FormattingException("Unable to parse multipart form data", e);
-        }
-    }
-
-    private ParsedMultipart parseMultipartBody(byte[] bodyBytes, String boundary) {
-        String payload = new String(bodyBytes, StandardCharsets.ISO_8859_1);
-        String delimiter = "--" + boundary;
-        String[] segments = payload.split(java.util.regex.Pattern.quote(delimiter));
-
-        Map<String, String> fields = new HashMap<>();
-        byte[] value = null;
-
-        for (String rawSegment : segments) {
-            String segment = normalizeSegment(rawSegment);
-            if (segment != null) {
-                PartData part = parsePartData(segment);
-                if (part != null && part.name != null) {
-                    byte[] partBytes = part.body.getBytes(StandardCharsets.ISO_8859_1);
-                    if (isValuePart(part.name, part.filePart)) {
-                        value = partBytes;
-                    } else {
-                        fields.put(part.name, new String(partBytes, StandardCharsets.UTF_8));
-                    }
-                }
-
-            }
-
-        }
-
-        return new ParsedMultipart(fields, value);
-    }
-
-    private String normalizeSegment(String rawSegment) {
-        if (rawSegment == null || rawSegment.isBlank() || rawSegment.startsWith("--")) {
-            return null;
-        }
-
-        if (rawSegment.startsWith("\r\n")) {
-            return rawSegment.substring(2);
-        }
-        return rawSegment;
-    }
-
-    private PartData parsePartData(String segment) {
-        int headerSeparator = segment.indexOf("\r\n\r\n");
-        if (headerSeparator < 0) {
-            return null;
-        }
-
-        String headers = segment.substring(0, headerSeparator);
-        String body = segment.substring(headerSeparator + 4);
-        if (body.endsWith("\r\n")) {
-            body = body.substring(0, body.length() - 2);
-        }
-
-        String name = extractPartName(headers);
-        boolean filePart = hasFileName(headers);
-        return new PartData(name, filePart, body);
-    }
-
-    private String extractPartName(String headers) {
-        for (String headerLine : headers.split("\r\n")) {
-            String lower = headerLine.toLowerCase(Locale.ROOT);
-            if (!lower.startsWith("content-disposition:")) {
-                continue;
-            }
-
-            for (String dispositionPart : headerLine.split(";")) {
-                String trimmed = dispositionPart.trim();
-                if (trimmed.startsWith("name=")) {
-                    return stripQuotes(trimmed.substring(5));
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private boolean hasFileName(String headers) {
-        for (String headerLine : headers.split("\r\n")) {
-            String lower = headerLine.toLowerCase(Locale.ROOT);
-            if (!lower.startsWith("content-disposition:")) {
-                continue;
-            }
-
-            for (String dispositionPart : headerLine.split(";")) {
-                if (dispositionPart.trim().startsWith("filename=")) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private boolean isValuePart(String name, boolean filePart) {
-        return filePart || "value".equalsIgnoreCase(name)
-            || "blob".equalsIgnoreCase(name)
-            || "file".equalsIgnoreCase(name)
-            || "content".equalsIgnoreCase(name);
-    }
-
-    private String stripQuotes(String input) {
-        if (input == null) {
-            return null;
-        }
-
-        String value = input.trim();
-        if (value.startsWith("\"") && value.endsWith("\"") && value.length() > 1) {
-            return value.substring(1, value.length() - 1);
-        }
-        return value;
-    }
-
-    private byte[] readMultipartValue(Context ctx) {
-        String valueText = ctx.formParam("value");
-        if (valueText != null) {
-            return valueText.getBytes(StandardCharsets.UTF_8);
-        }
-        return new byte[0];
-    }
-
-    private String firstNonBlank(String... values) {
-        for (String value : values) {
-            if (value != null && !value.trim().isEmpty()) {
-                return value;
-            }
-        }
-        return null;
-    }
-
-    private static final class ParsedMultipart {
-        private final Map<String, String> fields;
-        private final byte[] value;
-
-        ParsedMultipart(Map<String, String> fields, byte[] value) {
-            this.fields = fields;
-            this.value = value;
-        }
-
-        String field(String name) {
-            return fields.get(name);
-        }
-
-        byte[] value() {
-            return value;
-        }
-    }
-
-    private static final class PartData {
-        private final String name;
-        private final boolean filePart;
-        private final String body;
-
-        PartData(String name, boolean filePart, String body) {
-            this.name = name;
-            this.filePart = filePart;
-            this.body = body;
-        }
+        return new Blob(office, id, description, mediaTypeId, value);
     }
 }
