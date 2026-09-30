@@ -33,10 +33,13 @@ import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import java.time.Instant;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -89,10 +92,10 @@ public class ProjectPublishStatusUpdate implements Handler {
                     @OpenApiParam(name = NAME,  description = "The location "
                             + "identifier of the project that has been updated"),
             },
-            method = HttpMethod.POST,
-            responses = {
-                @OpenApiResponse(status = STATUS_200)},
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            responses = {@OpenApiResponse(status = STATUS_200)},
+            tags = {TAG},
+            path = "/projects/publish/{" + NAME + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

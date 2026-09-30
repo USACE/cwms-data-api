@@ -39,7 +39,7 @@ import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.data.dto.project.ProjectLockId;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import javax.servlet.http.HttpServletResponse;
