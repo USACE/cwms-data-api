@@ -56,7 +56,7 @@ import java.sql.SQLException;
 import java.time.Instant;
 import com.google.common.flogger.FluentLogger;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;

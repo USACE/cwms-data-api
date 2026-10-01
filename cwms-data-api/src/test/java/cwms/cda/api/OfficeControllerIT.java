@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.isEmptyOrNullString;
 import cwms.cda.formatters.Formats;
 import io.javalin.core.util.Header;
 import io.restassured.filter.log.LogDetail;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;

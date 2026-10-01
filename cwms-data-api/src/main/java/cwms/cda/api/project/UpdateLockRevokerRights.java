@@ -41,7 +41,7 @@ import io.javalin.http.Handler;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiParam;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 public class UpdateLockRevokerRights implements Handler {

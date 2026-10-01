@@ -57,11 +57,11 @@ import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import javax.annotation.Resource;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.entity.ContentType;
+import org.eclipse.jetty.ee10.webapp.WebAppContext;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -137,11 +137,6 @@ public final class CwmsDataApi {
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
 
-    
-
-    @Resource(name = "jdbc/CWMS3") // TODO: sort out
-    DataSource cwms;
-
     public static String getApiVersion() {
         return VERSION != null ? VERSION : "Not Yet Known";
     }
@@ -173,16 +168,27 @@ public final class CwmsDataApi {
 
 
         final var appContext = args.length > 0 ? args[0] : "cwms-data";
+        final var uiPath = args.length > 1 ? args[1] : null;
         final var cdaAccessManager = new CdaAccessManager();
         final var app = Javalin.create(config -> {
-            //config.defaultContentType = "application/json";
-            getOpenApiOptions(config, appContext);
-            //config.autogenerateEtags = true; // TODO: find?
+            config.http.defaultContentType = "application/json";
+            config.http.generateEtags = true;
+            getOpenApiOptions(config, appContext);            
             config.requestLogger.http((ctx, ms) -> logger.atFinest().log(ctx.toString()));
             config.router.contextPath = appContext;
             CwmsDataApi.VERSION = obtainFullVersion();
             logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
-
+            System.out.println(uiPath);
+            if (uiPath != null) {
+                config.jetty.modifyServer(server -> {
+                    var war = new WebAppContext();
+                    war.setContextPath("");
+                    war.setWar(uiPath);
+                    var handlers = new ContextHandlerCollection();
+                    handlers.setHandlers(server.getHandler(), war);
+                    server.setHandler(handlers);
+                });
+            }
             config.routes.beforeMatched(cdaAccessManager);
             config.appData(new Key<PolicyFactory>("PolicyFactory"), sanitizer);
             config.appData(new Key<ObjectMapper>("ObjectMapper"), om);
@@ -291,6 +297,8 @@ public final class CwmsDataApi {
 
 
         config.registerPlugin(new OpenApiPlugin(openapi -> {
+            openapi.prettyOutputEnabled = true;
+            openapi.documentationPath = "/swagger-docs";
             openapi.withDefinitionConfiguration((v,builder) -> {
                 builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
                 builder.server(server -> server.url(appContext));

@@ -63,7 +63,7 @@ import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 public final class PropertyController extends BaseCrudHandler {

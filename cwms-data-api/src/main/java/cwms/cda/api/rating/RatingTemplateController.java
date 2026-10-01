@@ -52,7 +52,7 @@ import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.Optional;
 import com.google.common.flogger.FluentLogger;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
