@@ -45,6 +45,7 @@ s3mock = "5.2.2"
 opentelemetry = "1.63.0"
 opentelemetry-java = "2.29.0"
 opentelemetry-java-logging = "2.29.0-alpha"
+hikaricp = "7.1.0"
 
 #Overrides
 classgraph = { strictly = '4.8.176' }
@@ -104,6 +105,8 @@ jackson-dataformat-xml = { module = "com.fasterxml.jackson.dataformat:jackson-da
 jackson-datatype-jdk8 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jdk8", version.ref = "jackson" }
 
 togglz-core = { module = "org.togglz:togglz-core", version.ref = "togglz" }
+
+com-zaxxer-hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 
 # for s3 client
 minio = { module = "io.minio:minio", version.ref = "minio"}
