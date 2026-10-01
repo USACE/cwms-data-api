@@ -36,7 +36,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
@@ -1919,7 +1919,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpCode.MULTI_STATUS.getStatus()))
+            .statusCode(is(HttpStatus.MULTI_STATUS.getStatus()))
             .body("missing-locations", equalTo("notReal-loc"));
 
         //Retrieve Group
