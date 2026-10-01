@@ -71,10 +71,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.apache.catalina.Manager;
-import org.apache.catalina.SessionEvent;
-import org.apache.catalina.SessionListener;
-import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
@@ -189,7 +185,7 @@ public class DataApiTestIT {
     @BeforeAll
     public static void register_users() throws Exception {
         try {
-            final Manager tsm = CwmsDataApiSetupCallback.getTestSessionManager();
+            final var tsm = CwmsDataApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for (TestAccounts.KeyUser user : TestAccounts.KeyUser.values()) {
                 if (user.getKeyName() == null) {
@@ -227,25 +223,22 @@ public class DataApiTestIT {
                     user.setApiKey(key);
                 }, "cwms_20");
 
-                StandardSession session = (StandardSession) tsm.createSession(user.getJSessionId());
-                if (session == null) {
-                    throw new RuntimeException("Test Session Manager is unusable.");
-                }
-                MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
-                session.setAuthType("CLIENT-CERT");
-                session.setPrincipal(mcup);
-                session.activate();
-                session.addSessionListener(new SessionListener() {
+                // TODO: sort out sessions
+                // ManagedSession session = tsm.getSessionCache().newSession(null);
+                // MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
+                
+                // session.setAuthType("CLIENT-CERT");
+                // session.setPrincipal(mcup);
+                // session.activate();
+                // session.addSessionListener(new SessionListener() {
 
-                    @Override
-                    public void sessionEvent(SessionEvent event) {
-                        logger.atInfo().log("Got event of type: %s", event.getType());
-                        logger.atInfo().log("Session is: %s", event.getSession().toString());
-                    }
+                //     @Override
+                //     public void sessionEvent(SessionEvent event) {
+                //         logger.atInfo().log("Got event of type: %s", event.getType());
+                //         logger.atInfo().log("Session is: %s", event.getSession().toString());
+                //     }
 
-                });
-                CwmsDataApiSetupCallback.getSsoValve()
-                        .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null, null);
+                // });
             }
         } catch (RuntimeException ex) {
             throw new Exception("User registration failed", ex);

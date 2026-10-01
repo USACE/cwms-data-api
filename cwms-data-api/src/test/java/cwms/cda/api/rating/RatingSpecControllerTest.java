@@ -39,7 +39,7 @@ import cwms.cda.data.dao.RatingSpecDao;
 import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -72,7 +72,7 @@ class RatingSpecControllerTest
 		// build mock request and response
 		final HttpServletRequest request= mock(HttpServletRequest.class);
 		final HttpServletResponse response = mock(HttpServletResponse.class);
-		final Map<String, ?> map = new LinkedHashMap<>();
+		final Map<String, Object> map = new LinkedHashMap<>();
 
 		when(request.getAttribute("office")).thenReturn(officeId);
 		when(request.getAttribute("rating-id")).thenReturn(ratingId);
@@ -91,7 +91,10 @@ class RatingSpecControllerTest
 
 
 		// build real context that uses the mock request/response
-		Context ctx = new Context(request, response, map);
+		Context ctx = mock(Context.class);
+		when(ctx.res()).thenReturn(response);
+		when(ctx.req()).thenReturn(request);
+		when(ctx.attributeMap()).thenReturn(map);
 
 		// Build a controller that doesn't actually talk to database
 		RatingSpecController controller = new RatingSpecController(new MetricRegistry()){
@@ -118,8 +121,8 @@ class RatingSpecControllerTest
 		verify(response).setStatus(200);
 		// And make sure controller returned json
 		verify(response).setContentType(Formats.JSONV2);
-
-		String result = ctx.resultString();
+		
+		String result = ctx.body();
 		assertNotNull(result);  // MAke sure we got some sort of response
 
 		// Turn json response back into a spec object

@@ -14,17 +14,19 @@ import cwms.cda.data.dto.Clob;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import fixtures.TestServletInputStream;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
+import io.javalin.http.servlet.MaxRequestSize;
+import io.javalin.config.ContextResolverConfig;
+import io.javalin.config.Key;
 import io.javalin.http.Context;
-import io.javalin.http.ContextResolver;
 import io.javalin.http.HandlerType;
-import io.javalin.http.util.ContextUtil;
-import io.javalin.plugin.json.JavalinJackson;
-import io.javalin.plugin.json.JsonMapperKt;
 import java.util.HashMap;
+import java.util.Map;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
+import org.owasp.html.PolicyFactory;
 
 public class ClobControllerTest extends ControllerTest {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -37,11 +39,11 @@ public class ClobControllerTest extends ControllerTest {
         ClobController controller = spy(new ClobController(new MetricRegistry()));
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
-        HashMap<String, Object> attributes = new HashMap<>();
-        attributes.put(ContextUtil.maxRequestSizeKey, Integer.MAX_VALUE);
-        attributes.put(JsonMapperKt.JSON_MAPPER_KEY, new JavalinJackson());
-        // JooqDao.getDslContext uses ctx.url() which delegates through ContextResolver
-        attributes.put("contextResolver", new ContextResolver());
+
+        Map<Key<?>, Object> attributes = new HashMap<>();
+        attributes.put(MaxRequestSize.INSTANCE.getMaxRequestSizeKey(), Long.MAX_VALUE);
+        attributes.put(new Key<PolicyFactory>("PolicyFactory"), this.sanitizer);
+        attributes.put(ContextResolverConfig.Companion.getContextResolverKey$javalin(), new ContextResolverConfig());
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(testBody));
         // JooqDao.getDslContext snapshots client-info from the request for connection preparers
@@ -50,9 +52,15 @@ public class ClobControllerTest extends ControllerTest {
         when(request.getRequestURL()).thenReturn(new StringBuffer("http://localhost:7000/cwms-data/clobs"));
         when(request.getContextPath()).thenReturn("/cwms-data");
 
-        Context context = ContextUtil.init(request, response, "*", new HashMap<>(),
-                HandlerType.GET, attributes);
-        context.attribute("database", getTestConnection());
+        var context = mock(Context.class);
+        when(context.req()).thenReturn(request);
+        when(context.res()).thenReturn(response);
+        when(context.attributeMap()).thenReturn(new HashMap<>());
+        when(context.contentType()).thenReturn("*");
+        when(context.method()).thenReturn(HandlerType.GET);
+        when(context.attribute("database")).thenReturn(getTestConnection());
+        
+
 
         when(request.getAttribute("database")).thenReturn(getTestConnection());
 

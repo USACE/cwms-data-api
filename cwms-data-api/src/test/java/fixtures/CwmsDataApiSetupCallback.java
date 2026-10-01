@@ -10,8 +10,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
@@ -26,10 +26,10 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.google.common.flogger.FluentLogger;
 
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.security.OpenIdConnectIdentityProvider;
-import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
@@ -50,7 +50,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-    private static TomcatServer cdaInstance;
+    private static CwmsDataApi cdaInstance;
     private static CwmsDatabaseContainer<?> cwmsDb;
 
     private static final String ORACLE_IMAGE =
@@ -171,12 +171,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             System.setProperty(OpenIdConnectIdentityProvider.TIMEOUT_PROPERTY, "1"); // to force a reload at least once.
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
-            cdaInstance = new TomcatServer("build/tomcat",
-                                             System.getProperty("warFile"),
-                                             0,
-                                             System.getProperty("warContext"));
-            cdaInstance.start();
-            logger.atInfo().log("Tomcat Listing on " + cdaInstance.getPort());
+           
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = System.getProperty("warContext");
@@ -283,7 +278,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
     }
 
     public static int httpPort() {
-        return cdaInstance.getPort();
+        return 0; //cdaInstance.getPort();
     }
 
     public static CwmsDatabaseContainer<?> getDatabaseLink() {
@@ -294,7 +289,7 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         Exception failure = null;
         if (cdaInstance != null) {
             try {
-                cdaInstance.stop();
+                //cdaInstance.stop();
             } catch (Exception e) {
                 failure = e;
             } finally {
@@ -334,12 +329,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         }
     }
 
-    public static Manager getTestSessionManager() {
-        return cdaInstance.getTestSessionManager();
-    }
-
-    public static SingleSignOnWrapper getSsoValve() {
-        return cdaInstance.getSsoValve();
+    public static SessionHandler getTestSessionManager() {
+        return new SessionHandler(); //cdaInstance.getTestSessionManager();
     }
 
     public static String getWebUser() {
