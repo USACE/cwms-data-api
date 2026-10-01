@@ -32,7 +32,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.restassured.filter.log.LogDetail;
 import jakarta.servlet.http.HttpServletResponse;
 import org.hamcrest.CoreMatchers;

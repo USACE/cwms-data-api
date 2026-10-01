@@ -85,7 +85,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                 .get(WELL_KNOWN);
         response
             .then()
-            .statusCode(is(HttpStatus.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getCode()))
             ;
         
         JsonNode oidcConfig = mapper.readTree(response.asPrettyString());

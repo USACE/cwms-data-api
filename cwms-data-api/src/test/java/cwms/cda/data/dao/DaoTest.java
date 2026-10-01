@@ -3,17 +3,17 @@ package cwms.cda.data.dao;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.sql.Connection;
-import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
-import javax.sql.DataSource;
-import org.apache.tomcat.jdbc.pool.PoolConfiguration;
 import org.jooq.ConnectionProvider;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.jooq.impl.DefaultExecuteListenerProvider;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import cwms.cda.api.DataApiTestIT;
 import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
@@ -55,14 +55,12 @@ public class DaoTest extends DataApiTestIT
 	// most Dao will only use one connection...
 	public static DSLContext getDslContext(String officeId) throws SQLException {
 
-		PoolConfiguration poolProperties = new org.apache.tomcat.jdbc.pool.PoolProperties();
-		poolProperties.setUrl(System.getenv("CDA_JDBC_URL"));
-		poolProperties.setUsername(System.getenv("CDA_JDBC_USERNAME"));
-		poolProperties.setPassword(System.getenv("CDA_JDBC_PASSWORD"));
-
-		Driver driver = DriverManager.getDriver(System.getenv("CDA_JDBC_URL"));
-		poolProperties.setDriverClassName(driver.getClass().getName());
-		DataSource ds = new org.apache.tomcat.jdbc.pool.DataSource(poolProperties);
+		var dsConfig = new HikariConfig();
+        dsConfig.setJdbcUrl(System.getProperty("CDA_JDBC_URL"));
+        dsConfig.setUsername(System.getProperty("CDA_JDBC_USERNAME"));
+        dsConfig.setPassword(System.getProperty("CDA_JDBC_PASSWORD"));
+        dsConfig.setMaximumPoolSize(Integer.parseInt(System.getProperty("CDA_POOL_MAX_ACTIVE", "1")));
+        final var ds = new HikariDataSource(dsConfig);
 
 		ConnectionProvider cp = new OfficeSettingConnectionProvider(ds, officeId);
 		DSLContext dsl =  DSL.using(cp, SQLDialect.ORACLE18C);
