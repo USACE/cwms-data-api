@@ -107,6 +107,9 @@ public abstract class BlobController extends BaseCrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.queryParam(OFFICE);
+            if (office == null) {
+                office = ctx.attribute(OFFICE);
+            }
 
             String cursor = queryParamAsClass(ctx, new String[]{PAGE, CURSOR},
                 String.class, "", getMetrics(), name(BlobControllerV1.class.getName(), GET_ALL));

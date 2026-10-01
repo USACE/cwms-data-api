@@ -211,10 +211,6 @@ public final class BlobControllerV2 extends BlobController {
 
     @OpenApi(
         queryParams = {
-            @OpenApiParam(name = OFFICE,
-                description = "Specifies the owning office. If this field is not "
-                    + "specified, matching information from all offices shall be "
-                    + "returned."),
             @OpenApiParam(name = PAGE,
                 description = "This end point can return a lot of data, this "
                     + "identifies where in the request you are. This is an opaque"
@@ -247,7 +243,8 @@ public final class BlobControllerV2 extends BlobController {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
-        logUnusedPathParameter(ctx, OFFICE, "Query parameter used instead");
+        String office = ctx.pathParam(OFFICE);
+        ctx.attribute(OFFICE, office);
         super.getAll(ctx);
     }
 
