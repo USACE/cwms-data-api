@@ -12,13 +12,13 @@ import cwms.cda.formatters.FormattingException;
 import fixtures.TestHttpServletResponse;
 import fixtures.TestServletInputStream;
 import io.javalin.http.Header;
+import io.javalin.config.Key;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.servlet.MaxRequestSize;
 import io.javalin.json.JavalinJackson;
-import io.javalin.json.JsonMapperKt;
-import io.javalin.testtools.*;
+
 import java.util.HashMap;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.owasp.html.PolicyFactory;
 
 @Disabled
 public class CatalogControllerTest extends ControllerTest {
@@ -68,23 +69,23 @@ public class CatalogControllerTest extends ControllerTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = new TestHttpServletResponse();
 
-        Map<String, Object> attributes = new HashMap<>();
-        attributes.put(ContextUtil.maxRequestSizeKey, Integer.MAX_VALUE);
-        attributes.put(JsonMapperKt.JSON_MAPPER_KEY, new JavalinJackson());
-        attributes.put("PolicyFactory", this.sanitizer);
+        Map<Key<?>, Object> attributes = new HashMap<>();
+        attributes.put(MaxRequestSize.INSTANCE.getMaxRequestSizeKey(), Long.MAX_VALUE);
+        attributes.put(new Key<PolicyFactory>("PolicyFactory"), this.sanitizer);
 
         when(request.getInputStream()).thenReturn(new TestServletInputStream(""));
         when(request.getAttribute("database")).thenReturn(this.conn);
         when(request.getRequestURI()).thenReturn("/catalog/TIMESERIES");
         when(request.getHeader(Header.ACCEPT)).thenReturn("application/json;version=2");
 
-        Context context = ContextUtil.init(request,
-                response,
-                "*",
-                new HashMap<>(),
-                HandlerType.GET,
-                attributes);
-        context.attribute("database", this.conn);
+        var context = mock(Context.class);
+        when(context.req()).thenReturn(request);
+        when(context.res()).thenReturn(response);
+        when(context.attributeMap()).thenReturn(new HashMap<>());
+        when(context.contentType()).thenReturn("*");
+        when(context.method()).thenReturn(HandlerType.GET);
+        when(context.attribute("database")).thenReturn(conn);
+        when(context.jsonMapper()).thenReturn(new JavalinJackson());
 
         controller.getOne(context, CatalogableEndpoint.TIMESERIES.getValue());
 
