@@ -93,6 +93,8 @@ public class BlobControllerV1 extends BlobController {
     )
     @Override
     public void getAll(@NotNull Context ctx) {
+        String office = ctx.queryParam(OFFICE);
+        ctx.attribute(OFFICE, office);
         super.getAll(ctx);
     }
 
@@ -131,7 +133,6 @@ public class BlobControllerV1 extends BlobController {
         ctx.attribute(OFFICE, office);
         super.getOne(ctx, blobId);
     }
-
 
     @OpenApi(
             description = "Create new Blob",
