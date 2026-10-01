@@ -21,7 +21,7 @@ geojson-jackson = "1.14"
 dropwizard = "4.2.12"
 prometheus_client = "1.6.1"
 owasp = "20220608.1"
-java-ee = "8.0.1"
+jakarta-ee = "11.0.0"
 cwms-tomcat-auth = "1.1.0"
 jjwt = "0.11.5"
 jstl = "1.2"
@@ -112,7 +112,7 @@ com-zaxxer-hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp"
 minio = { module = "io.minio:minio", version.ref = "minio"}
 
 #compile compileOnly
-javaee-web-api = { module = "javax:javaee-web-api", version.ref = "java-ee" }
+jakarta-web-api = { module = "jakarta.platform:jakarta.jakartaee-web-api", version.ref = "jakarta-ee" }
 cwms-tomcat-auth = { module = "mil.army.usace.hec.cwms.auth:cwms-tomcat-auth-api", version.ref = "cwms-tomcat-auth" }
 jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref="jjwt" }
 

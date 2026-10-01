@@ -41,7 +41,7 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.servlet.W3CTraceFilter;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.stream.IntStream;
 
 import static cwms.cda.api.Controllers.METHOD;

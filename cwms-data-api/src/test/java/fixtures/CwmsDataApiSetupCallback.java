@@ -36,7 +36,7 @@ import io.restassured.config.EncoderConfig;
 import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.config.JsonPathConfig;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.testcontainers.images.PullPolicy;
 
 import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;

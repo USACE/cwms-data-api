@@ -46,7 +46,7 @@ import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 

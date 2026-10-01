@@ -48,7 +48,7 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 

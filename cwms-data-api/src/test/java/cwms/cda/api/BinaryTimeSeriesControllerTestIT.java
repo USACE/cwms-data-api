@@ -32,7 +32,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;

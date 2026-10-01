@@ -55,7 +55,7 @@ import java.util.Optional;
 
 import com.google.common.flogger.FluentLogger;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;

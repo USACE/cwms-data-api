@@ -162,6 +162,7 @@ import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
 import io.javalin.Javalin;
+import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.config.RoutesConfig;
 import io.javalin.security.RouteRole;
@@ -172,7 +173,7 @@ import io.javalin.http.Handler;
 import org.jetbrains.annotations.NotNull;
 import org.togglz.core.context.FeatureContext;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -187,8 +188,7 @@ public final class ApiServletRouteConfiguration {
 
     public static void configureRoutes(RoutesConfig routes, MetricRegistry metrics, RouteRole[] requiredRoles, CdaAccessManager cdaAccessManager) {
 
-        routes.apiBuilder(() ->{
-
+        routes.apiBuilder(() -> {
         
         get("/", ctx -> ctx.result("Welcome to the CWMS REST API")
                 .contentType(Formats.PLAIN));
@@ -710,25 +710,21 @@ public final class ApiServletRouteConfiguration {
         String fullPath = prefixPath(path);
         String resourceId = getResourceId(fullPath);
 
-        // TODO. methods used below no longer exist
-        //noinspection KotlinInternalInJava
-        // Map<CrudFunction, Handler> crudFunctions = CrudHandlerKt.getCrudFunctions(crudHandler, resourceId);
-
-        // Javalin instance = staticInstance();
+        var instance = ApiBuilder.staticInstance();
         // // getOne and getAll are assumed not to need authorization
-        // String pathWithoutResource = fullPath.replace(resourceId, "");
-        // if (getRequiresAuth) {
-        //     instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE), roles);
-        //     instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL), roles);
-        // } else {
-        //     instance.get(fullPath, crudFunctions.get(CrudFunction.GET_ONE));
-        //     instance.get(pathWithoutResource, crudFunctions.get(CrudFunction.GET_ALL));
-        // }
+         String pathWithoutResource = fullPath.replace(resourceId, "");
+        if (getRequiresAuth) {
+            instance.get(fullPath, ctx -> crudHandler.getOne(ctx, ctx.pathParam(resourceId)), roles);
+            instance.get(pathWithoutResource, ctx -> crudHandler.getAll(ctx), roles);
+        } else {
+            instance.get(fullPath, ctx -> crudHandler.getOne(ctx, ctx.pathParam(resourceId)));
+            instance.get(pathWithoutResource, ctx -> crudHandler.getAll(ctx));
+        }
 
-        // // create, update and delete need authorization.
-        // instance.post(pathWithoutResource, crudFunctions.get(CrudFunction.CREATE), roles);
-        // instance.patch(fullPath, crudFunctions.get(CrudFunction.UPDATE), roles);
-        // instance.delete(fullPath, crudFunctions.get(CrudFunction.DELETE), roles);
+        // create, update and delete need authorization.
+        instance.post(pathWithoutResource, ctx -> crudHandler.create(ctx), roles);
+        instance.patch(fullPath, ctx -> crudHandler.update(ctx, ctx.pathParam(resourceId)), roles);
+        instance.delete(fullPath, ctx -> crudHandler.delete(ctx, ctx.pathParam(resourceId)), roles);
     }
 
     /**
@@ -741,6 +737,6 @@ public final class ApiServletRouteConfiguration {
     private static String formatV2(String path, Object... args) {
         int lastSlash = path.lastIndexOf('/');
         String pathWithOffice = path.substring(0, lastSlash) + format("/{%s}", OFFICE) + path.substring(lastSlash);
-        return format("/v2/" + pathWithOffice, args);
+        return format("/v2" + pathWithOffice, args);
     }
 }
