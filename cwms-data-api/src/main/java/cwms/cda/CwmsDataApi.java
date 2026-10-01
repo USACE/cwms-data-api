@@ -29,6 +29,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import cwms.cda.api.auth.userlists.UserListController;
 import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
@@ -44,6 +47,7 @@ import io.javalin.config.RoutesConfig;
 import io.javalin.security.RouteRole;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.openapi.plugin.OpenApiPlugin;
+import io.javalin.plugin.bundled.RouteOverviewPlugin;
 import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
@@ -146,7 +150,12 @@ public final class CwmsDataApi {
 
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     public static void main(String[] args) {
-        
+        var dsConfig = new HikariConfig();
+        dsConfig.setJdbcUrl(System.getProperty("CDA_JDBC_URL"));
+        dsConfig.setUsername(System.getProperty("CDA_JDBC_USERNAME"));
+        dsConfig.setPassword(System.getProperty("CDA_JDBC_PASSWORD"));
+        dsConfig.setMaximumPoolSize(Integer.parseInt(System.getProperty("CDA_POOL_MAX_ACTIVE", "1")));
+        final var ds = new HikariDataSource(dsConfig);
         logger.atInfo().log("Initializing Javalin.");
         final MetricRegistry metrics = new MetricRegistry();
         // TODO: move to config
@@ -170,15 +179,21 @@ public final class CwmsDataApi {
             getOpenApiOptions(config, appContext);
             //config.autogenerateEtags = true; // TODO: find?
             config.requestLogger.http((ctx, ms) -> logger.atFinest().log(ctx.toString()));
+            config.router.contextPath = appContext;
             CwmsDataApi.VERSION = obtainFullVersion();
-        
             logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
+
             config.routes.beforeMatched(cdaAccessManager);
             config.appData(new Key<PolicyFactory>("PolicyFactory"), sanitizer);
             config.appData(new Key<ObjectMapper>("ObjectMapper"), om);
             config.appData(new Key<OpenApiSchemeProcessor>("SchemeProcessor"), schemeProcessor);
+            config.registerPlugin(new RouteOverviewPlugin(o -> {}));
             config.routes
                 .before(authenticator)
+                .before(ctx -> {
+                    ctx.attribute(DATA_SOURCE, ds);
+                    ctx.attribute(RAW_DATA_SOURCE, ds);
+                })
                 .before(ctx -> totalRequests.mark())
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
