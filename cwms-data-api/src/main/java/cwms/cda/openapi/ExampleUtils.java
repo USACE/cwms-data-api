@@ -34,6 +34,7 @@ import cwms.cda.data.dto.locationlevel.SeasonalLocationLevel;
 import cwms.cda.data.dto.locationlevel.TimeSeriesLocationLevel;
 import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.Formats;
+import io.javalin.openapi.schema.OpenApiSchemaBuilder;
 import io.swagger.v3.oas.models.examples.Example;
 import java.io.IOException;
 import java.io.InputStream;
@@ -55,15 +56,16 @@ public final class ExampleUtils {
      *
      * @param ops the OpenApiOptions object to add the examples to.
      */
-    public static void addEndpointExamples(OpenApiOptions ops) {
+    public static void addEndpointExamples(OpenApiSchemaBuilder ops) {
         String swaggerPath = "/swagger-docs";
-        for (EndpointExamples endpoint : EndpointExamples.values()) {
-            endpoint.getExamples().forEach(config ->
-                ops.path(swaggerPath)
-                    .addExample(config.targetClass, config.displayName,
-                        buildExample(config.exampleClass, config.resourcePath))
-            );
-        }
+        // TODO: sort out
+        // for (EndpointExamples endpoint : EndpointExamples.values()) {
+        //     endpoint.getExamples().forEach(config -> coznfig
+        //         // ops.path(swaggerPath)
+        //         //     .addExample(config.targetClass, config.displayName,
+        //         //         buildExample(config.exampleClass, config.resourcePath))
+        //     );
+        // }
     }
 
     /**
