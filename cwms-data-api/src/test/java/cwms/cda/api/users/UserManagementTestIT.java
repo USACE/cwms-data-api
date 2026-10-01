@@ -29,7 +29,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.KeyCloakExtension;
 import fixtures.TestAccounts;
 import fixtures.users.annotation.AuthType;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
@@ -74,7 +74,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/user/profile")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .body("user-name", equalTo(theUser.getName().toUpperCase()))
             .body("cac-auth", equalTo(true))
             .body("roles.SPK",contains("All Users", "CWMS Users", "TS ID Creator"))
@@ -95,7 +95,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users/{user-name}", userUnderTest.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
             .body("roles.SPK",hasItems("All Users", "CWMS Users", "TS ID Creator"))
             ;
@@ -108,7 +108,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .post("/user/{user-name}/roles/{office-id}", userUnderTest.getName(), theUser.getOperatingOffice())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.NO_CONTENT.getStatus()))
+            .statusCode(is(HttpStatus.NO_CONTENT.getStatus()))
         ;
 
         // the role was added
@@ -119,7 +119,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users/{user-name}", userUnderTest.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
             .body("roles.SPK",hasItem("CCP Mgr"))
         ;
@@ -133,7 +133,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .delete("/user/{user-name}/roles/{office-id}", userUnderTest.getName(), theUser.getOperatingOffice())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.NO_CONTENT.getStatus()))
+            .statusCode(is(HttpStatus.NO_CONTENT.getStatus()))
         ;
 
         // the role was removed
@@ -144,7 +144,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users/{user-name}", userUnderTest.getName())
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .body("user-name", equalTo(userUnderTest.getName().toUpperCase()))
             .body("roles.SPK",not(hasItem("CCP Mgr")))
         ;
@@ -237,7 +237,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users/{user-name}", MISSING_USER)
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .statusCode(is(HttpCode.NOT_FOUND.getStatus()))
+            .statusCode(is(HttpStatus.NOT_FOUND.getStatus()))
             .body("message", equalTo("User not found: " + MISSING_USER))
         ;
     }
@@ -253,7 +253,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/roles")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .body("", hasItem("VT Mgr"))
         ;
     }
@@ -270,7 +270,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .body("users.find { it.'user-name' == 'M5HECTEST' }.roles.SWT", hasItem("TS ID Creator"))
         ;
     }
@@ -288,7 +288,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             //.body("users.find { it.'user-name' == 'M5HECTEST' }.roles.SWT", hasItem("TS ID Creator"))
             .extract().as(Users.class);
         ;
@@ -303,7 +303,7 @@ public class UserManagementTestIT extends DataApiTestIT {
                 .get("/users")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.OK.getStatus()))
+                .statusCode(is(HttpStatus.OK.getStatus()))
                 //.body("users.find { it.'user-name' == 'M5HECTEST' }.roles.SWT", hasItem("TS ID Creator"))
                 .extract().as(Users.class);
             ;
@@ -330,7 +330,7 @@ public class UserManagementTestIT extends DataApiTestIT {
                 .get("/users")
         .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.OK.getStatus()))
+                .statusCode(is(HttpStatus.OK.getStatus()))
                 .extract().as(Users.class);
 
         users.addAll(tmp.getUsers());
@@ -345,7 +345,7 @@ public class UserManagementTestIT extends DataApiTestIT {
                     .get("/users")
             .then()
                     .log().ifValidationFails(LogDetail.ALL,true)
-                    .statusCode(is(HttpCode.OK.getStatus()))
+                    .statusCode(is(HttpStatus.OK.getStatus()))
                     .extract().as(Users.class);
             users.addAll(tmp.getUsers());
         }
@@ -369,7 +369,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .extract().as(Users.class);
 
         assertNotNull(users);
@@ -385,7 +385,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .extract().as(Users.class);
 
         assertNotNull(users);
@@ -402,7 +402,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .extract().as(Users.class);
 
         assertNotNull(users);
@@ -423,7 +423,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/user/profile")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
+            .statusCode(is(HttpStatus.FORBIDDEN.getStatus()))
             ;
     }
 
@@ -441,7 +441,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/user/profile")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getStatus()))
             .body("user-name", equalToIgnoringCase(theUser.getName()))
         ;
     }
@@ -460,7 +460,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .delete("/locations/" + LOCATION)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .statusCode(is(HttpStatus.UNAUTHORIZED.getStatus()))
         ;
     }
 
@@ -476,7 +476,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .delete("/locations/" + LOCATION)
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
+            .statusCode(is(HttpStatus.FORBIDDEN.getStatus()))
         ;
     }
 
@@ -493,7 +493,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
+            .statusCode(is(HttpStatus.FORBIDDEN.getStatus()))
         ;
     }
 
@@ -505,7 +505,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .get("/users")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .statusCode(is(HttpStatus.UNAUTHORIZED.getStatus()))
         ;
     }
 

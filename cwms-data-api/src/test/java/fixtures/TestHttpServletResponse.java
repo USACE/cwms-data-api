@@ -1,6 +1,6 @@
 package fixtures;
 
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -18,7 +18,7 @@ public class TestHttpServletResponse implements HttpServletResponse {
     /**
      * We will default to OK in all handlers as that is the behavior we see from javalin.
      */
-    private int status = HttpCode.OK.getStatus();
+    private int status = HttpStatus.OK.getStatus();
     private String contentType="<not set by application>";
 
     private ServletOutputStream output = new TestServletOutputStream();
