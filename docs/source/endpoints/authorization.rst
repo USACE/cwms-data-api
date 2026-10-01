@@ -22,7 +22,8 @@ Endpoints
     - **Status**: 200 OK
     - **Body**: Returns the details of the specified authentication key.
 
-#### Retrieve a Key
+Retrieve a Key
+--------------
 
 
 The following table provides an overview of the available endpoints in the Authorization API:

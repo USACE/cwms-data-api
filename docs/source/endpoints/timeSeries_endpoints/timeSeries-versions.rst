@@ -33,7 +33,7 @@ When to use
     begin,":ref:`def-start`","",":ref:`when_start`"
     end,":ref:`def-end`","",":ref:`when_end`"
     page,":ref:`def-page`","",":ref:`when_page`"
-    page-size,":ref:`def-page_size`","",":ref:`when_page_size`"
+    page-size,":ref:`def-page-size`","",":ref:`when_page_size`"
 
 
 Examples

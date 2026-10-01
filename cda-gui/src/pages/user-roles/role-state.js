@@ -8,6 +8,34 @@ export function usersForOffice(users, office) {
   return users.filter((user) => rolesForOffice(user, office).length > 0);
 }
 
+export function onboardingUsers(users) {
+  return users.filter((user) => {
+    const offices = Object.entries(user.roles ?? {}).filter(
+      ([, roles]) => roles.length,
+    );
+    return (
+      offices.length === 0 ||
+      (offices.length === 1 &&
+        offices[0][0].toUpperCase() === "HQ" &&
+        offices[0][1].every((role) =>
+          ["all users", "cwms users"].includes(role.toLowerCase()),
+        ))
+    );
+  });
+}
+
+export function officeAssignmentOffices(rolesByOffice = {}) {
+  return Object.entries(rolesByOffice)
+    .filter(([, roles]) => {
+      const normalized = roles.map((role) => role.toLowerCase());
+      return ["cwms user admins", "cwms pd users"].every((role) =>
+        normalized.includes(role),
+      );
+    })
+    .map(([office]) => office)
+    .sort();
+}
+
 export function sameRoles(left, right) {
   if (left.length !== right.length) return false;
   const selected = new Set(right);

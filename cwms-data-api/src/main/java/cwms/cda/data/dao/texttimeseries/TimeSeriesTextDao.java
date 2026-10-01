@@ -75,6 +75,12 @@ public final class TimeSeriesTextDao extends JooqDao<TextTimeSeries> {
                 start, end, versionDate);
     }
 
+
+    public void update(TextTimeSeries tts, String textMask, @NotNull Instant start, @NotNull Instant end, @Nullable Instant version, boolean replaceExisting) {
+        RegularTimeSeriesTextDao dao = getRegularDao();
+        dao.updateRows(tts, textMask, start, end, version, replaceExisting);
+    }
+
     @NotNull
     private RegularTimeSeriesTextDao getRegularDao(){
         return new RegularTimeSeriesTextDao(dsl);

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,18 +28,38 @@ import com.google.common.flogger.FluentLogger;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dao.project.ProjectLockDaoV1;
+import cwms.cda.data.dao.project.ProjectLockDaoV2;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
+import cwms.cda.data.dto.project.ProjectLockV1;
+import cwms.cda.data.dto.project.ProjectLockV2;
+import cwms.cda.formatters.Formats;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import org.jooq.DSLContext;
+import org.junit.jupiter.params.provider.Arguments;
 
 public class ProjectLockHandlerUtil {
+    public static final String METHOD_SOURCE = "cwms.cda.api.project.ProjectLockHandlerUtil#fixturesAndFormats";
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
+
+    public static Stream<Fixture<? extends ProjectLock>> fixtures() {
+        return Stream.of(V1, V2);
+    }
+
+    public static Stream<Arguments> fixturesAndFormats() {
+        return fixtures()
+                .flatMap(fixture -> Stream.of(Formats.JSON, Formats.DEFAULT)
+                        .map(format -> Arguments.of(fixture, format)));
+    }
 
     public static Project buildTestProject(String office, String prjId) {
         Location pbLoc = new Location.Builder(office,prjId + "-PB")
@@ -87,9 +107,9 @@ public class ProjectLockHandlerUtil {
         try {
             prjDao.delete(office, projId, DeleteRule.DELETE_ALL);
         } catch (Exception e) {
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
             logger.atWarning().withCause(e).log("Failed to delete project: %s", projId);
-            List<ProjectLock> locks = lockDao.retrieveLocks(office, projId, appId);
+            List<ProjectLockV1> locks = lockDao.retrieveLocks(office, projId, appId);
             locks.forEach(lock -> {
                 logger.atFine().log("Remaining Locks: " + lock.getProjectId() + " " +
                         lock.getApplicationId() + " " + lock.getAcquireTime() + " " +
@@ -100,7 +120,7 @@ public class ProjectLockHandlerUtil {
     }
 
     public static void revokeLock(DSLContext dsl, String office, String projId, String appId) {
-        ProjectLockDao lockDao = new ProjectLockDao(dsl);
+        ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
         try {
             lockDao.revokeLock(office, projId, appId, 0);
         } catch (Exception e) {
@@ -118,7 +138,7 @@ public class ProjectLockHandlerUtil {
     }
     public static void releaseLock(DSLContext dsl,  String office, String lockId) {
         if (lockId != null) {
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
             try {
                 lockDao.releaseLock(office, lockId);
             } catch (Exception e) {
@@ -126,6 +146,178 @@ public class ProjectLockHandlerUtil {
             }
         }
     }
+
+    public interface Fixture<T extends ProjectLock> {
+        ProjectLockDao<T> newDao(DSLContext dsl);
+
+        T minimal(String office, String name, String applicationId);
+
+        T full(String office, String name, String applicationId, String osUser, String sessionProgram,
+               String sessionMachine, String sessionUser);
+
+        String requestPath(String office);
+
+        String catalogPath(String office);
+
+        String getOnePath(String office, String name);
+
+        String releasePath(String office);
+
+        String denyPath(String office);
+
+        boolean officeAsQueryParam();
+
+        String officeOf(Map<String, ?> lockJson);
+
+        String nameOf(Map<String, ?> lockJson);
+    }
+
+    public static final Fixture<ProjectLockV1> V1 = new Fixture<>() {
+        @Override
+        public ProjectLockDaoV1 newDao(DSLContext dsl) {
+            return new ProjectLockDaoV1(dsl);
+        }
+
+        @Override
+        public ProjectLockV1 minimal(String office, String name, String applicationId) {
+            return new ProjectLockV1.Builder(office, name, applicationId).build();
+        }
+
+        @Override
+        public ProjectLockV1 full(String office, String name, String applicationId, String osUser,
+                                  String sessionProgram, String sessionMachine, String sessionUser) {
+            return new ProjectLockV1.Builder()
+                    .withOfficeId(office)
+                    .withProjectId(name)
+                    .withApplicationId(applicationId)
+                    .withOsUser(osUser)
+                    .withSessionProgram(sessionProgram)
+                    .withSessionMachine(sessionMachine)
+                    .withSessionUser(sessionUser)
+                    .build();
+        }
+
+        @Override
+        public String requestPath(String office) {
+            return "/project-locks/";
+        }
+
+        @Override
+        public String catalogPath(String office) {
+            return "/project-locks/";
+        }
+
+        @Override
+        public String getOnePath(String office, String name) {
+            return "/project-locks/" + name;
+        }
+
+        @Override
+        public String releasePath(String office) {
+            return "/project-locks/release";
+        }
+
+        @Override
+        public String denyPath(String office) {
+            return "/project-locks/deny";
+        }
+
+        @Override
+        public boolean officeAsQueryParam() {
+            return true;
+        }
+
+        @Override
+        public String officeOf(Map<String, ?> lockJson) {
+            return (String) lockJson.get("office-id");
+        }
+
+        @Override
+        public String nameOf(Map<String, ?> lockJson) {
+            return (String) lockJson.get("project-id");
+        }
+
+        @Override
+        public String toString() {
+            return "ProjectLockV1";
+        }
+    };
+
+    public static final Fixture<ProjectLockV2> V2 = new Fixture<>() {
+        @Override
+        public ProjectLockDaoV2 newDao(DSLContext dsl) {
+            return new ProjectLockDaoV2(dsl);
+        }
+
+        @Override
+        public ProjectLockV2 minimal(String office, String name, String applicationId) {
+            return new ProjectLockV2.Builder(CwmsId.buildCwmsId(office, name), applicationId).build();
+        }
+
+        @Override
+        public ProjectLockV2 full(String office, String name, String applicationId, String osUser,
+                                  String sessionProgram, String sessionMachine, String sessionUser) {
+            return new ProjectLockV2.Builder(CwmsId.buildCwmsId(office, name), applicationId)
+                    .withOsUser(osUser)
+                    .withSessionProgram(sessionProgram)
+                    .withSessionMachine(sessionMachine)
+                    .withSessionUser(sessionUser)
+                    .build();
+        }
+
+        @Override
+        public String requestPath(String office) {
+            return "/v2/project-locks/" + office + "/";
+        }
+
+        @Override
+        public String catalogPath(String office) {
+            return "/v2/project-locks/" + office + "/";
+        }
+
+        @Override
+        public String getOnePath(String office, String name) {
+            return "/v2/project-locks/" + office + "/" + name;
+        }
+
+        @Override
+        public String releasePath(String office) {
+            return "/v2/project-locks/" + office + "/release";
+        }
+
+        @Override
+        public String denyPath(String office) {
+            return "/v2/project-locks/" + office + "/deny";
+        }
+
+        @Override
+        public boolean officeAsQueryParam() {
+            return false;
+        }
+
+        @Override
+        public String officeOf(Map<String, ?> lockJson) {
+            Object idObj = lockJson.get("id");
+            if (!(idObj instanceof Map)) {
+                return null;
+            }
+            return (String) ((Map<?, ?>) idObj).get("office-id");
+        }
+
+        @Override
+        public String nameOf(Map<String, ?> lockJson) {
+            Object idObj = lockJson.get("id");
+            if (!(idObj instanceof Map)) {
+                return null;
+            }
+            return (String) ((Map<?, ?>) idObj).get("name");
+        }
+
+        @Override
+        public String toString() {
+            return "ProjectLockV2";
+        }
+    };
 
 
 }

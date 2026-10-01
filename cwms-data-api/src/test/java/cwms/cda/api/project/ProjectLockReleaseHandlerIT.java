@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,13 +39,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.DataApiTestIT;
+import cwms.cda.api.project.ProjectLockHandlerUtil.Fixture;
 import cwms.cda.data.dao.project.ProjectDao;
 import cwms.cda.data.dao.project.ProjectLockDao;
+import cwms.cda.data.dao.project.ProjectLockDaoV1;
 import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.ProjectLock;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
+import io.restassured.specification.RequestSpecification;
 import java.sql.SQLException;
 import javax.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
@@ -53,7 +56,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @Tag("integration")
 public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
@@ -71,23 +74,10 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
     void setUp() throws SQLException {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
             ProjectDao prjDao = new ProjectDao(dsl);
 
             Project testProject = buildTestProject(OFFICE, projId);
             prjDao.create(testProject, true);
-
-            lockDao.removeAllLockRevokerRights(OFFICE, appId, userName); // start fresh
-            lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);
-
-            ProjectLock req1 = new ProjectLock.Builder(OFFICE, projId, appId).build();
-            lockId = lockDao.requestLock(req1, true, 10);
-            assertNotNull(lockId);
-            assertTrue(lockId.length() > 8);  // FYI its 32 hex chars
-
-            boolean locked = lockDao.isLocked(OFFICE, projId, appId);
-            assertTrue(locked);
-
         });
     }
 
@@ -95,7 +85,7 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
     void tearDown() throws SQLException {
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
+            ProjectLockDaoV1 lockDao = new ProjectLockDaoV1(dsl);
 
             releaseLock(dsl, OFFICE, lockId);
             revokeLock(dsl, OFFICE, projId, appId);
@@ -106,19 +96,39 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
-    void test_release(String format) throws SQLException {
+    @MethodSource(ProjectLockHandlerUtil.METHOD_SOURCE)
+    <T extends ProjectLock> void test_release(Fixture<T> fixture, String format) throws SQLException {
 
-        given()
+        connectionAsWebUser(c -> {
+            DSLContext dsl = getDslContext(c, OFFICE);
+            ProjectLockDao<T> lockDao = fixture.newDao(dsl);
+
+            lockDao.removeAllLockRevokerRights(OFFICE, appId, userName); // start fresh
+            lockDao.allowLockRevokerRights(OFFICE, projId, appId, userName);
+
+            T req1 = fixture.minimal(OFFICE, projId, appId);
+            lockId = lockDao.requestLock(req1, true, 10);
+            assertNotNull(lockId);
+            assertTrue(lockId.length() > 8);  // FYI its 32 hex chars
+
+            boolean locked = lockDao.isLocked(OFFICE, projId, appId);
+            assertTrue(locked);
+        });
+
+        RequestSpecification spec = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
-            .queryParam(LOCK_ID, lockId)
-            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(LOCK_ID, lockId);
+        if (fixture.officeAsQueryParam()) {
+            spec = spec.queryParam(Controllers.OFFICE, OFFICE);
+        }
+
+        spec
         .when()
             .redirects().follow(true)
             .redirects().max(3)
-            .post("/project-locks/release")
+            .post(fixture.releasePath(OFFICE))
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
         .assertThat()
@@ -126,8 +136,7 @@ public class ProjectLockReleaseHandlerIT extends DataApiTestIT {
 
         connectionAsWebUser(c -> {
             DSLContext dsl = getDslContext(c, OFFICE);
-            ProjectLockDao lockDao = new ProjectLockDao(dsl);
-            boolean locked = lockDao.isLocked(OFFICE, projId, appId);
+            boolean locked = fixture.newDao(dsl).isLocked(OFFICE, projId, appId);
             assertFalse(locked);
         });
 

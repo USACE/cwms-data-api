@@ -87,7 +87,7 @@ The data may not match what was used at the moment a decision was made.
     time series or an arbitrary period-of-record. This may change in the future after the above mentioned group
     determines an appropriate naming scheme.
 
-.. COMMENT::
+.. NOTE::
     Responses to discussion that the above is derived from.
 
 
@@ -126,10 +126,12 @@ Axioms
    #. The date ranges of a member *MUST* not overlap
    #. Each member *MUST* have a start date
    #. The last member *MAY* have an end date indicating no more data will be available for this location and measure.
+
    #. Data may have gaps, an explanation range *SHOULD* be provided. For data with regular gaps, e.g. season gauges
       a description should be provided in the notes. 
       Example: A Link to a Location Level can be provided if the seasonal timing is well known. This would let users
       of the data now if the gap is missing data "an error" or if just out-of-service.
+
 #. The members of a composite time series measure the same thing. (e.g. all members are Elevation, not some are elevation and some are stage.)
 #. The parameter type (e.g. Instantaneous; Average; etc), interval, and duration of each member *MAY* be different.
 
@@ -267,7 +269,7 @@ time series retrieval.
 Composite Time Series Definition
 ================================
 
-.. code-block:: json
+.. code-block:: javascript
     :caption: Schema
 
     {

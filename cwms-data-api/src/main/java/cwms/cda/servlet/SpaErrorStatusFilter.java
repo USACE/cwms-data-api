@@ -30,7 +30,8 @@ public final class SpaErrorStatusFilter implements Filter {
         "/regexp",
         "/swagger-ui",
         "/timestamps",
-        "/user-lists"
+        "/user-lists",
+        "/user-roles"
     );
 
     @Override
@@ -61,7 +62,7 @@ public final class SpaErrorStatusFilter implements Filter {
         if (path.length() > 1 && path.endsWith("/")) {
             path = path.substring(0, path.length() - 1);
         }
-        return SPA_ROUTES.contains(path);
+        return SPA_ROUTES.contains(path) || path.matches("/user-roles/[A-Za-z0-9-]+");
     }
 
     private String removeContextPath(String requestUri, String contextPath) {

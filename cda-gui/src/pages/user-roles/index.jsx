@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   CWMS_USER_ROLE_DESCRIPTIONS,
-  OfficeDropdown,
   useAuth,
   useCdaRoles,
   useCdaUsers,
@@ -28,9 +28,12 @@ import {
 
 import { HelpTip } from "../../components/HelpTip";
 import { AssignOfficeDialog } from "./AssignOfficeDialog";
+import { OnboardingDialog } from "./OnboardingDialog";
+import { ManagedOfficeSelect } from "./ManagedOfficeSelect";
 import { EmptyState, Notice } from "../user-lists/components/StatusMessages";
 import {
   filterUsers,
+  officeAssignmentOffices,
   paginateUsers,
   rolesForOffice,
   sameRoles,
@@ -66,8 +69,28 @@ function updateSummary(userName, additions, removals) {
 
 export default function UserRoles() {
   const auth = useAuth();
-  const [office, setOffice] = useState("");
-  const [selectedUserName, setSelectedUserName] = useState("");
+  const storageKey = `cda:user-roles:${cdaUrl}:${auth.profile?.userName ?? ""}`;
+  return <UserRolesContent key={storageKey} />;
+}
+
+function UserRolesContent() {
+  const auth = useAuth();
+  const { officeId } = useParams();
+  const navigate = useNavigate();
+  const storageKey = `cda:user-roles:${cdaUrl}:${auth.profile?.userName ?? ""}`;
+  const [savedSelection] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey));
+      return {
+        office: typeof saved?.office === "string" ? saved.office : "",
+        userName: typeof saved?.userName === "string" ? saved.userName : "",
+      };
+    } catch {
+      return { office: "", userName: "" };
+    }
+  });
+  const [office, setOffice] = useState(savedSelection.office);
+  const [selectedUserName, setSelectedUserName] = useState(savedSelection.userName);
   const [search, setSearch] = useState("");
   const [userPage, setUserPage] = useState(1);
   const [draftRoles, setDraftRoles] = useState([]);
@@ -75,6 +98,7 @@ export default function UserRoles() {
   const [message, setMessage] = useState("");
   const [mutationError, setMutationError] = useState("");
   const [assignOfficeOpened, setAssignOfficeOpened] = useState(false);
+  const [onboardingOpened, setOnboardingOpened] = useState(false);
   const [pendingSelection, setPendingSelection] = useState(null);
 
   const adminOffices = useMemo(
@@ -85,16 +109,58 @@ export default function UserRoles() {
         .sort(),
     [auth.profile],
   );
+  const assignmentOffices = useMemo(
+    () => officeAssignmentOffices(auth.profile?.roles),
+    [auth.profile],
+  );
+  const availableOffices = useMemo(
+    () => (adminOffices.length ? [...new Set([...adminOffices, "HQ"])].sort() : []),
+    [adminOffices],
+  );
+  const canEditOffice = adminOffices.includes(office);
 
   useEffect(() => {
-    if (!adminOffices.includes(office)) setOffice(adminOffices[0] ?? "");
-  }, [adminOffices, office]);
+    if (auth.isLoading || !auth.profile) return;
+    const preferredOffice = adminOffices.reduce(
+      (best, candidate) =>
+        (auth.profile.roles[candidate]?.length ?? 0) >
+        (auth.profile.roles[best]?.length ?? 0)
+          ? candidate
+          : best,
+      adminOffices[0] ?? "",
+    );
+    const requestedOffice = officeId?.toUpperCase();
+    const nextOffice = availableOffices.includes(requestedOffice)
+      ? requestedOffice
+      : availableOffices.includes(office)
+        ? office
+        : preferredOffice;
+    if (nextOffice !== office) {
+      setOffice(nextOffice);
+      setSearch("");
+      setUserPage(1);
+      setMessage("");
+      setMutationError("");
+      if (office && office !== nextOffice) setSelectedUserName("");
+    }
+    if (nextOffice && officeId !== nextOffice.toLowerCase()) {
+      navigate(`/user-roles/${nextOffice.toLowerCase()}`, { replace: true });
+    }
+  }, [
+    adminOffices,
+    availableOffices,
+    office,
+    officeId,
+    navigate,
+    auth.isLoading,
+    auth.profile,
+  ]);
 
   const usersQuery = useCdaUsers({
     cdaUrl,
     token: auth.token,
     office,
-    queryOptions: { enabled: auth.isAuth && Boolean(office) },
+    queryOptions: { enabled: auth.isAuth && availableOffices.includes(office) },
   });
   const rolesQuery = useCdaRoles({
     cdaUrl,
@@ -132,6 +198,8 @@ export default function UserRoles() {
   );
 
   useEffect(() => {
+    // An empty loading result is not evidence that the selected user disappeared.
+    if (!usersQuery.isSuccess || usersQuery.isFetching || !office) return;
     if (pendingSelection?.office === office) {
       if (users.some((user) => user["user-name"] === pendingSelection.userName)) {
         setSelectedUserName(pendingSelection.userName);
@@ -142,19 +210,55 @@ export default function UserRoles() {
     if (!users.some((user) => user["user-name"] === selectedUserName)) {
       setSelectedUserName(users[0]?.["user-name"] ?? "");
     }
-  }, [selectedUserName, users, office, pendingSelection]);
+  }, [
+    selectedUserName,
+    users,
+    office,
+    pendingSelection,
+    usersQuery.isSuccess,
+    usersQuery.isFetching,
+  ]);
+
+  useEffect(() => {
+    if (!auth.profile?.userName || !availableOffices.includes(office)) return;
+    if (
+      !selectedUser &&
+      (selectedUserName || !usersQuery.isSuccess || usersQuery.isFetching)
+    )
+      return;
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ office, userName: selectedUserName }),
+      );
+    } catch {
+      // Selection still works when browser storage is unavailable.
+    }
+  }, [
+    storageKey,
+    auth.profile?.userName,
+    availableOffices,
+    office,
+    selectedUser,
+    selectedUserName,
+    usersQuery.isSuccess,
+    usersQuery.isFetching,
+  ]);
 
   useEffect(() => {
     if (pagination.currentPage !== userPage) setUserPage(pagination.currentPage);
   }, [pagination.currentPage, userPage]);
 
   useEffect(() => {
+    if (!selectedUser) return;
     setDraftRoles(currentRoles);
     setRoleMode(matchCwmsUserRolePreset(currentRoles) ?? "custom");
-  }, [currentRoles]);
+  }, [currentRoles, selectedUser]);
 
   function changeOffice(nextOffice) {
+    setPendingSelection(null);
     setOffice(nextOffice);
+    navigate(`/user-roles/${nextOffice.toLowerCase()}`);
     setSelectedUserName("");
     setSearch("");
     setUserPage(1);
@@ -210,7 +314,7 @@ export default function UserRoles() {
 
   async function saveRoles(event) {
     event.preventDefault();
-    if (!selectedUser) return;
+    if (!selectedUser || !canEditOffice) return;
     setMessage("");
     setMutationError("");
     try {
@@ -288,43 +392,64 @@ export default function UserRoles() {
           <div>
             <Strong>Office</Strong>
             <Text className="mt-1">
-              Choose an office where you are a User Administrator.
+              Choose an office to review users. Role changes require User Administrator
+              access in that office.
             </Text>
           </div>
           {auth.isLoading ? (
             <Skeleton className="h-10 w-full" />
           ) : adminOffices.length ? (
-            <OfficeDropdown
-              cdaUrl={cdaUrl}
-              includeOffices={adminOffices}
+            <ManagedOfficeSelect
+              id="role-office"
+              offices={availableOffices}
               value={office}
-              initOverrides={{
-                headers: auth.token
-                  ? { Authorization: `Bearer ${auth.token}` }
-                  : undefined,
-              }}
               onChange={changeOffice}
             />
           ) : (
             <Text role="status">
               Your profile does not include CWMS User Administrator access for an
-              office.
+              office. Contact an administrator to be assigned roles for your office.
             </Text>
           )}
-          {adminOffices.length > 0 && (
-            <Button type="button" onClick={() => setAssignOfficeOpened(true)}>
-              <FaUsers aria-hidden="true" /> Assign office
-            </Button>
+          {assignmentOffices.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={() => setOnboardingOpened(true)}>
+                <FaUsers aria-hidden="true" /> Onboard users
+              </Button>
+              <Button
+                type="button"
+                color="light"
+                onClick={() => setAssignOfficeOpened(true)}
+              >
+                Assign office
+              </Button>
+            </div>
           )}
         </div>
+        <Text className="mt-4 text-sm">
+          To assign users to an office, you must have both CWMS User Admins and CWMS PD
+          Users in that office.
+        </Text>
       </Card>
 
-      {assignOfficeOpened && (
+      {onboardingOpened && assignmentOffices.length > 0 && (
+        <OnboardingDialog
+          cdaUrl={cdaUrl}
+          token={auth.token}
+          offices={assignmentOffices}
+          initialOffice={office}
+          onClose={() => setOnboardingOpened(false)}
+        />
+      )}
+
+      {assignOfficeOpened && assignmentOffices.length > 0 && (
         <AssignOfficeDialog
           cdaUrl={cdaUrl}
           token={auth.token}
-          adminOffices={adminOffices}
-          initialOffice={office}
+          adminOffices={assignmentOffices}
+          initialOffice={
+            assignmentOffices.includes(office) ? office : assignmentOffices[0]
+          }
           onClose={() => setAssignOfficeOpened(false)}
           onAssigned={async (userName, assignedOffice) => {
             changeOffice(assignedOffice);
@@ -487,6 +612,12 @@ export default function UserRoles() {
               </div>
             ) : (
               <form className="p-5" onSubmit={saveRoles}>
+                {!canEditOffice && (
+                  <Text role="status" className="mb-4">
+                    You can review HQ users. Contact an HQ administrator to change their
+                    roles.
+                  </Text>
+                )}
                 <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50 p-4">
                   <Strong>Assign roles for {office}</Strong>
                   <Text className="mt-1">
@@ -518,6 +649,7 @@ export default function UserRoles() {
                           name="role-configuration"
                           className="h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
                           checked={roleMode === preset.id}
+                          disabled={!canEditOffice}
                           onChange={() => selectRoleMode(preset.id)}
                         />
                         <label
@@ -546,6 +678,7 @@ export default function UserRoles() {
                         name="role-configuration"
                         className="h-4 w-4 border-zinc-400 text-blue-700 focus:ring-blue-600"
                         checked={roleMode === "custom"}
+                        disabled={!canEditOffice}
                         onChange={() => selectRoleMode("custom")}
                       />
                       <label
@@ -619,7 +752,7 @@ export default function UserRoles() {
                                 type="checkbox"
                                 className="mt-1 h-4 w-4 rounded border-zinc-400 text-blue-700 focus:ring-blue-600"
                                 checked={checked}
-                                disabled={protectedRole}
+                                disabled={protectedRole || !canEditOffice}
                                 onChange={() => toggleRole(role)}
                               />
                               <label
@@ -661,7 +794,7 @@ export default function UserRoles() {
                     <Button
                       type="button"
                       color="light"
-                      disabled={sameRoles(currentRoles, draftRoles)}
+                      disabled={!canEditOffice || sameRoles(currentRoles, draftRoles)}
                       onClick={resetRoles}
                     >
                       Reset
@@ -669,7 +802,9 @@ export default function UserRoles() {
                     <Button
                       type="submit"
                       disabled={
-                        updateRoles.isPending || sameRoles(currentRoles, draftRoles)
+                        !canEditOffice ||
+                        updateRoles.isPending ||
+                        sameRoles(currentRoles, draftRoles)
                       }
                     >
                       <FaUserShield aria-hidden="true" />

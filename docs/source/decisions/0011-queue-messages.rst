@@ -210,16 +210,16 @@ Continue using ``jakarta.jms.MapMessage`` with the following characteristics to 
 |               |                  | +-------------+-----------------------+--------------------------------+ |
 |               |                  | | ``String``  | ``'user'``            | The user publishing the msg    | |
 |               |                  | +-------------+-----------------------+--------------------------------+ |
-|               |                  | | ``String``  | ``'source_id'``¹      | A souce identifier associated  | |
+|               |                  | | ``String``  | ``'source_id'`` ¹      | A souce identifier associated | |
 |               |                  | |             |                       | with the message               | |
 |               |                  | +-------------+-----------------------+--------------------------------+ |
-|               |                  | | ``String``  | ``'time_series_id'``¹ | A time series identifier assoc | |
+|               |                  | | ``String``  | ``'time_series_id'`` ¹ | A time series identifier assoc| |
 |               |                  | |             |                       | with the message               | |
 |               |                  | +-------------+-----------------------+--------------------------------+ |
-|               |                  | | ``long``    | ``'start_time'``¹     | A start time associated with   | |
+|               |                  | | ``long``    | ``'start_time'`` ¹     | A start time associated with  | |
 |               |                  | |             |                       | the message                    | |
 |               |                  | +-------------+-----------------------+--------------------------------+ |
-|               |                  | | ``long``    | ``'end_time'``¹       | An end time associated with    | |
+|               |                  | | ``long``    | ``'end_time'`` ¹       | An end time associated with   | |
 |               |                  | |             |                       | the message                    | |
 |               |                  | +-------------+-----------------------+--------------------------------+ |
 |               |                  |                                                                          |

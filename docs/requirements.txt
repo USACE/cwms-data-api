@@ -14,3 +14,4 @@ setuptools>=68
 
 # Helpful for modern builds (sdist/wheel)
 wheel
+pygments>=2.20.0

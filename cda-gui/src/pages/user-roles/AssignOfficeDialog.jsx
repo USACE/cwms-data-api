@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Badge, Button, Input, Modal, Strong, Text } from "@usace/groundwork";
 import {
-  OfficeDropdown,
   useCdaUsers,
   useUpdateCdaUserRoles,
 } from "@usace-watermanagement/groundwork-water";
 import PropTypes from "prop-types";
 import { Notice } from "../user-lists/components/StatusMessages";
+import { ManagedOfficeSelect } from "./ManagedOfficeSelect";
 
 export function AssignOfficeDialog({
   cdaUrl,
@@ -64,6 +64,10 @@ export function AssignOfficeDialog({
       dialogDescription="Find a registered user across all offices, then add an office assignment."
       size="2xl"
     >
+      <Text className="mb-4 text-sm">
+        Assigning users to an office requires both CWMS User Admins and CWMS PD Users in
+        the destination office.
+      </Text>
       <form
         className="flex items-end gap-3"
         onSubmit={(event) => {
@@ -160,15 +164,12 @@ export function AssignOfficeDialog({
           <div>
             <Strong>Add office</Strong>
             <div className="mt-2">
-              <OfficeDropdown
-                cdaUrl={cdaUrl}
-                includeOffices={adminOffices}
+              <ManagedOfficeSelect
+                id="assign-office"
+                offices={adminOffices}
                 value={office}
                 disabled={working}
                 onChange={setOffice}
-                initOverrides={{
-                  headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-                }}
               />
             </div>
           </div>
