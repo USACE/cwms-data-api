@@ -155,6 +155,7 @@ dependencies {
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.jaxb.impl)
     testImplementation(libs.openapi.spec.validation)
+    testImplementation(libs.javalin.test.tools)
 
     baseLibs(libs.oracle.jdbc.driver)
 
