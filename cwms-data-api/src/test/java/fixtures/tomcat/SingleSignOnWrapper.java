@@ -3,7 +3,7 @@ package fixtures.tomcat;
 import java.io.IOException;
 import java.security.Principal;
 
-import javax.servlet.ServletException;
+import jakarta.servlet.ServletException;
 import org.apache.catalina.connector.Request;
 import org.apache.catalina.connector.Response;
 

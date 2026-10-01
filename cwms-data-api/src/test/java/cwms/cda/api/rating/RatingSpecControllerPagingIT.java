@@ -38,7 +38,7 @@ import fixtures.TestAccounts;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import io.restassured.filter.log.LogDetail;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.jdbc.RatingJdbcFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import org.junit.jupiter.api.BeforeAll;

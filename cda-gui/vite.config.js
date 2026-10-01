@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
   ).origin;
   // const BASE_PATH = env?.BASE_PATH ?? "/cwms-data";
   return {
-    base: "/cwms-data",
+    base: "/",
     plugins: [react()],
     optimizeDeps: {
       include: ["react-dom/client", "react-router-dom"],

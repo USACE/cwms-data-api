@@ -58,7 +58,7 @@ import io.javalin.openapi.OpenApiResponse;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.metadata.DataSetIllegalArgumentException;
 import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;

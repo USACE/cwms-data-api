@@ -55,7 +55,7 @@ import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import org.jooq.DSLContext;

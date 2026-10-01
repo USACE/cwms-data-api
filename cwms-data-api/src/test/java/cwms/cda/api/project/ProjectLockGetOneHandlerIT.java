@@ -47,7 +47,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 import java.sql.SQLException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;

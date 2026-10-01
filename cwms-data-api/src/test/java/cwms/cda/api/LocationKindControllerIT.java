@@ -38,7 +38,7 @@ import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.formatters.Formats;
 import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;

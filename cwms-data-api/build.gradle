@@ -7,7 +7,7 @@ plugins {
 
 configurations {
     info
-    webjars
+    ui
     docker
     baseLibs
     tomcatLibs
@@ -125,7 +125,7 @@ dependencies {
     implementation(libs.password4j)
     implementation 'cz.jirutka.rsql:rsql-parser:2.1.0'
 
-    compileOnly(libs.javaee.web.api)
+    compileOnly(libs.jakarta.web.api)
     compileOnly(libs.cwms.tomcat.auth)
 
 
@@ -175,7 +175,7 @@ dependencies {
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
 
-    webjars(project(":cda-gui"))
+    ui(project(path: ":cda-gui", configuration: "warOutput"))
 
 
     // override versions
@@ -184,42 +184,6 @@ dependencies {
     testImplementation(libs.bundles.java.parser)
     implementation(libs.togglz.core)
     implementation(libs.minio)
-}
-
-task extractWebJars(type: Copy) {
-    dependsOn configurations.webjars
-    from zipTree(configurations.webjars.singleFile)
-    into file("$buildDir/extra")
-    includeEmptyDirs false
-    includeEmptyDirs = false
-}
-
-war {
-    dependsOn extractWebJars
-    from "$buildDir/extra"
-    from "src/resources/"
-
-    manifest {
-        attributes "build-version": project.version
-    }
-
-    doLast {
-        println(war.archiveFileName.toString())
-        println("::set-output name=WARFILE::${project.name}-${project.version}.war")
-    }
-}
-
-sourceSets {
-    formatList {
-        output.resourcesDir = layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main")
-        java.destinationDirectory = layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main")
-    }
-    main {
-        runtimeClasspath += formatList.runtimeClasspath
-    }
-    test {
-        runtimeClasspath += formatList.runtimeClasspath
-    }
 }
 
 test {
@@ -247,6 +211,7 @@ task generateConfig(type: Copy) {
 
 task run(type: JavaExec) {
     group "application"
+    dependsOn configurations.ui
     classpath sourceSets.main.runtimeClasspath +
               configurations.baseLibs
 
@@ -256,10 +221,11 @@ task run(type: JavaExec) {
 
     def context = project.findProperty("cda.war.context") ?: "/cwms-data"
 
-    args context
+    args context, configurations.ui.asPath
     jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
     jvmArgs += "-Duser.timezone=UTC"
+    
     // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
