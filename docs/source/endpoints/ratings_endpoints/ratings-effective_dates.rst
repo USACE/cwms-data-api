@@ -3,7 +3,8 @@ Ratings — GET /ratings/effective-dates
 
 What it does
 ------------
-Returns the effective dates and times for a given rating specification ID and office ID. Time window can be set to filter the effective dates retrieved.
+Returns the effective dates and times for a given rating specification ID and office ID. Time window \
+can be set to filter the effective dates retrieved.
 
 
 When to use
@@ -35,6 +36,25 @@ Examples
 
         GET /ratings/effective-dates?office-mask=SWT&rating-id-mask=KEYS.Elev%3BArea.Linear.Production
 
+2. | The user wants to retrieve the effective dates for the rating specification ID mask of
+   | `Elev;Area.Linear.Production` from all offices:
+   | (**rating-id-mask**) :code:`*.Elev;Area.Linear.Production`
+
+   .. code-block:: urlencoded
+
+        GET /ratings/effective-dates?rating-id-mask=*.Elev%3BArea.Linear.Production&_cb=1790799953975
+
+3. | The user wants to retrieve the effective dates for the rating specification ID mask of
+   | `Elev;Stor.Linear.Production` from the `SWT` office in the timezone of `CST/CDT`:
+   | (**office-mask**) :code:`SWT`
+   |
+   | (**rating-id-mask**) :code:`*.Elev;Stor.Linear.Production`
+   |
+   | (**timezone**) :code: `CST/CDT`
+
+   .. code-block:: urlencoded
+
+        GET /ratings/effective-dates?office-mask=SWT&rating-id-mask=*.Elev%3BStor.Linear.Production&timezone=CST%2FCDT&_cb=1790800682152
 
 See the consolidated API documentation: :doc:`/api-references`.
 

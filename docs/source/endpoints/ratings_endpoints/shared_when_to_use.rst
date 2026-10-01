@@ -1,4 +1,4 @@
-Shared Time Series Examples of When to Use
+Shared Ratings Examples of When to Use
 ============================================
 
 .. _when_start:

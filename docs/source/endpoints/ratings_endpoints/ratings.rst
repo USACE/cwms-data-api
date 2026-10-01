@@ -1,6 +1,6 @@
-.. _timeSeries_endpoint:
+.. _Ratings_endpoint:
 
-TimeSeries — GET /ratings
+Ratings — GET /ratings
 ==============================
 
 
@@ -12,8 +12,8 @@ Retrieve rating data for a location and effective date. The time window may be a
 When to use
 -----------
 
-- View rating data for a given location
-- Export rating data for a given location
+- View rating data for a given rating specification ID
+- View rating data for a given rating specification ID in different units
 
 
 .. csv-table:: GET /ratings - Endpoint Parameters
@@ -42,16 +42,38 @@ When to use
 Examples
 ----------
 
-1. | The user wants to retrieve available rating data for `KEYS`:
+1. | The user wants to retrieve available rating data for the location of `KEYS`:
    | (**name**)  :code:`KEYS`
    |
    | (**office**)  :code:`SWT`
-   |
-   | (**unit**)  :code:`SI`.
 
    .. code-block:: urlencoded
 
         GET /ratings?name=KEYS&office=SWT&unit=SI
+
+2. | The user wants to retrieve available rating data for the rating specification of
+   | `TULA.Stage;Flow.EXSA.Production` in the office of `SWT`:
+   | (**name**)  :code:`TULA.Stage;Flow.EXSA.Production`
+   |
+   | (**office**)  :code:`SWT`
+   |
+
+   .. code-block:: urlencoded
+
+        GET /ratings?name=TULA.Stage%3BFlow.EXSA.PRODUCTION&office=SWT&_cb=1790797962720
+
+3. | The user wants to retrieve the available rating data for the rating specification of
+   | `TORO.Elev;Area.Linear.Production` in English units:
+   | (**name**)  :code:`TORO.Elev;Area.Linear.Production`
+   |
+   | (**office**)  :code:`SWT`
+   |
+   | (**unit**)  :code:`EN`.
+
+   .. code-block:: urlencoded
+
+        GET /ratings?name=KEYS&office=SWT&unit=SI
+
 
 
 See the consolidated API documentation: :doc:`/api-references`.

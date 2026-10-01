@@ -39,18 +39,14 @@ Examples
 
         GET /ratings/template?office=SWT&template-id-mask=%2AOpening%2CElev%3BFlow%2A
 
-3. | The user wants to retrieve the recent time series data for all time series in the `CALC3` time series group:
-   | (**group-id**) :code:`CALC3`
+3. | The user wants to retrieve the first 500 rating templates containing the parameters of `Elev;Stor`:
+   | (**template-id-mask**) :code:`*Elev;Area*`
    |
-   | and in the `COMPUTE` time series category:
-   | (**category-id**) :code:`COMPUTE`
-   |
-   | for the `HQ` office:
-   | (**office**) :code:`HQ`
+   | (**page-size**) :code:`500`
 
    .. code-block:: urlencoded
 
-        GET /timeseries/recent?group-ide=CALC3&category-id=COMPUTE&office=HQ
+        GET /ratings/template?template-id-mask=*Elev%3BStor*&page-size=500&_cb=1790786522039
 
 See the consolidated API documentation: :doc:`/api-references`.
 

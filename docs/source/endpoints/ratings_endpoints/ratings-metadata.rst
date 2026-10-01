@@ -35,6 +35,26 @@ Examples
 
         GET /ratings/metadata?office=SWT&rating-id-mask=KEYS.Elev%3BArea.Linear.Production
 
+2. | The user wants to retrieve the metadata for the rating ID mask including the parameters of
+   | `Elev;Stor` for up to 100 entries:
+   | (**rating-id-mask**) :code:`*Elev;Stor*`
+   |
+   | (**page-size**) :code:`100`
+
+   .. code-block:: urlencoded
+
+        GET /ratings/metadata?rating-id-mask=*Elev%3BStor*&page-size=100&_cb=1790801150071
+
+
+3. | The user wants to retrieve the metadata for the rating ID mask including the parameters of
+   | `Opening,Elev;Flow` in the office of `SWT`:
+   | (**rating-id-mask**) :code:`*Opening,Elev;Flow*`
+   |
+   | (**office**) :code:`SWT`
+
+   .. code-block:: urlencoded
+
+        GET /ratings/metadata?office=SWT&rating-id-mask=*Opening%2CElev%3BFlow*&_cb=1790802020631
 
 See the consolidated API documentation: :doc:`/api-references`.
 
