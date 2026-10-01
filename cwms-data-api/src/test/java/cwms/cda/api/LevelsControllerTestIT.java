@@ -2000,7 +2000,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @MinimumSchema(20261001)
     @Test
-    void testSeasonalLevelIntervalSupportA() throws Exception {
+    void testSeasonalLevelIntervalSupportsLargeIntervalYear() throws Exception {
         String locName = "seasonalLoc29";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Elev.Ave.1Day.Bottom of Spillway", locName);
@@ -2028,6 +2028,25 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
         String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
 
+        // assert the level does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, "2024-01-01T00:00:00Z")
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .get("/levels/" + levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .queryParam(Controllers.OFFICE, OFFICE)
@@ -2049,7 +2068,7 @@ public class LevelsControllerTestIT extends DataApiTestIT {
 
     @MaximumSchema(20260716)
     @Test
-    void testSeasonalLevelIntervalSupportB() throws Exception {
+    void testSeasonalLevelIntervalSupportsShortIntervalYear() throws Exception {
         String locName = "seasonalLoc34";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Elev.Ave.1Day.Bottom of Spillway", locName);
