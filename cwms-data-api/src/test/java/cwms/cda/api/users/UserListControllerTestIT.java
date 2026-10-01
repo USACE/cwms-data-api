@@ -124,7 +124,7 @@ public final class UserListControllerTestIT extends DataApiTestIT {
             RequestSpecification authSpec) {
         given().spec(authSpec).queryParam("office", OFFICE)
         .when().get("/user/list/{user-list-id}", USER_LIST_ID)
-        .then().statusCode(HttpStatus.OK.getStatus())
+        .then().statusCode(HttpStatus.OK.getCode())
                 .body("office-id", equalTo(OFFICE))
                 .body("user-list-id", equalTo(USER_LIST_ID))
                 .body("description", equalTo(USER_LIST_DESC))
@@ -132,26 +132,26 @@ public final class UserListControllerTestIT extends DataApiTestIT {
 
         given().spec(authSpec).queryParam("office", OFFICE)
             .when().get("/user/list")
-            .then().statusCode(HttpStatus.OK.getStatus())
+            .then().statusCode(HttpStatus.OK.getCode())
                 .body("user-lists.user-list-id", hasItem(USER_LIST_ID));
 
         given().spec(authSpec).contentType(ContentType.JSON)
                 .body("{\"office-id\":\"SPK\",\"user-list-id\":\""
                         + SECONDARY_LIST_ID + "\",\"description\":\"Created through CDA\"}")
             .when().post("/user/list")
-            .then().statusCode(HttpStatus.CREATED.getStatus())
+            .then().statusCode(HttpStatus.CREATED.getCode())
                 .body("owned-by-user-id",
                         equalTo(user.getName().toUpperCase(Locale.ROOT)));
 
         given().spec(authSpec).contentType(ContentType.JSON).queryParam("office", OFFICE)
                 .body("{\"description\":\"Updated through CDA\"}")
         .when().patch("/user/list/{user-list-id}", SECONDARY_LIST_ID)
-        .then().statusCode(HttpStatus.OK.getStatus())
+        .then().statusCode(HttpStatus.OK.getCode())
                 .body("description", equalTo("Updated through CDA"));
 
         given().spec(authSpec).queryParam("office", OFFICE)
         .when().delete("/user/list/{user-list-id}", SECONDARY_LIST_ID)
-        .then().statusCode(HttpStatus.NO_CONTENT.getStatus());
+        .then().statusCode(HttpStatus.NO_CONTENT.getCode());
     }
 
     @ParameterizedTest
@@ -161,24 +161,24 @@ public final class UserListControllerTestIT extends DataApiTestIT {
             RequestSpecification authSpec) {
         given().spec(authSpec).queryParam("search", "l2hec")
         .when().get("/user/list-member-candidates")
-        .then().statusCode(HttpStatus.OK.getStatus())
+        .then().statusCode(HttpStatus.OK.getCode())
                 .body("candidates.user-id", hasItem("L2HECTEST"));
 
         given().spec(authSpec).contentType(ContentType.JSON).queryParam("office", OFFICE)
                 .body("{\"user-id\":\"L2HECTEST\"}")
         .when().post("/user/list/{user-list-id}/members", USER_LIST_ID)
-        .then().statusCode(HttpStatus.CREATED.getStatus())
+        .then().statusCode(HttpStatus.CREATED.getCode())
                 .body("user-id", equalTo("L2HECTEST"));
 
         given().spec(authSpec).queryParam("office", OFFICE)
         .when().get("/user/list/{user-list-id}/members", USER_LIST_ID)
-        .then().statusCode(HttpStatus.OK.getStatus())
+        .then().statusCode(HttpStatus.OK.getCode())
                 .body("members.user-id", hasItem("L2HECTEST"));
 
         given().spec(authSpec).queryParam("office", OFFICE)
         .when().delete("/user/list/{user-list-id}/members/{user-id}",
                 USER_LIST_ID, "L2HECTEST")
-        .then().statusCode(HttpStatus.NO_CONTENT.getStatus());
+        .then().statusCode(HttpStatus.NO_CONTENT.getCode());
     }
 
     @ParameterizedTest
@@ -190,12 +190,12 @@ public final class UserListControllerTestIT extends DataApiTestIT {
                 .body("{\"office-id\":\"SPK\",\"user-list-id\":\""
                         + USER_LIST_ID + "\"}")
         .when().post("/user/list")
-        .then().statusCode(HttpStatus.CONFLICT.getStatus());
+        .then().statusCode(HttpStatus.CONFLICT.getCode());
 
         given().spec(authSpec).contentType(ContentType.JSON)
                 .body("{\"office-id\":\"SPK\",\"user-list-id\":\"bad list id\"}")
         .when().post("/user/list")
-        .then().statusCode(HttpStatus.BAD_REQUEST.getStatus());
+        .then().statusCode(HttpStatus.BAD_REQUEST.getCode());
     }
 
     @ParameterizedTest
@@ -207,7 +207,7 @@ public final class UserListControllerTestIT extends DataApiTestIT {
                 .body("{\"office-id\":\"SPK\",\"user-list-id\":\""
                         + SECONDARY_LIST_ID + "\"}")
         .when().post("/user/list")
-        .then().statusCode(HttpStatus.FORBIDDEN.getStatus());
+        .then().statusCode(HttpStatus.FORBIDDEN.getCode());
     }
 
     @ParameterizedTest
@@ -219,7 +219,7 @@ public final class UserListControllerTestIT extends DataApiTestIT {
 
         given().spec(authSpec).queryParam("office", OTHER_OFFICE)
         .when().get("/user/list/{user-list-id}", USER_LIST_ID)
-        .then().statusCode(HttpStatus.OK.getStatus())
+        .then().statusCode(HttpStatus.OK.getCode())
                 .body("office-id", equalTo(OTHER_OFFICE))
                 .body("user-list-id", equalTo(USER_LIST_ID));
     }

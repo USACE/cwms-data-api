@@ -18,7 +18,7 @@ public class TestHttpServletResponse implements HttpServletResponse {
     /**
      * We will default to OK in all handlers as that is the behavior we see from javalin.
      */
-    private int status = HttpStatus.OK.getStatus();
+    private int status = HttpStatus.OK.getCode();
     private String contentType="<not set by application>";
 
     private ServletOutputStream output = new TestServletOutputStream();
@@ -150,13 +150,7 @@ public class TestHttpServletResponse implements HttpServletResponse {
     public String encodeRedirectURL(String arg0) {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public String encodeRedirectUrl(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    }     
 
     @Override
     public String encodeURL(String arg0) {
@@ -164,11 +158,6 @@ public class TestHttpServletResponse implements HttpServletResponse {
         return null;
     }
 
-    @Override
-    public String encodeUrl(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public String getHeader(String arg0) {
@@ -232,11 +221,6 @@ public class TestHttpServletResponse implements HttpServletResponse {
     public void setStatus(int arg0) {
         status = arg0;
 
-    }
-
-    @Override
-    public void setStatus(int arg0, String arg1) {
-        throw new UnsupportedOperationException("Don't use this form");
     }
 
 }

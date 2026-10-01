@@ -1919,7 +1919,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpStatus.MULTI_STATUS.getStatus()))
+            .statusCode(is(HttpStatus.MULTI_STATUS.getCode()))
             .body("missing-locations", equalTo("notReal-loc"));
 
         //Retrieve Group
