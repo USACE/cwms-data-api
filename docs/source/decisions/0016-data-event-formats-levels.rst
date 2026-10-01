@@ -14,15 +14,19 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for location level-related events.
+Summary: Use the structures described below for location level-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
-**Specified Levels**
+Specified Levels
+^^^^^^^^^^^^^^^^
 
-Only "type", "office_id", and "specified_level_id" values are required.
+Only values necessary to uniquely identify a specified level ("type", "specified_level_id") are required for SpecifiedLevelCreated, SpecifiedLevelUpdated,
+and SpecifiedLevelDeleted messages.
+
+**SpecifiedLevelCreated Message Structure**
 
 +-----------------------+--------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                      |
@@ -38,16 +42,20 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | +------------+----------------------+----------------------------------------+ |
 +-----------------------+--------------------------------------------------------------------------------+
 
+**Example SpecifiedLevelCreated message**
+
 .. code-block:: json
 
     {
         "type": "specified_level_created",
         "specified_level_id": {
         	"office_id": "SWT",
-        	name: "24-hr Surveilance"
+        	"name": "24-hr Surveilance"
         },
         "description": "Level at which 24-hour surveillance is required"
     }
+
+**SpecifiedLevelUpdated Message Structure**
 
 +-----------------------+--------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                      |
@@ -63,16 +71,20 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | +------------+----------------------+----------------------------------------+ |
 +-----------------------+--------------------------------------------------------------------------------+
 
+**Example SpecifiedLevelUpdated message**
+
 .. code-block:: json
 
     {
         "type": "specified_level_updated",
         "specified_level_id": {
         	"office_id": "SWT",
-        	name: "24-hr Surveilance"
+        	"name": "24-hr Surveilance"
         },
         "description": "Lowest level at which 24-hour surveillance is required"
     }
+
+**SpecifiedLevelDeleted Message Structure**
 
 +-----------------------+--------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                      |
@@ -86,21 +98,27 @@ Only "type", "office_id", and "specified_level_id" values are required.
 |                       | +------------+----------------------+----------------------------------------+ |
 +-----------------------+--------------------------------------------------------------------------------+
 
+**Example SpecifiedLevelDeleted message**
+
 .. code-block:: json
 
     {
         "type": "specified_level_deleted",
         "specified_level_id": {
         	"office_id": "SWT",
-        	name: "24-hr Surveilance"
+        	"name": "24-hr Surveilance"
         },
     }
 
-**Location Levels**
+Location Levels
+^^^^^^^^^^^^^^^
 
-Only "type", "office_id", "location_level_id", "effective_time", and "virtual" values are required.
+Only values necessary to uniquely identify a location level ("type", "location_level_id", "effective_time", and "virtual") are required for LocationLevelCreated,
+LocationLevelUpdated, and LocationLevelDeleted messages.
 
 If the location level has an attribute, "attribute_id", "attribute_value", and "attribute_name" are also required.
+
+**LocationLevelCreated Message Structure**
 
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type         | Structure                                                                                                                                                  |
@@ -142,19 +160,23 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example LocationLevelCreated message**
+
 .. code-block:: json
 
     {
         "type": "location_level_created",
         "location_level_id": {
         	"office_id": "SWT",
-        	name: "Keystone.Elev.Inst.0.24-hr Surveillance"
+        	"name": "Keystone.Elev.Inst.0.24-hr Surveillance"
         },
         "effective_time": 1782190800000,
         "virtual": false,
         "constant_value": 727.4,
         "constant_value_unit": "ft"
     }
+
+**LocationLevelUpdated Message Structure**
 
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type         | Structure                                                                                                                                                  |
@@ -196,13 +218,15 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example LocationLevelUpdated message**
+
 .. code-block:: json
 
     {
         "type": "location_level_updated",
         "location_level_id": {
         	"office_id": "SWT",
-        	name: "Keystone.Elev.Inst.0.24-hr Surveillance"
+        	"name": "Keystone.Elev.Inst.0.24-hr Surveillance"
         },
         "effective_time": 1782190800000,
         "virtual": false,
@@ -210,6 +234,8 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
         "constant_value_unit": "ft",
         "level_comment": "Updated after embankment remediation"
     }
+
+**LocationLevelDeleted Message Structure**
 
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type         | Structure                                                                                                                                                  |
@@ -233,13 +259,15 @@ If the location level has an attribute, "attribute_id", "attribute_value", and "
 |                      | +------------+-----------------------+-------------------------------------------------------------------------------------------------------------------+ |
 +----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example LocationLevelDeleted message**
+
 .. code-block:: json
 
     {
         "type": "location_level_deleted",
         "location_level_id": {
         	"office_id": "SWT",
-        	name: "Keystone.Elev.Inst.0.24-hr Surveillance"
+        	"name": "Keystone.Elev.Inst.0.24-hr Surveillance"
         },
         "effective_time": 1782190800000,
         "virtual": false

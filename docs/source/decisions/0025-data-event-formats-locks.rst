@@ -14,15 +14,19 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for lock-related events.
+Summary: Use the structures described below for lock-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
-**Locks**
+Locks
+^^^^^
 
-Only "type", "office_id", "lock_id", and  "project_id" are required.
+Only values necessary to uniquely identify a lock ("type", "lock_id"), and  values necessary to minimally describe a lock ("project_id") are required
+for LockCreated and LockUpdated messages.
+
+**LockCreated Message Structure**
 
 +--------------+--------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type | Structure                                                                                                                            | 
@@ -52,9 +56,11 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 |              | | String     | "unit"                | The unit of length, width, draft, and lift                                                  | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "chamber_description" | "Single Chamber", "Land Side Main", "Land Side Aux", "River Side Main", or "River Side Aux" | |
+|              | | String     | "gate_type"           | The type of lock gate used (see table)                                                      | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 +--------------+--------------------------------------------------------------------------------------------------------------------------------------+
+
+**Example LockCreated message**
 
 .. code-block:: json
 
@@ -62,7 +68,7 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
       "type": "lock_created",
       "lock_id": {
       	"office_id": "SWT",
-      	name: "Green LD2-Lock"
+      	"name": "Green LD2-Lock"
       },
       "project_id": "Green LD2",
       "volume_per_lockage": 42.4,
@@ -73,8 +79,10 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
       "normal_lift": 28.0,
       "maximum_lift": 35.0,
       "unit": "ft",
-      "chamber_description": "Single Chamber"
+      "gate_type": "Single Chamber"
     }
+
+**LockUpdated Message Structure**
 
 +--------------+--------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type | Structure                                                                                                                            | 
@@ -104,9 +112,11 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 |              | | String     | "unit"                | The unit of length, width, draft, and lift                                                  | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
-|              | | String     | "chamber_description" | "Single Chamber", "Land Side Main", "Land Side Aux", "River Side Main", or "River Side Aux" | |
+|              | | String     | "gate_type"           | The type of lock gate used (see table)                                                      | |
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 +--------------+--------------------------------------------------------------------------------------------------------------------------------------+
+
+**Example LockUpdated message**
 
 .. code-block:: json
 
@@ -114,7 +124,7 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
       "type": "lock_updated",
       "lock_id": {
       	"office_id": "SWT",
-      	name: "Green LD2-Lock"
+      	"name": "Green LD2-Lock"
       },
       "project_id": "Green LD2",
       "volume_per_lockage": 42.4,
@@ -125,8 +135,12 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
       "normal_lift": 28.0,
       "maximum_lift": 35.0,
       "unit": "ft",
-      "chamber_description": "Single Chamber"
+      "gate_type": "Single Chamber"
     }
+
+Only values necessary to uniquely identify a lock ("type", "lock_id") are required for LockDeleted messages.
+
+**LockDeleted Message Structure**
 
 +--------------+--------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type | Structure                                                                                                                            | 
@@ -140,17 +154,41 @@ Only "type", "office_id", "lock_id", and  "project_id" are required.
 |              | +------------+-----------------------+---------------------------------------------------------------------------------------------+ |
 +--------------+--------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example LockDeleted message**
+
 .. code-block:: json
 
     {
       "type": "lock_deleted",
-      "office_id": "SWT",
-      "lock_id": "Green LD2-Lock"
+      "lock_id": {
+      	"office_id": "SWT",
+      	"name": "Green LD2-Lock"
+      }
     }
 
-**Lockages**
+**Gate Types Table**
 
-Only "type", "office_id", "lock_id", and  "date_time" are required.
++-----------------+----------------------------------------------------+
+| Gate Type       | Description                                        |
++=================+====================================================+
+| Single Chamber  | A lock gate system with a single chamber           |
++-----------------+----------------------------------------------------+
+| Land Side Main  | The main chamber on the land side of the lock      |
++-----------------+----------------------------------------------------+
+| Land Side Aux   | An auxiliary chamber on the land side of the lock  |
++-----------------+----------------------------------------------------+
+| River Side Main | The main chamber on the river side of the lock     |
++-----------------+----------------------------------------------------+
+| River Side Aux  | An auxiliary chamber on the river side of the lock |
++-----------------+----------------------------------------------------+
+
+Lockages
+^^^^^^^^
+
+Only values necessary to uniquely identify a lockage ("type", "lock_id", "date_time") are required for LockageCreated, LockageUpdated, and
+LockageDeleted messages.
+
+**LockageCreated Message Structure**
 
 +----------------+----------------------------------------------------------------------------------------+
 | Message Type   | Structure                                                                              |
@@ -178,13 +216,15 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 |                | +------------+---------------+-------------------------------------------------------+ |
 +----------------+----------------------------------------------------------------------------------------+
 
+**Example LockageCreated message**
+
 .. code-block:: json
 
     {
       "type": "lockage_created",
       "lock_id": {
       	"office_id": "SWT",
-      	name: "Green LD2-Lock"
+      	"name": "Green LD2-Lock"
       },
       "date_time": 1788971820000,
       "boat_count": 1,
@@ -194,6 +234,8 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
       "emptying": false,
       "notes": "Lockage completed successfully."
     }
+
+**LockageUpdated Message Structure**
 
 +----------------+----------------------------------------------------------------------------------------+
 | Message Type   | Structure                                                                              |
@@ -221,13 +263,15 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 |                | +------------+---------------+-------------------------------------------------------+ |
 +----------------+----------------------------------------------------------------------------------------+
 
+**Example LockageUpdated message**
+
 .. code-block:: json
 
     {
       "type": "lockage_updated",
       "lock_id": {
       	"office_id": "SWT",
-      	name: "Green LD2-Lock"
+      	"name": "Green LD2-Lock"
       },
       "date_time": 1788971820000,
       "boat_count": 1,
@@ -237,6 +281,8 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
       "emptying": false,
       "notes": "Lockage completed successfully."
     }
+
+**LockageDeleted Message Structure**
 
 +----------------+----------------------------------------------------------------------------------------+
 | Message Type   | Structure                                                                              |
@@ -252,13 +298,15 @@ Only "type", "office_id", "lock_id", and  "date_time" are required.
 |                | +------------+---------------+-------------------------------------------------------+ |
 +----------------+----------------------------------------------------------------------------------------+
 
+**Example LockageDeleted message**
+
 .. code-block:: json
 
     {
       "type": "lockage_deleted",
       "lock_id": {
       	"office_id": "SWT",
-      	name: "Green LD2-Lock"
+      	"name": "Green LD2-Lock"
       },
       "date_time": 1788971820000
     }

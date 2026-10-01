@@ -14,15 +14,18 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for pump-related events.
+Summary: Use the structures described below for pump-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
-**Pumps**
+Pumps
+^^^^^
 
-Only of "type", "office_id", and "pump_id" are required.
+Only values necessary to uniquely identify a pump ("type", "pump_id") are required for PumpCreated, PumpUpdated, and PumpDeleted messages.
+
+**PumpCreated Message Structure**
 
 +--------------+---------------------------------------------------------------+
 | Message Type | Structure                                                     |
@@ -38,16 +41,20 @@ Only of "type", "office_id", and "pump_id" are required.
 |              | +------------+---------------+------------------------------+ |
 +--------------+---------------------------------------------------------------+
 
+**Example PumpCreated Message**
+
 .. code-block:: json
 
     {
       "type": "pump_created",
       "pump_id": {
       	"office_id": "SWT",
-      	name: "Jonesboro-MI-1"
+      	"name": "Jonesboro-MI-1"
       },
       "description": "M+I Pump 1 for City of Jonesboro"
     }
+
+**PumpUpdated Message Structure**
 
 +--------------+---------------------------------------------------------------+
 | Message Type | Structure                                                     |
@@ -63,16 +70,20 @@ Only of "type", "office_id", and "pump_id" are required.
 |              | +------------+---------------+------------------------------+ |
 +--------------+---------------------------------------------------------------+
 
+**Example PumpUpdated Message**
+
 .. code-block:: json
 
     {
       "type": "pump_updated",
       "pump_id": {
       	"office_id": "SWT",
-      	name: "Jonesboro-MI-1"
+      	"name": "Jonesboro-MI-1"
       },
       "description": "M+I Pump 1 for City of Jonesboro"
     }
+
+**PumpDeleted Message Structure**
 
 +--------------+---------------------------------------------------------------+
 | Message Type | Structure                                                     |
@@ -86,17 +97,25 @@ Only of "type", "office_id", and "pump_id" are required.
 |              | +------------+---------------+------------------------------+ |
 +--------------+---------------------------------------------------------------+
 
+**Example PumpDeleted Message**
+
 .. code-block:: json
 
     {
       "type": "pump_deleted",
-      "office_id": "SWT",
-      "pump_id": "Jonesboro-MI-1"
+      "pump_id": {
+      	"office_id": "SWT",
+      	"name": "Jonesboro-MI-1"
+      }
     }
 
-**Pumpages**
+Pumpages
+^^^^^^^^
 
-Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
+Only values necessary to uniquely identify a pumpage ("type", "pump_id", "date_time"), and values required to mininimally describe a pumpuage
+("flow") are required for PumpageCreated and PumpageUpdated messages.
+
+**PumpageCreated Message Structure**
 
 +----------------+---------------------------------------------------------------------------------------------------------+
 | Message Type   | Structure                                                                                               |
@@ -124,13 +143,15 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
 +----------------+---------------------------------------------------------------------------------------------------------+
 
+**Example PumpageCreated Message**
+
 .. code-block:: json
 
     {
       "type": "pumpage_created",
       "pump_id": {
       	"office_id": "SWT",
-      	name: "Jonesboro-MI-1"
+      	"name": "Jonesboro-MI-1"
       },
       "date_time": 1788971820000,
       "flow": 64.3,
@@ -140,6 +161,8 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
       "pumpage_type": "Pipeline",
       "remarks": "Jonesboro M & I"
     }
+
+**PumpageUpdated Message Structure**
 
 +----------------+---------------------------------------------------------------------------------------------------------+
 | Message Type   | Structure                                                                                               |
@@ -167,13 +190,15 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
 +----------------+---------------------------------------------------------------------------------------------------------+
 
+**Example PumpageUpdated Message**
+
 .. code-block:: json
 
     {
       "type": "pumpage_updated",
       "pump_id": {
       	"office_id": "SWT",
-      	name: "Jonesboro-MI-1"
+      	"name": "Jonesboro-MI-1"
       },
       "date_time": 1788971820000,
       "flow": 64.3,
@@ -183,6 +208,10 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
       "pumpage_type": "Pipeline",
       "remarks": "Jonesboro M & I"
     }
+
+Only values necessary to uniquely identify a pumpage ("type", "pump_id", "date_time") are required for PumpageDeleted messages.
+
+**PumpageDeleted Message Structure**
 
 +----------------+---------------------------------------------------------------------------------------------------------+
 | Message Type   | Structure                                                                                               |
@@ -198,13 +227,15 @@ Only of "type", "office_id", "pump_id", "date_time", and "flow" are required.
 |                | +------------+-----------------------+----------------------------------------------------------------+ |
 +----------------+---------------------------------------------------------------------------------------------------------+
 
+**Example PumpageDeleted Message**
+
 .. code-block:: json
 
     {
       "type": "pumpage_deleted",
       "pump_id": {
       	"office_id": "SWT",
-      	name: "Jonesboro-MI-1"
+      	"name": "Jonesboro-MI-1"
       },
       "date_time": 1788971820000
     }

@@ -14,15 +14,18 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for stream-related events.
+Summary: Use the structures described below for stream-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
-**Streams**
+Streams
+^^^^^^^
 
-Only "type", "office_id", and "stream_id" values are required.
+Only values necessary to uniquely identify the stream ("type", "stream_id") are required for the StreamCreated, StreamUpdated, and StreamDeleted messages.
+
+**StreamCreated Message Structure**
 
 +---------------+--------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                |
@@ -58,13 +61,15 @@ Only "type", "office_id", and "stream_id" values are required.
 |               | +------------+--------------------------------+------------------------------------------------------------------------+ |
 +---------------+--------------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamCreated message**
+
 .. code-block:: json
 
    {
      "type": "stream_created",
      "stream_id": {
      	"office_id": "SPK",
-     	name: "American"
+     	"name": "American"
      },
      "station_unit": "ft",
      "length": 100.0,
@@ -75,6 +80,8 @@ Only "type", "office_id", and "stream_id" values are required.
      "flows_into_bank": "L",
      "comments": "Fake information for testing purposes"
    }
+
+**StreamUpdated Message Structure**
 
 +---------------+--------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                |
@@ -110,13 +117,15 @@ Only "type", "office_id", and "stream_id" values are required.
 |               | +------------+--------------------------------+------------------------------------------------------------------------+ |
 +---------------+--------------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamUpdated message**
+
 .. code-block:: json
 
    {
      "type": "stream_updated",
      "stream_id": {
      	"office_id": "SPK",
-     	name: "American"
+     	"name": "American"
      },
      "station_unit": "ft",
      "length": 100.0,
@@ -127,6 +136,8 @@ Only "type", "office_id", and "stream_id" values are required.
      "flows_into_bank": "L",
      "comments": "More fake information for testing purposes"
    }
+
+**StreamDeleted Message Structure**
 
 +---------------+--------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                |
@@ -140,17 +151,25 @@ Only "type", "office_id", and "stream_id" values are required.
 |               | +------------+--------------------------------+------------------------------------------------------------------------+ |
 +---------------+--------------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamDeleted message**
+
 .. code-block:: json
    
     {
       "type": "stream_deleted",
-      "office_id": "SPK",
-      "stream_id": "American"
+      "stream_id": {
+       	"office_id": "SPK",
+       	"name": "American"
+      }
     }
 
-**Stream Reaches**
+Stream Reaches
+^^^^^^^^^^^^^^
 
-Only "type", "office_id", "reach_id", "stream_id", "upstream_location_id", and "downstream_location_id" values are required.
+Only values necessary to uniquely identify a stream reach ("type", "reach_id"), and  values necessary to minimally describe a strean reach
+("upstream_location_id", "downstream_location_id") are required for StreamReachCreated and StreamReachUpdated messages.
+
+**StreamReachCreated Message Structure**
 
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------+
 | Message Type       | Structure                                                                                                                      |
@@ -174,19 +193,23 @@ Only "type", "office_id", "reach_id", "stream_id", "upstream_location_id", and "
 |                    | +------------+--------------------------+------------------------------------------------------------------------------------+ |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamReachCreated message**
+
 .. code-block:: json
 
     {
       "type": "stream_reach_created",
       "reach_id": {
       	"office_id": "SPK",
-      	name: "American_Reach_1"
+      	"name": "American_Reach_1"
       },
       "stream_id": "American",
       "upstream_location_id": "Amer_Riv_Pkwy",
       "downstream_location_id": "Amer_Sac_Confluence",
       "comments": "Fake information for testing purposes"
     }
+
+**StreamReachUpdated Message Structure**
 
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------+
 | Message Type       | Structure                                                                                                                      |
@@ -210,19 +233,25 @@ Only "type", "office_id", "reach_id", "stream_id", "upstream_location_id", and "
 |                    | +------------+--------------------------+------------------------------------------------------------------------------------+ |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamReachUpdated message**
+
 .. code-block:: json
 
     {
       "type": "stream_reach_updated",
       "reach_id": {
       	"office_id": "SPK",
-      	name: "American_Reach_1"
+      	"name": "American_Reach_1"
       },
       "stream_id": "American",
       "upstream_location_id": "Amer_Riv_Pkwy",
       "downstream_location_id": "Amer_Sac_Confluence",
       "comments": "Fake information for testing purposes"
     }
+
+Only values necessary to uniquely identify a stream reach ("type", "reach_id") are required for StreamReachDeleted messages.
+
+**StreamReachDeleted Message Structure**
 
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------+
 | Message Type       | Structure                                                                                                                      |
@@ -236,17 +265,25 @@ Only "type", "office_id", "reach_id", "stream_id", "upstream_location_id", and "
 |                    | +------------+--------------------------+------------------------------------------------------------------------------------+ |
 +--------------------+--------------------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamReachDeleted message**
+
 .. code-block:: json
 
     {
       "type": "stream_reach_deleted",
-      "office_id": "SPK",
-      "reach_id": "American_Reach_1"
+      "reach_id": {
+      	"office_id": "SPK",
+      	"name": "American_Reach_1"
+      }
     }
 
-**Stream Locations**
+Stream Locations
+^^^^^^^^^^^^^^^^
 
-Only "type", "office_id", "location_id", "stream_id", "station", and "station_unit" values are required.
+Only values necessary to uniquely identify a stream location ("type", "location_id"), and values necessary to minimally describe a stream location
+("station", "station_unit") are required for StreamLocationCreated and StreamLocationUpdated messages.
+
+**StreamLocationCreated Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                                                        |
@@ -282,13 +319,15 @@ Only "type", "office_id", "location_id", "stream_id", "station", and "station_un
 |                       | +------------+---------------------------+---------------------------------------------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamLocationCreated message**
+
 .. code-block:: json
 
     {
       "type": "stream_location_created",
       "location_id": {
       	"office_id": "SPK",
-      	name: "American_R_Pkwy"
+      	"name": "American_R_Pkwy"
       },
       "stream_id": "American",
       "station": 1.25,
@@ -299,6 +338,8 @@ Only "type", "office_id", "location_id", "stream_id", "station", and "station_un
       "drainage_area": 1234.5,
       "area_unit": "mi2"
     }
+
+**StreamLocationUpdated Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                                                        |
@@ -334,13 +375,15 @@ Only "type", "office_id", "location_id", "stream_id", "station", and "station_un
 |                       | +------------+---------------------------+---------------------------------------------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamLocationUpdated message**
+
 .. code-block:: json
 
     {
       "type": "stream_location_updated",
       "location_id": {
       	"office_id": "SPK",
-      	name: "American_R_Pkwy"
+      	"name": "American_R_Pkwy"
       },
       "stream_id": "American",
       "station": 1.25,
@@ -352,6 +395,10 @@ Only "type", "office_id", "location_id", "stream_id", "station", and "station_un
       "drainage_area": 1234.5,
       "area_unit": "mi2"
     }
+
+Only values necessary to uniquely identify a stream location ("type", "location_id") are required for StreamLocationDeleted messages.
+
+**StreamLocationDeleted Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                                                        |
@@ -365,12 +412,16 @@ Only "type", "office_id", "location_id", "stream_id", "station", and "station_un
 |                       | +------------+---------------------------+---------------------------------------------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 
+**Example StreamLocationDeleted message**
+
 .. code-block:: json
 
     {
       "type": "stream_location_deleted",
-      "office_id": "SPK",
-      "location_id": "American_R_Pkwy"
+      "location_id": {
+      	"office_id": "SPK",
+      	"name": "American_R_Pkwy"
+      }
     }
 
 Decision Status

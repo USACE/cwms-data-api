@@ -14,15 +14,19 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for gate-related events.
+Summary: Use the structures described below for gate-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
-**Gate Groups**
+Gate Groups
+^^^^^^^^^^^
 
-Only "type", "office_id", "group_id", and  "project_id" are required.
+Only values necessary to uniquely identify a gate group ("type", "group_id"), and  values necessary to minimally describe a gate group ("project_id") are
+required for GateGroupCreated and GateGroupUpdated messages.
+
+**GateGroupCreated Message Structure**
 
 +------------------+--------------------------------------------------------------------------------------------------+
 | Message Type     | Structure                                                                                        |
@@ -48,13 +52,15 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 |                  | +------------+--------------------+------------------------------------------------------------+ |
 +------------------+--------------------------------------------------------------------------------------------------+
 
+**Example GateGroupCreated Message**
+
 .. code-block:: json
 
     {
       "type": "gate_group_created",
       "group_id": {
       	"office_id": "SWT",
-      	name: "Greenbrier Service Gates"
+      	"name": "Greenbrier Service Gates"
       },
       "project_id": "Greenbrier",
       "rating_spec_id": "Greenbrier.Opening-Service Gates,Elev;Flow.Linear.Production",
@@ -63,6 +69,8 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
       "always_submerged": false,
       "description": "Service gates for Greenbrier Dam."
     }
+
+**GateGroupUpdated Message Structure**
 
 +------------------+--------------------------------------------------------------------------------------------------+
 | Message Type     | Structure                                                                                        |
@@ -88,13 +96,15 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 |                  | +------------+--------------------+------------------------------------------------------------+ |
 +------------------+--------------------------------------------------------------------------------------------------+
 
+**Example GateGroupUpdated Message**
+
 .. code-block:: json
 
     {
       "type": "gate_group_updated",
       "group_id": {
       	"office_id": "SWT",
-      	name: "Greenbrier Service Gates"
+      	"name": "Greenbrier Service Gates"
       },
       "project_id": "Greenbrier",
       "rating_spec_id": "Greenbrier.Opening-Service Gates,Elev;Flow.Linear.Production",
@@ -103,6 +113,10 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
       "always_submerged": false,
       "description": "Service gates for Greenbrier Dam."
     }
+
+Only values necessary to uniquely identify a gate group ("type", "group_id") are required for GateGroupDeleted messages.
+
+**GateGroupDeleted Message Structure**
 
 +------------------+--------------------------------------------------------------------------------------------------+
 | Message Type     | Structure                                                                                        |
@@ -116,13 +130,19 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 |                  | +------------+--------------------+------------------------------------------------------------+ |
 +------------------+--------------------------------------------------------------------------------------------------+
 
+**Example GateGroupDeleted Message**
+
 .. code-block:: json
 
     {
       "type": "gate_group_deleted",
-      "office_id": "SWT",
-      "group_id": "Greenbrier Service Gates"
+      "group_id": {
+      	"office_id": "SWT",
+      	"name": "Greenbrier Service Gates"
+      }
     }
+
+**Gate Types Table**
 
 +----------------+------------------------------------------------------------------------------------------------------------------------------+
 | Gate Type ID   | Description                                                                                                                  |
@@ -156,9 +176,13 @@ Only "type", "office_id", "group_id", and  "project_id" are required.
 | WICKET         | A group of small connected hinged gates (wickets) that overlap when closed and rotate together to open                       |
 +----------------+------------------------------------------------------------------------------------------------------------------------------+
 
-**Gates**
+Gates
+^^^^^
 
-Only "type", "office_id", "gate_id", and "group_id" are required.
+Only values necessary to uniquely identify a gate ("type", "gate_id"), and values necessary to minimally describe a gate ("group_id") are required
+for GateCreated and GateUpdated messages.
+
+**GateCreated Message Structure**
 
 +--------------+------------------------------------------------------------------------------------+
 | Message Type | Structure                                                                          |
@@ -176,17 +200,21 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 |              | +------------+--------------+----------------------------------------------------+ |
 +--------------+------------------------------------------------------------------------------------+
 
+**Example GateCreated Message**
+
 .. code-block:: json
 
     {
       "type": "gate_created",
       "gate_id": {
       	"office_id": "SWT",
-      	name: "Greenbrier-SG1"
+      	"name": "Greenbrier-SG1"
       },
       "group_id": "Greenbrier Service Gates",
       "sort_order": 1
     }
+
+**GateUpdated Message Structure**
 
 +--------------+------------------------------------------------------------------------------------+
 | Message Type | Structure                                                                          |
@@ -204,17 +232,23 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 |              | +------------+--------------+----------------------------------------------------+ |
 +--------------+------------------------------------------------------------------------------------+
 
+**Example GateUpdated Message**
+
 .. code-block:: json
 
     {
       "type": "gate_updated",
       "gate_id": {
       	"office_id": "SWT",
-      	name: "Greenbrier-SG1"
+      	"name": "Greenbrier-SG1"
       },
       "group_id": "Greenbrier Service Gates",
       "sort_order": 1
     }
+
+Only values necessary to uniquely identify a gate ("type", "gate_id") are required for GateDeleted messages.
+
+**GateDeleted Message Structure**
 
 +--------------+------------------------------------------------------------------------------------+
 | Message Type | Structure                                                                          |
@@ -228,17 +262,44 @@ Only "type", "office_id", "gate_id", and "group_id" are required.
 |              | +------------+--------------+----------------------------------------------------+ |
 +--------------+------------------------------------------------------------------------------------+
 
+**Example GateDeleted Message**
+
 .. code-block:: json
 
     {
       "type": "gate_deleted",
-      "office_id": "SWT",
-      "gate_id": "Greenbrier-SG1"
+      "gate_id": {
+      	"office_id": "SWT",
+      	"name": "Greenbrier-SG1"
+      }
     }
 
-**Gate Changes**
+Gate Changes
+^^^^^^^^^^^^
 
-Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharge_method", and "release_reason" are required.
+GateChangeCreated and GateChangeUpdated messages contain arrays of gate settings for each gate in the project. Each setting in the array has the following
+structure, with only "gate_id", "opening", and "opening_unit" values required.
+
+**Gate Setting Structure**
+
++------------+--------------------+-------------------------------------------------------------+
+| Value Type | Value Name         | Value                                                       |
++============+====================+=============================================================+
+| String     | "gate_id"          | The gate identifier (without office_id)                     |
++------------+--------------------+-------------------------------------------------------------+
+| double     | "opening"          | The opening of the gate                                     |
++------------+--------------------+-------------------------------------------------------------+
+| String     | "opening_unit"     | The unit of the gate opening                                |
++------------+--------------------+-------------------------------------------------------------+
+| double     | "invert_elevation" | The invert elevation if the gate supports variable inverts  |
++------------+--------------------+-------------------------------------------------------------+
+| String     | "elevation_unit"   | The unit of the invert elevation                            |
++------------+--------------------+-------------------------------------------------------------+
+
+Only values necessary to uniquely identify a gate change ("type", "project_id", "date_time") and values necessary to minimally describe
+a gate change ("pool_elevation", "discharge_method", and "release_reason") are required for GateChangeCreated ang GateChangeUpdatedmessages.
+
+**GateChangeCreated Message Structure**
 
 +-------------------+------------------------------------------------------------------------------------------------------------------------------+
 | Message Type      | Structure                                                                                                                    |
@@ -274,7 +335,11 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 |                   | | String     | "notes"                        | Notes about the gate change                                                | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
+|                   | | Array      | "settings"                     | Settings for each gate of the project                                      | |
+|                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------+
+
+**Example GateChangeCreated Message**
 
 .. code-block:: json
 
@@ -282,7 +347,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
       "type": "gate_change_created",
       "project_id": {
       	"office_id": "SWT",
-      	name: "Greenbrier"
+      	"name": "Greenbrier"
       },
       "date_time": 1788971820000,
       "pool_elevation": 912.54,
@@ -294,8 +359,27 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
       "discharge_method": "Calculated from gate opening-elev curves",
       "release_reason": "Flood control release",
       "protected": false,
-      "notes": "Gate change for flood control."
+      "notes": "Gate change for flood control.",
+      "settings": [
+        {
+          "gate_id": "Greenbrier-SG1",
+          "opening": 1.1,
+          "opening_unit": "ft"
+        },
+        {
+          "gate_id": "Greenbrier-SG2",
+          "opening": 1.1,
+          "opening_unit": "ft"
+        },
+        {
+          "gate_id": "Greenbrier-LF",
+          "opening": 0.0,
+          "opening_unit": "%"
+        }
+      ]
     }
+
+**GateChangeUpdated Message Structure**
 
 +-------------------+------------------------------------------------------------------------------------------------------------------------------+
 | Message Type      | Structure                                                                                                                    |
@@ -331,7 +415,11 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 |                   | | String     | "notes"                        | Notes about the gate change                                                | |
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
+|                   | | Array      | "settings"                     | Settings for each gate of the project                                      | |
+|                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------+
+
+**Example GateChangeUpdated Message**
 
 .. code-block:: json
 
@@ -339,7 +427,7 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
       "type": "gate_change_updated",
       "project_id": {
       	"office_id": "SWT",
-      	name: "Greenbrier"
+      	"name": "Greenbrier"
       },
       "date_time": 1788971820000,
       "pool_elevation": 912.54,
@@ -351,8 +439,29 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
       "discharge_method": "Calculated from gate opening-elev curves",
       "release_reason": "Flood control release",
       "protected": false,
-      "notes": "Gate change for flood control."
+      "notes": "Gate change for flood control.",
+      "settings": [
+        {
+          "gate_id": "Greenbrier-SG1",
+          "opening": 1.1,
+          "opening_unit": "ft"
+        },
+        {
+          "gate_id": "Greenbrier-SG2",
+          "opening": 1.1,
+          "opening_unit": "ft"
+        },
+        {
+          "gate_id": "Greenbrier-LF",
+          "opening": 0.0,
+          "opening_unit": "%"
+        }
+      ]
     }
+
+Only values necessary to uniquely identify a gate change ("type", "project_id", "date_time") required for GateChangeDeleted messages.
+
+**GateChangeDeleted Message Structure**
 
 +-------------------+------------------------------------------------------------------------------------------------------------------------------+
 | Message Type      | Structure                                                                                                                    |
@@ -368,16 +477,20 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 |                   | +------------+--------------------------------+----------------------------------------------------------------------------+ |
 +-------------------+------------------------------------------------------------------------------------------------------------------------------+
 
+**Example GateChangeDeleted Message**
+
 .. code-block:: json
 
     {
       "type": "gate_change_deleted",
       "project_id": {
       	"office_id": "SWT",
-      	name: "Greenbrier"
+      	"name": "Greenbrier"
       },
       "date_time": 1788971820000
     }
+
+**Discharge Methods Table**
 
 +------------------------------------------+
 | Discharge Methods                        |
@@ -390,6 +503,8 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 +------------------------------------------+
 | Adjusted by an automated method          |
 +------------------------------------------+
+
+**Release Reasons Table**
 
 +-----------------------+
 | Release Reasons       |
@@ -405,114 +520,6 @@ Only "type", "office_id", "project_id", "date_time", "pool_elevation", "discharg
 | Other release         |
 +-----------------------+
 
-**Gate Settings**
-
-Only "type", "office_id", "project_id", "date_time", "gate_id", and "opening" are required.
-
-+--------------------+---------------------------------------------------------------------------------------------------+
-| Message Type       | Structure                                                                                         |
-+====================+===================================================================================================+
-| GateSettingCreated | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | Value Type | Value Name         | Value                                                       | |
-|                    | +============+====================+=============================================================+ |
-|                    | | String     | "type"             | "gate_setting_created"                                      | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | Object     | "project_id"       | The project identifier                                      | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | long       | "date_time"        | The date and time of the gate setting in epoch milliseconds | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "gate_id"          | The gate identifier                                         | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | double     | "opening"          | The opening of the gate                                     | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "opening_unit"     | The unit of the gate opening                                | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | double     | "invert_elevation" | The invert elevation if the gate supports variable inverts  | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "elevation_unit"   | The unit of the invert elevation                            | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-+--------------------+---------------------------------------------------------------------------------------------------+
-
-.. code-block:: json
-
-    {
-      "type": "gate_setting_created",
-      "project_id": {
-      	"office_id": "SWT",
-      	name: "Greenbrier"
-      },
-      "date_time": 1788971820000,
-      "gate_id": "Greenbrier-SG1",
-      "opening": 1.1,
-      "opening_unit": "ft"
-    }
-
-+--------------------+---------------------------------------------------------------------------------------------------+
-| Message Type       | Structure                                                                                         |
-+====================+===================================================================================================+
-| GateSettingUpdated | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | Value Type | Value Name         | Value                                                       | |
-|                    | +============+====================+=============================================================+ |
-|                    | | String     | "type"             | "gate_setting_updated"                                      | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | Object     | "project_id"       | The project identifier                                      | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | long       | "date_time"        | The date and time of the gate setting in epoch milliseconds | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "gate_id"          | The gate identifier                                         | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | double     | "opening"          | The opening of the gate                                     | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "opening_unit"     | The unit of the gate opening                                | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | double     | "invert_elevation" | The invert elevation if the gate supports variable inverts  | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "elevation_unit"   | The unit of the invert elevation                            | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-+--------------------+---------------------------------------------------------------------------------------------------+
-
-.. code-block:: json
-
-    {
-      "type": "gate_setting_updated",
-      "project_id": {
-      	"office_id": "SWT",
-      	name: "Greenbrier"
-      },
-      "date_time": 1788971820000,
-      "gate_id": "Greenbrier-SG1",
-      "opening": 1.1,
-      "opening_unit": "ft"
-    }
-
-
-+--------------------+---------------------------------------------------------------------------------------------------+
-| Message Type       | Structure                                                                                         |
-+====================+===================================================================================================+
-| GateSettingDeleted | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | Value Type | Value Name         | Value                                                       | |
-|                    | +============+====================+=============================================================+ |
-|                    | | String     | "type"             | "gate_setting_deleted"                                      | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | Object     | "project_id"       | The project identifier                                      | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | long       | "date_time"        | The date and time of the gate changes in epoch milliseconds | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-|                    | | String     | "gate_id"          | The gate identifier                                         | |
-|                    | +------------+--------------------+-------------------------------------------------------------+ |
-+--------------------+---------------------------------------------------------------------------------------------------+
-
-.. code-block:: json
-
-    {
-      "type": "gate_setting_deleted",
-      "project_id": {
-      	"office_id": "SWT",
-      	name: "Greenbrier"
-      },
-      "date_time": 1788971820000,
-      "gate_id": "Greenbrier-SG1"
-    }
 
 Decision Status
 ===============

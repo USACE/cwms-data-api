@@ -14,15 +14,19 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for entity-related events.
+Summary: Use the structures described below for entity-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
 Author: Mike Perryman
 
-**Entities**
+Entities
+^^^^^^^^
 
-Only "type", "office_id", "entity_id", and "entity_name" values are required.
+Only values necessary to uniquely identify an entity ("type", "entity_id"), and  values necessary to minimally describe an entity ("entity_name") are
+required for EntityCreated and EntityUpdated messages.
+
+**EntityCreated Message Structure**
 
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                          |
@@ -43,18 +47,22 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 |               |                                                                                                                    |
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 
+**Example EntityCreated message**
+
 .. code-block:: json
 
     {
       "type": "entity_created",
       "entity_id": {
       	"office_id": "SWT",
-      	name: "KEYS_AO"
+      	"name": "KEYS_AO"
       },
       "entity_name": "Keystone Lake Area Office",
       "parent_entity_id": "CESWT",
       "category_id": "GOV"
     }
+
+**EntityUpdated Message Structure**
 
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                          |
@@ -75,18 +83,24 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 |               |                                                                                                                    |
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 
+**Example EntityUpdated message**
+
 .. code-block:: json
 
     {
       "type": "entity_updated",
       "entity_id": {
       	"office_id": "SWT",
-      	name: "KEYS_AO"
+      	"name": "KEYS_AO"
       },
       "entity_name": "Keystone Lake Area Office",
       "parent_entity_id": "CESWT",
       "category_id": "GOV"
     }
+
+Only values necessary to uniquely identify an entity ("type", "entity_id") are required for EntityDeleted messages.
+
+**EntityDeleted Message Structure**
 
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                          |
@@ -100,17 +114,25 @@ Only "type", "office_id", "entity_id", and "entity_name" values are required.
 |               | +------------+--------------------+------------------------------------------------------------------------------+ |
 +---------------+--------------------------------------------------------------------------------------------------------------------+
 
+**Example EntityDeleted message**
+
 .. code-block:: json
 
     {
       "type": "entity_deleted",
-      "office_id": "SWT",
-      "entity_id": "KEYS_AO"
+      "entity_id": {
+      	"office_id": "SWT",
+      	"name": "KEYS_AO"
+      }
     }
 
-**Entity Locations**
+Entity Locations
+^^^^^^^^^^^^^^^^
 
-Only "type", "office_id", "location_id", and "entity_id" values are required.
+Only values necessary to uniquely identify an entity location ("type", "location_id", "entity_id") are required for EntityLocationCreated,
+EntityLocationUpdated, and EntityLocationDeleted messages.
+
+**EntityLocationCreated Message Structure**
 
 +-----------------------+-------------------------------------------------------------------+
 | Message Type          + Structure                                                         |
@@ -128,17 +150,21 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 |                       | +------------+---------------+----------------------------------+ |
 +-----------------------+-------------------------------------------------------------------+
 
+**Example EntityLocationCreated message**
+
 .. code-block:: json
 
     {
       "type": "entity_location_created",
       "location_id": {
       	"office_id": "SWT",
-      	name: "KEYS_AO"
+      	"name": "KEYS_AO"
       },
       "entity_id": "KEYS_AO",
       "comments": "Keystone Lake Area Office location"
     }
+
+**EntityLocationUpdated Message Structure**
 
 +-----------------------+-------------------------------------------------------------------+
 | Message Type          + Structure                                                         |
@@ -156,17 +182,21 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 |                       | +------------+---------------+----------------------------------+ |
 +-----------------------+-------------------------------------------------------------------+
 
+**Example EntityLocationUpdated message**
+
 .. code-block:: json
 
     {
       "type": "entity_location_updated",
       "location_id": {
       	"office_id": "SWT",
-      	name: "KEYS_AO"
+      	"name": "KEYS_AO"
       },
       "entity_id": "KEYS_AO",
       "comments": "Keystone Lake Area Office location"
     }
+    
+**EntityLocationDeleted Message Structure**
 
 +-----------------------+-------------------------------------------------------------------+
 | Message Type          + Structure                                                         |
@@ -182,13 +212,15 @@ Only "type", "office_id", "location_id", and "entity_id" values are required.
 |                       | +------------+---------------+----------------------------------+ |
 +-----------------------+-------------------------------------------------------------------+
 
+**Example EntityLocationDeleted message**
+
 .. code-block:: json
 
     {
       "type": "entity_location_deleted",
       "location_id": {
       	"office_id": "SWT",
-      	name: "KEYS_AO"
+      	"name": "KEYS_AO"
       },
       "entity_id": "KEYS_AO"
     }

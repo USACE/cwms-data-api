@@ -14,7 +14,7 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for rating-related events.
+Summary: Use the structures described below for rating-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
@@ -23,9 +23,13 @@ After implementation, the RatingStored messages published to various ``TS_STORED
 Author: Mike Perryman
 
 
-**Rating Templates**
+Rating Templates
+^^^^^^^^^^^^^^^^
 
-Only "type", "office_id", and "template_id" values are required.
+Only values necessary to uniquely identify a rating template ("type", "template_id") are required for RatingTemplateCreated, RatingTemplateUpdated,
+and RatingTemplateDeleted messages.
+
+**RatingTemplateCreated Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                    |
@@ -41,16 +45,20 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
 
+**Example RatingTemplateCreated message**
+
 .. code-block:: json
 
     {
         "type": "rating_template_created",
         "template_id": {
         	"office_id": "SWT",
-        	name: "Stage;Flow.Logarithmic"
+        	"name": "Stage;Flow.Logarithmic"
         },
         "description": "USGS-style stage/flow ratings"
     }
+
+**RatingTemplateUpdated Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                    |
@@ -66,16 +74,20 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
 
+**Example RatingTemplateUpdated message**
+
 .. code-block:: json
 
     {
         "type": "rating_template_updated",
         "template_id": {
         	"office_id": "SWT",
-        	name: "Stage;Flow.Logarithmic"
+        	"name": "Stage;Flow.Logarithmic"
         },
         "description": "USGS-style stage/flow BASE ratings"
     }
+
+**RatingTemplateDeleted Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                    |
@@ -89,6 +101,8 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
 
+**Example RatingTemplateDeleted message**
+
 .. code-block:: json
 
     {
@@ -97,9 +111,11 @@ Only "type", "office_id", and "template_id" values are required.
         "template_id": "Stage;Flow.Logarithmic"
     }
 
-**Rating Specifications**
+Rating Specifications
+^^^^^^^^^^^^^^^^^^^^^
 
-Only "type", "office_id", and "specification_id" values are required.
+Only values necessary to uniquely identify a rating specification ("type", "specification_id") are required for RatingSpecificationCreated,
+RatingSpecificationUpdated, and RatingSpecificationDeleted messages.
 
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type               | Structure                                                                                                                                                       |
@@ -135,13 +151,15 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingSpecificationCreated message**
+
 .. code-block:: json
 
     {
         "type": "rating_specification_created",
         "specification_id": {
         	"office_id": "SWT",
-        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
         },
         "source_agency": "ABRFC",
         "in_range_method": "LINEAR",
@@ -155,6 +173,8 @@ Only "type", "office_id", and "specification_id" values are required.
         "dependent_rounding": "4444444444",
         "description": "USGS streamflow rating for the Arkansas River at Tulsa, OK"
     }
+
+**RatingSpecificationUpdated Message Structure**
 
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type               | Structure                                                                                                                                                       |
@@ -190,13 +210,15 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingSpecificationUpdated message**
+
 .. code-block:: json
 
     {
         "type": "rating_specification_updated",
         "specification_id": {
         	"office_id": "SWT",
-        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
         },
         "source_agency": "ABRFC",
         "in_range_method": "LINEAR",
@@ -211,6 +233,8 @@ Only "type", "office_id", and "specification_id" values are required.
         "description": "USGS streamflow rating for the Arkansas River at Tulsa, OK"
     }
 
+**RatingSpecificationDeleted Message Structure**
+
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type               | Structure                                                                                                                                                       |
 +============================+=================================================================================================================================================================+
@@ -223,6 +247,8 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingSpecificationDeleted message**
+
 .. code-block:: json
 
     {
@@ -231,9 +257,13 @@ Only "type", "office_id", and "specification_id" values are required.
         "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production"
     }
 
-**Ratings**
+Ratings
+^^^^^^^
 
-Only "type", "office_id", "specification_id", and "effective_time" values are required.
+Only values necessary to uniquely identify a rating ("type", "specification_id", "effective_time") are required for RatingCreated, RatingUpdated,
+and RatingDeleted messages.
+
+**RatingCreated Message Structure**
 
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                             |
@@ -257,13 +287,15 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingCreated message**
+
 .. code-block:: json
 
     {
         "type": "rating_created",
         "specification_id": {
         	"office_id": "SWT",
-        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
         },
         "effective_time": 1782190800000,
         "transition_time": 1780981200000,
@@ -271,6 +303,8 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
         "active": false,
         "rating_type": "usgs"
     }
+
+**RatingUpdated Message Structure**
 
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                             |
@@ -294,13 +328,15 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingUpdated message**
+
 .. code-block:: json
 
     {
         "type": "rating_updated",
         "specification_id": {
         	"office_id": "SWT",
-        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
         },
         "effective_time": 1782190800000,
         "transition_time": 1780981200000,
@@ -308,6 +344,8 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
         "active": true,
         "rating_type": "usgs"
     }
+
+**RatingDeleted Message Structure**
 
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                             |
@@ -323,13 +361,15 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingDeleted message**
+
 .. code-block:: json
 
     {
         "type": "rating_deleted",
         "specification_id": {
         	"office_id": "SWT",
-        	name: "Tulsa.Stage;Flow.Logarithmic.Production"
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
         },
         "effective_time": 1782190800000
     }
