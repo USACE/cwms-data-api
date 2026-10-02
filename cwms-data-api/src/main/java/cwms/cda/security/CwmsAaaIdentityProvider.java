@@ -52,33 +52,9 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
     private static Set<RouteRole> getRoles(@NotNull Context ctx) {
         Objects.requireNonNull(ctx,"Configuration is horribly wrong. This system is not usable.");
         Set<RouteRole> retval = new LinkedHashSet<>();
-        Principal principal = ctx.sessionAttribute(IdentityProvider.PRINCIPAL_KEY);
-
-        Set<RouteRole> specifiedRoles = getRoles(principal);
-        if (!specifiedRoles.isEmpty()) {
-            retval.addAll(specifiedRoles);
-        }
-
-        return retval;
-    }
-
-    private static Set<RouteRole> getRoles(Principal principal) {
-        Set<RouteRole> retval = new LinkedHashSet<>();
-        if (principal != null) {
-            List<String> roleNames;
-            try {
-                CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
-                roleNames = cup.getRoles();
-                if (roleNames != null) {
-                    roleNames.stream().map(CwmsAaaIdentityProvider::buildRole).forEach(retval::add);
-                }
-                logger.atFine().log("Principal had roles: %s", retval);
-            } catch (ClassCastException e) {
-                logger.atSevere().log("cwmsaaa api and implementation jars should only be in the system "
-                        + "classpath, not the war file. Verify and restart application");
-            }
-        } else {
-            throw new CwmsAuthException("Provided User credentials are not valid.");
+        var principal = ctx.sessionAttribute(IdentityProvider.PRINCIPAL_KEY);
+        if (principal instanceof DataApiPrincipal dap) {
+            retval.addAll(dap.getRoles());
         }
         return retval;
     }
