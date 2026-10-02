@@ -173,6 +173,7 @@ public final class Controllers {
 
     public static final String GROUP_ID = "group-id";
     public static final String REPLACE_ASSIGNED_LOCS = "replace-assigned-locs";
+    public static final String REPLACE_METADATA = "replace-metadata";
     public static final String REPLACE_ASSIGNED_TS = "replace-assigned-ts";
     public static final String TS_IDS = "ts-ids";
     public static final String IGNORE_MISSING = "ignore-missing";
