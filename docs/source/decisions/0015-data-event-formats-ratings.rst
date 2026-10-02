@@ -6,7 +6,7 @@ Data Event Formats - Ratings
 Summary
 =======
 
-CWMS needs an message structure to notify clients of rating-related events.
+CWMS needs a message structure to notify clients of rating-related events.
 
 Opinions
 ========
@@ -14,7 +14,7 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use the structure described below for rating-related events.
+Summary: Use the structures described below for rating-related events.
 
 All messages will be published to the appropriate ``REALTIME_OPS`` topic. Subscribers can set up appropriate filters to receive the desired messages.
 
@@ -23,9 +23,13 @@ After implementation, the RatingStored messages published to various ``TS_STORED
 Author: Mike Perryman
 
 
-**Rating Templates**
+Rating Templates
+^^^^^^^^^^^^^^^^
 
-Only "type", "office_id", and "template_id" values are required.
+Only values necessary to uniquely identify a rating template ("type", "template_id") are required for RatingTemplateCreated, RatingTemplateUpdated,
+and RatingTemplateDeleted messages.
+
+**RatingTemplateCreated Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                    |
@@ -35,22 +39,26 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +============+==========================+==================================+ |
 |                       | | String     | "type"                   | "rating_template_created"        | |
 |                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "office_id"              | The office identifier            | |
-|                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "template_id"            | The rating template identifier   | |
+|                       | | Object     | "template_id"            | The rating template identifier   | |
 |                       | +------------+--------------------------+----------------------------------+ |
 |                       | | String     | "description"            | The description for the template | |
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
 
+**Example RatingTemplateCreated message**
+
 .. code-block:: json
 
     {
         "type": "rating_template_created",
-        "office_id": "SWT",
-        "template_id": "Stage;Flow.Logarithmic",
+        "template_id": {
+        	"office_id": "SWT",
+        	"name": "Stage;Flow.Logarithmic"
+        },
         "description": "USGS-style stage/flow ratings"
     }
+
+**RatingTemplateUpdated Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                    |
@@ -60,22 +68,26 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +============+==========================+==================================+ |
 |                       | | String     | "type"                   | "rating_template_updated"        | |
 |                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "office_id"              | The office identifier            | |
-|                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "template_id"            | The rating template identifier   | |
+|                       | | Object     | "template_id"            | The rating template identifier   | |
 |                       | +------------+--------------------------+----------------------------------+ |
 |                       | | String     | "description"            | The description for the template | |
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
 
+**Example RatingTemplateUpdated message**
+
 .. code-block:: json
 
     {
         "type": "rating_template_updated",
-        "office_id": "SWT",
-        "template_id": "Stage;Flow.Logarithmic",
+        "template_id": {
+        	"office_id": "SWT",
+        	"name": "Stage;Flow.Logarithmic"
+        },
         "description": "USGS-style stage/flow BASE ratings"
     }
+
+**RatingTemplateDeleted Message Structure**
 
 +-----------------------+------------------------------------------------------------------------------+
 | Message Type          | Structure                                                                    |
@@ -85,11 +97,11 @@ Only "type", "office_id", and "template_id" values are required.
 |                       | +============+==========================+==================================+ |
 |                       | | String     | "type"                   | "rating_template_deleted"        | |
 |                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "office_id"              | The office identifier            | |
-|                       | +------------+--------------------------+----------------------------------+ |
-|                       | | String     | "template_id"            | The rating template identifier   | |
+|                       | | Object     | "template_id"            | The rating template identifier   | |
 |                       | +------------+--------------------------+----------------------------------+ |
 +-----------------------+------------------------------------------------------------------------------+
+
+**Example RatingTemplateDeleted message**
 
 .. code-block:: json
 
@@ -99,9 +111,11 @@ Only "type", "office_id", and "template_id" values are required.
         "template_id": "Stage;Flow.Logarithmic"
     }
 
-**Rating Specifications**
+Rating Specifications
+^^^^^^^^^^^^^^^^^^^^^
 
-Only "type", "office_id", and "specification_id" values are required.
+Only values necessary to uniquely identify a rating specification ("type", "specification_id") are required for RatingSpecificationCreated,
+RatingSpecificationUpdated, and RatingSpecificationDeleted messages.
 
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type               | Structure                                                                                                                                                       |
@@ -111,9 +125,7 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +============+===========================+====================================================================================================================+ |
 |                            | | String     | "type"                    | "rating_specification_created"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "office_id"               | The office identifier                                                                                              | |
-|                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "specification_id"        | The rating specification identifier                                                                                | |
+|                            | | Object     | "specification_id"        | The rating specification identifier                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | String     | "source_agency"           | The entity that generates ratings for this specification                                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
@@ -139,12 +151,16 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingSpecificationCreated message**
+
 .. code-block:: json
 
     {
         "type": "rating_specification_created",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "source_agency": "ABRFC",
         "in_range_method": "LINEAR",
         "out_range_low_method": "NEAREST",
@@ -158,6 +174,8 @@ Only "type", "office_id", and "specification_id" values are required.
         "description": "USGS streamflow rating for the Arkansas River at Tulsa, OK"
     }
 
+**RatingSpecificationUpdated Message Structure**
+
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type               | Structure                                                                                                                                                       |
 +============================+=================================================================================================================================================================+
@@ -166,9 +184,7 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +============+===========================+====================================================================================================================+ |
 |                            | | String     | "type"                    | "rating_specification_updated"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "office_id"               | The office identifier                                                                                              | |
-|                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "specification_id"        | The rating specification identifier                                                                                | |
+|                            | | Object     | "specification_id"        | The rating specification identifier                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 |                            | | String     | "source_agency"           | The entity that generates ratings for this specification                                                           | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
@@ -194,12 +210,16 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingSpecificationUpdated message**
+
 .. code-block:: json
 
     {
         "type": "rating_specification_updated",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "source_agency": "ABRFC",
         "in_range_method": "LINEAR",
         "out_range_low_method": "NULL",
@@ -213,6 +233,8 @@ Only "type", "office_id", and "specification_id" values are required.
         "description": "USGS streamflow rating for the Arkansas River at Tulsa, OK"
     }
 
+**RatingSpecificationDeleted Message Structure**
+
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type               | Structure                                                                                                                                                       |
 +============================+=================================================================================================================================================================+
@@ -221,11 +243,11 @@ Only "type", "office_id", and "specification_id" values are required.
 |                            | +============+===========================+====================================================================================================================+ |
 |                            | | String     | "type"                    | "rating_specification_deleted"                                                                                     | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "office_id"               | The office identifier                                                                                              | |
-|                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
-|                            | | String     | "specification_id"        | The rating specification identifier                                                                                | |
+|                            | | Object     | "specification_id"        | The rating specification identifier                                                                                | |
 |                            | +------------+---------------------------+--------------------------------------------------------------------------------------------------------------------+ |
 +----------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+**Example RatingSpecificationDeleted message**
 
 .. code-block:: json
 
@@ -235,9 +257,13 @@ Only "type", "office_id", and "specification_id" values are required.
         "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production"
     }
 
-**Ratings**
+Ratings
+^^^^^^^
 
-Only "type", "office_id", "specification_id", and "effective_time" values are required.
+Only values necessary to uniquely identify a rating ("type", "specification_id", "effective_time") are required for RatingCreated, RatingUpdated,
+and RatingDeleted messages.
+
+**RatingCreated Message Structure**
 
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                             |
@@ -247,9 +273,7 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +============+====================+=================================================================================================+ |
 |               | | String     | "type"             | "rating_created"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                                           | |
-|               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "specification_id" | The rating specification identifier                                                             | |
+|               | | Object     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
@@ -263,18 +287,24 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingCreated message**
+
 .. code-block:: json
 
     {
         "type": "rating_created",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "effective_time": 1782190800000,
         "transition_time": 1780981200000,
         "creation_time": 1787140800000,
         "active": false,
         "rating_type": "usgs"
     }
+
+**RatingUpdated Message Structure**
 
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                             |
@@ -284,9 +314,7 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +============+====================+=================================================================================================+ |
 |               | | String     | "type"             | "rating_updated"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                                           | |
-|               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "specification_id" | The rating specification identifier                                                             | |
+|               | | Object     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
@@ -300,18 +328,24 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingUpdated message**
+
 .. code-block:: json
 
     {
         "type": "rating_updated",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "effective_time": 1782190800000,
         "transition_time": 1780981200000,
         "creation_time": 1787140800000,
         "active": true,
         "rating_type": "usgs"
     }
+
+**RatingDeleted Message Structure**
 
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 | Message Type  | Structure                                                                                                                             |
@@ -321,20 +355,22 @@ Only "type", "office_id", "specification_id", and "effective_time" values are re
 |               | +============+====================+=================================================================================================+ |
 |               | | String     | "type"             | "rating_deleted"                                                                                | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "office_id"        | The office identifier                                                                           | |
-|               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
-|               | | String     | "specification_id" | The rating specification identifier                                                             | |
+|               | | Object     | "specification_id" | The rating specification identifier                                                             | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 |               | | long       | "effective_time"   | The date/time the rating comes into effect, in epoch milliseconds                               | |
 |               | +------------+--------------------+-------------------------------------------------------------------------------------------------+ |
 +---------------+---------------------------------------------------------------------------------------------------------------------------------------+
 
+**Example RatingDeleted message**
+
 .. code-block:: json
 
     {
         "type": "rating_deleted",
-        "office_id": "SWT",
-        "specification_id": "Tulsa.Stage;Flow.Logarithmic.Production",
+        "specification_id": {
+        	"office_id": "SWT",
+        	"name": "Tulsa.Stage;Flow.Logarithmic.Production"
+        },
         "effective_time": 1782190800000
     }
 
