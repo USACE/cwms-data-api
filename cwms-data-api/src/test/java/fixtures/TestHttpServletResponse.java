@@ -146,10 +146,10 @@ public class TestHttpServletResponse implements HttpServletResponse {
         return false;
     }
 
-    @Override
-    public String encodeRedirectUrl(String url) {
-        return null;
-    }
+    // @Override
+    // public String encodeRedirectUrl(String url) {
+    //     return null;
+    // }
 
     @Override
     public String encodeRedirectURL(String arg0) {
@@ -163,11 +163,11 @@ public class TestHttpServletResponse implements HttpServletResponse {
         return null;
     }
 
-    @Override
-    public String encodeUrl(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
+    // @Override
+    // public String encodeUrl(String arg0) {
+    //     // TODO Auto-generated method stub
+    //     return null;
+    // }
 
     @Override
     public String getHeader(String arg0) {
@@ -233,10 +233,10 @@ public class TestHttpServletResponse implements HttpServletResponse {
 
     }
 
-    @Override
-    public void setStatus(int sc, String sm) {
-        status = sc;
-    }
+    // @Override
+    // public void setStatus(int sc, String sm) {
+    //     status = sc;
+    // }    
 
 
 }

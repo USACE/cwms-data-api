@@ -24,8 +24,8 @@ def cdaGuiViteMode = providers.gradleProperty('cdaGuiMode')
         .orElse('production')
 
 dependencies {
-    compileOnly(libs.jakarta.web.api)
-    testImplementation(libs.jakarta.web.api)
+    compileOnly(libs.javalin.core) // TO get the transitive web-api spec
+    testImplementation(libs.javalin.core)
     testImplementation(libs.bundles.junit)
     testImplementation(libs.mockito.core)
 }
