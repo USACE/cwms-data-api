@@ -10,8 +10,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.catalina.Manager;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.session.DefaultSessionCache;
+import org.eclipse.jetty.session.NullSessionDataStore;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
@@ -26,17 +28,16 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import com.google.common.flogger.FluentLogger;
 
+import cwms.cda.CwmsDataApi;
+import cwms.cda.TestSessionHandler;
 import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.security.OpenIdConnectIdentityProvider;
-import fixtures.tomcat.SingleSignOnWrapper;
 import helpers.TsRandomSampler;
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
-import io.restassured.config.JsonConfig;
 import io.restassured.filter.log.LogDetail;
-import io.restassured.path.json.config.JsonPathConfig;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.testcontainers.images.PullPolicy;
 
 import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
@@ -50,8 +51,9 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
-    private static TomcatServer cdaInstance;
+    private static CwmsDataApi cdaInstance;
     private static CwmsDatabaseContainer<?> cwmsDb;
+    private static TestSessionHandler sessionHandler;
 
     private static final String ORACLE_IMAGE =
         System.getProperty("CDA.oracle.database.image",
@@ -155,10 +157,6 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             this.loadDefaultData(cwmsDb);
             this.loadTimeSeriesData(cwmsDb);
 
-            System.setProperty("RADAR_JDBC_URL", jdbcUrl);
-            System.setProperty("RADAR_JDBC_USERNAME", webUser);
-            System.setProperty("RADAR_JDBC_PASSWORD", pw);
-
             System.setProperty("CDA_JDBC_URL", jdbcUrl);
             System.setProperty("CDA_JDBC_USERNAME", webUser);
             System.setProperty("CDA_JDBC_PASSWORD", pw);
@@ -171,12 +169,19 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             System.setProperty(OpenIdConnectIdentityProvider.TIMEOUT_PROPERTY, "1"); // to force a reload at least once.
             logger.atInfo().log("warFile property:" + System.getProperty("warFile"));
 
-            cdaInstance = new TomcatServer("build/tomcat",
-                                             System.getProperty("warFile"),
-                                             0,
-                                             System.getProperty("warContext"));
+            sessionHandler = new TestSessionHandler();
+            var cache = new DefaultSessionCache(sessionHandler);
+            cache.setSessionDataStore(new NullSessionDataStore());
+            sessionHandler.setSessionCache(cache);
+            sessionHandler.setSessionCookie("JSESSIONIDSSO");
+
+            cdaInstance = CwmsDataApi.builder()
+                                     .withPort(0)
+                                     .withContext("/cwms-data")
+                                     .withDataSource(CwmsDataApi.buildDataSource())
+                                     .withSessionManager(sessionHandler)
+                                     .build();
             cdaInstance.start();
-            logger.atInfo().log("Tomcat Listing on " + cdaInstance.getPort());
             RestAssured.baseURI=CwmsDataApiSetupCallback.httpUrl();
             RestAssured.port = CwmsDataApiSetupCallback.httpPort();
             RestAssured.basePath = System.getProperty("warContext");
@@ -334,12 +339,8 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
         }
     }
 
-    public static Manager getTestSessionManager() {
-        return cdaInstance.getTestSessionManager();
-    }
-
-    public static SingleSignOnWrapper getSsoValve() {
-        return cdaInstance.getSsoValve();
+    public static TestSessionHandler getTestSessionManager() {
+        return sessionHandler;
     }
 
     public static String getWebUser() {

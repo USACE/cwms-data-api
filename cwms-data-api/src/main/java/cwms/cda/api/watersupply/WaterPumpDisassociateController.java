@@ -41,13 +41,11 @@ import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.watersupply.PumpType;
 import cwms.cda.data.dto.watersupply.WaterUserContract;
-import io.javalin.core.validation.JavalinValidation;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -80,7 +78,7 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
         },
         description = "Disassociate a pump from a contract",
         path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-name}/pumps/{name}",
-        method = HttpMethod.DELETE,
+        methods = HttpMethod.DELETE,
         tags = {TAG}
     )
 
@@ -93,7 +91,7 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
             String pumpName = ctx.pathParam(NAME);
             String projectName = ctx.pathParam(PROJECT_ID);
             String entityName = ctx.pathParam(WATER_USER);
-            JavalinValidation.register(PumpType.class, PumpType::valueOf);
+            //JavalinValidation.register(PumpType.class, PumpType::valueOf); // TODO: move to config
             PumpType pumpType = requiredParamAs(ctx, PUMP_TYPE, PumpType.class);
             String contractName = ctx.pathParam(CONTRACT_NAME);
             WaterContractDao contractDao = getContractDao(dsl);

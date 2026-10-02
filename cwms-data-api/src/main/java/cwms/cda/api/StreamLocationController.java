@@ -55,17 +55,17 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -92,12 +92,13 @@ public final class StreamLocationController extends BaseCrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = StreamLocation.class),
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = StreamLocation.class)
+                            @OpenApiContent(type = Formats.JSONV1, from = StreamLocation[].class),
+                            @OpenApiContent(type = Formats.JSON, from = StreamLocation[].class)
                     })
             },
             description = "Returns matching CWMS Stream Location Data for a Reservoir Project.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/stream/location"
     )
     @Override
     public void getAll(Context ctx) {
@@ -121,7 +122,7 @@ public final class StreamLocationController extends BaseCrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve stream locations", ex);
@@ -147,12 +148,13 @@ public final class StreamLocationController extends BaseCrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(isArray = true, type = Formats.JSONV1, from = StreamLocation.class),
-                                    @OpenApiContent(isArray = true, type = Formats.JSON, from = StreamLocation.class)
+                                    @OpenApiContent(type = Formats.JSONV1, from = StreamLocation[].class),
+                                    @OpenApiContent(type = Formats.JSON, from = StreamLocation[].class)
                             })
             },
             description = "Returns CWMS Stream Location Data",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/stream/location/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
@@ -175,7 +177,7 @@ public final class StreamLocationController extends BaseCrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve stream location", ex);
@@ -195,8 +197,9 @@ public final class StreamLocationController extends BaseCrudHandler {
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             description = "Create CWMS Stream Location",
-            method = HttpMethod.POST,
+            methods = {HttpMethod.POST},
             tags = {TAG},
+            path = "/stream/location",
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Stream Location successfully stored to CWMS.")
             }
@@ -204,7 +207,7 @@ public final class StreamLocationController extends BaseCrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             StreamLocation streamLocation = Formats.parseContent(contentType, ctx.body(), StreamLocation.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
@@ -228,8 +231,9 @@ public final class StreamLocationController extends BaseCrudHandler {
                     },
                     required = true),
             description = "Update CWMS Stream Location",
-            method = HttpMethod.PATCH,
+            methods = {HttpMethod.PATCH},
             tags = {TAG},
+            path = "/stream/location/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Updated Stream Location")
             }
@@ -238,7 +242,7 @@ public final class StreamLocationController extends BaseCrudHandler {
     public void update(Context ctx, @NotNull String name) {
         logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(METHOD + "update")) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamLocation.class);
             StreamLocation streamLocation = Formats.parseContent(contentType, ctx.body(), StreamLocation.class);
             DSLContext dsl = getDslContext(ctx);
@@ -262,8 +266,9 @@ public final class StreamLocationController extends BaseCrudHandler {
                             + "stream location to be deleted.")
             },
             description = "Delete CWMS Stream Location",
-            method = HttpMethod.DELETE,
+            methods = {HttpMethod.DELETE},
             tags = {TAG},
+            path = "/stream/location/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Stream Location successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Stream Location not found.")

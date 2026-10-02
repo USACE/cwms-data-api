@@ -66,7 +66,7 @@ const router = createBrowserRouter(
       ],
     },
   ],
-  { basename: "/cwms-data" },
+  { basename: "/" },
 );
 
 ReactDOM.createRoot(document.getElementById("root")).render(

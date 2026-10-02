@@ -36,9 +36,13 @@ import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dao.project.ProjectLockDaoV1;
 import cwms.cda.data.dto.project.ProjectLockV1;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import org.jetbrains.annotations.NotNull;
 
 public final class ProjectLockRevokeV1 extends ProjectLockRevoke<ProjectLockV1> {
@@ -71,9 +75,10 @@ public final class ProjectLockRevokeV1 extends ProjectLockRevoke<ProjectLockV1> 
                 @OpenApiParam(name = REVOKE_TIMEOUT, type = Integer.class,
                         description = "time in seconds to wait for existing lock to be revoked. Default: 10")
             },
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
             path = PATH,
-            tags = {TAGS}
+            tags = {TAGS},
+            versions = "1"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

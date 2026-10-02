@@ -41,18 +41,18 @@ import cwms.cda.data.dto.rating.RatingTemplates;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.Optional;
 import com.google.common.flogger.FluentLogger;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -108,7 +108,8 @@ public class RatingTemplateController implements CrudHandler {
                                             Formats.JSONV2),
                             }
                     )},
-            tags = {TAG}
+            tags = {TAG},
+            path = "/rating/template" // TODO: fix
     )
     @Override
     public void getAll(Context ctx) {
@@ -136,7 +137,7 @@ public class RatingTemplateController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError re = new CdaError("Error while writing response ");
             logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
@@ -164,11 +165,11 @@ public class RatingTemplateController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(isArray = true, from = RatingTemplate.class,
-                                            type = Formats.JSONV2),
+                                    @OpenApiContent(from = RatingTemplate[].class, type = Formats.JSONV2),
                             }
                     )},
-            tags = {TAG}
+            tags = {TAG},
+            path = "/rating/template" // TODO: Fix
     )
     @Override
     public void getOne(Context ctx, @NotNull String templateId) {
@@ -194,7 +195,7 @@ public class RatingTemplateController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find Rating Template based on "
                         + "parameters given");
@@ -220,15 +221,16 @@ public class RatingTemplateController implements CrudHandler {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true")
         },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/ratings/template" // TODO: check
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)){
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
+            String reqContentType = ctx.contentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
             String body = ctx.body();
             String xml = translateToXml(body, formatHeader);
@@ -264,7 +266,7 @@ public class RatingTemplateController implements CrudHandler {
         return retval;
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationCode) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -281,8 +283,9 @@ public class RatingTemplateController implements CrudHandler {
                 type = JooqDao.DeleteMethod.class)
         },
         description = "Deletes requested rating specification",
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/ratings/template/{" + TEMPLATE_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String ratingTemplateId) {

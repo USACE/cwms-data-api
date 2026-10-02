@@ -22,15 +22,15 @@ import cwms.cda.data.dto.Parameter;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -51,17 +51,16 @@ public class ParametersController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void create(@NotNull Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void delete(@NotNull Context ctx, @NotNull String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
-
     }
 
     @OpenApi(
@@ -81,11 +80,12 @@ public class ParametersController implements CrudHandler {
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
-                @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSONV2),
-                @OpenApiContent(isArray = true, from = Parameter.class, type = Formats.JSON)
+                @OpenApiContent(from = Parameter[].class, type = Formats.JSONV2),
+                @OpenApiContent(from = Parameter[].class, type = Formats.JSON)
             }),
         },
-        tags = {"Parameters"}
+        tags = {"Parameters"},
+        path = "/paramters"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -125,7 +125,7 @@ public class ParametersController implements CrudHandler {
 
             byte[] bytes = results.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError re = new CdaError("Error writing response");
             LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basins");
@@ -133,16 +133,15 @@ public class ParametersController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context ctx, @NotNull String id) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
-
 }

@@ -36,15 +36,15 @@ import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -67,9 +67,10 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
             },
             required = true
         ),
-        method = HttpMethod.POST,
+        methods = HttpMethod.POST,
         summary = "Store a TimeSeriesProfile Parser",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/timeseries/profile"
     )
     @Override
     public void handle(@NotNull Context ctx) {

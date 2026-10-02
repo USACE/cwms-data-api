@@ -41,11 +41,14 @@ import com.codahale.metrics.Timer;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -73,9 +76,10 @@ public final class TimeSeriesProfileParserDeleteController extends TimeSeriesPro
                 + " TimeSeriesProfileParser object"),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        method = HttpMethod.DELETE,
+        methods = HttpMethod.DELETE,
         summary = "Delete a TimeSeriesProfile Parser by ID",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/timeseries/profile"
     )
     @Override
     public void handle(@NotNull Context ctx) {

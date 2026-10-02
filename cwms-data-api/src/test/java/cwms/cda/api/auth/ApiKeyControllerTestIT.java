@@ -11,7 +11,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.DataApiTestIT;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dto.Location;
@@ -22,7 +22,7 @@ import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Forced order is used here to allow better error reporting
@@ -128,7 +128,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .post("/auth/keys")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .statusCode(is(HttpStatus.CREATED.getCode()))
                 .body("user-id",is(key.getUserId().toUpperCase()))
                 .body("key-name",is(key.getKeyName()))
                 .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
@@ -160,7 +160,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .post("/auth/keys")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .statusCode(is(HttpStatus.CREATED.getCode()))
                 .body("user-id",is(key.getUserId().toUpperCase()))
                 .body("key-name",is(key.getKeyName()))
                 .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
@@ -179,7 +179,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .post("/auth/keys")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .statusCode(is(HttpStatus.CREATED.getCode()))
                 .body("user-id",is(expiredKey.getUserId().toUpperCase()))
                 .body("key-name",is(expiredKey.getKeyName()))
                 .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
@@ -200,7 +200,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .post("/auth/keys")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.CREATED.getStatus()))
+                .statusCode(is(HttpStatus.CREATED.getCode()))
                 .body("user-id",is(expiredKey.getUserId().toUpperCase()))
                 .body("key-name",is("foo"))
                 .body("api-key.size()",is(AuthDao.API_KEY_TOTAL_LENGTH))
@@ -229,7 +229,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .post("/auth/keys")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .statusCode(is(HttpStatus.UNAUTHORIZED.getCode()))
             .body("message",is(AuthDao.ONLY_OWN_KEY_MESSAGE));
     }
 
@@ -248,7 +248,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .get("/auth/keys/")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.OK.getStatus()))
+                .statusCode(is(HttpStatus.OK.getCode()))
             .extract()
                 .body()
                 .jsonPath()
@@ -267,7 +267,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .when()
             .get("/auth/keys/{key-name}",KEY_NAME)
         .then()
-            .statusCode(HttpCode.OK.getStatus());
+            .statusCode(HttpStatus.OK.getCode());
     }
 
 
@@ -301,7 +301,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpCode.CREATED.getStatus()));
+            .statusCode(is(HttpStatus.CREATED.getCode()));
 
         final ApiKey expiredKey = realKeys.stream()
                                           .filter(k -> k.getKeyName().equals(EXPIRED_KEY_NAME))
@@ -325,7 +325,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .statusCode(is(HttpStatus.UNAUTHORIZED.getCode()))
             .body("message", is(AUTH_ERROR_MSG));
         // fail to use no existent key
         given()
@@ -341,7 +341,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
-            .statusCode(is(HttpCode.UNAUTHORIZED.getStatus()))
+            .statusCode(is(HttpStatus.UNAUTHORIZED.getCode()))
             .body("message", is(AUTH_ERROR_MSG));
     }
 
@@ -364,8 +364,8 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
             .post("/auth/keys")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.FORBIDDEN.getStatus()))
-            .body("message",is("Missing roles {Role{name='" + ApiServlet.CAC_USER + "'}}"));
+            .statusCode(is(HttpStatus.FORBIDDEN.getCode()))
+            .body("message",is("Missing roles {Role{name='" + CwmsDataApi.CAC_USER + "'}}"));
     }
 
     // delete api keys
@@ -384,7 +384,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .delete("/auth/keys/{key-name}",key.getKeyName())
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.NO_CONTENT.getStatus()));
+                .statusCode(is(HttpStatus.NO_CONTENT.getCode()));
 
             // try to retrieve the key
             given()
@@ -395,7 +395,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .get("/auth/keys/{key-name}",key.getKeyName())
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.NOT_FOUND.getStatus()));
+                .statusCode(is(HttpStatus.NOT_FOUND.getCode()));
         }
 
         List<ApiKey> keys =
@@ -407,7 +407,7 @@ public class ApiKeyControllerTestIT extends DataApiTestIT {
                 .get("/auth/keys/")
             .then()
                 .log().ifValidationFails(LogDetail.ALL,true)
-                .statusCode(is(HttpCode.OK.getStatus()))
+                .statusCode(is(HttpStatus.OK.getCode()))
             .extract()
                 .body()
                 .jsonPath()

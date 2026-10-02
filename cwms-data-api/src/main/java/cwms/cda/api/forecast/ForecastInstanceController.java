@@ -30,19 +30,19 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -69,8 +69,9 @@ public final class ForecastInstanceController extends BaseCrudHandler {
                     },
                     required = true
             ),
-            method = HttpMethod.POST,
-            tags = TAG
+            methods = HttpMethod.POST,
+            tags = TAG,
+            path = "/forecasts/instance"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -106,14 +107,15 @@ public final class ForecastInstanceController extends BaseCrudHandler {
                 @OpenApiResponse(status = STATUS_404, description = "The provided combination of "
                         + "parameters did not find a forecast instance."),
             },
-            method = HttpMethod.DELETE,
-            tags = TAG
+            methods = HttpMethod.DELETE,
+            tags = TAG,
+            path = "/forecast/instance/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
 
-        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).getOrNull();
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();
@@ -147,14 +149,15 @@ public final class ForecastInstanceController extends BaseCrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                         + "implemented")
             },
-            method = HttpMethod.GET,
-            tags = TAG
+            methods = HttpMethod.GET,
+            tags = TAG,
+            path = "/forecasts/instance"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = ctx.queryParam(OFFICE);
-            String designatorMask = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
+            String designatorMask = ctx.queryParamAsClass(DESIGNATOR, String.class).getOrNull();
             String name = ctx.queryParam(NAME);
 
             ForecastInstanceDao dao = new ForecastInstanceDao(getDslContext(ctx));
@@ -184,7 +187,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (URISyntaxException e) {
             throw new FormattingException("Could not build file download URL", e);
         } catch (IOException ex) {
@@ -225,13 +228,14 @@ public final class ForecastInstanceController extends BaseCrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                         + "implemented")
             },
-            method = HttpMethod.GET,
-            tags = TAG
+            methods = HttpMethod.GET,
+            tags = TAG,
+            path = "/forecast/instance/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         String office = requiredParam(ctx, OFFICE);
-        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).allowNullable().get();
+        String designator = ctx.queryParamAsClass(DESIGNATOR, String.class).getOrNull();
         String forecastDate =  requiredParam(ctx, FORECAST_DATE);
         String issueDate = requiredParam(ctx, ISSUE_DATE);
         Instant forecastInstant = DateUtils.parseUserDate(forecastDate, "UTC").toInstant();
@@ -263,7 +267,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (URISyntaxException e) {
             throw new FormattingException("Could not build file download URL", e);
         } catch (IOException ex) {
@@ -290,8 +294,9 @@ public final class ForecastInstanceController extends BaseCrudHandler {
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the ForecastInstance was not found.")
             },
-            method = HttpMethod.PATCH,
-            tags = TAG
+            methods = HttpMethod.PATCH,
+            tags = TAG,
+            path = "/forecasts/instance/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
@@ -305,7 +310,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
     }
 
     private ForecastInstance deserializeForecastInstance(Context ctx) {
-        String formatHeader = ctx.req.getContentType();
+        String formatHeader = ctx.contentType();
         ContentType contentType = Formats.parseHeader(formatHeader, ForecastInstance.class);
         return Formats.parseContent(contentType, ctx.body(), ForecastInstance.class);
     }

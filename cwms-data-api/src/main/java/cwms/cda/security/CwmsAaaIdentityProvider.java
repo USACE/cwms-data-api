@@ -4,7 +4,7 @@ import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
 import cwms.auth.CwmsUserPrincipal;
 import cwms.cda.spi.IdentityProvider;
-import io.javalin.core.security.RouteRole;
+import io.javalin.security.RouteRole;
 import io.javalin.http.Context;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.security.SecurityScheme.In;
@@ -35,8 +35,9 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
 
     private static Optional<String> getUser(Context ctx) {
         Optional<String> retval = Optional.empty();
-        if (ctx != null && ctx.req != null && ctx.req.getUserPrincipal() != null) {
-            retval = Optional.of(ctx.req.getUserPrincipal().getName());
+        
+        if (ctx != null && ctx.sessionAttribute(IdentityProvider.PRINCIPAL_KEY) instanceof Principal p) {
+            retval = Optional.of(p.getName());
         } else {
             logger.atFine().log("No user principal found in request.");
         }
@@ -51,33 +52,9 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
     private static Set<RouteRole> getRoles(@NotNull Context ctx) {
         Objects.requireNonNull(ctx,"Configuration is horribly wrong. This system is not usable.");
         Set<RouteRole> retval = new LinkedHashSet<>();
-        Principal principal = ctx.req.getUserPrincipal();
-
-        Set<RouteRole> specifiedRoles = getRoles(principal);
-        if (!specifiedRoles.isEmpty()) {
-            retval.addAll(specifiedRoles);
-        }
-
-        return retval;
-    }
-
-    private static Set<RouteRole> getRoles(Principal principal) {
-        Set<RouteRole> retval = new LinkedHashSet<>();
-        if (principal != null) {
-            List<String> roleNames;
-            try {
-                CwmsUserPrincipal cup = (CwmsUserPrincipal) principal;
-                roleNames = cup.getRoles();
-                if (roleNames != null) {
-                    roleNames.stream().map(CwmsAaaIdentityProvider::buildRole).forEach(retval::add);
-                }
-                logger.atFine().log("Principal had roles: %s", retval);
-            } catch (ClassCastException e) {
-                logger.atSevere().log("cwmsaaa api and implementation jars should only be in the system "
-                        + "classpath, not the war file. Verify and restart application");
-            }
-        } else {
-            throw new CwmsAuthException("Provided User credentials are not valid.");
+        var principal = ctx.sessionAttribute(IdentityProvider.PRINCIPAL_KEY);
+        if (principal instanceof DataApiPrincipal dap) {
+            retval.addAll(dap.getRoles());
         }
         return retval;
     }

@@ -35,20 +35,20 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.HttpResponseException;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -112,7 +112,8 @@ public class ClobController implements CrudHandler {
                 @OpenApiContent(type = Formats.XMLV2, from = Clobs.class)
             })
         },
-        tags = {TAG}
+        tags = {TAG},
+        path = "/clobs"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -129,7 +130,7 @@ public class ClobController implements CrudHandler {
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new CdaError("cursor or page passed in but failed validation"))
-                        .status(HttpCode.BAD_REQUEST);
+                        .status(HttpStatus.BAD_REQUEST);
                 return;
             }
 
@@ -151,7 +152,7 @@ public class ClobController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException e) {
             CdaError re = new CdaError("Failed to process request to retrieve ");
             logger.atSevere().withCause(e).log("Failed to process request to retrieve Basin");
@@ -191,7 +192,8 @@ public class ClobController implements CrudHandler {
                         @OpenApiContent(type = TEXT_PLAIN),
                     })
             },
-            tags = {TAG}
+            tags = {TAG},
+            path = "/clobs/{" + CLOB_ID + "}" 
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String clobId) {
@@ -237,7 +239,7 @@ public class ClobController implements CrudHandler {
 
                     byte[] bytes = result.getBytes();
                     ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                    ctx.res.getOutputStream().write(bytes);
+                    ctx.outputStream().write(bytes);
                 } else {
                     ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
                             + "clob based on given parameters"));
@@ -262,20 +264,21 @@ public class ClobController implements CrudHandler {
                 @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                     description = "Create will fail if provided ID already exists. Default: true")
             },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/clobs"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
-            Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
+            Clob clob = Formats.parseContent(contentType, ctx.bodyInputStream(), Clob.class);
             ClobDao dao = new ClobDao(dsl);
             dao.create(clob, failIfExists);
-            ctx.status(HttpCode.CREATED);
+            ctx.status(HttpStatus.CREATED);
         }
     }
 
@@ -303,8 +306,9 @@ public class ClobController implements CrudHandler {
             },
             required = true),
         description = "Update clob",
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = HttpMethod.PATCH,
+        tags = {TAG},
+        path = "/clobs/{" + CLOB_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String clobId) {
@@ -318,20 +322,20 @@ public class ClobController implements CrudHandler {
             }
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ClobDao dao = new ClobDao(dsl);
             ContentType contentType = Formats.parseHeader(formatHeader, Clob.class);
-            Clob clob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Clob.class);
+            Clob clob = Formats.parseContent(contentType, ctx.bodyInputStream(), Clob.class);
 
             if (clob.getOfficeId() == null) {
-                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                throw new HttpResponseException(HttpStatus.BAD_REQUEST.getCode(),
                         "An office is required in the request body when updating a clob");
             }
 
             clob = fillOutClob(clob, clobId);
 
             if (!Objects.equals(clob.getId(), clobId)) {
-                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                throw new HttpResponseException(HttpStatus.BAD_REQUEST.getCode(),
                         "Clob id in body does not match id in path");
             }
 
@@ -376,8 +380,9 @@ public class ClobController implements CrudHandler {
                     + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
         },
         description = "Delete clob",
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/clobs/{" + CLOB_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String clobId) {

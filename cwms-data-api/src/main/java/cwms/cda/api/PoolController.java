@@ -12,7 +12,6 @@ import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.PoolDao;
 import cwms.cda.data.dto.Pool;
 import cwms.cda.data.dto.Pools;
@@ -20,16 +19,16 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -91,7 +90,7 @@ public final class PoolController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_501, description = "request format is not"
                             + " implemented")},
             description = "Returns Pools Data",
-            tags = {TAG})
+            tags = {TAG}, path = "/pool")
     @Override
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
@@ -138,7 +137,7 @@ public final class PoolController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Pools", ex);
@@ -179,7 +178,8 @@ public final class PoolController implements CrudHandler {
                             + "inputs provided the Location Category was not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
-            description = "Retrieves requested Pool", tags = {TAG})
+            description = "Retrieves requested Pool", tags = {TAG},
+        path = "/pool/{" + POOL_ID + "}")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
         try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
@@ -224,7 +224,7 @@ public final class PoolController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             }
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
@@ -247,8 +247,9 @@ public final class PoolController implements CrudHandler {
                       description = "Create will create the pool name if it doesn't already exists. Default: true")
           },
           description = "Create CWMS Pool",
-          method = HttpMethod.POST,
+          methods = HttpMethod.POST,
           tags = {TAG},
+          path = "/pool",
           responses = {
                 @OpenApiResponse(status = STATUS_204, description = "Pool successfully stored to CWMS.")
           }
@@ -261,7 +262,7 @@ public final class PoolController implements CrudHandler {
                   .getOrDefault(true);
             boolean createPoolName = ctx.queryParamAsClass(CREATE_POOL_NAME, Boolean.class)
                   .getOrDefault(true);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Pool.class);
             Pool pool = Formats.parseContent(contentType, ctx.body(), Pool.class);
             PoolDao dao = new PoolDao(dsl);
@@ -284,8 +285,9 @@ public final class PoolController implements CrudHandler {
                 @OpenApiParam(name = NAME, required = true, description = "Specifies the new pool name. ")
           },
           description = "Rename CWMS Pool",
-          method = HttpMethod.PATCH,
+          methods = HttpMethod.PATCH,
           tags = {TAG},
+          path = "/pool/{" + NAME + "}",
           responses = {
                 @OpenApiResponse(status = STATUS_204, description = "Pool successfully renamed in CWMS.")
           }
@@ -315,8 +317,9 @@ public final class PoolController implements CrudHandler {
                       + "the pool to be deleted.")
           },
           description = "Delete CWMS Pool",
-          method = HttpMethod.DELETE,
+          methods = HttpMethod.DELETE,
           tags = {TAG},
+          path = "/pool/{" + NAME + "}",
           responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Pool successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

@@ -29,15 +29,12 @@ import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.enums.VersionType;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
-import io.javalin.core.validation.JavalinValidation;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -256,12 +253,12 @@ public final class Controllers {
     public static final String QUERY = "query";
     public static final String INCLUDE_ROLES = "include-roles";
 
-
-    static {
-        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-        JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
-        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
-    }
+    // TODO: moved to config block
+    // static {
+    //     JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+    //     JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
+    //     JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
+    // }
 
     private Controllers() {
 
@@ -509,9 +506,9 @@ public final class Controllers {
 
     public static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
         if (type.getType().equalsIgnoreCase(Formats.TAB)) {
-            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
+            ctx.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
         } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {
-            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
+            ctx.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
         }
     }
 }

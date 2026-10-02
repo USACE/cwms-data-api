@@ -2,7 +2,8 @@ package cwms.cda.security;
 
 import com.google.auto.service.AutoService;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
@@ -19,7 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 @AutoService(IdentityProvider.class)
 public final class OpenIdConnectIdentityProvider implements IdentityProvider {
@@ -114,7 +115,8 @@ public final class OpenIdConnectIdentityProvider implements IdentityProvider {
             final String issuer = claims.getIssuer();
             final String subject = claims.getSubject();
             final String oidcPrincipal = issuer + "::" + subject;
-            AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx), ctx.attribute(ApiServlet.OFFICE_ID));
+            AuthDao dao = AuthDao.getInstance(JooqDao.getDslContext(ctx),
+                                              ctx.appData(CwmsDataApiAttributes.OFFICE_ID_KEY));
             Optional<DataApiPrincipal> principal = dao.getPrincipalFromPrincipal(oidcPrincipal);
             if (principal.isPresent()) {
                 return principal.get();

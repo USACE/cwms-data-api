@@ -5,7 +5,7 @@ volumes:
 
 services:
   db:
-    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
+    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16
     environment:
       #- ORACLE_DATABASE=FREEPDB1
       - ORACLE_PASSWORD=badSYSpassword

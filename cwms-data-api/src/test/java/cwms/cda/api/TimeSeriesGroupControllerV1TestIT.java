@@ -54,7 +54,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
 import cwms.cda.data.dao.TimeSeriesDaoImpl;
@@ -71,7 +71,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.path.json.JsonPath;
 import io.restassured.response.Response;
@@ -81,7 +81,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
@@ -500,7 +500,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpCode.MULTI_STATUS.getStatus()))
+            .statusCode(is(HttpStatus.MULTI_STATUS.getCode()))
             .body("missing-time-series", equalTo(nonExistentTimeSeriesId));
         //Read Group
         given()
@@ -614,7 +614,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(categoryXml)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(FAIL_IF_EXISTS, false)
         .when()
@@ -637,7 +637,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
                 .contentType(Formats.JSON)
                 .body(groupXml)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
                 .queryParam(FAIL_IF_EXISTS, false)
             .when()
                 .redirects().follow(true)
@@ -658,7 +658,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(FAIL_IF_EXISTS, false)
         .when()
             .redirects().follow(true)
@@ -674,7 +674,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
             .contentType(Formats.JSON)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_OFFICE_ID, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)
@@ -703,7 +703,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
             .contentType(Formats.JSON)
             .body(groupXml)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(CATEGORY_ID, group.getTimeSeriesCategory().getId())
             .queryParam(REPLACE_ASSIGNED_TS, "true")
             .queryParam(OFFICE, group.getOfficeId())
@@ -721,7 +721,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
             .queryParam(END, "2025-05-19T11:00:00+00:00")
@@ -743,7 +743,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
             .accept(format)
             .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(CATEGORY_ID, cat.getId())
         .when()
@@ -759,7 +759,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .contentType(Formats.JSON)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)
@@ -777,7 +777,7 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(format)
             .contentType(Formats.JSON)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
         .when()

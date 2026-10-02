@@ -51,19 +51,19 @@ import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.time.Instant;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -117,7 +117,8 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
                         @OpenApiContent(type = Formats.JSONV2, from = BinaryTimeSeries.class)
                     }
                 )},
-            tags = {TAG}
+            tags = {TAG},
+            path = "/timeseries/binary"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -163,7 +164,7 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (URISyntaxException | IOException ex) {
             CdaError re = ExceptionTraceSupport.buildError(ctx,
                     "Failed to process request: " + ex.getLocalizedMessage(), ex);
@@ -172,7 +173,7 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String templateId) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -188,15 +189,16 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
             queryParams = {
                 @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            tags = {TAG},
+            path = "/timeseries/binary"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, BinaryTimeSeries.class);
             BinaryTimeSeries tts = deserializeBody(ctx, contentType);
             TimeSeriesBinaryDao dao = getDao(dsl);
@@ -223,7 +225,7 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
                 },
                 required = true
             ),
-            method = HttpMethod.PATCH,
+            methods = HttpMethod.PATCH,
             path = "/timeseries/binary/{timeseries}",
             tags = {TAG}
     )
@@ -233,7 +235,7 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             boolean maxVersion = true;
             boolean replaceAll = ctx.queryParamAsClass(REPLACE_ALL, Boolean.class).getOrDefault(false);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, BinaryTimeSeries.class);
             BinaryTimeSeries tts = deserializeBody(ctx, contentType);
             DSLContext dsl = getDslContext(ctx);
@@ -243,7 +245,6 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
 
         }
     }
-
 
     @OpenApi(
             description = "Deletes requested binary timeseries id",
@@ -268,8 +269,9 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
                 @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
                         + "series.  If not specified, the maximum version date is used.")
             },
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = HttpMethod.DELETE,
+            tags = {TAG},
+            path = "/timeseries/binary/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
@@ -320,6 +322,6 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
           We know this end-point can potentially deal with big bodies so the solution is
           just read the object from the body as an input stream.
         */
-        return Formats.parseContent(contentType, ctx.bodyAsInputStream(), BinaryTimeSeries.class);
+        return Formats.parseContent(contentType, ctx.bodyInputStream(), BinaryTimeSeries.class);
     }
 }

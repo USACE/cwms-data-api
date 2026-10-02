@@ -73,18 +73,19 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.ZoneIdHelper;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.config.Key;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -154,7 +155,7 @@ public class LocationController implements CrudHandler {
             responses = {
                 @OpenApiResponse(status = STATUS_200,
                         content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV2, from = Location.class),
+                            @OpenApiContent(type = Formats.JSONV2, from = Location[].class),
                             @OpenApiContent(type = Formats.JSON),
                             @OpenApiContent(type = Formats.TAB),
                             @OpenApiContent(type = Formats.CSV),
@@ -167,7 +168,8 @@ public class LocationController implements CrudHandler {
             },
             description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
                     + "retrieving lists of locations and can filter on additional fields.",
-            tags = {LOCATIONS_TAG}
+            tags = {LOCATIONS_TAG},
+            path = "/locations"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -195,14 +197,14 @@ public class LocationController implements CrudHandler {
                         office);
                 ctx.contentType(contentType.toString());
 
-                ObjectMapper mapper = ctx.appAttribute("ObjectMapper");
+                ObjectMapper mapper = ctx.appData(new Key<ObjectMapper>("ObjectMapper")); // TODO: Constant
                 String result = mapper.writeValueAsString(collection);
                 requestResultSize.update(result.length());
 
                 ctx.status(HttpServletResponse.SC_OK);
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else if (formatParm.isEmpty() && !isLegacyFormat) {
                 List<Location> locations = locationsDao.getLocations(names, units, datum, office);
                 results = Formats.format(contentType, locations, Location.class);
@@ -212,7 +214,7 @@ public class LocationController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 byte[] bytes = results.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 String format = Formats.getLegacyTypeFromContentType(contentType);
                 results = locationsDao.getLocations(names, format, units, datum, office);
@@ -227,7 +229,7 @@ public class LocationController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 byte[] bytes = results.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             }
 
             addDeprecatedContentTypeWarning(ctx, contentType);
@@ -268,7 +270,8 @@ public class LocationController implements CrudHandler {
                         + "inputs provided the location was not found.")
             },
             description = "Returns CWMS Location Data",
-            tags = {LOCATIONS_TAG}
+            tags = {LOCATIONS_TAG},
+            path = "/locations/{" + LOCATION_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
@@ -294,7 +297,7 @@ public class LocationController implements CrudHandler {
             ctx.status(HttpServletResponse.SC_OK);
             byte[] bytes = serializedLocation.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
 
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (IOException ex) {
@@ -320,7 +323,7 @@ public class LocationController implements CrudHandler {
                         + "be updated with the new values.")
             },
             description = "Create new CWMS Location",
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             path = "/locations",
             tags = {LOCATIONS_TAG}
     )
@@ -332,7 +335,7 @@ public class LocationController implements CrudHandler {
 
             LocationsDao locationsDao = getLocationsDao(dsl);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
@@ -358,7 +361,7 @@ public class LocationController implements CrudHandler {
                 },
                 required = true),
             description = "Update CWMS Location",
-            method = HttpMethod.PATCH,
+            methods = HttpMethod.PATCH,
             path = "/locations",
             tags = {LOCATIONS_TAG},
             responses = {
@@ -374,7 +377,7 @@ public class LocationController implements CrudHandler {
 
             LocationsDao locationsDao = getLocationsDao(dsl);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Location.class);
             Location locationFromBody = Formats.parseContent(contentType, ctx.body(), Location.class);
             //getLocation will throw an error if location does not exist
@@ -400,7 +403,6 @@ public class LocationController implements CrudHandler {
             logger.atSevere().withCause(ex).log("%s", re.toString());
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
-
     }
 
     @OpenApi(
@@ -416,8 +418,8 @@ public class LocationController implements CrudHandler {
                         + " associated data for this location before deleting the location itself. Default: false")
             },
             description = "Delete CWMS Location",
-            method = HttpMethod.DELETE,
-            path = "/locations",
+            methods = HttpMethod.DELETE,
+            path = "/locations/{" + LOCATION_ID + "}",
             tags = {LOCATIONS_TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Location successfully deleted from CWMS."),

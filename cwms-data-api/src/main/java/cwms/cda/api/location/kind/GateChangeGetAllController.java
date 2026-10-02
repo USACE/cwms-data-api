@@ -47,16 +47,16 @@ import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -104,12 +104,13 @@ public class GateChangeGetAllController extends BaseHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
-                            @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON),
+                            @OpenApiContent(from = GateChange[].class, type = Formats.JSONV1),
+                            @OpenApiContent(from = GateChange[].class, type = Formats.JSON),
                     })
             },
             description = "Returns matching CWMS gate change data for a Reservoir Project.",
-            tags = {OutletController.TAG}
+            tags = {OutletController.TAG},
+            path = "/gates-chage/" // TODO: check
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
@@ -138,7 +139,7 @@ public class GateChangeGetAllController extends BaseHandler {
 
             byte[] bytes = serialized.getBytes();
             context.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            context.res.getOutputStream().write(bytes);
+            context.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(context,
                 "Failed to process request to retrieve Gate Changes", ex);

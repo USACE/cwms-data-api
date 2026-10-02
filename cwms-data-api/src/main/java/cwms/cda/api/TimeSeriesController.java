@@ -7,7 +7,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -30,17 +31,16 @@ import cwms.cda.data.dto.csv.TimeSeriesCsv;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
-import io.javalin.core.validation.Validator;
+import io.javalin.http.Header;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
@@ -50,7 +50,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -128,10 +128,11 @@ public class TimeSeriesController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
-    static {
-        JavalinValidation.register(StoreRule.class, StoreRule::getStoreRule);
-        JavalinValidation.register(VerticalDatum.class, VerticalDatum::getVerticalDatum);
-    }
+    // TODO: move to config
+//     static {
+//         JavalinValidation.register(StoreRule.class, StoreRule::getStoreRule);
+//         JavalinValidation.register(VerticalDatum.class, VerticalDatum::getVerticalDatum);
+//     }
 
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
@@ -166,7 +167,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                         + "and should be converted to the as-stored datum before being saved.")
             },
-            method = HttpMethod.POST,
+            methods = {HttpMethod.POST},
             path = "/timeseries",
             tags = TAG
     )
@@ -201,10 +202,10 @@ public class TimeSeriesController implements CrudHandler {
 
     protected DSLContext getDslContext(Context ctx) {
         String office = null;
-        if (ctx.handlerType() == HandlerType.GET
+        if (ctx.method() == HandlerType.GET
                 && ctx.attribute(AuthDao.DATA_API_PRINCIPAL) != null) {
             office = ctx.queryParamAsClass(OFFICE, String.class)
-                    .getOrDefault(ctx.attribute(ApiServlet.OFFICE_ID));
+                    .getOrDefault(ctx.appData(CwmsDataApiAttributes.OFFICE_ID_KEY));
         }
         return JooqDao.getDslContext(ctx, office);
     }
@@ -249,7 +250,7 @@ public class TimeSeriesController implements CrudHandler {
                     + "('True'/'False') specifying whether to delete protected data. "
                     + "Default is False")
         },
-        method = HttpMethod.DELETE,
+        methods = {HttpMethod.DELETE},
         path = "/timeseries/{timeseries}",
         tags = TAG
     )
@@ -432,7 +433,7 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                         + "implemented")
             },
-            method = HttpMethod.GET,
+            methods = {HttpMethod.GET},
             path = "/timeseries",
             tags = TAG
     )
@@ -558,7 +559,7 @@ public class TimeSeriesController implements CrudHandler {
 
                 byte[] bytes = results.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 String office = ctx.queryParam(OFFICE);
 
@@ -599,7 +600,7 @@ public class TimeSeriesController implements CrudHandler {
 
                 byte[] bytes = results.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             }
 
             addDeprecatedContentTypeWarning(ctx, contentType);
@@ -630,7 +631,7 @@ public class TimeSeriesController implements CrudHandler {
                     ctx.header(Header.CONTENT_TYPE, Formats.CSV + "; charset=UTF-8");
                     ctx.header("X-Stream-Batch-Size", String.valueOf(batchSize));
                     try (stream) {
-                        IOUtils.copy(stream, ctx.res.getOutputStream());
+                        IOUtils.copy(stream, ctx.outputStream());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -682,7 +683,7 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String id) {
 
@@ -718,12 +719,12 @@ public class TimeSeriesController implements CrudHandler {
                         + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                         + "and should be converted to the as-stored datum before being saved.")
             },
-            method = HttpMethod.PATCH,
+            methods = {HttpMethod.PATCH},
             path = "/timeseries/{timeseries}",
             tags = TAG
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String id) {
+    public void update(@NotNull Context ctx, @NotNull String timeseries) {
 
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -752,9 +753,9 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
-        String contentTypeHeader = ctx.req.getContentType();
+        String contentTypeHeader = ctx.contentType();
         StringWriter writer = new StringWriter();
-        IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
+        IOUtils.copy(ctx.bodyInputStream(), writer, StandardCharsets.UTF_8);
         if (writer.toString().contains("data-entry-date")) {
             throw new IllegalArgumentException("Data entry date is not allowed in the request");
         }
@@ -770,11 +771,11 @@ public class TimeSeriesController implements CrudHandler {
      * @return a URL that references the same query, but with a different "page" parameter
      */
     public String buildRequestUrl(Context ctx, TimeSeries ts, String cursor) throws URISyntaxException {
-        URIBuilder builder = new URIBuilder(ctx.req.getRequestURL().toString()); // requestURL stops just before '?'
+        URIBuilder builder = new URIBuilder(ctx.url()); // requestURL stops just before '?'
 
         // Instead of adding specific parameters and risk forgetting to add one to this method
         // Lets add all the previous parameters and then (cont.)
-        builder.setParameters(URLEncodedUtils.parse(ctx.req.getQueryString(), StandardCharsets.UTF_8));
+        builder.setParameters(URLEncodedUtils.parse(ctx.queryString(), StandardCharsets.UTF_8));
 
         // (cont.) override or add the page parameter with the new cursor value
         if (cursor != null && !cursor.isEmpty()) {

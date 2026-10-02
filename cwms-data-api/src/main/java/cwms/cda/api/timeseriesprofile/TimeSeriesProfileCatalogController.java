@@ -44,16 +44,18 @@ import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -76,9 +78,10 @@ public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileB
             @OpenApiParam(name = PAGE, description = "The page cursor. Default is null"),
             @OpenApiParam(name = PAGE_SIZE, description = "The page size. Default is 500")
         },
-        method = HttpMethod.GET,
+        methods = HttpMethod.GET,
         summary = "Get a catalog of time series profiles",
         tags = {TAG},
+        path = "/timeseries/profile/catalog",
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfile object",
@@ -110,7 +113,7 @@ public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileB
 
             byte[] bytes = results.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve time series profiles", ex);
