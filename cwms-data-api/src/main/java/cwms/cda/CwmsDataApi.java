@@ -32,10 +32,13 @@ import com.google.common.flogger.FluentLogger;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import cwms.cda.api.Controllers;
 import cwms.cda.api.auth.userlists.UserListController;
+import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
+import cwms.cda.data.dao.JooqDao;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
@@ -53,15 +56,24 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
+
+import java.io.File;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
+import javax.sql.DataSource;
+
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.entity.ContentType;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
+import org.eclipse.jetty.http.HttpCookie;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.session.DefaultSessionCache;
+import org.eclipse.jetty.session.NullSessionDataStore;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
@@ -121,9 +133,9 @@ public final class CwmsDataApi {
     public static final String CWMS_USERS_ROLE = "CWMS Users";
     public static final String CAC_USER = "cac_auth";
     /** Default OFFICE where needed. Based on context. e.g. /cwms-data -> HQ, /spk-data -> SPK */
-    public static final String OFFICE_ID = "office_id";
-    public static final String DATA_SOURCE = "data_source";
-    public static final String RAW_DATA_SOURCE = "data_source";
+    //public static final String OFFICE_ID = "office_id";
+    // public static final String DATA_SOURCE = "data_source";
+    // public static final String RAW_DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
     public static final String IS_NEW_LRTS = "X-CWMS-LRTS-Formatting";
 
@@ -141,21 +153,34 @@ public final class CwmsDataApi {
         return VERSION != null ? VERSION : "Not Yet Known";
     }
 
+    private final String appContext;
+    private final MetricRegistry metrics = new MetricRegistry(); 
+    private final Javalin app;
+
+    public static void main(String[] args)
+    {
+
+        final var appContext = args.length > 0 ? args[0] : "cwms-data";
+        final var uiPath = args.length > 1 ? args[1] : null;
+
+        var ds = buildDataSource();
+        var api = CwmsDataApi.builder()
+                             .withContext(appContext)
+                             .withPort(7000)
+                             .withUiWar(new File(uiPath))
+                             .withDataSource(ds)
+                             .build();
+        api.start();
+    }
     
 
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
-    public static void main(String[] args) {
-        var dsConfig = new HikariConfig();
-        dsConfig.setJdbcUrl(System.getProperty("CDA_JDBC_URL"));
-        dsConfig.setUsername(System.getProperty("CDA_JDBC_USERNAME"));
-        dsConfig.setPassword(System.getProperty("CDA_JDBC_PASSWORD"));
-        dsConfig.setMaximumPoolSize(Integer.parseInt(System.getProperty("CDA_POOL_MAX_ACTIVE", "1")));
-        final var ds = new HikariDataSource(dsConfig);
+    private CwmsDataApi(int port, String context, File uiWar, DataSource ds, SessionHandler sessionHandler) {
+        this.appContext = context;
         logger.atInfo().log("Initializing Javalin.");
-        final MetricRegistry metrics = new MetricRegistry();
-        // TODO: move to config
-        // JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
-        // JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
+        CwmsDataApi.VERSION = obtainFullVersion();
+        logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
+
         var totalRequests = metrics.meter("cwms.dataapi.total_requests");
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);
@@ -166,40 +191,39 @@ public final class CwmsDataApi {
         final Authenticator authenticator = new Authenticator();
         final OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
 
-
-        final var appContext = args.length > 0 ? args[0] : "cwms-data";
-        final var uiPath = args.length > 1 ? args[1] : null;
         final var cdaAccessManager = new CdaAccessManager();
-        final var app = Javalin.create(config -> {
+        app = Javalin.create(config -> {
             config.http.defaultContentType = "application/json";
             config.http.generateEtags = true;
             getOpenApiOptions(config, appContext);            
             config.requestLogger.http((ctx, ms) -> logger.atFinest().log(ctx.toString()));
             config.router.contextPath = appContext;
-            CwmsDataApi.VERSION = obtainFullVersion();
-            logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
-            System.out.println(uiPath);
-            if (uiPath != null) {
+            config.validation.register(UnitSystem.class, UnitSystem::systemFor);
+            config.validation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);    
+            
+            if (uiWar != null) {
                 config.jetty.modifyServer(server -> {
                     var war = new WebAppContext();
                     war.setContextPath("");
-                    war.setWar(uiPath);
+                    war.setWar(uiWar.getAbsolutePath());
                     var handlers = new ContextHandlerCollection();
                     handlers.setHandlers(server.getHandler(), war);
                     server.setHandler(handlers);
                 });
             }
+            config.jetty.modifyServletContextHandler(handler -> {
+                handler.setSessionHandler(sessionHandler);
+            });
+            
             config.routes.beforeMatched(cdaAccessManager);
-            config.appData(new Key<PolicyFactory>("PolicyFactory"), sanitizer);
-            config.appData(new Key<ObjectMapper>("ObjectMapper"), om);
-            config.appData(new Key<OpenApiSchemeProcessor>("SchemeProcessor"), schemeProcessor);
+            config.appData(CwmsDataApiAttributes.POLICY_FACTORY_KEY, sanitizer);
+            config.appData(CwmsDataApiAttributes.OBJECT_MAPPER_KEY, om);
+            config.appData(CwmsDataApiAttributes.SCHEME_PROCESSOR_KEY, schemeProcessor);
+            config.appData(CwmsDataApiAttributes.DATA_SOURCE_KEY, ds);
+            config.appData(CwmsDataApiAttributes.OFFICE_ID_KEY, officeFromContext(context));
             config.registerPlugin(new RouteOverviewPlugin(o -> {}));
             config.routes
                 .before(authenticator)
-                .before(ctx -> {
-                    ctx.attribute(DATA_SOURCE, ds);
-                    ctx.attribute(RAW_DATA_SOURCE, ds);
-                })
                 .before(ctx -> totalRequests.mark())
                 .before(ctx -> {
                     ctx.attribute("sanitizer", sanitizer);
@@ -275,21 +299,32 @@ public final class CwmsDataApi {
                 });
                 configureRoutes(config.routes, metrics, cdaAccessManager);
             });
-        app.start(7000);
         //QueueManager.ensureRssSubscribers(cwms); //TODO: fix
         logger.atInfo().log("Javalin initialized.");
     }
 
-    private static void configureRoutes(RoutesConfig routes, MetricRegistry metrics, CdaAccessManager cdaAccessManager) {
+    public void start() {
+        app.start();
+    }
+
+    public void stop() {
+        app.stop();   
+    }
+
+    public int getPort() {
+        return app.port();
+    }
+
+    private void configureRoutes(RoutesConfig routes, MetricRegistry metrics, CdaAccessManager cdaAccessManager) {
         RouteRole[] requiredRoles = {new Role(CWMS_USERS_ROLE)};
         ApiServletRouteConfiguration.configureRoutes(routes, metrics, requiredRoles, cdaAccessManager);
     }
 
-    private static String obtainFullVersion() {
+    private  String obtainFullVersion() {
         return "99.99.99"; // TODO: actually get
     }
 
-    private static void getOpenApiOptions(JavalinConfig config, String appContext) {
+    private void getOpenApiOptions(JavalinConfig config, String appContext) {
         Info applicationInfo = new Info().title(APPLICATION_TITLE).version(CwmsDataApi.getApiVersion())
                 .description("CWMS REST API for Data Retrieval");
 
@@ -448,5 +483,80 @@ public final class CwmsDataApi {
             office = "HQ";
         }
         return System.getProperty(DEFAULT_OFFICE_KEY, office).toUpperCase();
+    }
+
+    /**
+     * Initialize data source from properties or environment
+     * 
+     * TODO: environment.
+     * @return
+     */
+    public static DataSource buildDataSource()
+    {
+        var dsConfig = new HikariConfig();
+        dsConfig.setJdbcUrl(System.getProperty("CDA_JDBC_URL"));
+        dsConfig.setUsername(System.getProperty("CDA_JDBC_USERNAME"));
+        dsConfig.setPassword(System.getProperty("CDA_JDBC_PASSWORD"));
+        dsConfig.setMaximumPoolSize(Integer.parseInt(System.getProperty("CDA_POOL_MAX_ACTIVE", "1")));
+        return new HikariDataSource(dsConfig);
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private int port = 7000;
+        private String context = "/cwms-data";
+        private File uiWar = null;
+        private DataSource dataSource;
+
+        private SessionHandler sessionManager = null;
+
+
+        public Builder withPort(int port) {
+            this.port = 7000;
+            return this;
+        }
+
+        public Builder withContext(String context) {
+            this.context = context;
+            return this;
+        }
+
+        public Builder withUiWar(String uiWar) {
+            this.uiWar = new File(uiWar);
+            return this;
+        }
+
+        public Builder withUiWar(File uiWar) {
+            this.uiWar = uiWar;
+            return this;
+        }
+
+        public Builder withDataSource(DataSource dataSource) {
+            this.dataSource = dataSource;
+            return this;
+        }
+
+        public Builder withSessionManager(SessionHandler sessionManager) {
+            this.sessionManager = sessionManager;
+            return this;
+        }
+
+        public CwmsDataApi build()
+        {
+            if (sessionManager == null) {
+                this.sessionManager = new SessionHandler();
+                sessionManager.setSameSite(HttpCookie.SameSite.STRICT);
+                sessionManager.setHttpOnly(true);
+                sessionManager.setMaxInactiveInterval(900);
+                var cache = new DefaultSessionCache(sessionManager);
+                cache.setSessionDataStore(new NullSessionDataStore());
+                sessionManager.setSessionCache(cache);
+            }
+            return new CwmsDataApi(port, context, uiWar, dataSource, sessionManager);
+        }
     }
 }
