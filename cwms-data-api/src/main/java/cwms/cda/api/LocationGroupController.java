@@ -97,7 +97,8 @@ public class LocationGroupController implements CrudHandler {
                 + "owning office of the category the location group belongs to "
                 + "whose data is to be included in the response."),
             @OpenApiParam(name = LOCATION_OFFICE_ID, description = "Specifies the "
-                + "owning office of the location assigned to the location group whose data is to be included in the response."),
+                + "owning office of the location assigned to the location group whose data is "
+                + "to be included in the response."),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -313,6 +314,8 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = REPLACE_ASSIGNED_LOCS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing locations before assigning new locations specified in the content body "
                 + "Default: false"),
+            @OpenApiParam(name = REPLACE_METADATA, type = Boolean.class, description = "Specifies whether to "
+                + "replace group metadata with that specified in the content body. Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "office of the user making the request. This is the office that the location, group, and category "
                 + "belong to. If the group and/or category belong to the CWMS office, "
@@ -335,7 +338,7 @@ public class LocationGroupController implements CrudHandler {
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
-            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
+            boolean replaceMetadata = ctx.queryParamAsClass(REPLACE_METADATA, Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !groupId.equals(deserialize.getId())) {
                 locationGroupDao.renameLocationGroup(groupId, deserialize);
@@ -343,6 +346,10 @@ public class LocationGroupController implements CrudHandler {
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);
             }
+            if (replaceMetadata) {
+                locationGroupDao.replaceWithMetadata(deserialize, replaceAssignedLocs);
+            }
+            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             List<CwmsId> missingLocations = locationGroupDao.assignLocs(deserialize, office, ignoreMissing);
             if (missingLocations.isEmpty()) {
                 ctx.status(HttpServletResponse.SC_OK);

@@ -29,6 +29,7 @@ import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.noCondition;
 
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.AssignedLocation;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LocationCategory;
@@ -94,7 +95,19 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return An optional location group.
      */
     public Optional<LocationGroup> getLocationGroup(@NotNull String officeId, @NotNull String categoryId,
-                                                    @NotNull String groupId) {
+        @NotNull String groupId) {
+        return getLocationGroup(dsl, officeId, categoryId, groupId);
+    }
+
+    /**
+     * Get a location group by office, category, and group id.
+     * @param officeId The office id to use for the query.
+     * @param categoryId The category id to use for the query.
+     * @param groupId The group id to use for the query.
+     * @return An optional location group.
+     */
+    public Optional<LocationGroup> getLocationGroup(@NotNull DSLContext context, @NotNull String officeId,
+                                                    @NotNull String categoryId, @NotNull String groupId) {
         officeId = officeId.toUpperCase();
 
         Condition joinCondition;
@@ -109,7 +122,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             .and(catGroupView.GRP_DB_OFFICE_ID.in(CWMS, officeId))
             .and(catGroupView.CAT_DB_OFFICE_ID.in(CWMS, officeId));
 
-        LocationGroup locGroup = buildQuery(whereCondition, joinCondition)
+        LocationGroup locGroup = buildQuery(whereCondition, joinCondition, context)
                 .fetchSize(DEFAULT_FETCH_SIZE)
                 .fetchOne(mapToLocationGroup);
 
@@ -505,6 +518,40 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                     group.getId(), group.getDescription(), group.getOfficeId(), group.getSharedLocAliasId(),
                     group.getSharedRefLocationId());
                 return assignLocs(config, group, office, allowPartialAssignment);
+            });
+        });
+    }
+
+    /**
+     * Replace a stored location group with a new group, storing the new group's metadata
+     * @param group The new group to replace the old one with
+     * @param replaceAssignedLocs If true, replace the assigned locations with the new group's assigned locations
+     */
+    public void replaceWithMetadata(LocationGroup group, boolean replaceAssignedLocs) {
+        String office =  group.getOfficeId();
+        String categoryId = group.getLocationCategory().getId();
+        String groupId = group.getId();
+        connection(dsl, conn -> {
+            DSLContext dslContext = getDslContext(conn, office);
+            dslContext.transaction((Configuration trx) -> {
+                DSLContext transactionContext = trx.dsl();
+                Optional<LocationGroup> oldGroup = getLocationGroup(transactionContext, office, categoryId, groupId);
+                if (oldGroup.isPresent()) {
+                    Configuration config = transactionContext.configuration();
+                    CWMS_LOC_PACKAGE.call_UNASSIGN_LOC_GROUP(config,
+                        categoryId, groupId, null, "T", office);
+                    CWMS_LOC_PACKAGE.call_DELETE_LOC_GROUP__2(config, categoryId,
+                        groupId, "F",  office);
+                    LocationGroup newGroup = new LocationGroup(group, oldGroup.get().getAssignedLocations());
+                    CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(config, categoryId,
+                        newGroup.getId(), newGroup.getDescription(), newGroup.getOfficeId(),
+                        newGroup.getSharedLocAliasId(), newGroup.getSharedRefLocationId());
+                    if (!replaceAssignedLocs) {
+                        assignLocs(trx, newGroup, office);
+                    }
+                } else {
+                    throw new NotFoundException("Location Group " + categoryId + "/" + groupId + " not found");
+                }
             });
         });
     }
