@@ -23,7 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.BasinController;
 import cwms.cda.api.BinaryTimeSeriesController;
 import cwms.cda.api.BinaryTimeSeriesValueController;
-import cwms.cda.api.BlobController;
+import cwms.cda.api.blob.BlobControllerV1;
 import cwms.cda.api.CatalogController;
 import cwms.cda.api.CdaVersionHandler;
 import cwms.cda.api.ClobController;
@@ -32,6 +32,7 @@ import cwms.cda.api.CountyController;
 import cwms.cda.api.DownstreamLocationsGetController;
 import cwms.cda.api.EmbankmentController;
 import cwms.cda.api.EntityController;
+import cwms.cda.api.blob.BlobControllerV2;
 import cwms.cda.api.forecast.ForecastFileController;
 import cwms.cda.api.forecast.ForecastInstanceController;
 import cwms.cda.api.LevelRefsController;
@@ -334,7 +335,9 @@ public final class ApiServletRouteConfiguration {
         cdaCrudCache(format("/published/{%s}", LOCATION_ID),
                 new PublishedController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/blobs/{blob-id}",
-                new BlobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
+                new BlobControllerV1(metrics), requiredRoles,5, TimeUnit.MINUTES);
+        cdaCrudCache(formatV2("/blobs/{blob-id}", Controllers.BLOB_ID),
+            new BlobControllerV2(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/clobs/{clob-id}",
                 new ClobController(metrics), requiredRoles,5, TimeUnit.MINUTES);
         cdaCrudCache("/pools/{pool-id}",
