@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
 import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
+import static org.mockito.Mockito.mock;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
@@ -42,6 +43,8 @@ import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.helpers.ZoneIdHelper;
 import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.Role;
+import cwms.cda.spi.IdentityProvider;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
@@ -51,6 +54,7 @@ import fixtures.users.MockCwmsUserPrincipalImpl;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import io.javalin.security.RouteRole;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -70,8 +74,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.authentication.SessionAuthentication;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.util.security.SecurityUtils;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -223,22 +232,13 @@ public class DataApiTestIT {
                     user.setApiKey(key);
                 }, "cwms_20");
 
-                // TODO: sort out sessions
-                // ManagedSession session = tsm.getSessionCache().newSession(null);
-                // MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
-                
-                // session.setAuthType("CLIENT-CERT");
-                // session.setPrincipal(mcup);
-                // session.activate();
-                // session.addSessionListener(new SessionListener() {
-
-                //     @Override
-                //     public void sessionEvent(SessionEvent event) {
-                //         logger.atInfo().log("Got event of type: %s", event.getType());
-                //         logger.atInfo().log("Session is: %s", event.getSession().toString());
-                //     }
-
-                // });
+                final Set<RouteRole> roles = List.of(user.getRoles()).stream().map(Role::new).collect(Collectors.toSet());
+                final var p = new DataApiPrincipal(user.getName(), roles);
+                tsm.createTestSession(user.getJSessionId(), s -> {
+                    s.setAttribute(SecurityHandler.SESSION_AUTHENTICATED_ATTRIBUTE, Boolean.TRUE);
+                    s.setAttribute(IdentityProvider.PRINCIPAL_KEY, p);
+                    s.setMaxInactiveInterval(3600);
+                });
             }
         } catch (RuntimeException ex) {
             throw new Exception("User registration failed", ex);

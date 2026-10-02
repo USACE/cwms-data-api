@@ -4,6 +4,7 @@ import com.google.common.flogger.FluentLogger;
 import com.password4j.Hash;
 import com.password4j.HashUpdate;
 import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
@@ -387,17 +388,15 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         logger.atInfo()
               .atMostEvery(5,TimeUnit.SECONDS)
               .log("Validated Api Key for user=%s", p.getName());
-        DataSource dataSource = ctx.attribute(CwmsDataApi.DATA_SOURCE);
+        DataSource dataSource = JooqDao.getDataSourceFromContext(ctx);
         ConnectionPreparer userPreparer = new DirectUserPreparer(p.getName());
         ctx.attribute(DATA_API_PRINCIPAL,p);
-        if (dataSource instanceof ConnectionPreparingDataSource) {
-            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
+        if (dataSource instanceof ConnectionPreparingDataSource cpDs) {
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
-
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, userPreparer));
         } else {
-            ctx.attribute(CwmsDataApi.DATA_SOURCE,
+            ctx.attribute(CwmsDataApiAttributes.DATA_SOURCE_KEY.getId(),
                           new ConnectionPreparingDataSource(userPreparer, dataSource));
         }
     }
@@ -446,7 +445,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * Set the Context and datasource to be suitable for processing guest requests.
      */
     public void prepareGuestContext(Context ctx) {
-        DataSource dataSource = ctx.attribute(CwmsDataApi.DATA_SOURCE);
+        DataSource dataSource = ctx.appData(CwmsDataApiAttributes.DATA_SOURCE_KEY);
         SessionTimeZonePreparer utcPrep = new SessionTimeZonePreparer();
         ConnectionPreparer officePreparer = new SessionOfficePreparer(defaultOffice);
         ConnectionPreparer userPreparer = new DirectUserPreparer(connectionUser);
@@ -459,7 +458,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, guestPreparer));
         } else {
-            ctx.attribute(CwmsDataApi.DATA_SOURCE,
+            ctx.attribute(CwmsDataApiAttributes.DATA_SOURCE_KEY.getId(),
                           new ConnectionPreparingDataSource(guestPreparer, dataSource));
         }
     }

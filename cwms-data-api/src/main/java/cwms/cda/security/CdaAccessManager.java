@@ -2,6 +2,7 @@ package cwms.cda.security;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
@@ -72,7 +73,8 @@ public final class CdaAccessManager implements Handler {
 
     private void prepareContext(Context ctx, DataApiPrincipal p) {
         if (p == null) {
-            AuthDao authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(CwmsDataApi.OFFICE_ID));
+            AuthDao authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),
+                                                  ctx.appData(CwmsDataApiAttributes.OFFICE_ID_KEY));
             authDao.prepareGuestContext(ctx);
         } else {
             AuthDao.prepareContextWithUser(ctx, p);

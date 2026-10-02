@@ -28,6 +28,7 @@ import static org.jooq.SQLDialect.ORACLE;
 
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
@@ -147,6 +148,19 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     /**
+     * Helper to retrieve session data source if it exists
+     * @param ctx Current javalin context
+     * @return The session specific DataSource, or the default one if that doesn't exist.
+     */
+    public static DataSource getDataSourceFromContext(Context ctx) {
+        DataSource ret = ctx.attribute(CwmsDataApiAttributes.DATA_SOURCE_KEY.getId());
+        if (ret == null) {
+            ret = ctx.appData(CwmsDataApiAttributes.DATA_SOURCE_KEY);
+        }
+        return ret;
+    }
+
+    /**
      * Creates a DSL context whose checked-out connections use the supplied CWMS
      * session office. Callers should only supply an office when the endpoint's
      * database behavior requires it; setting it globally changes legacy access
@@ -159,7 +173,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     public static DSLContext getDslContext(Context ctx, String office) {
         DSLContext retVal;
 
-        final DataSource dataSource = ctx.attribute(CwmsDataApi.DATA_SOURCE);
+        final DataSource dataSource = getDataSourceFromContext(ctx);
         final boolean isNewLRTS = ctx.header(CwmsDataApi.IS_NEW_LRTS) != null
             && Boolean.parseBoolean(ctx.header(CwmsDataApi.IS_NEW_LRTS));
 
