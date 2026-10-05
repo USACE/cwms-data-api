@@ -10,6 +10,8 @@ import io.javalin.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HttpResponseException;
+import io.javalin.plugin.bundled.RateLimitPlugin;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,7 +49,7 @@ public final class CdaAccessManager implements Handler {
         RouteRole[] routeRoles = rateLimitedPaths.get(path);
         if (routeRoles != null && routeRoles.length != 0) {
             try {
-                //NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT); // TODO: handle before controller
+                ctx.with(RateLimitPlugin.class).requestPerTimeUnit(REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
             } catch (HttpResponseException ex) {
                 try {
                     DataApiPrincipal principal = getApiPrincipal(ctx);
