@@ -59,8 +59,10 @@ public class GateChangeCreateController extends BaseHandler {
         queryParams = {
             @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class,
                 description = "Create will fail if provided Gate Changes already exist." +
-                        " Previously known as " + FAIL_IF_EXISTS + "." +
-                        " Default: true")
+                        " Default: true"),
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
+                    description = "Create will fail if provided Gate Changes already exist." +
+                            "  Deprecated, use " + OVERRIDE_PROTECTION)
         },
         description = "Create CWMS Gate Changes",
         method = HttpMethod.POST,
