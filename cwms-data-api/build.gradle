@@ -150,6 +150,9 @@ dependencies {
     testRuntimeOnly(libs.jaxb.impl)
     testImplementation(libs.openapi.spec.validation)
     testImplementation(libs.javalin.test.tools)
+    testImplementation(libs.javalin.context.mock) {
+        exclude group: "org.eclipse.jetty.toolchain", module: "jetty-jakarta-servlet-api"
+    }
 
     baseLibs(libs.oracle.jdbc.driver)
 

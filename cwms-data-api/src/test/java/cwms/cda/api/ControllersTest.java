@@ -17,6 +17,7 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
+import io.javalin.mock.ContextMock;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
@@ -152,13 +153,14 @@ class ControllersTest {
                 + ".1:7001/timeseries/"));
 
         // build real context that uses the mock request/response
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(map);
+        var ctx = ContextMock.create().build();
+        // Context ctx = mock(Context.class);
+        // when(ctx.req()).thenReturn(request);
+        // when(ctx.res()).thenReturn(response);
+        // when(ctx.attributeMap()).thenReturn(map);
 
 
-        return ctx;
+        return ctx.execute(null);
     }
 
     private Context buildContext(String nameToUse, String expected) {
@@ -182,6 +184,7 @@ class ControllersTest {
                 + ".1:7001/timeseries/"));
 
         // build real context that uses the mock request/response
+        
         Context ctx = mock(Context.class);
         when(ctx.req()).thenReturn(request);
         when(ctx.res()).thenReturn(response);
