@@ -31,6 +31,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
@@ -64,6 +66,10 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase {
                 @OpenApiContent(from = WaterUser.class, type = Formats.JSONV1)
             },
             required = true),
+        pathParams = {
+            @OpenApiParam(name = Controllers.OFFICE, type = String.class, description = Controllers.OFFICE_DESCRIPTION),
+            @OpenApiParam(name = Controllers.PROJECT_ID, type = String.class)
+        },
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Water user successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
