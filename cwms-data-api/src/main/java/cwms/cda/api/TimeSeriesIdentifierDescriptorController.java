@@ -182,7 +182,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor",
             tags = {TAG},
-            path = "/timeseries/identifier/{timeseriesId}"
+            path = "/timeseries/identifier/{" + TIMESERIES_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String timeseriesId) {
@@ -347,7 +347,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             description = "Deletes requested timeseries identifier",
             methods = {HttpMethod.DELETE},
             tags = {TAG},
-            path = "/timeseries/identifier/{timeseriesId}"
+            path = "/timeseries/identifier/{" + TIMESERIES_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {

@@ -424,7 +424,8 @@ public class LocationController implements CrudHandler {
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Location successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
-                        + "inputs provided the location was not found.")
+                        + "inputs provided the location was not found.", 
+                        content = @OpenApiContent(type = Formats.JSON, from = CdaError.class))
             }
     )
     @Override

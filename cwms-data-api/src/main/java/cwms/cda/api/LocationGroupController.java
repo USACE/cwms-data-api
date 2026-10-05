@@ -378,7 +378,7 @@ public class LocationGroupController implements CrudHandler {
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/location/group/{location-id}"
+        path = "/location/group/{" + GROUP_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {

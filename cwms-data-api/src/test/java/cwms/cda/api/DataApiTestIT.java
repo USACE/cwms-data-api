@@ -128,7 +128,8 @@ public class DataApiTestIT {
 
     public static OpenApiValidationFilter getOpenApiValidationFilter() {
         if (validationFilter == null) {
-            OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
+            OPEN_API_SPEC_URL = String.format("%s:%s/cwms-data/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort());
+            logger.atInfo().log("OPENAPI Spec URL: %s", OPEN_API_SPEC_URL);
             validationFilter = new OpenApiValidationFilter(OPEN_API_SPEC_URL);
         }
         return validationFilter;

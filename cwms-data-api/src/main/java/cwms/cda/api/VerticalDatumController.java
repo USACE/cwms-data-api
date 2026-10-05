@@ -81,6 +81,7 @@ public final class VerticalDatumController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
+    @OpenApi (ignore = true, path = "/")
     @Override
     public void getAll(@NotNull Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -142,6 +143,9 @@ public final class VerticalDatumController implements CrudHandler {
             queryParams = {
                     @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the location id for this vertical-datum-info."),
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office.")
+            },
+            pathParams = {
+                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the location id for this vertical-datum-info.")
             },
             description = "Create Vertical Datum Info for a Location",
             methods = {HttpMethod.POST},
