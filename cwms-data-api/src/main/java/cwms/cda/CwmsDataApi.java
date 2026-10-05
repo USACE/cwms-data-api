@@ -43,6 +43,7 @@ import cwms.cda.openapi.OpenApiSchemeProcessor;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.Role;
+import cwms.cda.validation.ValidationSetup;
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.config.Key;
@@ -198,8 +199,7 @@ public final class CwmsDataApi {
             getOpenApiOptions(config, appContext);            
             config.requestLogger.http((ctx, ms) -> logger.atFinest().log(ctx.toString()));
             config.router.contextPath = appContext;
-            config.validation.register(UnitSystem.class, UnitSystem::systemFor);
-            config.validation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);    
+            ValidationSetup.registerValidation(config.validation);
             
             if (uiWar != null) {
                 config.jetty.modifyServer(server -> {

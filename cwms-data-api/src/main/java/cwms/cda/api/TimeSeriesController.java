@@ -128,11 +128,6 @@ public class TimeSeriesController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
-    // TODO: move to config
-//     static {
-//         JavalinValidation.register(StoreRule.class, StoreRule::getStoreRule);
-//         JavalinValidation.register(VerticalDatum.class, VerticalDatum::getVerticalDatum);
-//     }
 
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
