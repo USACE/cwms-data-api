@@ -48,12 +48,15 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.plugin.bundled.RateLimitPlugin;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
@@ -115,7 +118,7 @@ public final class RssHandler extends BaseHandler {
             ctx.header("Retry-After", "10")
                .header("RateLimit-Policy", "\"default\";q=6;w=60");
             // Limit is 1 request per 10 seconds, or 6 a minute.
-            //NaiveRateLimit.requestPerTimeUnit(ctx, 6, TimeUnit.MINUTES); // TODO: moves to config using RelateLimitPlugin
+            ctx.with(RateLimitPlugin.class).requestPerTimeUnit(6, TimeUnit.MINUTES);
 
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE).toUpperCase();
