@@ -32,21 +32,19 @@ import com.google.common.flogger.FluentLogger;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import cwms.cda.api.Controllers;
 import cwms.cda.api.auth.userlists.UserListController;
-import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
-import cwms.cda.data.dao.JooqDao;
+import cwms.cda.data.dao.rss.QueueManager;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.Role;
 import cwms.cda.validation.ValidationSetup;
 import io.javalin.Javalin;
+import io.javalin.compression.CompressionStrategy;
 import io.javalin.config.JavalinConfig;
-import io.javalin.config.Key;
 import io.javalin.config.RoutesConfig;
 import io.javalin.security.RouteRole;
 import io.javalin.http.BadRequestResponse;
@@ -133,10 +131,6 @@ public final class CwmsDataApi {
     // based on https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_aaa/browse/IntegrationTests/src/test/resources/sql/load_testusers.sql
     public static final String CWMS_USERS_ROLE = "CWMS Users";
     public static final String CAC_USER = "cac_auth";
-    /** Default OFFICE where needed. Based on context. e.g. /cwms-data -> HQ, /spk-data -> SPK */
-    //public static final String OFFICE_ID = "office_id";
-    // public static final String DATA_SOURCE = "data_source";
-    // public static final String RAW_DATA_SOURCE = "data_source";
     public static final String DATABASE = "database";
     public static final String IS_NEW_LRTS = "X-CWMS-LRTS-Formatting";
 
@@ -145,7 +139,6 @@ public final class CwmsDataApi {
     private static String VERSION;
 
     public static final String APPLICATION_TITLE = "CWMS Data API";
-    public static final String PROVIDER_KEY_OLD = "radar.access.provider";
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
     public static final String DEFAULT_OFFICE_KEY = "cwms.dataapi.default.office";
     public static final String DEFAULT_PROVIDER = "MultipleAccessManager";
@@ -196,6 +189,7 @@ public final class CwmsDataApi {
         app = Javalin.create(config -> {
             config.http.defaultContentType = "application/json";
             config.http.generateEtags = true;
+            config.http.compressionStrategy = CompressionStrategy.NONE;
             getOpenApiOptions(config, appContext);            
             config.requestLogger.http((ctx, ms) -> logger.atFinest().log(ctx.toString()));
             config.router.contextPath = appContext;
@@ -230,6 +224,9 @@ public final class CwmsDataApi {
                     ctx.header("X-Content-Type-Options", "nosniff");
                     ctx.header("X-Frame-Options", "SAMEORIGIN");
                     ctx.header("X-XSS-Protection", "1; mode=block");
+                    // A given endpoint can override this, but otherwise we
+                    // don't want javalin or jetty to even try to guess
+                    ctx.res().setCharacterEncoding(null);
                 })
                 .before(ctx -> {
                     // now that we can get the generic route, update the name.
@@ -299,7 +296,7 @@ public final class CwmsDataApi {
                 });
                 configureRoutes(config.routes, metrics, cdaAccessManager);
             });
-        //QueueManager.ensureRssSubscribers(cwms); //TODO: fix
+        QueueManager.ensureRssSubscribers(ds);
         logger.atInfo().log("Javalin initialized.");
     }
 

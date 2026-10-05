@@ -820,7 +820,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
                 .filter(s -> s.getName() != null)
                 .filter(s -> s.getValue() != null)
                 .collect(toMap(NameValuePair::getName, NameValuePair::getValue));
-        ResponseBody body = given()
+        var body = given()
                                 .log().ifValidationFails(LogDetail.ALL, true)
                                 .accept(format)
                                 .queryParams(params)
@@ -840,7 +840,7 @@ final class BinaryTimeSeriesControllerTestIT extends DataApiTestIT {
 
         byte[] data = new byte[LARGE_BYTES.length];
         try (ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-             InputStream is = body.asInputStream()) {
+            InputStream is = body.asInputStream()) {
             int nRead;
             while ((nRead = is.read(data, 0, data.length)) != -1) {
                 buffer.write(data, 0, nRead);
