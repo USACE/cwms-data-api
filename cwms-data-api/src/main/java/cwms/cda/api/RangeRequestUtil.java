@@ -53,7 +53,7 @@ public class RangeRequestUtil {
             // Chunked is a worse experience overall, seems like we should just set the length if we know it.
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(totalBytes));
 
-            IOUtils.copyLarge(is, (OutputStream) ctx.outputStream(), 0, totalBytes);
+            IOUtils.copyLarge(is, ctx.outputStream(), 0, totalBytes);
         } else {
             String rangeHeader = ctx.header(Header.RANGE);
 
@@ -97,7 +97,7 @@ public class RangeRequestUtil {
             // stream from Oracle Blobs).
 
             // We do our own skipping and then have IOUtils copy.
-            IOUtils.copyLarge(is, (OutputStream) ctx.outputStream(), 0, len);
+            IOUtils.copyLarge(is, ctx.outputStream(), 0, len);
         }
     }
 
