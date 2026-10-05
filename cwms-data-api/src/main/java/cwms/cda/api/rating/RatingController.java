@@ -96,8 +96,6 @@ import java.util.Map;
 import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.metadata.VerticalDatumException;
-import usace.cwms.db.jooq.codegen.udt.RATING_SPEC_T;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jooq.DSLContext;
@@ -108,17 +106,11 @@ public class RatingController extends BaseCrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     static final String TAG = "Ratings";
 
-    // TODO: moves to config
-    // static {
-    //     JavalinValidation.register(RatingSet.DatabaseLoadMethod.class,
-    //             RatingController::getDatabaseLoadMethod);
-    // }
-
     public RatingController(MetricRegistry metrics) {
         super(metrics);
     }
 
-    private static RatingSet.DatabaseLoadMethod getDatabaseLoadMethod(String input) {
+    public static RatingSet.DatabaseLoadMethod getDatabaseLoadMethod(String input) {
         RatingSet.DatabaseLoadMethod retval = null;
 
         if (input != null) {

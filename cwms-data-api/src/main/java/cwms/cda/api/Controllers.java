@@ -251,14 +251,7 @@ public final class Controllers {
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
     public static final String QUERY = "query";
-    public static final String INCLUDE_ROLES = "include-roles";
-
-    // TODO: moved to config block
-    // static {
-    //     JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-    //     JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
-    //     JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
-    // }
+    public static final String INCLUDE_ROLES = "include-roles";    
 
     private Controllers() {
 
