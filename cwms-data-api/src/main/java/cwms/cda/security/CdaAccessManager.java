@@ -1,7 +1,6 @@
 package cwms.cda.security;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.CwmsDataApi;
 import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
@@ -45,7 +44,8 @@ public final class CdaAccessManager implements Handler {
     }
 
     private void checkRateLimit(Context ctx) {
-        String path = ctx.path();
+        // we need the registered path name without variables here.
+        String path = ctx.endpoints().matchedHttpEndpoint().path;
         RouteRole[] routeRoles = rateLimitedPaths.get(path);
         if (routeRoles != null && routeRoles.length != 0) {
             try {
