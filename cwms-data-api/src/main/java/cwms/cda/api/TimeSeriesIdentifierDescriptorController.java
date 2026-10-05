@@ -299,7 +299,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
         String office = requiredParam(ctx, OFFICE);
         String newTimeseriesId = ctx.queryParam(TIMESERIES_ID);
-        Long intervalOffset = ctx.queryParamAsClass(INTERVAL_OFFSET, Long.class).getOrDefault(null);
+        Long intervalOffset = ctx.queryParamAsClass(INTERVAL_OFFSET, Long.class).getOrNull();
 
         List<String> updateKeys = Arrays.asList(SNAP_FORWARD, SNAP_BACKWARD, ACTIVE, INTERVAL_OFFSET);
 
@@ -323,8 +323,8 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                 // basic rename.
                 dao.rename(office, name, newTimeseriesId, intervalOffset);
             } else {
-                Long forward = ctx.queryParamAsClass(SNAP_FORWARD, Long.class).getOrDefault(null);
-                Long backward = ctx.queryParamAsClass(SNAP_BACKWARD, Long.class).getOrDefault(null);
+                Long forward = ctx.queryParamAsClass(SNAP_FORWARD, Long.class).getOrNull();
+                Long backward = ctx.queryParamAsClass(SNAP_BACKWARD, Long.class).getOrNull();
                 boolean active = ctx.queryParamAsClass(ACTIVE, Boolean.class).getOrDefault(true);
 
                 dao.update(office, name, intervalOffset, forward, backward, active);
