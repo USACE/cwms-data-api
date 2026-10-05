@@ -91,7 +91,7 @@ public final class WaterPumpDisassociateController extends WaterSupplyController
             String pumpName = ctx.pathParam(NAME);
             String projectName = ctx.pathParam(PROJECT_ID);
             String entityName = ctx.pathParam(WATER_USER);
-            //JavalinValidation.register(PumpType.class, PumpType::valueOf); // TODO: move to config
+
             PumpType pumpType = requiredParamAs(ctx, PUMP_TYPE, PumpType.class);
             String contractName = ctx.pathParam(CONTRACT_NAME);
             WaterContractDao contractDao = getContractDao(dsl);
