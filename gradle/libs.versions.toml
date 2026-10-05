@@ -85,6 +85,7 @@ cwms-ratings-io-jdbc = { module = "mil.army.usace.hec:hec-cwms-ratings-io-jdbc",
 owasp-sanitizer = { module = "com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer", version.ref = "owasp" }
 geojson-jackson = { module = "de.grundid.opendatalab:geojson-jackson", version.ref = "geojson-jackson" }
 javalin-core = { module = "io.javalin:javalin", version.ref = "javalin" }
+javalin-context-mock = { module = "io.javalin:javalin-context-mock", version.ref = "javalin" }
 javalin-openapi-annotation-processor = { module = "io.javalin.community.openapi:openapi-annotation-processor", version.ref = "javalin" }
 javalin-openapi-api = { module = "io.javalin.community.openapi:javalin-openapi-plugin", version.ref = "javalin" }
 javalin-openapi-swagger = { module = "io.javalin.community.openapi:javalin-openapi-plugin", version.ref = "javalin" }
