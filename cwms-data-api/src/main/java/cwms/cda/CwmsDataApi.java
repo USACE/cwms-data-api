@@ -49,6 +49,7 @@ import io.javalin.config.RoutesConfig;
 import io.javalin.security.RouteRole;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.openapi.plugin.OpenApiPlugin;
+import io.javalin.plugin.bundled.RateLimitPlugin;
 import io.javalin.plugin.bundled.RouteOverviewPlugin;
 import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.Operation;
@@ -194,7 +195,7 @@ public final class CwmsDataApi {
             config.requestLogger.http((ctx, ms) -> logger.atFinest().log(ctx.toString()));
             config.router.contextPath = appContext;
             ValidationSetup.registerValidation(config.validation);
-            
+            config.registerPlugin(new RateLimitPlugin());
             if (uiWar != null) {
                 config.jetty.modifyServer(server -> {
                     var war = new WebAppContext();
