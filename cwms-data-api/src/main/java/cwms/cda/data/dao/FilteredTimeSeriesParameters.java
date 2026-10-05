@@ -42,7 +42,7 @@ public class FilteredTimeSeriesParameters {
         }
 
         public static Builder from(@NotNull Context ctx){
-            String query = ctx.queryParamAsClass(QUERY, String.class).getOrDefault(null);
+            String query = ctx.queryParamAsClass(QUERY, String.class).getOrNull();
 
             return new Builder()
                     .withQuery(query)

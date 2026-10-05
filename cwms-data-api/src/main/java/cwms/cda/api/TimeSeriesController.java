@@ -176,7 +176,7 @@ public class TimeSeriesController implements CrudHandler {
                 .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
         VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                .getOrDefault(null);
+                .getOrNull();
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -734,7 +734,7 @@ public class TimeSeriesController implements CrudHandler {
                     .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
             VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                    .getOrDefault(null);
+                    .getOrNull();
             vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
 
             dao.store(timeSeries, createAsLrts, storeRule, overrideProtection, vd);

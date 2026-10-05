@@ -93,7 +93,7 @@ public class ParametersController implements CrudHandler {
             DSLContext dsl = getDslContext(ctx);
             ParameterDao dao = new ParameterDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
-            String office = ctx.queryParamAsClass(OFFICE, String.class).getOrDefault(null);
+            String office = ctx.queryParamAsClass(OFFICE, String.class).getOrNull();
             String header = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseQueryOrHeaderParam(header, format, Parameter.class);
             String version = contentType.getParameters()

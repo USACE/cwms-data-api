@@ -251,7 +251,7 @@ class ControllersTest {
 
         Context ctx = buildContext(nameToUse, null);
 
-        Number intervalForward = ctx.queryParamAsClass(nameToUse, Double.class).getOrDefault(null);
+        Number intervalForward = ctx.queryParamAsClass(nameToUse, Double.class).getOrNull();
         assertNull(intervalForward);
 
     }

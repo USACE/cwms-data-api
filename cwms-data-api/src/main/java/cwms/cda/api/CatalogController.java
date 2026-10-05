@@ -314,7 +314,7 @@ public class CatalogController implements CrudHandler {
             boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
                 .getOrDefault(false);
             String searchText = validateSearchText(ctx.queryParamAsClass(SEARCH_TEXT, String.class)
-                .getOrDefault(null));
+                .getOrNull());
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
