@@ -32,6 +32,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.StatusResponse;
@@ -64,6 +66,9 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
         queryParams = {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = boolean.class, description = "Create will fail if provided"
                     + "display value already exists. Default: true")
+        },
+        pathParams = {
+            @OpenApiParam(name = Controllers.OFFICE, type = String.class, description = Controllers.OFFICE)
         },
         responses = {
             @OpenApiResponse(status = "201", description = "Contract type successfully stored to CWMS."),
