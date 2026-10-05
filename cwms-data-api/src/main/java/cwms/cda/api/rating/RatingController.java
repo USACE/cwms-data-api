@@ -158,8 +158,7 @@ public class RatingController extends BaseCrudHandler {
             String datum = ctx.queryParam(DATUM);
             VerticalDatum vd = null;
             if(datum != null) {
-               vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                        .getOrDefault(null);
+               vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class).getOrNull();
             }
             vd = RatingsVerticalDatumExtractor.getVerticalDatum(ratingSet).orElse(vd);
             ratingDao.create(ratingSet, false, vd);
@@ -589,8 +588,7 @@ public class RatingController extends BaseCrudHandler {
             String datum = ctx.queryParam(DATUM);
             VerticalDatum vd = null;
             if(datum != null) {
-                vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                        .getOrDefault(null);
+                vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class).getOrNull();
             }
             vd = RatingsVerticalDatumExtractor.getVerticalDatum(ratingSet).orElse(vd);
             ratingDao.store(ratingSet, replaceBaseCurve, vd);

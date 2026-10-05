@@ -103,8 +103,8 @@ public class ProjectChildLocationHandler implements Handler {
         String office = requiredParam(ctx, OFFICE);
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             ProjectChildLocationDao lockDao = new ProjectChildLocationDao(JooqDao.getDslContext(ctx));
-            String projLike = ctx.queryParamAsClass(PROJECT_LIKE, String.class).getOrDefault(null);
-            String kindLike = ctx.queryParamAsClass(LOCATION_KIND_LIKE, String.class).getOrDefault(null);
+            String projLike = ctx.queryParamAsClass(PROJECT_LIKE, String.class).getOrNull();
+            String kindLike = ctx.queryParamAsClass(LOCATION_KIND_LIKE, String.class).getOrNull();
 
             List<ProjectChildLocations> childLocations = lockDao.retrieveProjectChildLocations(office, projLike, kindLike);
             String formatHeader = ctx.header(Header.ACCEPT);
