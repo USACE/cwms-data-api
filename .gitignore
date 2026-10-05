@@ -19,4 +19,3 @@ cda-etl/cache
 **/.venv
 cda-gui/.env.dev-cda-compose.local
 .env
-cwms-data-api/src/test/resources/features-integration.properties
