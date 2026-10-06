@@ -1,8 +1,8 @@
 plugins {
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
-    id 'war'
     id 'com.gradleup.shadow' version '8.3.10'
+    id 'application'
 }
 
 configurations {
@@ -14,10 +14,6 @@ configurations {
     testImplementation.extendsFrom(tomcatLibs)
     jooqCodegenLatest
     jooqCodegenLegacy
-}
-
-configurations.implementation {
-    exclude group: 'com.oracle.database.jdbc'
 }
 
 configurations.all {
@@ -80,6 +76,8 @@ dependencies {
         //exclude group: "org.python", module: "jython-standalone"
         //exclude group: "mil.army.usace.hec.swingx"
         exclude group: "*"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
 
     implementation(libs.google.flogger.api)
@@ -89,18 +87,24 @@ dependencies {
 
     implementation(libs.nucleus.data) {
         exclude group: "org.jdom"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
     implementation(libs.nucleus.metadata)
     implementation(libs.cwms.ratings.core) {
         
         //exclude group: "mil.army.usace.hec.swingx"
         exclude group: "*"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
 
     implementation(libs.cwms.ratings.io.xml)
     implementation(libs.cwms.ratings.io.jdbc) {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
         exclude group: "org.jooq.pro-java-11", module: "jooq"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
 
     implementation(libs.jooq) {
@@ -154,10 +158,7 @@ dependencies {
         exclude group: "org.eclipse.jetty.toolchain", module: "jetty-jakarta-servlet-api"
     }
 
-    baseLibs(libs.oracle.jdbc.driver)
-
-    compileOnly(libs.oracle.jdbc.driver)
-    testRuntimeOnly(libs.oracle.jdbc.driver)
+    implementation(libs.oracle.jdbc.driver)
 
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.rest.assured)
@@ -168,7 +169,8 @@ dependencies {
         exclude group: "org.slf4j"
     }
 
-    baseLibs(libs.ch.qos.logback)
+    implementation(libs.ch.qos.logback)
+    //baseLibs(libs.ch.qos.logback)
     baseLibs(libs.io.opentelemetry.instrumentation.logback.mdc)
 
     testImplementation(libs.bundles.testcontainers)
@@ -198,10 +200,22 @@ test {
 
 description = 'CWMS-Data-API'
 
+application {
+    mainClass = 'cwms.cda.CwmsDataApi'
+}
 
+distributions {
+    main {
+        contents {
+            into ('wars') {
+                from configurations.ui
+                rename '.*', 'ui.war'
+            }
+        }
+    }
+}
 
-task run(type: JavaExec) {
-    group "application"
+run() {
     dependsOn configurations.ui
     classpath sourceSets.main.runtimeClasspath +
               configurations.baseLibs
@@ -240,7 +254,6 @@ tasks.register('seedDevApiKeys', JavaExec) {
 
 task integrationTests(type: Test) {
     dependsOn test
-    dependsOn war
     dependsOn configurations.ui
 
     useJUnitPlatform() {
@@ -265,7 +278,6 @@ task integrationTests(type: Test) {
 task timeseriesReadBenchmark(type: JavaExec) {
     group "verification"
     description = "Run the local time-series read benchmark harness"
-    dependsOn war
     dependsOn testClasses
 
     workingDir = projectDir
@@ -289,35 +301,6 @@ task timeseriesReadBenchmark(type: JavaExec) {
     jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 
-task prepareDockerBuild(type: Copy, dependsOn: war) {
-    doFirst {
-        project.mkdir("$buildDir/docker")
-    }
-    from "src/docker"
-    into "$buildDir/docker"
-
-    from(configurations.docker)
-
-    from(configurations.baseLibs) {
-        into "libs"
-    }
-
-    from(sourceSets.test.resources) {
-
-        include "**/conf/context.xml"
-        eachFile {
-            path = name
-        }
-        includeEmptyDirs = false
-    }
-
-    from(war.outputs.files.singleFile) {
-        //include "${project.name}-${project.version}.jar"
-        into "cda/webapps"
-        rename(".*\\.war", "cwms-data.war")
-    }
-}
-
 task generateTimeSeriesSamples(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     classpath += sourceSets.test.runtimeClasspath
@@ -336,7 +319,6 @@ task generateTimeSeriesSamples(type: JavaExec) {
 
 tasks.register("executeOpenAPIConversion", Test) {
     group 'documentation'
-    dependsOn war
 
     useJUnitPlatform() {
         includeTags "openapi"

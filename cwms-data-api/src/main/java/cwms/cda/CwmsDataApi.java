@@ -37,6 +37,7 @@ import cwms.cda.api.errors.ApplicationException;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.rss.QueueManager;
+import cwms.cda.helpers.ConfigVariables;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
 import cwms.cda.security.Authenticator;
 import cwms.cda.security.CdaAccessManager;
@@ -155,7 +156,7 @@ public final class CwmsDataApi {
     public static void main(String[] args)
     {
 
-        final var appContext = args.length > 0 ? args[0] : "cwms-data";
+        final var appContext = args.length > 0 ? args[0] : "/cwms-data";
         final var uiPath = args.length > 1 ? args[1] : null;
 
         var ds = buildDataSource();
@@ -486,16 +487,15 @@ public final class CwmsDataApi {
     /**
      * Initialize data source from properties or environment
      * 
-     * TODO: environment.
      * @return
      */
     public static DataSource buildDataSource()
     {
         var dsConfig = new HikariConfig();
-        dsConfig.setJdbcUrl(System.getProperty("CDA_JDBC_URL"));
-        dsConfig.setUsername(System.getProperty("CDA_JDBC_USERNAME"));
-        dsConfig.setPassword(System.getProperty("CDA_JDBC_PASSWORD"));
-        dsConfig.setMaximumPoolSize(Integer.parseInt(System.getProperty("CDA_POOL_MAX_ACTIVE", "1")));
+        dsConfig.setJdbcUrl(ConfigVariables.getConfigString("CDA_JDBC_URL"));
+        dsConfig.setUsername(ConfigVariables.getConfigString("CDA_JDBC_USERNAME"));
+        dsConfig.setPassword(ConfigVariables.getConfigString("CDA_JDBC_PASSWORD"));
+        dsConfig.setMaximumPoolSize(ConfigVariables.getConfigInt("CDA_POOL_MAX_ACTIVE", 1));
         return new HikariDataSource(dsConfig);
     }
 

@@ -28,7 +28,7 @@ junit = "5.11.1"
 junit-launcher = "1.11.2"
 testcontainers = { strictly = "2.0.2" }
 cwms-testcontainers = "2.0.0"
-oracle-jdbc = "23.26.1.0.0"
+oracle-jdbc = { strictly = "23.26.1.0.0" }
 mockito = "4.6.1"
 rest-assured = "5.2.0"
 hamcrest = "1.3"
