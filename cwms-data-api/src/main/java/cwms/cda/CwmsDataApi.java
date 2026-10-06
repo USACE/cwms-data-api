@@ -152,6 +152,7 @@ public final class CwmsDataApi {
     private final String appContext;
     private final MetricRegistry metrics = new MetricRegistry(); 
     private final Javalin app;
+    private final int port;
 
     public static void main(String[] args)
     {
@@ -172,6 +173,7 @@ public final class CwmsDataApi {
 
     @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     private CwmsDataApi(int port, String context, File uiWar, DataSource ds, SessionHandler sessionHandler) {
+        this.port = port;
         this.appContext = context;
         logger.atInfo().log("Initializing Javalin.");
         CwmsDataApi.VERSION = obtainFullVersion();
@@ -303,7 +305,7 @@ public final class CwmsDataApi {
     }
 
     public void start() {
-        app.start();
+        app.start(port);
     }
 
     public void stop() {
