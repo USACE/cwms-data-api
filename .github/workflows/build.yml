@@ -21,13 +21,12 @@ jobs:
         schema:
           - env: latest
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
-          # Still fixing up tests, avoid excessive runs
-          # - env: release
-          #   image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16"
-          # - env: next-release
-          #   image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16"
-          # - env: previous
-          #   image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17"
+          - env: release
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16"
+          - env: next-release
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16"
+          - env: previous
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17"
     name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
     runs-on: ubuntu-latest
     outputs:
@@ -51,10 +50,9 @@ jobs:
           gradle-version: wrapper
       - name: build and test
         id: thebuild
-        run: ./gradlew clean build --info --init-script init.gradle -x test
+        run: ./gradlew clean build --info --init-script init.gradle
       - name: integration tests
-        # skipping integration tests for the moment, need to fix mocks.
-        run: ./gradlew integrationtest -x test --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
+        run: ./gradlew integrationtest --info --init-script init.gradle -PCDA.oracle.database.image=${{matrix.schema.image}}
       - name: Create matrix job badge
         if: success() || failure() # always run even if the previous step fails
         uses: ./.github/actions/badge
