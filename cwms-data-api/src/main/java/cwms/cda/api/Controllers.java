@@ -29,6 +29,8 @@ import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.api.errors.RequiredPathParameterException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.ContentType;
@@ -406,6 +408,22 @@ public final class Controllers {
         String param = ctx.queryParam(name);
         if (param == null || param.isEmpty()) {
             throw new RequiredQueryParameterException(name);
+        }
+        return param;
+    }
+
+    /**
+     * Returns the required path parameter. Primarily used when the parameters are required but embedded in the url.
+     * as a create method for something that adds additional data.
+     * @param ctx Request Context
+     * @param name Path parameter name
+     * @return value of the parameter
+     * @throws RequiredPathParameterException if the parameter is not found
+     */
+    public static String requiredPathParam(io.javalin.http.Context ctx, String name) {
+        String param = ctx.pathParam(name);
+        if (param == null || param.isEmpty()) {
+            throw new RequiredPathParameterException(name);
         }
         return param;
     }

@@ -28,6 +28,7 @@ package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.requiredPathParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
@@ -83,7 +84,8 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
+            var office = requiredPathParam(ctx, Controllers.OFFICE);
+            DSLContext dsl = getDslContext(ctx, office);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
