@@ -198,20 +198,7 @@ test {
 
 description = 'CWMS-Data-API'
 
-task generateConfig(type: Copy) {
-    doFirst {
-        project.delete "$buildDir/tomcat/"
-        project.mkdir "$buildDir/tomcat/logs"
-    }
-    from 'src/test/resources/tomcat'
-    into "$buildDir/tomcat"
 
-    //rename "context.xml", "context.xml.template"
-    rename "tomcat-server.xml", "server.xml"
-
-    inputs.dir "src/test/resources"
-    outputs.dir "$buildDir/tomcat/conf"
-}
 
 task run(type: JavaExec) {
     group "application"
@@ -252,8 +239,7 @@ tasks.register('seedDevApiKeys', JavaExec) {
 }
 
 task integrationTests(type: Test) {
-//    dependsOn test // TODO: reenabled
-    dependsOn generateConfig
+    dependsOn test
     dependsOn war
     dependsOn configurations.ui
 
@@ -279,7 +265,6 @@ task integrationTests(type: Test) {
 task timeseriesReadBenchmark(type: JavaExec) {
     group "verification"
     description = "Run the local time-series read benchmark harness"
-    dependsOn generateConfig
     dependsOn war
     dependsOn testClasses
 
@@ -351,7 +336,6 @@ task generateTimeSeriesSamples(type: JavaExec) {
 
 tasks.register("executeOpenAPIConversion", Test) {
     group 'documentation'
-    dependsOn generateConfig
     dependsOn war
 
     useJUnitPlatform() {
