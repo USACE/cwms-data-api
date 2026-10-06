@@ -58,11 +58,12 @@ public class GateChangeCreateController extends BaseHandler {
             required = true),
         queryParams = {
             @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class,
-                description = "Create will fail if provided Gate Changes already exist." +
-                        " Default: true"),
-            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                    description = "Create will fail if provided Gate Changes already exist." +
-                            "  Deprecated, use " + OVERRIDE_PROTECTION)
+                    description = "A flag ('True'/'False') specifying whether to delete protected data. "
+                            + "Default is True"),
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class, deprecated = true,
+                    description = "A flag ('True'/'False') specifying whether to delete protected data. "
+                            + "Default is True"
+                            + "  Deprecated, use " + OVERRIDE_PROTECTION)
         },
         description = "Create CWMS Gate Changes",
         method = HttpMethod.POST,
