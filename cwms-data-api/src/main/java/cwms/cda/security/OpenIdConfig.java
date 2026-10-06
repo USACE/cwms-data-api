@@ -4,13 +4,14 @@ package cwms.cda.security;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
+
+import io.javalin.openapi.OpenID;
+import io.javalin.openapi.SecurityScheme;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwsHeader;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SigningKeyResolverAdapter;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
@@ -93,9 +94,7 @@ public class OpenIdConfig {
     }
 
     static SecurityScheme buildScheme(String wellKnownUrl, String clientId, String idpHint) {
-        SecurityScheme scheme =  new SecurityScheme().type(Type.OPENIDCONNECT)
-                                                    .openIdConnectUrl(wellKnownUrl);
-        if (idpHint != null) {
+        //if (idpHint != null) {
             Map<String, Object> hint = new HashMap<>();
             hint.put("query-parameter", "kc_idp_hint");
             ArrayList<String> values = new ArrayList<>();
@@ -103,11 +102,11 @@ public class OpenIdConfig {
                 values.add(value.trim());
             }
             hint.put("values", values);
-            scheme.addExtension("x-kc_idp_hint", hint);
-        }
-
-        scheme.addExtension("x-oidc-client-id", clientId);
-        return scheme;
+            //scheme.addExtension("x-kc_idp_hint", hint);
+        //}
+        
+        //scheme.addExtension("x-oidc-client-id", clientId);
+        return new OpenWithExtension(wellKnownUrl, Map.of("x-kc_idp_hint", hint, "x-oidc-client-id", clientId));
     }
 
     public SecurityScheme getScheme() {
@@ -200,4 +199,14 @@ public class OpenIdConfig {
             return key;
         }
     }
+
+    public record OpenWithExtension(String openIdConnectUrl, Map<String, Object> extensions) implements SecurityScheme {
+
+
+        @Override
+        public String getType() {
+            return "openIdConnect";
+        }
+
+    };
 }
