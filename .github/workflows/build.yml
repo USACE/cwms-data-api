@@ -10,7 +10,6 @@ on:
 
 jobs:
   build:
-    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -91,7 +90,6 @@ jobs:
           report_paths: '**/TEST-*.xml'
           detailed_summary: true
   open-api-static-analysis:
-    if: false
     name: OpenApi Static Analysis Tests
     runs-on: ubuntu-latest
     env:
