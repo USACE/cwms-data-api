@@ -327,7 +327,8 @@ class OpenApiDocTest {
 
 
         Set<OpenApiParamUsageInfo> pathParams = methodCalls.stream()
-                                                     .filter(call -> call.getNameAsString().equals("pathParam"))
+                                                     .filter(call -> call.getNameAsString().equals("pathParam") ||
+                                                                     call.getNameAsString().equals("requiredPathParam"))
                                                      .map(call -> readUsageFromCall(unit, clazz, call, true))
                                                      .collect(Collectors.toSet());
         pathParams.addAll(ignoredPathParams);

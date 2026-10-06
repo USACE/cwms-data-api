@@ -12,6 +12,7 @@ import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
+import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
@@ -691,7 +692,7 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Update a TimeSeries with provided values",
             pathParams = {
-                @OpenApiParam(name = TIMESERIES, description = "Full CWMS Timeseries name")
+                @OpenApiParam(name = TIMESERIES, description = "Full CWMS Timeseries name", required = true)
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -715,7 +716,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "and should be converted to the as-stored datum before being saved.")
             },
             methods = {HttpMethod.PATCH},
-            path = "/timeseries/{timeseries}",
+            path = "/timeseries/{" + TIMESERIES + "}",
             tags = TAG
     )
     @Override
@@ -726,6 +727,13 @@ public class TimeSeriesController implements CrudHandler {
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
+            var bodyTsId = timeSeries.getName();
+            if (!timeseries.equals(bodyTsId)) {
+                throw new InvalidItemException(
+                "Provided object time series name and path url time series name do not match.", null);
+            }
+
+
             boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class)
                     .getOrDefault(false);
             StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class)

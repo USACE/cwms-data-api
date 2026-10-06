@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredPathParam;
 import static cwms.cda.api.LocationController.LOCATIONS_TAG;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -141,7 +142,6 @@ public final class VerticalDatumController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the location id for this vertical-datum-info."),
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office.")
             },
             pathParams = {
@@ -165,7 +165,7 @@ public final class VerticalDatumController implements CrudHandler {
             String locationId = info.getLocation();
             String office = info.getOffice();
             if(locationId == null || locationId.isBlank()) {
-                locationId = requiredParam(ctx, LOCATION_ID);
+                locationId = requiredPathParam(ctx, LOCATION_ID);                
             }
             if(office == null || office.isBlank()) {
                 office = requiredParam(ctx, OFFICE);

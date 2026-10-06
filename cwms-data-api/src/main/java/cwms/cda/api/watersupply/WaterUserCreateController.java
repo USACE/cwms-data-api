@@ -33,6 +33,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 
 import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
@@ -82,11 +83,17 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase {
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
+            var office = requiredPathParam(ctx, Controllers.OFFICE);
+            var projectId = requiredPathParam(ctx, Controllers.PROJECT_ID);
+            DSLContext dsl = getDslContext(ctx, office);
             String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
             WaterUser user = Formats.parseContent(contentType, ctx.body(), WaterUser.class);
+            if (!projectId.equals(user.getProjectId().getName())) {
+                throw new InvalidItemException("Project ID in provided data and project ID in URL path do not match", null);
+            }
+            
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterUser(user, failIfExists);
