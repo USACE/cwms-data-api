@@ -20,8 +20,7 @@ RUN ls cwms-data-api/build/install/
 FROM eclipse-temurin:17-jre-alpine-3.24 AS api
 RUN adduser -D cda
 COPY --from=builder /builddir/cwms-data-api/build/install/cwms-data-api /cda
-# TODO: place and pull from correct location.
-#COPY --from=builder /builddir/cwms-data-api/build/docker/logback.xml /logback.xml
+COPY --from=builder /builddir/cwms-data-api/src/docker/logback.xml /logback.xml
 
 ENV CDA_JDBC_DRIVER="oracle.jdbc.driver.OracleDriver"
 ENV CDA_JDBC_URL=""

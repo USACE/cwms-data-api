@@ -326,10 +326,6 @@ public final class CwmsDataApi {
     }
 
     private void getOpenApiOptions(JavalinConfig config, String appContext) {
-        Info applicationInfo = new Info().title(APPLICATION_TITLE).version(CwmsDataApi.getApiVersion())
-                .description("CWMS REST API for Data Retrieval");
-
-        String provider = CdaAccessManager.class.getSimpleName();
 
 
         config.registerPlugin(new OpenApiPlugin(openapi -> {
@@ -338,6 +334,7 @@ public final class CwmsDataApi {
             openapi.withDefinitionConfiguration((v,builder) -> {
                 builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
                 builder.server(server -> server.url(appContext));
+                builder.withOpenID("test", System.getenv("cwms.dataapi.access.openid.wellKnownUrl"));
             });
         }));
 
