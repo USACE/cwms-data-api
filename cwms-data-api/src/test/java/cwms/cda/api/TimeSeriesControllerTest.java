@@ -295,7 +295,7 @@ class TimeSeriesControllerTest extends ControllerTest {
                 .orElseThrow();
 
         assertEquals(1, okResponse.content().length);
-        assertEquals(RecentValue.class, okResponse.content()[0].from());
+        assertEquals(RecentValue[].class, okResponse.content()[0].from());
     }
 
 }

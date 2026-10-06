@@ -21,16 +21,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package cwms.cda.api.rating;
 
 import cwms.cda.api.ControllerTest;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,12 +39,18 @@ import cwms.cda.data.dto.rating.RatingSpec;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV2;
 import io.javalin.http.Header;
+import io.javalin.http.HttpStatus;
+import io.javalin.mock.ContextMock;
+import io.javalin.router.Endpoint;
 import io.javalin.http.Context;
+import io.javalin.http.HandlerType;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.Test;
 
 import static cwms.cda.data.dto.rating.RatingSpecTest.buildRatingSpec;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -68,33 +73,12 @@ class RatingSpecControllerTest
 		RatingSpecDao dao = mock(RatingSpecDao.class);
 
 		when(dao.retrieveRatingSpec(officeId, ratingId)).thenReturn(Optional.of(expected));
-
-		// build mock request and response
-		final HttpServletRequest request= mock(HttpServletRequest.class);
-		final HttpServletResponse response = mock(HttpServletResponse.class);
-		final Map<String, Object> map = new LinkedHashMap<>();
-
-		when(request.getAttribute("office")).thenReturn(officeId);
-		when(request.getAttribute("rating-id")).thenReturn(ratingId);
-
-		when(request.getHeader(Header.ACCEPT)).thenReturn(Formats.JSONV2);
-
+		
 		Map<String, String> urlParams = new LinkedHashMap<>();
 		urlParams.put("office", officeId);
-		urlParams.put("rating-id", ratingId);
 
-		String paramStr = ControllerTest.buildParamStr(urlParams);
-
-		when(request.getQueryString()).thenReturn(paramStr);
-		when(request.getRequestURL()).thenReturn(new StringBuffer( "http://127.0.0.1:7001/ratings/spec/"));
-
-
-
-		// build real context that uses the mock request/response
-		Context ctx = mock(Context.class);
-		when(ctx.res()).thenReturn(response);
-		when(ctx.req()).thenReturn(request);
-		when(ctx.attributeMap()).thenReturn(map);
+		String paramStr = ControllerTest.buildParamStr(urlParams);		
+		var url = "http://127.0.0.1:7001/cwms-data/ratings/spec/" + ratingId;
 
 		// Build a controller that doesn't actually talk to database
 		RatingSpecController controller = new RatingSpecController(new MetricRegistry()){
@@ -109,27 +93,34 @@ class RatingSpecControllerTest
 				return dao;
 			}
 		};
-		// make controller use our mock dao
-
-		// Do a controller getAll with our context
-		controller.getOne(ctx, ratingId);
+		final var outputStream = new ByteArrayOutputStream();
+        var executor = ContextMock.create(config -> {
+										config.getReq().contentType = "*";
+										config.getReq().requestURL = url;
+										config.getReq().queryString = paramStr;
+										config.getReq().addHeader(Header.ACCEPT, Formats.JSONV2);
+										config.getRes().outputStream = outputStream;
+									})
+                                 .build("/cwms-data/ratings/spec/{rating-id}");
+        var endpoint = Endpoint.create(HandlerType.GET, "/cwms-data/ratings/spec/{rating-id}")
+							   .handler(ctx -> controller.getOne(ctx, ratingId));
+        var ctx = endpoint.handle(executor);
 
 		// Check that the controller accessed our mock dao in the expected way
 		verify(dao, times(1)).retrieveRatingSpec(officeId, ratingId);
 
+		assertEquals(HttpStatus.OK, ctx.status());
 		// Make sure controller thought it was happy
-		verify(response).setStatus(200);
-		// And make sure controller returned json
-		verify(response).setContentType(Formats.JSONV2);
+		assertEquals(Formats.JSONV2, ctx.res().getContentType());
 		
-		String result = ctx.body();
+		String result = outputStream.toString(StandardCharsets.UTF_8);
 		assertNotNull(result);  // MAke sure we got some sort of response
 
 		// Turn json response back into a spec object
 		ObjectMapper om = JsonV2.buildObjectMapper();
 		RatingSpec actual = om.readValue(result, RatingSpec.class);
 
-		assertNotNull(actual);
+		assertNotNull(actual, () -> result);
 	}
 
 
