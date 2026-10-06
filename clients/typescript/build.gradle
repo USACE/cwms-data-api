@@ -76,9 +76,9 @@ tasks.register('generateTypeScriptClient', GenerateTask) {
     description 'Generate the cwmsjs TypeScript client with the Gradle OpenAPI plugin.'
     dependsOn validateOpenApiSpec
     validateSpec = true
-    inputSpec = modifiedSpecFile.asFile.absolutePath
-    outputDir = generatedClientDir.asFile.absolutePath
-    configFile = layout.projectDirectory.file('openapi.config.json').asFile.absolutePath
+    inputSpec = modifiedSpecFile.asFile
+    outputDir = generatedClientDir.asFile
+    configFile = layout.projectDirectory.file('openapi.config.json').asFile
     generatorName = 'typescript-fetch'
     globalProperties.set([
             modelDocs             : 'true',
@@ -87,7 +87,7 @@ tasks.register('generateTypeScriptClient', GenerateTask) {
             apiTests              : 'false',
             enabledPostProcessFile: 'false'
     ])
-    ignoreFileOverride = layout.projectDirectory.file('.openapi-generator-ignore').asFile.absolutePath
+    ignoreFileOverride = layout.projectDirectory.file('.openapi-generator-ignore').asFile
 }
 
 tasks.register('modPackage', NpxTask) {
