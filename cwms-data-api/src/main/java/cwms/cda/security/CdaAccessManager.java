@@ -32,7 +32,7 @@ public final class CdaAccessManager implements Handler {
     @Override
     public void handle(Context ctx) throws Exception {
         DataApiPrincipal principal = getApiPrincipal(ctx);
-        String path = ctx.path();
+        String path = ctx.endpoints().matchedHttpEndpoint().path; // we want the generic path here
         var routeRoles = ctx.routeRoles();
         if (customAuthorizers.containsKey(path)) {
             AuthDao.isAuthorized(ctx, principal, routeRoles, customAuthorizers.get(path));
