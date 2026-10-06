@@ -22,7 +22,7 @@ public class FormattingException extends ApplicationException {
     public FormattingException(String message, Throwable err) {
         super(message, PARSER_SOURCE, "Formatting error:" + message,
             ((err instanceof IOException)
-                ? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : HttpServletResponse.SC_NOT_ACCEPTABLE),
+                ? HttpServletResponse.SC_BAD_REQUEST : HttpServletResponse.SC_NOT_ACCEPTABLE),
             LOG_LEVEL, new HashMap<>(), err);
     }
 }
