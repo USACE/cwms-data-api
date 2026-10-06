@@ -7,9 +7,12 @@ import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
 import io.javalin.http.Context;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.In;
-import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+import io.javalin.openapi.ApiKeyAuth;
+import io.javalin.openapi.SecurityScheme;
+
+// import io.swagger.v3.oas.models.security.SecurityScheme;
+// import io.swagger.v3.oas.models.security.SecurityScheme.In;
+//import io.swagger.v3.oas.models.security.SecurityScheme.Type;
 import java.security.Principal;
 
 @AutoService(IdentityProvider.class)
@@ -34,14 +37,15 @@ public class ApiKeyIdentityProvider implements IdentityProvider {
 
     @Override
     public SecurityScheme getScheme() {
-        return new SecurityScheme()
-                    .scheme("apikey")
-                    .type(Type.APIKEY)
-                    .in(In.HEADER)
-                    .description("Key value as generated from the /auth/keys endpoint. "
-                            + "NOTE: you MUST manually prefix your key with 'apikey ' "
-                            + "(without the single quotes).")
-                    .name(AUTH_HEADER);
+        return new ApiKeyAuth("header", AUTH_HEADER);
+        // return new SecurityScheme()
+        //             .scheme("apikey")
+        //             .type(Type.APIKEY)
+        //             .in(In.HEADER)
+        //             .description("Key value as generated from the /auth/keys endpoint. "
+        //                     + "NOTE: you MUST manually prefix your key with 'apikey ' "
+        //                     + "(without the single quotes).")
+        //             .name(AUTH_HEADER);
     }
 
     @Override

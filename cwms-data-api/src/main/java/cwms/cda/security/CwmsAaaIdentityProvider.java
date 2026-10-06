@@ -6,9 +6,9 @@ import cwms.auth.CwmsUserPrincipal;
 import cwms.cda.spi.IdentityProvider;
 import io.javalin.security.RouteRole;
 import io.javalin.http.Context;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.security.SecurityScheme.In;
-import io.swagger.v3.oas.models.security.SecurityScheme.Type;
+import io.javalin.openapi.CookieAuth;
+import io.javalin.openapi.SecurityScheme;
+
 import java.security.Principal;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -65,11 +65,7 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
 
     @Override
     public SecurityScheme getScheme() {
-        return new SecurityScheme()
-                .type(Type.APIKEY)
-                .in(In.COOKIE)
-                .name(SESSION_COOKIE_NAME)
-                .description("Auth handler running on same tomcat instance as the data api.");
+        return new CookieAuth(SESSION_COOKIE_NAME);
     }
 
     @Override

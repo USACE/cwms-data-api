@@ -153,6 +153,7 @@ public final class CwmsDataApi {
     private final MetricRegistry metrics = new MetricRegistry(); 
     private final Javalin app;
     private final int port;
+    final OpenApiSchemeProcessor schemeProcessor;
 
     public static void main(String[] args)
     {
@@ -170,8 +171,6 @@ public final class CwmsDataApi {
         api.start();
     }
     
-
-    @SuppressWarnings({"java:S125","java:S2095"}) // closed in destroy handler
     private CwmsDataApi(int port, String context, File uiWar, DataSource ds, SessionHandler sessionHandler) {
         this.port = port;
         this.appContext = context;
@@ -187,7 +186,7 @@ public final class CwmsDataApi {
         PolicyFactory sanitizer = new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
 
         final Authenticator authenticator = new Authenticator();
-        final OpenApiSchemeProcessor schemeProcessor = new OpenApiSchemeProcessor(authenticator);
+        schemeProcessor = new OpenApiSchemeProcessor(authenticator);
 
         final var cdaAccessManager = new CdaAccessManager();
         app = Javalin.create(config -> {
@@ -332,9 +331,9 @@ public final class CwmsDataApi {
             openapi.prettyOutputEnabled = true;
             openapi.documentationPath = "/swagger-docs";
             openapi.withDefinitionConfiguration((v,builder) -> {
+                CwmsDataApi.this.schemeProcessor.apply(null, builder);
                 builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
                 builder.server(server -> server.url(appContext));
-                builder.withOpenID("test", System.getenv("cwms.dataapi.access.openid.wellKnownUrl"));
             });
         }));
 
