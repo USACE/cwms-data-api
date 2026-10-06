@@ -192,6 +192,8 @@ test {
     useJUnitPlatform() {
         excludeTags "integration"
     }
+    classpath += configurations.baseLibs
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback-tests.xml"
 }
 
 description = 'CWMS-Data-API'

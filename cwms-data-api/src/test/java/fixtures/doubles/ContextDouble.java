@@ -21,6 +21,12 @@ import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * It is possible this could just be replaced with better use of ContextMock as
+ * used in the previously fixed controllers. However, given this isn't super complex and the structure
+ * was already different I'm going to leave this in place and come back to it later given this is already a 
+ * rather large set of changes.
+ */
 public class ContextDouble implements Context
 {
 
