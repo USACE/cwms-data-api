@@ -15,9 +15,17 @@ import com.codahale.metrics.MetricRegistry;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
+import cwms.cda.validation.ValidationSetup;
+import fixtures.doubles.ContextDouble;
 import io.javalin.http.Header;
+import io.javalin.config.Key;
+import io.javalin.config.ValidationConfig;
 import io.javalin.http.Context;
 import io.javalin.mock.ContextMock;
+import io.javalin.validation.Validation;
+import io.javalin.validation.Validation.Companion;
+
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 
 class ControllersTest {
-
+    public static final Key<Validation> VALIDATION_KEY = new Key<>("javalin-validation");
 
     @Test
     void testCorrectQueryParams() {
@@ -138,6 +146,7 @@ class ControllersTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final Map<String, Object> map = new LinkedHashMap<>();
+       
 
         when(request.getAttribute(nameToUse)).thenReturn(expected);
 
@@ -151,16 +160,15 @@ class ControllersTest {
         when(request.getQueryString()).thenReturn(paramStr);
         when(request.getRequestURL()).thenReturn(new StringBuffer("http://127.0.0"
                 + ".1:7001/timeseries/"));
-
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
         // build real context that uses the mock request/response
-        var ctx = ContextMock.create().build();
-        // Context ctx = mock(Context.class);
-        // when(ctx.req()).thenReturn(request);
-        // when(ctx.res()).thenReturn(response);
-        // when(ctx.attributeMap()).thenReturn(map);
-
-
-        return ctx.execute(null);
+        return new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
     }
 
     private Context buildContext(String nameToUse, String expected) {
@@ -168,6 +176,9 @@ class ControllersTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final Map<String, Object> map = new LinkedHashMap<>();
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
 
         when(request.getAttribute(nameToUse)).thenReturn(expected);
 
@@ -184,14 +195,11 @@ class ControllersTest {
                 + ".1:7001/timeseries/"));
 
         // build real context that uses the mock request/response
-        
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(map);
-
-
-        return ctx;
+        return new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
     }
 
     @Test
@@ -347,10 +355,15 @@ class ControllersTest {
         when(request.getQueryString()).thenReturn(paramStr);
 
         // build real context that uses the mock request/response
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(new LinkedHashMap<String, Object>());
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
+        // build real context that uses the mock request/response
+        var ctx = new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
 
         // if its present it should work
         assertEquals("the_value", Controllers.requiredParam(ctx, "boring"));
@@ -371,10 +384,15 @@ class ControllersTest {
         when(request.getQueryString()).thenReturn(paramStr);
 
         // build real context that uses the mock request/response
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(new LinkedHashMap<String, Object>());
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
+        // build real context that uses the mock request/response
+        var ctx = new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
 
 
         // if its present it should work
@@ -392,10 +410,16 @@ class ControllersTest {
         when(request.getQueryString()).thenReturn(paramStr);
 
         // build real context that uses the mock request/response
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(new LinkedHashMap<String, Object>());
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
+        // build real context that uses the mock request/response
+        var ctx = new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
+
 
         // if its present it should work
         assertNull(Controllers.queryParamAsClass(ctx, JooqDao.DeleteMethod.class, null, "Not a key"));
@@ -412,10 +436,16 @@ class ControllersTest {
         when(request.getQueryString()).thenReturn(paramStr);
 
         // build real context that uses the mock request/response
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(new LinkedHashMap<String, Object>());
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
+        // build real context that uses the mock request/response
+        var ctx = new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
+
 
 
         // if its present it should work
@@ -430,10 +460,16 @@ class ControllersTest {
         urlParams.put("boring", "the_value");
         String paramStr = ControllerTest.buildParamStr(urlParams);
         when(request.getQueryString()).thenReturn(paramStr);
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(new LinkedHashMap<String, Object>());
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
+        // build real context that uses the mock request/response
+        var ctx = new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
+
 
         assertEquals("the_value", Controllers.requiredParamAs(ctx, "boring", String.class));
         assertThrows(RequiredQueryParameterException.class,
@@ -449,10 +485,16 @@ class ControllersTest {
         urlParams.put("an_int", "1");
         String paramStr = ControllerTest.buildParamStr(urlParams);
         when(request.getQueryString()).thenReturn(paramStr);
-        Context ctx = mock(Context.class);
-        when(ctx.req()).thenReturn(request);
-        when(ctx.res()).thenReturn(response);
-        when(ctx.attributeMap()).thenReturn(new LinkedHashMap<String, Object>());
+        var validationConfig = new ValidationConfig();
+        ValidationSetup.registerValidation(validationConfig);
+        final Validation validation = new Validation(validationConfig);
+        // build real context that uses the mock request/response
+        var ctx = new ContextDouble(paramStr,
+                                 Map.of(),
+                                 Map.of(
+                                    VALIDATION_KEY, validation),
+                                 request, response);
+
 
 
         Double retVal = Controllers.queryParamAsDouble(ctx, "a_double");
