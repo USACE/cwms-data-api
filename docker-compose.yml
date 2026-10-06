@@ -107,7 +107,7 @@ services:
       start_period: 2s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.data-api.rule=PathPrefix(`/cwms-data`)"
+      - "traefik.http.routers.data-api.rule=PathPrefix(`/`)"
       - "traefik.http.routers.data-api.entryPoints=web"
       - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 
