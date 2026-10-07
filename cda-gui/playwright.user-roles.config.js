@@ -6,7 +6,7 @@ export default defineConfig({
   workers: 1,
   webServer: {
     command: "npm run dev:onboarding",
-    url: "http://127.0.0.1:18742/cwms-data/",
+    url: "http://127.0.0.1:18742",
     reuseExistingServer: true,
   },
 });
