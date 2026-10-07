@@ -46,7 +46,7 @@ export default function SwaggerUI() {
   const cwmsAuthMethod = useMemo(() => {
     const basePath = getBasePath();
     return createCwmsLoginAuthMethod({
-      authUrl: `/CWMSLogin`,
+      authUrl: `${window.location.origin}/CWMSLogin`,
       authCheckUrl: `${basePath}/auth/keys`,
     });
   }, []);

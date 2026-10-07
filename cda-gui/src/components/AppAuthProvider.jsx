@@ -73,7 +73,7 @@ async function loadDeployedAuthMethod() {
   }
   if (spec.components?.securitySchemes?.CwmsAAACacAuth) {
     return createCwmsLoginAuthMethod({
-      authUrl: `${basePath}/CWMSLogin`,
+      authUrl: `${window.location.origin}/CWMSLogin`,
       authCheckUrl: `${getBasePath()}/auth/keys`,
     });
   }
