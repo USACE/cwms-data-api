@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /cwms-data/auth/
+Disallow: /cwms-data/catalog/
+Disallow: /cwms-data/timeseries/
+Disallow: /cwms-data/swagger-docs
+Sitemap: https://cwms-data.usace.army.mil/sitemap.xml
