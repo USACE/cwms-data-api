@@ -1,8 +1,6 @@
 FROM gradle:8.5-jdk17 AS builder
 USER $USER
 RUN --mount=type=cache,target=/home/gradle/.gradle
-WORKDIR /builddir
-COPY . /builddir/
 RUN apt update && apt install -y curl
 ENV NVM_DIR="/root/.nvm"
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
@@ -12,6 +10,9 @@ SHELL ["/bin/bash", "-c"]
 RUN . "$NVM_DIR/nvm.sh" && nvm install $NODE_VERSION && nvm use $NODE_VERSION
 ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+# Do this last no everything above can cache
+COPY . /builddir/
+WORKDIR /builddir
 RUN ./gradlew installDist -x test --info --no-daemon
 
 FROM eclipse-temurin:17-jre-alpine-3.24 AS api
