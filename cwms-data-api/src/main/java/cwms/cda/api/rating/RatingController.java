@@ -84,6 +84,7 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.JsonSchema;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
@@ -124,30 +125,34 @@ public class RatingController extends BaseCrudHandler {
     }
 
     @Override
-    @OpenApi(description = "Create new RatingSet",
-            requestBody = @OpenApiRequestBody(content = {
-                @OpenApiContent(type = Formats.XMLV2),
-                @OpenApiContent(type = Formats.JSONV2)},
-            required = true),
-            queryParams = {
-                @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
-                        description = "Also store updates to the rating template. Default: true"),
-                @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
-                        + "rating-set includes an explicit vertical-datum-info attribute "
-                        + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
-                        + "If the input rating-set does not include vertical-datum-info and "
-                        + "this parameter is not provided it is assumed that the data is in the as-stored "
-                        + "datum and no conversion is necessary.  "
-                        + "If the input rating-set does not include vertical-datum-info and "
-                        + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
-                        + "and should be converted to the as-stored datum before being saved.")
-            },
-            methods = HttpMethod.POST,
-            path = "/ratings",
-            tags = {TAG},
-            responses = {
-                @OpenApiResponse(status = STATUS_201, description = "Rating Set successfully stored to CWMS.")
-            })
+    @OpenApi(
+        description = "Create new RatingSet",
+        requestBody = @OpenApiRequestBody(
+            content = {
+                @OpenApiContent(type = Formats.XMLV2, from = RatingAliasMarker.class),
+                @OpenApiContent(type = Formats.JSONV2, from = RatingAliasMarker.class)
+        },
+        required = true),
+        queryParams = {
+            @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
+                    description = "Also store updates to the rating template. Default: true"),
+            @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
+                    + "rating-set includes an explicit vertical-datum-info attribute "
+                    + "then it is assumed that the data is in the datum specified by the vertical-datum-info. "
+                    + "If the input rating-set does not include vertical-datum-info and "
+                    + "this parameter is not provided it is assumed that the data is in the as-stored "
+                    + "datum and no conversion is necessary.  "
+                    + "If the input rating-set does not include vertical-datum-info and "
+                    + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
+                    + "and should be converted to the as-stored datum before being saved.")
+        },
+        methods = {HttpMethod.POST},
+        path = "/ratings",
+        tags = {TAG},
+        operationId = "postRating",
+        responses = {
+            @OpenApiResponse(status = STATUS_201, description = "Rating Set successfully stored to CWMS.")
+        })
     public void create(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
@@ -553,10 +558,11 @@ public class RatingController extends BaseCrudHandler {
             @OpenApiParam(name = RATING_ID, description = "Specifies the rating-id of "
                     + "the rating to be updated."),
             },
-            requestBody = @OpenApiRequestBody(content = {
-                @OpenApiContent(type = Formats.XMLV2),
-                @OpenApiContent(type = Formats.JSONV2)
-            }, required = true),
+            requestBody = @OpenApiRequestBody(
+                content = {
+                    @OpenApiContent(type = Formats.XMLV2, from = RatingAliasMarker.class),
+                    @OpenApiContent(type = Formats.JSONV2, from = RatingAliasMarker.class)
+                }, required = true),
             queryParams = {
                 @OpenApiParam(name = STORE_TEMPLATE, type = Boolean.class,
                         description = "Also store updates to the rating template. Default: true"),
@@ -572,6 +578,7 @@ public class RatingController extends BaseCrudHandler {
                             + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                             + "and should be converted to the as-stored datum before being saved.")
             },
+            operationId = "updateRating",
             methods = HttpMethod.PATCH,
             path = "/ratings/{" + RATING_ID + "}",
             tags = {TAG})
@@ -615,5 +622,5 @@ public class RatingController extends BaseCrudHandler {
      */
     @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.JSON})
     @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML, Formats.DEFAULT})
-    private static final class RatingAliasMarker extends CwmsDTOBase { }
+    public static final class RatingAliasMarker extends CwmsDTOBase { }
 }
