@@ -116,7 +116,7 @@ public class LevelsAsTimeSeriesController extends BaseHandler {
             },
             description = "Retrieves requested Location Level",
             tags = LevelsController.TAG,
-            path = "/levels/as-ts"
+            path = "/levels/{" + LEVEL_ID + "}/timeseries"
     )
     public void handle(Context ctx) {
         logUnusedPathParameter(ctx, LEVEL_ID, "Body contains required information");

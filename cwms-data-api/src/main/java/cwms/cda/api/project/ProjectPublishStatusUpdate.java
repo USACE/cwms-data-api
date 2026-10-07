@@ -30,16 +30,12 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.ProjectController;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.project.ProjectDao;
-import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import java.time.Instant;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -95,7 +91,7 @@ public class ProjectPublishStatusUpdate implements Handler {
             methods = HttpMethod.POST,
             responses = {@OpenApiResponse(status = STATUS_200)},
             tags = {TAG},
-            path = "/projects/publish/{" + NAME + "}"
+            path = "/projects/status-update/{" + NAME + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

@@ -66,7 +66,7 @@ public final class UserListMembersController implements Handler {
         description = "Retrieve the members of a user list.",
         methods = HttpMethod.GET,
         tags = {TAG},
-        path = "/user/list/members" // TODO: fix
+        path = "/user/list/{" + USER_LIST_ID + "}/members"
     )
     @Override
     public void handle(Context ctx) {

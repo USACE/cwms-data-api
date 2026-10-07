@@ -98,7 +98,8 @@ public final class StreamLocationController extends BaseCrudHandler {
             },
             description = "Returns matching CWMS Stream Location Data for a Reservoir Project.",
             tags = {TAG},
-            path = "/stream/location"
+            path = "/stream-loations",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(Context ctx) {
@@ -154,7 +155,8 @@ public final class StreamLocationController extends BaseCrudHandler {
             },
             description = "Returns CWMS Stream Location Data",
             tags = {TAG},
-            path = "/stream/location/{" + NAME + "}"
+            path = "/stream-locations/{" + NAME + "}",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String locationId) {
@@ -199,7 +201,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             description = "Create CWMS Stream Location",
             methods = {HttpMethod.POST},
             tags = {TAG},
-            path = "/stream/location",
+            path = "/stream-location",
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Stream Location successfully stored to CWMS.")
             }
@@ -233,7 +235,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             description = "Update CWMS Stream Location",
             methods = {HttpMethod.PATCH},
             tags = {TAG},
-            path = "/stream/location/{" + NAME + "}",
+            path = "/stream-locations/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Updated Stream Location")
             }
@@ -268,7 +270,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             description = "Delete CWMS Stream Location",
             methods = {HttpMethod.DELETE},
             tags = {TAG},
-            path = "/stream/location/{" + NAME + "}",
+            path = "/stream-locations/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Stream Location successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Stream Location not found.")

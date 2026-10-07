@@ -137,7 +137,7 @@ public class BlobControllerV1 extends BlobController {
             },
             security = {@OpenApiSecurity(name = "")},
             tags = {TAG},
-            path = "/blob/{" + BLOB_ID + "}"
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
@@ -187,7 +187,7 @@ public class BlobControllerV1 extends BlobController {
             },
             methods = HttpMethod.PATCH,
             tags = {TAG},
-            path = "/blob/{" + BLOB_ID + "}"
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {

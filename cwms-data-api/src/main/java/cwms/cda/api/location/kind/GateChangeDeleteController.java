@@ -69,7 +69,7 @@ public class GateChangeDeleteController extends BaseHandler {
             description = "Deletes matching CWMS gate change data for a Reservoir Project.",
             tags = {OutletController.TAG},
             methods = HttpMethod.DELETE,
-            path = "/gate/change" // TODO: fix
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/gate-changes"
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override

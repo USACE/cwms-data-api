@@ -52,7 +52,7 @@ public final class UpdateUserListController implements Handler {
         description = "Update user-list metadata. Creator ownership is immutable.",
         methods = HttpMethod.PATCH,
         tags = UserListController.TAG,
-        path = "/user-lists/" // TODO: fix
+        path = "/user/lists/{" + USER_LIST_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

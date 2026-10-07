@@ -318,7 +318,7 @@ public class LocationGroupController implements CrudHandler {
         },
         methods = {HttpMethod.PATCH},
         tags = {TAG},
-        path = "/locatiton/group/{" + GROUP_ID + "}"
+        path = "/location/group/{" + GROUP_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String groupId) {

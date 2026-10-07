@@ -105,7 +105,7 @@ public final class TurbineController implements CrudHandler {
             },
             description = "Returns matching CWMS Turbine Data for a Reservoir Project.",
             tags = {TAG},
-            path = "/"
+            path = "/projects/turbines"
     )
     @Override
     public void getAll(Context ctx) {
@@ -151,7 +151,7 @@ public final class TurbineController implements CrudHandler {
             },
             description = "Returns CWMS Turbine Data",
             tags = {TAG},
-            path = "/{name}"
+            path = "/project/turbines/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -195,7 +195,7 @@ public final class TurbineController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Turbine successfully stored to CWMS.")
             },
-            path = "/"
+            path = "/projects/turbines"
     )
     @Override
     public void create(Context ctx) {
@@ -231,7 +231,7 @@ public final class TurbineController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Turbine successfully renamed in to CWMS.")
             },
-            path = "/{name}"
+            path = "/projects/turbines{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
@@ -266,7 +266,7 @@ public final class TurbineController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the turbine was not found.")
             },
-            path = "/{name}"
+            path = "/projects/turbines/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {

@@ -52,6 +52,7 @@ import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.Context;
+import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
@@ -116,7 +117,8 @@ public final class PublishedController implements CrudHandler {
             },
             description = "Returns matching time series identifiers for published data.",
             tags = {TAG},
-            path = "/published"
+            path = "/published",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(@NotNull Context ctx) {

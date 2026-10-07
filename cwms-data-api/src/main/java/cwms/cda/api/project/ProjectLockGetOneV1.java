@@ -90,8 +90,7 @@ public final class ProjectLockGetOneV1 extends ProjectLockGetOne<ProjectLockV1> 
             },
             tags = {TAGS},
             methods = HttpMethod.GET,
-            path = "/projects/lock/{" + NAME + "}",
-            versions = "1"
+            path = "/projects/lock/{" + NAME + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

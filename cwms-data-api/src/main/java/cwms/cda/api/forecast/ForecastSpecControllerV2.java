@@ -60,8 +60,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             ),
             methods = HttpMethod.POST,
             tags = TAG,
-            path = "/forecasts/spec",
-            versions = "2"
+            path = "/v2/forecasts-spec"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -91,8 +90,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.DELETE,
             tags = TAG,
-            path = "/forecast/spec/{" + OFFICE + "}/{" + NAME + "}",
-            versions = "2"
+            path = "/v2/forecast-spec/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
@@ -131,8 +129,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecast/spec",
-            versions = "2"
+            path = "/v2/forecast-spec"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -166,8 +163,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecast/spec/{" + OFFICE + "}/{" + NAME + "}",
-            versions = "2"
+            path = "/v2/forecast-spec/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -193,8 +189,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.PATCH,
             tags = TAG,
-            path = "/forecasts/spec/{" + OFFICE + "}/{" + NAME + "}",
-            versions = "2"
+            path = "/v2/forecasts-spec/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

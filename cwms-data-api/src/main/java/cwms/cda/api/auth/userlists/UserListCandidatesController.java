@@ -48,7 +48,7 @@ public final class UserListCandidatesController implements Handler {
         description = "Search existing CWMS users for user-list membership.",
         methods = HttpMethod.GET,
         tags = UserListController.TAG,
-        path = "/user-lists/candidates" // TODO: fix
+        path = "/user/list-member-candidates"
     )
     @Override
     public void handle(Context ctx) {

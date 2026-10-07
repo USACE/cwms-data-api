@@ -43,11 +43,8 @@ import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -79,7 +76,7 @@ public final class TimeSeriesProfileParserDeleteController extends TimeSeriesPro
         methods = HttpMethod.DELETE,
         summary = "Delete a TimeSeriesProfile Parser by ID",
         tags = {TAG},
-        path = "/timeseries/profile"
+        path = "/timeseries/profile-parser/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) {

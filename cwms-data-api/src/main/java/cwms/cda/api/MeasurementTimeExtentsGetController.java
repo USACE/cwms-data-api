@@ -44,6 +44,7 @@ import cwms.cda.formatters.Formats;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
@@ -80,7 +81,8 @@ public final class MeasurementTimeExtentsGetController implements Handler {
             },
             description = "Returns matching downstream stream locations.",
             tags = {MeasurementController.TAG},
-            path = "/measurements/extents"
+            path = "/measurements/time-extends",
+            methods = {HttpMethod.GET}
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String officeIdMask = ctx.queryParam(OFFICE_MASK);

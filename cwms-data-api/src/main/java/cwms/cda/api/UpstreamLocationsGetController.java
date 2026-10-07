@@ -93,7 +93,7 @@ public final class UpstreamLocationsGetController implements Handler {
             },
             description = "Returns matching upstream stream locations.",
             tags = {StreamLocationController.TAG},
-            path = "/"
+            path = "/stream-locations/{" + OFFICE + "}/{" + NAME + "}/upstream-locations"
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String locationId =  ctx.pathParam(NAME);

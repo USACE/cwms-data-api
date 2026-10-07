@@ -105,7 +105,8 @@ public final class EmbankmentController  implements CrudHandler {
             },
             description = "Returns matching CWMS Embankment Data for a Reservoir Project.",
             tags = {TAG},
-            path = "/embankment"
+            path = "/projects/embankment",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(Context ctx) {
@@ -151,7 +152,8 @@ public final class EmbankmentController  implements CrudHandler {
             },
             description = "Returns CWMS Embankment Data",
             tags = {TAG},
-            path = "/embankment/{" + NAME + "}"
+            path = "/projects/embankment/{" + NAME + "}",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -192,7 +194,7 @@ public final class EmbankmentController  implements CrudHandler {
             description = "Create CWMS Embankment",
             methods = HttpMethod.POST,
             tags = {TAG},
-            path = "/embankment",
+            path = "/projects/embankment",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Embankment successfully stored to CWMS.")
             }
@@ -226,7 +228,7 @@ public final class EmbankmentController  implements CrudHandler {
             description = "Rename CWMS Embankment",
             methods = HttpMethod.PATCH,
             tags = {TAG},
-            path = "/embankment/{" + NAME + "}",
+            path = "/projects/embankment/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Embankment successfully renamed in CWMS.")
             }
@@ -259,7 +261,7 @@ public final class EmbankmentController  implements CrudHandler {
             description = "Delete CWMS Embankment",
             methods = HttpMethod.DELETE,
             tags = {TAG},
-            path = "/embankment/{" + NAME + "}",
+            path = "/projects/embankment/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Embankment successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

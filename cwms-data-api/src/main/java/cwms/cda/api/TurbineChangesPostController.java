@@ -79,7 +79,7 @@ public final class TurbineChangesPostController extends BaseHandler {
         description = "Create CWMS Turbine Changes",
         methods = {HttpMethod.POST},
         tags = {TurbineController.TAG},
-        path = "/",
+        path = "/projects/{" + OFFICE + "}/{" + NAME + "}/turbine-changes",
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Turbine successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Project Id or Turbine location Ids not found.")

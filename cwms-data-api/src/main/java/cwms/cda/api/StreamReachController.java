@@ -107,7 +107,8 @@ public final class StreamReachController implements CrudHandler {
             },
             description = "Returns matching CWMS Stream Reach Data for a Reservoir Project.",
             tags = {TAG},
-            path = "/stream/reach"
+            path = "/stream-reaches",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -160,7 +161,8 @@ public final class StreamReachController implements CrudHandler {
             },
             description = "Returns CWMS Stream Reach Data",
             tags = {TAG},
-            path = "/stream/reach/{" + NAME + "}"
+            path = "/stream-reaches/{" + NAME + "}",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String reachId) {
@@ -203,7 +205,7 @@ public final class StreamReachController implements CrudHandler {
             description = "Create CWMS Stream Reach",
             methods = {HttpMethod.POST},
             tags = {TAG},
-            path = "/stream/reach",
+            path = "/stream-reaches",
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Stream Reach successfully stored to CWMS.")
             }
@@ -237,7 +239,7 @@ public final class StreamReachController implements CrudHandler {
             description = "Rename CWMS Stream Reach",
             methods = {HttpMethod.PATCH},
             tags = {TAG},
-            path = "/stream/reach/{" + NAME + "}",
+            path = "/stream-reaches/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Stream Reach successfully renamed in CWMS.")
             }
@@ -267,7 +269,7 @@ public final class StreamReachController implements CrudHandler {
             description = "Delete CWMS Stream Reach",
             methods = {HttpMethod.DELETE},
             tags = {TAG},
-            path = "/stream/reach/{" + NAME + "}",
+            path = "/stream-reaches/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Stream Reach successfully deleted from CWMS.")
             }
