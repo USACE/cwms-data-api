@@ -13,9 +13,6 @@ RUN . "$NVM_DIR/nvm.sh" && nvm install $NODE_VERSION && nvm use $NODE_VERSION
 ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN ./gradlew installDist -x test --info --no-daemon
-RUN ls
-RUN ls build/
-RUN ls cwms-data-api/build/install/
 
 FROM eclipse-temurin:17-jre-alpine-3.24 AS api
 RUN adduser -D cda
