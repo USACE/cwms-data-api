@@ -107,7 +107,7 @@ public class OpenIdConfig {
             hint.put("values", values);
         }
         
-        return new OpenWithExtension(wellKnownUrl, hint, clientId);
+        return new OpenIdWithExtension(wellKnownUrl, hint, clientId);
     }
 
     public SecurityScheme getScheme() {
@@ -201,7 +201,7 @@ public class OpenIdConfig {
         }
     }
 
-    public record OpenWithExtension(String openIdConnectUrl,
+    public record OpenIdWithExtension(String openIdConnectUrl,
                                     @JsonProperty("x-kc_idp_hint") Map<String, Object> xKcIdpHint,
                                     @JsonProperty("x-oidc-client-id") String xOidcClientId) implements SecurityScheme {
 
