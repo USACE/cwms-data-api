@@ -48,7 +48,7 @@ public class SchemaMaximumVersionCondition implements ExecutionCondition {
                         + currentVersion + " is greater than " + version);
                 }
                 return ConditionEvaluationResult.enabled("Test enabled because schema version "
-                    + currentVersion + " is less than " + version);
+                    + currentVersion + " is less than or equal to " + version);
             })
             .orElse(ENABLED);
     }
