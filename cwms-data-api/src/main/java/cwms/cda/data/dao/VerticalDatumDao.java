@@ -33,7 +33,9 @@ import java.sql.Clob;
 import java.util.ArrayList;
 import java.util.List;
 import org.jooq.DSLContext;
+import org.jooq.Record;
 import org.jooq.Record1;
+import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 import usace.cwms.db.jooq.codegen.tables.AV_VERT_DATUM_OFFSET;
 import usace.cwms.db.jooq.codegen_latest.udt.records.CLOB_TAB_T;
@@ -115,6 +117,24 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
             CWMS_LOC_PACKAGE.call_SET_VERTICAL_DATUM_INFO(ctx.configuration(), emptyXml, formatBool(false));
             CWMS_LOC_PACKAGE.call_DELETE_LOCAL_VERT_DATUM_NAME__2(ctx.configuration(), locationId, officeId);
         });
+    }
+
+    /**
+     * Returns true if the database supports the GET_VERTICAL_DATUM_INFO_LIST stored procedure.
+     * @return boolean
+     */
+    public boolean supportsGetAll() {
+        boolean supported = false;
+        Record result = dsl.select(DSL.count())
+            .from(DSL.table("USER_PROCEDURES"))
+            .where(DSL.field("OBJECT_NAME").eq("CWMS_LOC")
+                .and(DSL.field("PROCEDURE_NAME").eq("GET_VERTICAL_DATUM_INFO_LIST")))
+            .fetchOne();
+        if (result != null) {
+            Integer count = result.getValue(0, Integer.class);
+            supported = count != null && count > 0;
+        }
+        return supported;
     }
 
     private void verifyVerticalDatumInfoExists(DSLContext ctx, String officeId, String locationId) {

@@ -44,7 +44,6 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.AlreadyExists;
@@ -66,7 +65,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
-import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -117,6 +115,11 @@ public final class VerticalDatumController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             VerticalDatumDao dao = new VerticalDatumDao(dsl);
+            boolean supported = dao.supportsGetAll();
+            if (!supported) {
+                ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED);
+                return;
+            }
             VerticalDatumInfoList vdiList = dao.retrieveVerticalDatumInfoList(office, locationMask, unitSystem);
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfoList.class);
