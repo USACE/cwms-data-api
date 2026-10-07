@@ -82,6 +82,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true);
         } catch (Exception ignore) {
+            // ignored
         }
 
         try {
@@ -98,6 +99,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true);
         } catch (Exception ignore) {
+            // ignored
         }
     }
 
@@ -117,6 +119,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .then()
                 .log().ifValidationFails(LogDetail.ALL, true);
         } catch (Exception ignore) {
+            // ignored
         }
     }
 
@@ -275,6 +278,65 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
         String vdiPayload = Formats.format(contentType, vdi);
 
         KeyUser user = KeyUser.SPK_NORMAL;
+
+        // DELETE
+        try {
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(contentType.toString())
+                .queryParam(OFFICE, OFFICE_ID)
+                .header(AUTH_HEADER, user.toHeaderValue())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/location/" + TEST_LOCATION2 + "/vertical-datum");
+        } catch (Exception e) {
+            // ignore
+        }
+
+        try {
+            given()
+                .log().ifValidationFails(LogDetail.ALL, true)
+                .accept(contentType.toString())
+                .queryParam(OFFICE, OFFICE_ID)
+                .header(AUTH_HEADER, user.toHeaderValue())
+            .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .delete("/location/" + TEST_LOCATION3 + "/vertical-datum");
+        } catch (Exception e) {
+            // ignore
+        }
+
+        //VERIFY DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.UNIT, "m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/" + TEST_LOCATION2 + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        //VERIFY DELETE
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(contentType.toString())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.UNIT, "m")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/" + TEST_LOCATION3 + "/vertical-datum")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
 
         // CREATE
         given()
