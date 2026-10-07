@@ -42,6 +42,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
@@ -430,6 +432,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "implemented")
             },
             methods = {HttpMethod.GET},
+            security = @OpenApiSecurity(name = ""),
             path = "/timeseries",
             tags = TAG
     )
