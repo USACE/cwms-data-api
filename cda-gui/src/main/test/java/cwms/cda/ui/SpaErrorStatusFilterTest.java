@@ -51,7 +51,7 @@ class SpaErrorStatusFilterTest {
         "/user-roles/mvsc/"
     })
     void returnsOkForClientRoutes(String route) throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("GET", "/cwms-data" + route);
+        HttpServletRequest request = buildRequest("GET", route);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -63,7 +63,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void returnsOkForHeadRequest() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("HEAD", "/cwms-data/swagger-ui");
+        HttpServletRequest request = buildRequest("HEAD", "/swagger-ui");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -75,7 +75,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void returnsOkForAlternateContextPath() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("GET", "/spk-data/swagger-ui", "/spk-data");
+        HttpServletRequest request = buildRequest("GET", "/cwms-data-ui/swagger-ui", "/cwms-data");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -87,7 +87,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void preservesNotFoundStatusForUnknownRoutes() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("GET", "/cwms-data/not-a-client-route");
+        HttpServletRequest request = buildRequest("GET", "not-a-client-route");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -99,7 +99,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void preservesNotFoundStatusForNonPageRequests() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("POST", "/cwms-data/swagger-ui");
+        HttpServletRequest request = buildRequest("POST", "/swagger-ui");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
