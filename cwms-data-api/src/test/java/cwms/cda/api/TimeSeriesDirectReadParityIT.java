@@ -313,6 +313,45 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     }
 
     @Test
+    void pagedRegularReadPreservesLongGapAcrossCursors() throws Exception {
+        String seriesId = "ITPARPAGE.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-01-01T00:09:00Z");
+        seedTimeSeries("ITPARPAGE", seriesId, longGapRows(), false);
+        TimeSeries unpaged = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, -1, false, null, true);
+
+        List<TimeSeries.Record> values = new ArrayList<>();
+        String page = null;
+        int pageCount = 0;
+        do {
+            TimeSeries response = fetchCdaRowsWithPageSize(
+                seriesId,
+                "ft",
+                beginTime,
+                endTime,
+                3,
+                false,
+                null,
+                true,
+                null,
+                page
+            );
+            pageCount++;
+            values.addAll(response.getValues());
+            page = response.getNextPage();
+        } while (page != null);
+
+        assertEquals(4, pageCount, "page count");
+        assertEquals(unpaged.getValues().size(), values.size(), "values size");
+        for (int index = 0; index < values.size(); index++) {
+            assertRecordsEqual(unpaged.getValues().get(index), values.get(index), index);
+        }
+        assertNull(values.get(3).getValue(), "first gap value");
+        assertNull(values.get(4).getValue(), "second gap value");
+    }
+
+    @Test
     void trimmedResponseWindowMatchesReturnedValues() throws Exception {
         List<SeedRow> rows = gapRows();
         seedTimeSeries("ITPARTRM", "ITPARTRM.Stage.Inst.1Minute.0.BENCH", rows, false);
@@ -409,6 +448,13 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             row("2024-01-01T00:06:00Z", 7.0, 0, "2024-01-03T00:06:00Z", null),
             row("2024-01-01T00:07:00Z", 8.0, 0, "2024-01-03T00:07:00Z", null),
             row("2024-01-01T00:08:00Z", 9.0, 0, "2024-01-03T00:08:00Z", null),
+            row("2024-01-01T00:09:00Z", 10.0, 0, "2024-01-03T00:09:00Z", null)
+        );
+    }
+
+    private static List<SeedRow> longGapRows() {
+        return List.of(
+            row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-03T00:00:00Z", null),
             row("2024-01-01T00:09:00Z", 10.0, 0, "2024-01-03T00:09:00Z", null)
         );
     }
@@ -819,6 +865,15 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                                                        Instant endTime, int pageSize, boolean includeEntryDate,
                                                        Instant versionDate, boolean trim, Boolean lrtsFormatting)
         throws Exception {
+        return fetchCdaRowsWithPageSize(seriesId, units, beginTime, endTime, pageSize, includeEntryDate,
+            versionDate, trim, lrtsFormatting, null);
+    }
+
+    private static TimeSeries fetchCdaRowsWithPageSize(String seriesId, String units, Instant beginTime,
+                                                       Instant endTime, int pageSize, boolean includeEntryDate,
+                                                       Instant versionDate, boolean trim, Boolean lrtsFormatting,
+                                                       String page)
+        throws Exception {
         RequestSpecification request = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -835,6 +890,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         }
         if (versionDate != null) {
             request = request.queryParam(Controllers.VERSION_DATE, versionDate.toString());
+        }
+        if (page != null) {
+            request = request.queryParam(Controllers.PAGE, page);
         }
 
         ExtractableResponse<Response> response = request.when()
