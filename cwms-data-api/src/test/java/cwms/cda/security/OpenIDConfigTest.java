@@ -43,7 +43,7 @@ class OpenIDConfigTest {
             "federation-eams, login.gov"
         );
         var oidcScheme = assertInstanceOf(OpenIdWithExtension.class, scheme);
-        assertEquals(new OpenID(null).getType(), scheme.getType());
+        assertEquals(new OpenID("don't need url").getType(), scheme.getType());
         assertEquals(
             "https://identityc.sec.usace.army.mil/auth/realms/cwbi/.well-known/openid-configuration",
             oidcScheme.openIdConnectUrl()
