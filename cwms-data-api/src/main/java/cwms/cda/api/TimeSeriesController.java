@@ -46,6 +46,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
 
@@ -441,6 +443,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "implemented")
             },
             methods = {HttpMethod.GET},
+            security = @OpenApiSecurity(name = ""),
             path = "/timeseries",
             tags = TAG
     )

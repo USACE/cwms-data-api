@@ -157,14 +157,15 @@ public final class CwmsDataApi {
 
     public static void main(String[] args)
     {
-
+        //var cli = new CommandLine()
         final var appContext = args.length > 0 ? args[0] : "/cwms-data";
         final var uiPath = args.length > 1 ? args[1] : null;
-
+        final var port = args.length > 2 ? Integer.parseInt(args[2]) : 7000;
+        System.out.println("Using Port " + port);
         var ds = buildDataSource();
         var api = CwmsDataApi.builder()
                              .withContext(appContext)
-                             .withPort(7000)
+                             .withPort(port)
                              .withUiWar(new File(uiPath))
                              .withDataSource(ds)
                              .build();
@@ -305,6 +306,7 @@ public final class CwmsDataApi {
 
     public void start() {
         app.start(port);
+        logger.atInfo().log("Listening on port %d", getPort());
     }
 
     public void stop() {
@@ -325,8 +327,6 @@ public final class CwmsDataApi {
     }
 
     private void getOpenApiOptions(JavalinConfig config, String appContext) {
-
-
         config.registerPlugin(new OpenApiPlugin(openapi -> {
             openapi.prettyOutputEnabled = true;
             openapi.documentationPath = "/swagger-docs";
@@ -335,6 +335,7 @@ public final class CwmsDataApi {
                 builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
                 builder.server(server -> server.url(appContext));
             });
+            
         }));
 
         
@@ -512,7 +513,7 @@ public final class CwmsDataApi {
 
 
         public Builder withPort(int port) {
-            this.port = 7000;
+            this.port = port;
             return this;
         }
 

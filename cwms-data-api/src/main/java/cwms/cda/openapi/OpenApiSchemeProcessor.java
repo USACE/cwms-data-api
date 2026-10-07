@@ -7,7 +7,6 @@ import java.util.List;
 import cwms.cda.security.Authenticator;
 import io.javalin.http.Context;
 import io.javalin.openapi.schema.OpenApiSchemaBuilder;
-import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 
 // TODO: it works different now.
@@ -23,23 +22,19 @@ public class OpenApiSchemeProcessor {
 
     
     public OpenApiSchemaBuilder apply(Context ctx, OpenApiSchemaBuilder api) {
-        // var schemes = api.getComponents().getSecuritySchemes();    
-        // if (schemes != null)
-        // {
-        //     schemes.clear();
-        // }
         synchronized (secReqs) {
             secReqs.clear();
             authenticator.getActiveProviders().forEach(identityProvider -> {
-                api.withSecurityScheme(identityProvider.getName(), identityProvider.getScheme()) ;
-                
+                api.withSecurityScheme(identityProvider.getName(), identityProvider.getScheme());
                 SecurityRequirement req = new SecurityRequirement();
                 if (!identityProvider.getName().equalsIgnoreCase("guestauth")
                         && !identityProvider.getName().equalsIgnoreCase("noauth")) {
                     req.addList(identityProvider.getName());
                     secReqs.add(req);
+                    api.withGlobalSecurity(identityProvider.getName());
                 }
             });
+            api.withGlobalSecurity("");
         }
         return api;
     }

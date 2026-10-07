@@ -1,10 +1,12 @@
 package cwms.cda.security;
 
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 
+import io.javalin.openapi.JsonSchema;
 import io.javalin.openapi.OpenID;
 import io.javalin.openapi.SecurityScheme;
 import io.jsonwebtoken.Claims;
@@ -94,19 +96,18 @@ public class OpenIdConfig {
     }
 
     static SecurityScheme buildScheme(String wellKnownUrl, String clientId, String idpHint) {
-        //if (idpHint != null) {
-            Map<String, Object> hint = new HashMap<>();
+        Map<String, Object> hint = null;
+        if (idpHint != null) {
+            hint = new HashMap<>();
             hint.put("query-parameter", "kc_idp_hint");
             ArrayList<String> values = new ArrayList<>();
             for (String value: idpHint.split(",")) {
                 values.add(value.trim());
             }
             hint.put("values", values);
-            //scheme.addExtension("x-kc_idp_hint", hint);
-        //}
+        }
         
-        //scheme.addExtension("x-oidc-client-id", clientId);
-        return new OpenWithExtension(wellKnownUrl, Map.of("x-kc_idp_hint", hint, "x-oidc-client-id", clientId));
+        return new OpenWithExtension(wellKnownUrl, hint, clientId);
     }
 
     public SecurityScheme getScheme() {
@@ -200,7 +201,9 @@ public class OpenIdConfig {
         }
     }
 
-    public record OpenWithExtension(String openIdConnectUrl, Map<String, Object> extensions) implements SecurityScheme {
+    public record OpenWithExtension(String openIdConnectUrl,
+                                    @JsonProperty("x-kc_idp_hint") Map<String, Object> xKcIdpHint,
+                                    @JsonProperty("x-oidc-client-id") String xOidcClientId) implements SecurityScheme {
 
 
         @Override
