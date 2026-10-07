@@ -134,7 +134,7 @@ async function mockDeployment(page, flow) {
     specRequests += 1;
     return route.fulfill({
       json: {
-        openapi: "3.0.3",
+        openapi: "3.1.0",
         info: { title: "Refresh test", version: "1" },
         servers: [{ url: `${origin}/cwms-data` }],
         components: {
