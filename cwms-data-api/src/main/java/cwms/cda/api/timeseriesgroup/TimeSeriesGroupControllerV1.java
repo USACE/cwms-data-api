@@ -100,8 +100,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
             tags = {TAG},
-            path = "/timeseries/groups",
-            versions = "1")
+            path = "/timeseries/groups")
     @Override
     public void getAll(@NotNull Context ctx) {
         String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
@@ -133,8 +132,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
             },
             description = "Retrieves requested timeseries group",
             tags = {"Timeseries Groups"},
-            path = "/timeseries/group/{" + GROUP_ID + "}",
-            versions = "1")
+            path = "/timeseries/group/{" + GROUP_ID + "}")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {
         String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
@@ -166,8 +164,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
         },
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/timeseries/groups",
-        versions = "1"
+        path = "/timeseries/groups"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -199,8 +196,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
         },
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/timeseries/groups/{" + GROUP_ID + "}",
-        versions = "1"
+        path = "/timeseries/groups/{" + GROUP_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
@@ -249,8 +245,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/timeseries/group/{" + GROUP_ID + "}",
-        versions = "1"
+        path = "/timeseries/group/{" + GROUP_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {

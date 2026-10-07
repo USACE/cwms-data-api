@@ -108,7 +108,7 @@ public final class LockController implements CrudHandler {
         },
         description = "Returns matching CWMS Lock Data for a Reservoir Project.",
         tags = {TAG},
-        path = "/locks"
+        path = "/projects/locks"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -157,7 +157,7 @@ public final class LockController implements CrudHandler {
         },
         description = "Returns CWMS Lock Data",
         tags = {TAG},
-        path = "/locks/{" + NAME + "}"
+        path = "/projects/locks/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -203,7 +203,7 @@ public final class LockController implements CrudHandler {
         description = "Create CWMS Lock",
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/locks",
+        path = "/projects/locks",
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Lock successfully stored to CWMS.")
         }
@@ -245,7 +245,7 @@ public final class LockController implements CrudHandler {
         description = "Rename CWMS Lock",
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/locks/{" + NAME + "}",
+        path = "/projects/locks/{" + NAME + "}",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "Lock successfully renamed in CWMS.")
         }
@@ -277,7 +277,7 @@ public final class LockController implements CrudHandler {
         description = "Delete CWMS Lock",
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/locks/{" + NAME + "}",
+        path = "/projects/locks/{" + NAME + "}",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "Lock successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

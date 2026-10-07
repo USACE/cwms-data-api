@@ -43,7 +43,7 @@ public final class UserListsController implements Handler {
         description = "List office-scoped reusable user lists.",
         methods = HttpMethod.GET,
         tags = UserListController.TAG,
-        path = "/user/lists" // TODO :fix
+        path = "/user/list"
     )
     @Override
     public void handle(Context ctx) {

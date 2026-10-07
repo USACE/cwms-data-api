@@ -86,7 +86,7 @@ public final class TurbineChangesDeleteController implements Handler {
         description = "Delete CWMS Turbine Changes",
         methods = {HttpMethod.DELETE},
         tags = {TurbineController.TAG},
-        path = "",
+        path = "/projects/{" + OFFICE + "}/{" + NAME + "}/turbine-changes",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "Turbine successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

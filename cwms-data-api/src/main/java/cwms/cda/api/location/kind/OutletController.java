@@ -85,7 +85,7 @@ public class OutletController extends BaseCrudHandler {
         description = "Create CWMS Outlet",
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/outlets",
+        path = "/project/outlets",
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Outlet successfully stored to CWMS.")
         }
@@ -122,7 +122,7 @@ public class OutletController extends BaseCrudHandler {
         },
         description = "Returns matching CWMS Outlet Data for a Reservoir Project.",
         tags = {TAG},
-        path = "/outlets"
+        path = "/projects/outlets"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -167,7 +167,7 @@ public class OutletController extends BaseCrudHandler {
         },
         description = "Returns CWMS Outlet Data",
         tags = {TAG},
-        path = "/outlets/{" + NAME + "}"
+        path = "/projects/outlets/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -206,7 +206,7 @@ public class OutletController extends BaseCrudHandler {
         description = "Rename CWMS Outlet",
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/outlets/{" + NAME + "}",
+        path = "/projects/outlets/{" + NAME + "}",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "CWMS Outlet successfully renamed.")
         }
@@ -238,7 +238,7 @@ public class OutletController extends BaseCrudHandler {
         description = "Delete CWMS Outlet",
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/outlets/{" + NAME + "}",
+        path = "/projects/outlets/{" + NAME + "}",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "Outlet successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

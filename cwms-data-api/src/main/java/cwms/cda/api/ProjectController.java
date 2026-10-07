@@ -170,7 +170,8 @@ public class ProjectController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")},
             description = "Retrieves requested Project", tags = {"Projects"},
-        path = "/peoject/{" + NAME + "}")
+        path = "/peoject/{" + NAME + "}",
+        methods = {HttpMethod.GET})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {

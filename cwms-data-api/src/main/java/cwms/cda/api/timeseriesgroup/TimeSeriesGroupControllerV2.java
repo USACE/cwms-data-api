@@ -115,8 +115,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
             tags = {TAG},
-            path = "/timeseries/group",
-            versions = "2"
+            path = "/timeseries/group"
         )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -149,8 +148,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             },
             description = "Retrieves requested timeseries group",
             tags = {"Timeseries Groups"},
-            path = "/timeseries/group",
-            versions = "2"
+            path = "/timeseries/group"
         )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {
@@ -228,8 +226,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         },
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}",
-        versions = "2"
+        path = "/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
 
     )
     @Override
@@ -369,8 +366,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}",
-        versions = "2"
+        path = "/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {

@@ -115,7 +115,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             description = "Returns CWMS timeseries identifier descriptor"
                     + "Data. Currently includes aliased items in results.",
             tags = {TAG},
-            path = "/timeseries/identifier"
+            path = "/timeseries/identifier-descriptor"
     )
     @Override
     public void getAll(Context ctx) {
@@ -182,7 +182,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor",
             tags = {TAG},
-            path = "/timeseries/identifier/{" + TIMESERIES_ID + "}"
+            path = "/timeseries/identifier-descriptor/{" + TIMESERIES_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String timeseriesId) {
@@ -241,7 +241,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             },
             methods = {HttpMethod.POST},
             tags = {TAG},
-            path = "/timeseries/identifier"
+            path = "/timeseries/identifier-descriptor"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -292,7 +292,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = ACTIVE, type = Boolean.class,
                             description = "'True' or 'true' if the time series is active")
             }, tags = {TAG},
-            path = "/timeseries/identitifer/{name}"
+            path = "/timeseries/identitifer-descriptor/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

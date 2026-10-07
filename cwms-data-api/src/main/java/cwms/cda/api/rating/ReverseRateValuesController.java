@@ -99,7 +99,7 @@ public final class ReverseRateValuesController extends BaseHandler {
             "a single independent parameter.",
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/ratings/reverse/rate/value/" // TODO: fix
+        path = "/ratings/reverse-rate-values/{" + OFFICE + "}/{" + RATING_ID + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

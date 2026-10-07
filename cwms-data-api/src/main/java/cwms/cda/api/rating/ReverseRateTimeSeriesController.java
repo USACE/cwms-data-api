@@ -99,7 +99,7 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
             "a single independent parameter.",
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/ratings/reverse/" // TODO: fix
+        path = "/ratings/reverse-rate-ts/{" + OFFICE + "}/{" + RATING_ID + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

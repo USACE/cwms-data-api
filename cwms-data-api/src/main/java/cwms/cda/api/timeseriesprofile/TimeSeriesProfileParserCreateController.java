@@ -70,7 +70,7 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
         methods = HttpMethod.POST,
         summary = "Store a TimeSeriesProfile Parser",
         tags = {TAG},
-        path = "/timeseries/profile"
+        path = "/timeseries/profile-parser"
     )
     @Override
     public void handle(@NotNull Context ctx) {

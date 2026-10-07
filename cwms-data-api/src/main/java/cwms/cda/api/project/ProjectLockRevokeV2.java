@@ -72,8 +72,7 @@ public final class ProjectLockRevokeV2 extends ProjectLockRevoke<ProjectLockV2> 
             },
             methods = HttpMethod.DELETE,
             path = PATH,
-            tags = {TAGS},
-            versions = "2"
+            tags = {TAGS}
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

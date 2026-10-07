@@ -88,7 +88,6 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
@@ -143,7 +142,9 @@ public class RatingController extends BaseCrudHandler {
                         + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                         + "and should be converted to the as-stored datum before being saved.")
             },
-            methods = HttpMethod.POST, path = "/ratings", tags = {TAG},
+            methods = HttpMethod.POST,
+            path = "/ratings",
+            tags = {TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_201, description = "Rating Set successfully stored to CWMS.")
             })
@@ -571,7 +572,9 @@ public class RatingController extends BaseCrudHandler {
                             + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                             + "and should be converted to the as-stored datum before being saved.")
             },
-            methods = HttpMethod.PATCH, path = "/ratings", tags = {TAG})
+            methods = HttpMethod.PATCH,
+            path = "/ratings/{" + RATING_ID + "}",
+            tags = {TAG})
     public void update(@NotNull Context ctx, @NotNull String ratingId) {
         logUnusedPathParameter(ctx, RATING_ID, "Body contains required information");
         try (final Timer.Context ignored = markAndTime(UPDATE)) {

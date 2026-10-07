@@ -66,8 +66,7 @@ public final class ProjectLockReleaseV1 extends ProjectLockRelease<ProjectLockV1
             },
             methods = HttpMethod.PUT,
             tags = {TAGS},
-            path = PATH,
-            versions = "1"
+            path = PATH
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

@@ -47,7 +47,7 @@ public final class CreateUserListController implements Handler {
         description = "Create an office-scoped user list owned by the authenticated user.",
         methods = HttpMethod.POST,
         tags = UserListController.TAG,
-        path = "/user-lists"
+        path = "/user/lists"
     )
     @Override
     public void handle(Context ctx) {

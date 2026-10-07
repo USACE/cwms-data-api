@@ -72,7 +72,7 @@ public final class RatingEffectiveDatesController implements Handler {
             },
             description = "Returns mapping of office -> spec id -> effective date-times for all matching offices and spec ids.",
             tags = {RatingController.TAG},
-            path = "/ratings/effectives" // TODO: check
+            path = "/ratings/effective-dates"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

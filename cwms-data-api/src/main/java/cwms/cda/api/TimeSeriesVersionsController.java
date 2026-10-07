@@ -120,7 +120,7 @@ public final class TimeSeriesVersionsController implements Handler {
                     })
             },
             tags = {TimeSeriesController.TAG},
-            path = "/"
+            path = "/timeseries/versions"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

@@ -91,8 +91,7 @@ public final class ProjectLockCatalogV2 extends ProjectLockCatalog<ProjectLockV2
             },
             tags = {TAGS},
             path = PATH,
-            methods = HttpMethod.GET,
-            versions = "2"
+            methods = HttpMethod.GET
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

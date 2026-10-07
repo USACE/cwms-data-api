@@ -138,7 +138,8 @@ public final class MeasurementController implements CrudHandler {
             },
             description = "Returns matching measurement data.",
             tags = {TAG},
-            path = "/measurement"
+            path = "/measurements",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(@NotNull Context ctx) {

@@ -87,7 +87,7 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
         methods = HttpMethod.GET,
         summary = "Retrieve a list of TimeSeries Profile Parsers that match the provided mask parameters",
         tags = {TAG},
-        path = "/timeseries/profile/catalog"
+        path = "/timeseries/profile-catalog"
     )
     @Override
     public void handle(@NotNull Context ctx) {

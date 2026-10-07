@@ -127,7 +127,7 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
                     + " time series profile instance.", required = true),
         },
         methods = HttpMethod.GET,
-        path = "/timeseries/profile/instance", // TOOD: path parameters
+        path = "/timeseries/profile-instance/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}/{" + VERSION + "}",
         summary = "Get a time series profile instance that matches the provided parameters.",
         tags = {TAG},
         responses = {

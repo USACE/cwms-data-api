@@ -54,7 +54,7 @@ public final class AddUserListMemberController implements Handler {
         description = "Add an existing CWMS user to an office-scoped user list.",
         methods = HttpMethod.POST,
         tags = UserListController.TAG,
-        path = "/user-lists/add/{" + USER_LIST_ID + "}" // TODO: fix
+        path = "/user/lists/{" + USER_LIST_ID + "}/members"
     )
     @Override
     public void handle(Context ctx) {

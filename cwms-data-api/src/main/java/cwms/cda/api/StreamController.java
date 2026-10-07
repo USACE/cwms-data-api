@@ -115,7 +115,9 @@ public final class StreamController implements CrudHandler {
             },
             description = "Returns matching CWMS Stream Data for a Reservoir Project.",
             tags = {TAG},
-            path = "/stream"
+            path = "/streams",
+            methods = {HttpMethod.GET}
+            
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -166,7 +168,8 @@ public final class StreamController implements CrudHandler {
             },
             description = "Returns CWMS Stream Data",
             tags = {TAG},
-            path = "/stream/{" + NAME + "}"
+            path = "/streams/{" + NAME + "}",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String streamId) {
@@ -211,7 +214,7 @@ public final class StreamController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Stream successfully stored to CWMS.")
             },
-            path = "/stream"
+            path = "/streams"
     )
     @Override
     public void create(Context ctx) {
@@ -245,7 +248,7 @@ public final class StreamController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Stream successfully renamed in CWMS.")
             },
-            path = "/stream/{" + NAME + "}"
+            path = "/streams/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String streamId) {
@@ -280,7 +283,7 @@ public final class StreamController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                             + "inputs provided the stream was not found.")
             },
-            path = "/stream/{" + NAME + "}"
+            path = "/streams/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String streamId) {

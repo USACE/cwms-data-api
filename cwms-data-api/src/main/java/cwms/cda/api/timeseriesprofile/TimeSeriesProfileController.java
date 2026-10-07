@@ -75,7 +75,7 @@ public final class TimeSeriesProfileController extends TimeSeriesProfileBase imp
         methods = HttpMethod.GET,
         summary = "Get a time series profile",
         tags = {TAG},
-        path = "/timeseries/profile",
+        path = "/timeseries/profile/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}",
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileParser object",

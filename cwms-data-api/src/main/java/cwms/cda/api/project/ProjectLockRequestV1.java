@@ -100,8 +100,7 @@ public final class ProjectLockRequestV1 extends ProjectLockRequest<ProjectLockV1
                 )},
             methods = HttpMethod.POST,
             path = PATH,
-            tags = {TAGS},
-            versions = "1"
+            tags = {TAGS}
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

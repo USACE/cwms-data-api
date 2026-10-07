@@ -71,7 +71,7 @@ public final class TimeSeriesProfileDeleteController extends TimeSeriesProfileBa
             methods = HttpMethod.DELETE,
             summary = "Delete a time series profile",
             tags = {TAG},
-            path = "/timeseries/profile/instance", // TODO: path params
+            path = "/timeseries/profile/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}",
             responses = {
                 @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
                 @OpenApiResponse(status = STATUS_204, description = "Time series profile deleted"),

@@ -51,6 +51,7 @@ import cwms.cda.formatters.Formats;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
@@ -93,7 +94,8 @@ public final class DownstreamLocationsGetController implements Handler {
             },
             description = "Returns matching downstream stream locations.",
             tags = {StreamLocationController.TAG},
-            path = "/stream/location/downstream"
+            path = "/stream-locations/{" + OFFICE + "}/{" + NAME + "}/downstream-locations",
+            methods = {HttpMethod.GET}
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String locationId = ctx.pathParam(NAME);

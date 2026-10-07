@@ -2,8 +2,6 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -90,7 +88,9 @@ public final class PoolController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_501, description = "request format is not"
                             + " implemented")},
             description = "Returns Pools Data",
-            tags = {TAG}, path = "/pool")
+            tags = {TAG},
+            path = "/pools",
+        methods = {HttpMethod.GET})
     @Override
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
@@ -178,8 +178,10 @@ public final class PoolController implements CrudHandler {
                             + "inputs provided the Location Category was not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
-            description = "Retrieves requested Pool", tags = {TAG},
-        path = "/pool/{" + POOL_ID + "}")
+            description = "Retrieves requested Pool",
+        tags = {TAG},
+        path = "/pools/{" + POOL_ID + "}",
+        methods = {HttpMethod.GET})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String poolId) {
         try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
@@ -249,7 +251,7 @@ public final class PoolController implements CrudHandler {
           description = "Create CWMS Pool",
           methods = HttpMethod.POST,
           tags = {TAG},
-          path = "/pool",
+          path = "/pools",
           responses = {
                 @OpenApiResponse(status = STATUS_204, description = "Pool successfully stored to CWMS.")
           }
@@ -287,7 +289,7 @@ public final class PoolController implements CrudHandler {
           description = "Rename CWMS Pool",
           methods = HttpMethod.PATCH,
           tags = {TAG},
-          path = "/pool/{" + NAME + "}",
+          path = "/pools/{" + NAME + "}",
           responses = {
                 @OpenApiResponse(status = STATUS_204, description = "Pool successfully renamed in CWMS.")
           }
@@ -319,7 +321,7 @@ public final class PoolController implements CrudHandler {
           description = "Delete CWMS Pool",
           methods = HttpMethod.DELETE,
           tags = {TAG},
-          path = "/pool/{" + NAME + "}",
+          path = "/pools/{" + NAME + "}",
           responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Pool successfully deleted from CWMS."),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

@@ -71,7 +71,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             ),
             methods = HttpMethod.POST,
             tags = TAG,
-            path = "/forecasts/instance"
+            path = "/forecasts-instance"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -109,7 +109,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             },
             methods = HttpMethod.DELETE,
             tags = TAG,
-            path = "/forecast/instance/{" + NAME + "}"
+            path = "/forecast-instance/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {
@@ -151,7 +151,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecasts/instance"
+            path = "/forecasts-instance"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -230,7 +230,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecast/instance/{" + NAME + "}"
+            path = "/forecast-instance/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -296,7 +296,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             },
             methods = HttpMethod.PATCH,
             tags = TAG,
-            path = "/forecasts/instance/{" + NAME + "}"
+            path = "/forecasts-instance/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

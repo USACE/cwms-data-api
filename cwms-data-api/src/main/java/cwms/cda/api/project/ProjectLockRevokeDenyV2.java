@@ -67,8 +67,7 @@ public final class ProjectLockRevokeDenyV2 extends ProjectLockRevokeDeny<Project
             },
             methods = HttpMethod.POST,
             tags = {TAGS},
-            path = PATH,
-            versions = "2"
+            path = PATH
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

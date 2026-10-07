@@ -90,7 +90,7 @@ public final class TimeSeriesProfileParserController extends TimeSeriesProfilePa
         methods = HttpMethod.GET,
         summary = "Get a TimeSeriesProfile Parser by ID",
         tags = {TAG},
-        path = "/timeseries/profile"
+        path = "/timeseries/profile-parser/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}"
     )
 
     @Override

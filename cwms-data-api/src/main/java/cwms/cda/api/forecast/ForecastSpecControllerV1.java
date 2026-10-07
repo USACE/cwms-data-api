@@ -57,8 +57,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
             ),
             methods = HttpMethod.POST,
             tags = TAG,
-            path = "/forecasts/spec",
-            versions = "1"
+            path = "/forecast-spec"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -85,9 +84,8 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
                         + "parameters did not find a forecast spec."),
             },
             methods = HttpMethod.DELETE,
-            path = "/forecasts/spec/{" + NAME + "}",
-            tags = TAG,
-            versions = "1"
+            path = "/forecasts-spec/{" + NAME + "}",
+            tags = TAG
 
     )
     @Override
@@ -125,8 +123,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecasts/spec",
-            versions = "1"
+            path = "/forecasts-spec"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -160,8 +157,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecasts/spec/{" + NAME + "}",
-            versions = "1"
+            path = "/forecasts-spec/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -185,8 +181,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.PATCH,
             tags = TAG,
-            path = "/forecasts/spec/{" + NAME + "}",
-            versions = "1"
+            path = "/forecasts/spec/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

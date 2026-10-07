@@ -51,9 +51,7 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -81,7 +79,7 @@ public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileB
         methods = HttpMethod.GET,
         summary = "Get a catalog of time series profiles",
         tags = {TAG},
-        path = "/timeseries/profile/catalog",
+        path = "/timeseries/profile",
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfile object",

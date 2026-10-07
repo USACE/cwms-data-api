@@ -110,7 +110,7 @@ public class RatingTemplateController implements CrudHandler {
                             }
                     )},
             tags = {TAG},
-            path = "/rating/template" // TODO: fix
+            path = "/ratings/template"
     )
     @Override
     public void getAll(Context ctx) {
@@ -170,7 +170,7 @@ public class RatingTemplateController implements CrudHandler {
                             }
                     )},
             tags = {TAG},
-            path = "/rating/template" // TODO: Fix
+            path = "/ratings/template/{" + TEMPLATE_ID + "}"
     )
     @Override
     public void getOne(Context ctx, @NotNull String templateId) {
@@ -224,7 +224,7 @@ public class RatingTemplateController implements CrudHandler {
         },
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/ratings/template" // TODO: check
+        path = "/ratings/template"
     )
     @Override
     public void create(@NotNull Context ctx) {

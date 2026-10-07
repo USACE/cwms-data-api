@@ -68,7 +68,7 @@ public class TextTimeSeriesValueController extends BaseHandler {
                             }
                     )},
             tags = {TextTimeSeriesController.TAG},
-            path = "/timeseries/text/value/{" + NAME + "}"
+            path = "/timeseries/text/{" + NAME + "}/value"
     )
     public void handle(Context ctx) {
         //Implementation will change with new CWMS schema

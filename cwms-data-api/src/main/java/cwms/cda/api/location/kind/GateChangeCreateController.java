@@ -68,7 +68,7 @@ public class GateChangeCreateController extends BaseHandler {
         description = "Create CWMS Gate Changes",
         methods = HttpMethod.POST,
         tags = {OutletController.TAG},
-        path = "/gate/changes", // TODO: fix
+        path = "/projects/gate-changes",
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Gate Changes successfully stored to CWMS.")
         }

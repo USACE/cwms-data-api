@@ -61,7 +61,7 @@ public class VirtualOutletCreateController extends BaseHandler {
             description = "Create CWMS Virtual Outlet",
             methods = HttpMethod.POST,
             tags = {OutletController.TAG},
-            path = "/outlets/virtual", // TODO: fix
+            path = "/projects/virtual-outlets",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Virtual Outlet successfully stored to CWMS.")
             }

@@ -84,7 +84,7 @@ public class VirtualOutletController extends BaseCrudHandler {
             },
             description = "Returns matching CWMS Virtual Outlet Data for a Reservoir Project.",
             tags = {OutletController.TAG},
-            path = "/outlet/virtual" // TODO: fix
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/virtual-outlets"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -130,7 +130,7 @@ public class VirtualOutletController extends BaseCrudHandler {
             },
             description = "Returns CWMS Virtual Outlet Data",
             tags = {OutletController.TAG},
-            path = "/outlets/virtual/{" // TODO: implement
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/virtual-outlets/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -181,7 +181,7 @@ public class VirtualOutletController extends BaseCrudHandler {
             description = "Delete CWMS Virtual Outlet",
             methods = HttpMethod.DELETE,
             tags = {OutletController.TAG},
-            path = "/outlet/virtual/{", // TODO: fix
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/virtual-outlets/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Virtual Outlet successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

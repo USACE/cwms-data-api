@@ -52,9 +52,7 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -96,7 +94,7 @@ public class LocationKindController implements Handler {
         description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
             + "retrieving lists of locations and can filter on additional fields.",
         methods = HttpMethod.GET,
-        path = "/locations/with-kind",
+        path = "/locations/with-kinds",
         tags = {TAG}
     )
     @Override

@@ -89,7 +89,7 @@ public final class TimeSeriesProfileInstanceDeleteController extends TimeSeriesP
         responses = {
             @OpenApiResponse(status = "400", description = "Invalid input")
         },
-        path = "/timeseries/profiles"
+        path = "/timeseries/profile-instance/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}/{" + VERSION + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) {

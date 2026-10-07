@@ -96,7 +96,7 @@ public final class ForecastFileController implements Handler {
                             + "implemented")
             },
             tags = {ForecastSpecController.TAG},
-            path = "/forecasts/files"
+            path = "/forecast-instance/{" + NAME + "}/file-data"
     )
     public void handle(@NotNull Context ctx) {
         String specId = ctx.pathParam(NAME);

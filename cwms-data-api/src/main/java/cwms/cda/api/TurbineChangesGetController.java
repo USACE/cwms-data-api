@@ -129,7 +129,7 @@ public final class TurbineChangesGetController implements Handler {
         },
         description = "Returns matching CWMS Turbine Change Data for a Reservoir Project.",
         tags = {TurbineController.TAG},
-        path = ""
+        path = "/projects/{" + OFFICE + "}/{" + NAME + "}/turbine-changes"
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     public void handle(@NotNull Context ctx) throws Exception {

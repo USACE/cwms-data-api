@@ -125,7 +125,7 @@ public class RatingMetadataController implements CrudHandler {
                             }
                     )},
             tags = {"Ratings"},
-            path = "/ratings/meta-data" // TODO: check
+            path = "/ratings/metadata" // TODO: check
     )
     @Override
     public void getAll(Context ctx) {
