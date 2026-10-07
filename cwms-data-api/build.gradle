@@ -227,7 +227,7 @@ run() {
 
     def context = project.findProperty("cda.war.context") ?: "/cwms-data"
 
-    args context, configurations.ui.asPath
+    args context, configurations.ui.asPath, 7010
     jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
     jvmArgs += "-Duser.timezone=UTC"

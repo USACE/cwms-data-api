@@ -256,6 +256,7 @@ public class CatalogController implements CrudHandler {
                 @OpenApiContent(from = Catalog.class, type = Formats.XML)
             })
         },
+        security = {},
         tags = {TAG},
         path = "/catalog/{dataset}"
     )

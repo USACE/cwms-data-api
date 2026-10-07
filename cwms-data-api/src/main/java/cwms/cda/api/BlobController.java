@@ -44,6 +44,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.Optional;
 import jakarta.servlet.http.HttpServletResponse;
@@ -116,6 +118,7 @@ public class BlobController extends BaseCrudHandler {
                             @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
                     })
             },
+            security = {},
             tags = {TAG},
             path = "/blobs"
     )
@@ -191,6 +194,7 @@ public class BlobController extends BaseCrudHandler {
                                     @OpenApiContent(type = "application/octet-stream", from = byte[].class)
                             })
             },
+            security = {@OpenApiSecurity(name = "")},
             tags = {TAG},
             path = "/blob/{" + BLOB_ID + "}"
     )

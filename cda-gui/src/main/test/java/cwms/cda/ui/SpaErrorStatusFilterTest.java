@@ -1,4 +1,4 @@
-package cwms.cda.servlet;
+package cwms.cda.ui;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.Mockito.mock;
