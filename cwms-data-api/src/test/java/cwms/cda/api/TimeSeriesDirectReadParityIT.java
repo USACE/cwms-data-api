@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -349,6 +350,48 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         }
         assertNull(values.get(3).getValue(), "first gap value");
         assertNull(values.get(4).getValue(), "second gap value");
+    }
+
+    @Test
+    void smallPageFromYearLongSparseRegularSeriesCompletesWithoutScanningWindow() throws Exception {
+        String seriesId = "ITPARLONGREG.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-12-31T23:59:00Z");
+        seedTimeSeries("ITPARLONGREG", seriesId, List.of(
+            row(beginTime.toString(), 1.0, 0, "2025-01-01T00:00:00Z", null),
+            row(endTime.toString(), 2.0, 0, "2025-01-01T00:01:00Z", null)
+        ), false);
+
+        TimeSeries response = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 10, false, null, true));
+
+        assertEquals(10, response.getValues().size(), "values size");
+        assertNotNull(response.getValues().get(0).getValue(), "first value");
+        assertNull(response.getValues().get(1).getValue(), "first gap value");
+        assertNotNull(response.getNextPage(), "next-page");
+    }
+
+    @Test
+    void smallPagesFromLongIrregularSeriesRemainOrdered() throws Exception {
+        String seriesId = "ITPARLONGIRR.Flow.Inst.0.0.BENCH";
+        Instant beginTime = Instant.parse("2024-02-01T00:00:00Z");
+        int rowCount = 20_000;
+        Instant endTime = beginTime.plusSeconds((rowCount - 1L) * 60L);
+        seedTimeSeries("ITPARLONGIRR", seriesId,
+            regularRows(beginTime, rowCount, 1.0, Duration.ofDays(1)), false);
+
+        TimeSeries firstPage = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "cfs", beginTime, endTime, 10, false, null, true));
+        TimeSeries secondPage = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "cfs", beginTime, endTime, 10, false, null, true, null,
+            firstPage.getNextPage()));
+
+        assertEquals(10, firstPage.getValues().size(), "first page values size");
+        assertEquals(10, secondPage.getValues().size(), "second page values size");
+        assertEquals(firstPage.getValues().get(9).getDateTime().toInstant().plusSeconds(60),
+            secondPage.getValues().get(0).getDateTime().toInstant(), "page boundary");
+        assertNotNull(firstPage.getNextPage(), "first next-page");
+        assertNotNull(secondPage.getNextPage(), "second next-page");
     }
 
     @Test
