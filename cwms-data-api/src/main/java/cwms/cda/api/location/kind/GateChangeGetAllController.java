@@ -49,6 +49,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
+import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
@@ -110,7 +111,8 @@ public class GateChangeGetAllController extends BaseHandler {
             },
             description = "Returns matching CWMS gate change data for a Reservoir Project.",
             tags = {OutletController.TAG},
-            path = "/gates-chage/" // TODO: check
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/gate-changes",
+            methods = {HttpMethod.GET}
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override

@@ -106,7 +106,8 @@ public class SpecifiedLevelController implements CrudHandler {
             )
         },
         tags = {TAG},
-        path = "/level/specified"
+        path = "/specified-level",
+        methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(Context ctx) {
@@ -158,7 +159,7 @@ public class SpecifiedLevelController implements CrudHandler {
         },
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/levels/specified"
+        path = "/specified-levels"
 
     )
     @Override
@@ -189,7 +190,7 @@ public class SpecifiedLevelController implements CrudHandler {
         },
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/levels/specified/{" + SPECIFIED_LEVEL_ID + "}"
+        path = "/specified-levels/{" + SPECIFIED_LEVEL_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldSpecifiedLevelId) {
@@ -217,7 +218,7 @@ public class SpecifiedLevelController implements CrudHandler {
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/levels/specified/{" + SPECIFIED_LEVEL_ID + "}"
+        path = "/specified-levels/{" + SPECIFIED_LEVEL_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String specifiedLevelId) {

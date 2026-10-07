@@ -93,7 +93,7 @@ public class RatingLatestController implements Handler {
         },
         description = "Returns CWMS Rating Data",
         tags = {TAG},
-        path = "/ratings/latest/{" + RATING_ID + "}")
+        path = "/ratings/{" + RATING_ID + "}/latest")
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {

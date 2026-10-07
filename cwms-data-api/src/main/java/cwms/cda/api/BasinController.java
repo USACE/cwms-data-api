@@ -114,7 +114,8 @@ public class BasinController implements CrudHandler {
             + "This endpoint handles multiple accept header types, including named pg json. "
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG},
-        path = "/basins"
+        path = "/basins",
+        methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -195,7 +196,8 @@ public class BasinController implements CrudHandler {
             + "This endpoint handles multiple accept header types, including named pg json. "
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG},
-        path = "/basins/{" + NAME + "}"
+        path = "/basins/{" + NAME + "}",
+        methods = {HttpMethod.GET}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -252,7 +254,7 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        methods = HttpMethod.PATCH,
+        methods = {HttpMethod.PATCH},
         description = "Renames CWMS Basin",
         tags = {TAG},
         path = "/basins/{" + NAME + "}"
@@ -282,7 +284,7 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_204, description = "Basin successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        methods = HttpMethod.POST,
+        methods = {HttpMethod.POST},
         description = "Creates CWMS Basin",
         tags = {TAG},
         path = "/basins/"
@@ -318,7 +320,8 @@ public class BasinController implements CrudHandler {
         },
         description = "Deletes CWMS Basin",
         tags = {TAG},
-        path = "/basins/{" + NAME + "}"
+        path = "/basins/{" + NAME + "}",
+        methods = {HttpMethod.DELETE}
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {

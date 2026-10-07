@@ -226,7 +226,7 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
                 required = true
             ),
             methods = HttpMethod.PATCH,
-            path = "/timeseries/binary/{name}",
+            path = "/timeseries/binary/{" + NAME + "}",
             tags = {TAG}
     )
     @Override

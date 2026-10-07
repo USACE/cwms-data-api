@@ -93,7 +93,7 @@ public final class RateValuesController extends BaseHandler {
             "dependent parameter of the rating curve. ",
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/ratings/rate/{" + OFFICE + "}/{" + RATING_ID + "}"
+        path = "/ratings/rate-values/{" + OFFICE + "}/{" + RATING_ID + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

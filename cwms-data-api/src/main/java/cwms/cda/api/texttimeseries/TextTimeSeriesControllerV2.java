@@ -93,8 +93,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                             }
                     )},
             tags = {TAG},
-            path = "/timeseries/text",
-            versions = "2"
+            path = "/timeseries/text"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -120,8 +119,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                             + "Default is " + DEFAULT_CREATE_REPLACE_ALL)},
             methods = HttpMethod.POST,
             tags = {TAG},
-            path = "/timeseries/text",
-            versions = "2"
+            path = "/timeseries/text"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -170,8 +168,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
         ),
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}",
-        versions = "2"
+        path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String tsId) {
@@ -222,8 +219,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
             },
             methods = HttpMethod.DELETE,
             tags = {TAG},
-            path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}",
-            versions = "2"
+            path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String textTimeSeriesId) {

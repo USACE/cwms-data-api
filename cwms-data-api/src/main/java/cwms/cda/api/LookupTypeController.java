@@ -84,7 +84,7 @@ public final class LookupTypeController extends BaseCrudHandler {
             },
             description = "Returns matching CWMS Lookup Type Data.",
             tags = {TAG},
-            path = "/lookup-type"
+            path = "/lookup-types"
     )
     @Override
     public void getAll(Context ctx) {
@@ -132,7 +132,7 @@ public final class LookupTypeController extends BaseCrudHandler {
             description = "Create CWMS Lookup Type",
             methods = HttpMethod.POST,
             tags = {TAG},
-            path = "/lookup-type",
+            path = "/lookup-types",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Lookup Type successfully stored to CWMS.")
             }
@@ -170,7 +170,7 @@ public final class LookupTypeController extends BaseCrudHandler {
             description = "Update CWMS Lookup Type",
             methods = HttpMethod.PATCH,
             tags = {TAG},
-            path = "/lookup-type/{" + NAME + "}",
+            path = "/lookup-types/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Updated Lookup Type")
             }
@@ -205,7 +205,7 @@ public final class LookupTypeController extends BaseCrudHandler {
             description = "Delete CWMS Lookup Type",
             methods = HttpMethod.DELETE,
             tags = {TAG},
-            path = "/lookup-type/{" + NAME + "}",
+            path = "/lookup-types/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Lookup Type successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of inputs provided the lookup type was not found.")

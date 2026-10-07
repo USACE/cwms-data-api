@@ -82,7 +82,7 @@ public class UnitsController implements CrudHandler {
                 + "implemented")
         },
         tags = {"Units"},
-        path = "/"
+        path = "/units"
     )
     @Override
     public void getAll(@NotNull Context ctx) {

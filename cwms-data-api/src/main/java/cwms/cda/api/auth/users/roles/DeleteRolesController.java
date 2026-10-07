@@ -48,7 +48,7 @@ public class DeleteRolesController implements Handler {
         },
         description = "Remove roles from user",
         tags = {"User Management"},
-        path = "/roles/{office-id}/{user-name}"
+        path = "/user/{user-name}/roles/{office-id}"
     )
     @Override
     public void handle(Context ctx) throws Exception {

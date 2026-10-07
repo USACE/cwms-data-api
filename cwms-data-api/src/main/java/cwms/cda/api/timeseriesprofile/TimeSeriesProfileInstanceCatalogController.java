@@ -50,9 +50,7 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
-import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -82,7 +80,7 @@ public final class TimeSeriesProfileInstanceCatalogController extends TimeSeries
                 + "list of time series profile instances without the associated data. Data for an instance can be "
                 + "retrieved using the singular retrieval endpoint.",
         tags = {TAG},
-        path = "/timeseries/profiles/instance/catalog",
+        path = "/timeseries/profile-instance/",
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 description = "A TimeSeriesProfileInstance object",
