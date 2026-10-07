@@ -52,7 +52,7 @@ public class AddRoleController implements Handler {
         },
         description = "Add roles to user",
         tags = {"User Management"},
-        path = "/roles/add/{office-id}/{user-name}" // TODO: check
+        path = "/user/{user-name}/roles/{office-id}"
     )
     @Override
     public void handle(Context ctx) throws Exception {
