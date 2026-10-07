@@ -40,11 +40,12 @@ clean.dependsOn cleanGeneration
 tasks.register('copyOpenApiSpec') {
     group 'openapi'
     description 'Copy the locally generated CDA OpenAPI spec into the TypeScript client workspace.'
-    dependsOn ':cwms-data-api:executeOpenAPIConversion'
+    dependsOn ':cwms-data-api:compileJava'
+    inputs.file "$rootDir/cwms-data-api/build/classes/java/main/openapi-plugin/openapi-default.json"
     outputs.file rawSpecFile
     doLast {
         copy {
-            from "$rootDir/cwms-data-api/build/openapi.json"
+            from "$rootDir/cwms-data-api/build/classes/java/main/openapi-plugin/openapi-default.json"
             into projectDir
             rename { 'cwms-swagger-raw.json' }
         }
