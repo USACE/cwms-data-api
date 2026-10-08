@@ -116,6 +116,9 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
                                                                    buildTestGateSetting(CONDUIT_GATE_2_ID, 3, 4));
     private static final GateChange CHANGE_3 = buildTestGateChange(PROJECT_1_ID, JAN_THIRD);
 
+    private static final GateChange UNPROTECTED_CHANGE_1 = buildUnprotectedTestGateChange(PROJECT_1_ID, JAN_FIRST,
+                                                                   buildTestGateSetting(CONDUIT_GATE_1_ID, 12, 20));
+
     @BeforeAll
     static void setup() throws Exception {
         setupProject();
@@ -348,6 +351,46 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
+    @Test
+    void test_override_protection()
+    {
+        String json = Formats.format(Formats.parseHeader(Formats.JSONV1, GateChange.class), List.of(CHANGE_1), GateChange.class);
+
+        //Create the gate changes
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+            .queryParam(OVERRIDE_PROTECTION, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("projects/gate-changes")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        String unprotectedJson = Formats.format(Formats.parseHeader(Formats.JSONV1, GateChange.class), List.of(UNPROTECTED_CHANGE_1), GateChange.class);
+
+        //Try creating it again with OVERRIDE_PROTECTION=false, this should fail.
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(unprotectedJson)
+            .header(AUTH_HEADER, USER.toHeaderValue())
+            .queryParam(OVERRIDE_PROTECTION, "true")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("projects/gate-changes")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+
+    }
     private boolean isSimilar(GateChange left, GateChange right) {
         boolean output = false;
 
@@ -384,6 +427,43 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
                                                         .withOfficeId(OFFICE_ID)
                                                         .build();
         boolean isProtected = true;
+        Double newTotalDischargeOverride = 1.0;
+        Double oldTotalDischargeOverride = 2.0;
+        String dischargeUnits = "cfs";
+        Double poolElevation = 3.0;
+        Double tailwaterElevation = 4.0;
+        String elevationUnits = "ft";
+        String notes = "Test notes";
+        List<GateSetting> settings = Arrays.asList(settingVargs);
+
+        return new GateChange.Builder().withProjectId(projectId)
+                                       .withDischargeComputationType(dischargeComputationType)
+                                       .withReasonType(reasonType)
+                                       .withProtected(isProtected)
+                                       .withNewTotalDischargeOverride(newTotalDischargeOverride)
+                                       .withOldTotalDischargeOverride(oldTotalDischargeOverride)
+                                       .withDischargeUnits(dischargeUnits)
+                                       .withPoolElevation(poolElevation)
+                                       .withTailwaterElevation(tailwaterElevation)
+                                       .withElevationUnits(elevationUnits)
+                                       .withNotes(notes)
+                                       .withChangeDate(changeDate)
+                                       .withSettings(settings)
+                                       .build();
+    }
+
+    static GateChange buildUnprotectedTestGateChange(CwmsId projectId, Instant changeDate, GateSetting... settingVargs) {
+        LookupType dischargeComputationType = new LookupType.Builder().withActive(true)
+                                                                      .withDisplayValue("A")
+                                                                      .withTooltip("Adjusted by an automated method")
+                                                                      .withOfficeId(OFFICE_ID)
+                                                                      .build();
+        LookupType reasonType = new LookupType.Builder().withActive(true)
+                                                        .withDisplayValue("O")
+                                                        .withTooltip("Other release")
+                                                        .withOfficeId(OFFICE_ID)
+                                                        .build();
+        boolean isProtected = false;
         Double newTotalDischargeOverride = 1.0;
         Double oldTotalDischargeOverride = 2.0;
         String dischargeUnits = "cfs";
