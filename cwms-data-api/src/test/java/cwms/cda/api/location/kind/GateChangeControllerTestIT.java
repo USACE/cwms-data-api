@@ -380,7 +380,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .contentType(Formats.JSONV1)
             .body(unprotectedJson)
             .header(AUTH_HEADER, USER.toHeaderValue())
-            .queryParam(OVERRIDE_PROTECTION, "true")
+            .queryParam(OVERRIDE_PROTECTION, "false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -391,6 +391,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
 
     }
+
     private boolean isSimilar(GateChange left, GateChange right) {
         boolean output = false;
 
