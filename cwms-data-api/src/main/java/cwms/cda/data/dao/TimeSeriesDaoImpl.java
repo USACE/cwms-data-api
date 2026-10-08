@@ -1059,9 +1059,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         List<Timestamp> expectedTimes = fetchExpectedRegularTimes(intervalMinutes, effectiveIntervalOffset, timeZoneId,
                 intervalPart, isLrts, effectiveWindowStart, effectiveWindowEnd, regularPageStart, regularPageEnd,
                 maxPageRows);
-        int mergedRows = countMergedRows(rawRows, expectedTimes);
-        if (!regularSeries && (pageSize < 0 || (cursor == null && mergedRows <= pageSize))) {
-            total = mergedRows;
+        if (!regularSeries && (pageSize < 0 || (cursor == null && rawRows.size() <= pageSize))) {
+            total = rawRows.size();
         }
 
         TimeSeries timeseries = new TimeSeries(
@@ -1506,38 +1505,6 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         return Duration.ZERO;
-    }
-
-    private int countMergedRows(List<TimeSeries.Record> rawRows, List<Timestamp> expectedTimes) {
-        if (expectedTimes.isEmpty()) {
-            return rawRows.size();
-        }
-
-        int total = 0;
-        int rawIndex = 0;
-        int expectedIndex = 0;
-        while (rawIndex < rawRows.size() || expectedIndex < expectedTimes.size()) {
-            Timestamp rawTime = rawIndex < rawRows.size() ? rawRows.get(rawIndex).getDateTime() : null;
-            Timestamp expectedTime = expectedIndex < expectedTimes.size() ? expectedTimes.get(expectedIndex) : null;
-
-            if (rawTime == null) {
-                expectedIndex++;
-            } else if (expectedTime == null) {
-                rawIndex++;
-            } else {
-                int compare = compareTimestampOrder(expectedTime, rawTime);
-                if (compare < 0) {
-                    expectedIndex++;
-                } else if (compare > 0) {
-                    rawIndex++;
-                } else {
-                    expectedIndex++;
-                    rawIndex++;
-                }
-            }
-            total++;
-        }
-        return total;
     }
 
     private void populateTimeSeriesValues(TimeSeries timeseries,
