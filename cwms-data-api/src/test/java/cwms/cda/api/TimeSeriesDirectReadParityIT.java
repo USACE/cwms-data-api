@@ -400,8 +400,14 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
         assertEquals(10, firstPage.getValues().size(), "first page values size");
         assertEquals(10, secondPage.getValues().size(), "second page values size");
-        assertEquals(rowCount, firstPage.getTotal(), "first page total");
-        assertEquals(rowCount, secondPage.getTotal(), "second page total");
+        assertNull(firstPage.getTotal(), "first page total");
+        assertNull(secondPage.getTotal(), "second page total");
+        for (int index = 1; index < 10; index++) {
+            assertEquals(firstPage.getValues().get(index - 1).getDateTime().toInstant().plusSeconds(60),
+                firstPage.getValues().get(index).getDateTime().toInstant(), "first page ordering");
+            assertEquals(secondPage.getValues().get(index - 1).getDateTime().toInstant().plusSeconds(60),
+                secondPage.getValues().get(index).getDateTime().toInstant(), "second page ordering");
+        }
         assertEquals(firstPage.getValues().get(9).getDateTime().toInstant().plusSeconds(60),
             secondPage.getValues().get(0).getDateTime().toInstant(), "page boundary");
         assertNotNull(firstPage.getNextPage(), "first next-page");
