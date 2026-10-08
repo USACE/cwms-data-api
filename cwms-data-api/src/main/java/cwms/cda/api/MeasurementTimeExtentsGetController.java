@@ -81,7 +81,7 @@ public final class MeasurementTimeExtentsGetController implements Handler {
             },
             description = "Returns matching downstream stream locations.",
             tags = {MeasurementController.TAG},
-            path = "/measurements/time-extends",
+            path = "/measurements/time-extents",
             methods = {HttpMethod.GET}
     )
     public void handle(@NotNull Context ctx) throws Exception {
