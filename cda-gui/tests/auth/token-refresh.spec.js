@@ -139,6 +139,12 @@ async function mockDeployment(page, flow) {
         servers: [{ url: `${origin}/cwms-data` }],
         components: {
           securitySchemes: {
+            // OpenID must still win when the deployment also advertises AAA.
+            CwmsAAACacAuth: {
+              type: "apiKey",
+              in: "cookie",
+              name: "JSESSIONIDSSO",
+            },
             OpenId: {
               type: "openIdConnect",
               openIdConnectUrl: `${authority}/.well-known/openid-configuration`,
