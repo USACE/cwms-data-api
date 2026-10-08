@@ -353,6 +353,34 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     }
 
     @Test
+    void fixedIntervalPagingCountsOffGridObservationBeyondFirstPage() throws Exception {
+        String seriesId = "ITPAROFFGRID.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-01-01T00:05:00Z");
+        seedTimeSeries("ITPAROFFGRID", seriesId, List.of(
+            row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-02T00:00:00Z", null),
+            row("2024-01-01T00:04:30Z", 2.0, 0, "2024-01-02T00:01:00Z", null)
+        ), false);
+
+        TimeSeries firstPage = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 3, false, null, false);
+        TimeSeries secondPage = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 3, false, null, false, null,
+            firstPage.getNextPage());
+        TimeSeries countOnly = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 0, false, null, false);
+
+        int expectedTotal = 7;
+        assertEquals(expectedTotal, firstPage.getTotal(), "first page total");
+        assertEquals(expectedTotal, secondPage.getTotal(), "second page total");
+        assertNotNull(firstPage.getNextPage(), "first next-page");
+        assertNotNull(secondPage.getValues().get(2).getValue(), "off-grid value");
+        assertEquals(0, countOnly.getPageSize(), "count-only page-size");
+        assertEquals(0, countOnly.getValues().size(), "count-only values size");
+        assertEquals(expectedTotal, countOnly.getTotal(), "count-only total");
+    }
+
+    @Test
     void smallPageFromYearLongSparseRegularSeriesCompletesWithoutScanningWindow() throws Exception {
         String seriesId = "ITPARLONGREG.Stage.Inst.1Minute.0.BENCH";
         Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");

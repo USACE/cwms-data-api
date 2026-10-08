@@ -83,6 +83,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
@@ -693,14 +694,8 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             ))
             .where(filterConditions);
 
-            getRequestedTimeSeriesTotalQueryMeter.mark();
-            totalQueryFuture = TOTAL_QUERY_EXECUTOR.submit(() -> {
-                try (Timer.Context ignored = getRequestedTimeSeriesTotalQueryTimer.time()) {
-                    return dsl.selectCount().from(DSL.table(retrieveSelectCount)).fetchOne(0, Integer.class);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            totalQueryFuture = submitTotalQuery(() ->
+                    dsl.selectCount().from(DSL.table(retrieveSelectCount)).fetchOne(0, Integer.class));
             totalQueryDeadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(TOTAL_QUERY_TIMEOUT_SECONDS);
         }
 
@@ -844,6 +839,17 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         return retVal;
+    }
+
+    private Future<Integer> submitTotalQuery(Supplier<Integer> totalQuery) {
+        getRequestedTimeSeriesTotalQueryMeter.mark();
+        return TOTAL_QUERY_EXECUTOR.submit(() -> {
+            try (Timer.Context ignored = getRequestedTimeSeriesTotalQueryTimer.time()) {
+                return totalQuery.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Nullable
@@ -1013,16 +1019,29 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     : toOracleDateTimestamp(endTime)
                 : null;
 
+        Future<Integer> totalQueryFuture = CompletableFuture.completedFuture(total);
+        long totalQueryDeadlineNanos = Long.MAX_VALUE;
         if (regularSeries && total == null) {
-            total = effectiveWindowStart == null || effectiveWindowEnd == null
-                    ? 0
-                    : countExpectedRegularTimes(effectiveWindowStart, effectiveWindowEnd,
-                            effectiveIntervalOffset, intervalPart, timeZoneId, isLrts);
-        } else if (!regularSeries && pageSize == 0) {
-            total = fetchIrregularDirectReadTotal(tsCode, metadataOfficeId, metadataUnits, requestParameters);
+            if (effectiveWindowStart == null || effectiveWindowEnd == null) {
+                totalQueryFuture = CompletableFuture.completedFuture(0);
+            } else {
+                long resolvedIntervalOffset = effectiveIntervalOffset;
+                totalQueryFuture = submitTotalQuery(() -> fetchRegularDirectReadTotal(
+                        tsCode, metadataOfficeId, metadataUnits, requestParameters,
+                        effectiveWindowStart, effectiveWindowEnd, resolvedIntervalOffset,
+                        intervalPart, timeZoneId, isLrts));
+                totalQueryDeadlineNanos = System.nanoTime()
+                        + TimeUnit.SECONDS.toNanos(TOTAL_QUERY_TIMEOUT_SECONDS);
+            }
+        } else if (!regularSeries && pageSize == 0 && total == null) {
+            totalQueryFuture = submitTotalQuery(() -> fetchIrregularDirectReadTotal(
+                    tsCode, metadataOfficeId, metadataUnits, requestParameters));
+            totalQueryDeadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(TOTAL_QUERY_TIMEOUT_SECONDS);
         }
 
         if (pageSize == 0) {
+            total = resolveTotalQueryFuture(totalQueryFuture, totalQueryDeadlineNanos,
+                    names, office, beginTime, endTime);
             return new TimeSeries(
                     cursor,
                     pageSize,
@@ -1061,6 +1080,10 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 maxPageRows);
         if (!regularSeries && (pageSize < 0 || (cursor == null && rawRows.size() <= pageSize))) {
             total = rawRows.size();
+        }
+        if (regularSeries) {
+            total = resolveTotalQueryFuture(totalQueryFuture, totalQueryDeadlineNanos,
+                    names, office, beginTime, endTime);
         }
 
         TimeSeries timeseries = new TimeSeries(
@@ -1286,6 +1309,62 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
         Integer count = query.fetchOne(0, Integer.class);
         return count == null ? 0 : count;
+    }
+
+    private int fetchRegularDirectReadTotal(long tsCode, String officeId, String requestedUnits,
+                                            TimeSeriesRequestParameters requestParameters,
+                                            Timestamp rangeStart, Timestamp rangeEnd, long intervalOffset,
+                                            String intervalPart, String timeZoneId, boolean isLrts) {
+        int expectedCount = countExpectedRegularTimes(rangeStart, rangeEnd, intervalOffset,
+                intervalPart, timeZoneId, isLrts);
+
+        AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
+        Field<Timestamp> dateTime = field(name("CWMS_20", "AV_TSV_DQU", DATE_TIME), Timestamp.class);
+        Field<Timestamp> versionDate = field(name("CWMS_20", "AV_TSV_DQU", VERSION_DATE), Timestamp.class);
+        Condition condition = buildTsvDquBaseCondition(view, dateTime, tsCode, officeId, requestedUnits,
+                requestParameters, null, null);
+        Condition offGrid = buildRegularOffGridCondition(
+                dateTime, intervalOffset, intervalPart, timeZoneId, isLrts);
+
+        Field<Integer> offGridCount;
+        if (requestParameters.getVersionDate() != null) {
+            condition = condition.and(buildVersionDateCondition(versionDate,
+                    requestParameters.getVersionDate()));
+            offGridCount = DSL.count(DSL.when(offGrid, dateTime));
+        } else {
+            // Max-version reads select one row per timestamp.
+            offGridCount = countDistinct(DSL.when(offGrid, dateTime));
+        }
+
+        ResultQuery<org.jooq.Record1<Integer>> query = dsl.select(offGridCount)
+                .from(view)
+                .where(condition);
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
+        Integer count = query.fetchOne(0, Integer.class);
+        return Math.addExact(expectedCount, count == null ? 0 : count);
+    }
+
+    private Condition buildRegularOffGridCondition(Field<Timestamp> dateTime, long intervalOffset,
+                                                   String intervalPart, String timeZoneId, boolean isLrts) {
+        Interval interval = resolveExpectedInterval(intervalPart);
+        Condition onGrid;
+        if (interval != null && interval.isLessThanMonthly()) {
+            Field<Timestamp> intervalTime = isLrts
+                    ? CWMS_UTIL_PACKAGE.call_CHANGE_TIMEZONE(
+                            dateTime, DSL.val(UTC), DSL.val(timeZoneId))
+                    : dateTime;
+            Field<BigDecimal> wallClockSeconds = DSL.field(
+                    "round(({0} - date '1970-01-01') * 86400)", BigDecimal.class, intervalTime);
+            onGrid = DSL.condition("mod({0} - {1}, {2}) = 0", wallClockSeconds,
+                    DSL.val(TimeUnit.MINUTES.toSeconds(intervalOffset)), DSL.val(interval.getSeconds()));
+        } else {
+            String intervalTimeZone = isLrts ? timeZoneId : UTC;
+            Field<Timestamp> intervalTop = CWMS_TS_PACKAGE.call_TOP_OF_INTERVAL_UTC(
+                    dateTime, DSL.val(intervalPart), DSL.val(intervalTimeZone), DSL.val("F"));
+            onGrid = dateTime.eq(DSL.field("{0} + numtodsinterval({1}, 'MINUTE')",
+                    Timestamp.class, intervalTop, DSL.val(intervalOffset)));
+        }
+        return onGrid.not();
     }
 
     private int countExpectedRegularTimes(Timestamp rangeStart, Timestamp rangeEnd, long intervalOffset,
