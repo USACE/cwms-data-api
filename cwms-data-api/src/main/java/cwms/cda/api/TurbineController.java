@@ -231,7 +231,7 @@ public final class TurbineController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Turbine successfully renamed in to CWMS.")
             },
-            path = "/projects/turbines{" + NAME + "}"
+            path = "/projects/turbines/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

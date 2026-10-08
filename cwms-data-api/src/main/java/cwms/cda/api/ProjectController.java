@@ -112,7 +112,7 @@ public class ProjectController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "request format is not"
                     + " implemented")},
         description = "Returns Projects Data",
-        tags = {TAG}, path = "/project")
+        tags = {TAG}, path = "/projects")
     @Override
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(GET_ALL)) {
@@ -170,7 +170,7 @@ public class ProjectController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")},
             description = "Retrieves requested Project", tags = {"Projects"},
-        path = "/peoject/{" + NAME + "}",
+        path = "/projects/{" + NAME + "}",
         methods = {HttpMethod.GET})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
