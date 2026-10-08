@@ -988,52 +988,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         boolean regularSeries = isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts);
         boolean hasMoreTrimmedRows = false;
         long effectiveIntervalOffset = intervalOffset;
-        Timestamp regularPageStart = null;
-        Timestamp regularPageEnd = null;
-        if (regularSeries && pageSize > 0) {
-            Timestamp firstObservedTime = null;
-            boolean needsFirstObservedTime = (requestParameters.isShouldTrim() && tsCursor == null)
-                    || intervalOffset == UTC_OFFSET_UNDEFINED;
-            if (needsFirstObservedTime) {
-                firstObservedTime = fetchFirstRequestedTimeSeriesTimestamp(tsCode, metadataOfficeId,
-                        metadataUnits, requestParameters, tsCursor);
-            }
-            effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts,
-                    firstObservedTime);
-
-            regularPageStart = tsCursor;
-            if (regularPageStart == null) {
-                regularPageStart = requestParameters.isShouldTrim() && firstObservedTime != null
-                        ? firstObservedTime
-                        : toOracleDateTimestamp(beginTime);
-            }
-            Timestamp requestWindowEnd = toOracleDateTimestamp(endTime);
-            regularPageEnd = calculateRegularPageEnd(regularPageStart, requestWindowEnd, pageSize,
-                    effectiveIntervalOffset, intervalMinutes, intervalPart, timeZoneId, isLrts);
-
-            if (requestParameters.isShouldTrim() && regularPageEnd.before(requestWindowEnd)) {
-                Timestamp afterPageEnd = Timestamp.from(regularPageEnd.toInstant().plusSeconds(1));
-                hasMoreTrimmedRows = fetchFirstRequestedTimeSeriesTimestamp(tsCode, metadataOfficeId,
-                        metadataUnits, requestParameters, afterPageEnd) != null;
-            }
+        Timestamp firstObservedTime = null;
+        if (regularSeries && (requestParameters.isShouldTrim() || intervalOffset == UTC_OFFSET_UNDEFINED)) {
+            firstObservedTime = fetchFirstRequestedTimeSeriesTimestamp(tsCode, metadataOfficeId,
+                    metadataUnits, requestParameters, null);
         }
-
-        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId,
-                metadataUnits, requestParameters, includeEntryDate,
-                pageSize > 0 ? maxPageRows : null, tsCursor, regularPageEnd);
-        if (regularSeries && pageSize <= 0) {
-            Timestamp firstObservedTime = rawRows.isEmpty() ? null : rawRows.get(0).getDateTime();
+        if (regularSeries) {
             effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts,
                     firstObservedTime);
         }
 
-        List<Timestamp> expectedTimes = fetchExpectedRegularTimes(intervalMinutes, effectiveIntervalOffset, timeZoneId,
-                intervalPart, isLrts, requestParameters, rawRows, regularPageStart, regularPageEnd,
-                maxPageRows, hasMoreTrimmedRows);
-        int mergedRows = countMergedRows(rawRows, expectedTimes);
-        // Exact merged totals require a full-window scan, so leave totals unknown when another page exists.
-        if (pageSize <= 0 || (cursor == null && mergedRows <= pageSize)) {
-            total = mergedRows;
+        if (total == null && pageSize >= 0) {
+            total = fetchDirectReadTotal(tsCode, metadataOfficeId, metadataUnits, requestParameters,
+                    regularSeries, effectiveIntervalOffset, intervalPart, timeZoneId, isLrts);
         }
 
         TimeSeries timeseries = new TimeSeries(
@@ -1055,6 +1022,54 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         if (pageSize == 0) {
             return timeseries;
+        }
+
+        Timestamp regularPageStart = null;
+        Timestamp regularPageEnd = null;
+        if (regularSeries && pageSize > 0) {
+            regularPageStart = tsCursor;
+            if (regularPageStart == null) {
+                regularPageStart = requestParameters.isShouldTrim() && firstObservedTime != null
+                        ? firstObservedTime
+                        : toOracleDateTimestamp(beginTime);
+            }
+            Timestamp requestWindowEnd = toOracleDateTimestamp(endTime);
+            regularPageEnd = calculateRegularPageEnd(regularPageStart, requestWindowEnd, pageSize,
+                    effectiveIntervalOffset, intervalMinutes, intervalPart, timeZoneId, isLrts);
+
+            if (requestParameters.isShouldTrim() && regularPageEnd.before(requestWindowEnd)) {
+                Timestamp afterPageEnd = Timestamp.from(regularPageEnd.toInstant().plusSeconds(1));
+                hasMoreTrimmedRows = fetchFirstRequestedTimeSeriesTimestamp(tsCode, metadataOfficeId,
+                        metadataUnits, requestParameters, afterPageEnd) != null;
+            }
+        }
+
+        List<TimeSeries.Record> rawRows = fetchRequestedTimeSeriesRows(tsCode, metadataOfficeId,
+                metadataUnits, requestParameters, includeEntryDate,
+                pageSize > 0 ? maxPageRows : null, tsCursor, regularPageEnd);
+
+        List<Timestamp> expectedTimes = fetchExpectedRegularTimes(intervalMinutes, effectiveIntervalOffset, timeZoneId,
+                intervalPart, isLrts, requestParameters, rawRows, regularPageStart, regularPageEnd,
+                maxPageRows, hasMoreTrimmedRows);
+        int mergedRows = countMergedRows(rawRows, expectedTimes);
+        if (pageSize < 0) {
+            total = mergedRows;
+            timeseries = new TimeSeries(
+                    cursor,
+                    pageSize,
+                    total,
+                    tsId,
+                    metadataOfficeId,
+                    beginTime,
+                    endTime,
+                    metadataUnits,
+                    resolveIntervalDuration(intervalMinutes, intervalOffset, intervalPart, isLrts),
+                    verticalDatumInfo,
+                    effectiveIntervalOffset,
+                    timeZoneId,
+                    versionDate,
+                    finalDateVersionType
+            );
         }
 
         populateTimeSeriesValues(timeseries, rawRows, expectedTimes, tsCursor, includeEntryDate);
@@ -1237,6 +1252,140 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 .limit(1);
         logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
         return query.fetchOne(0, Timestamp.class);
+    }
+
+    private int fetchDirectReadTotal(long tsCode, String officeId, String requestedUnits,
+                                     TimeSeriesRequestParameters requestParameters,
+                                     boolean regularSeries, long intervalOffset, String intervalPart,
+                                     String timeZoneId, boolean isLrts) {
+        Table<?> selectedTimestamps = buildSelectedTimestampTable(tsCode, officeId, requestedUnits,
+                requestParameters);
+        Field<Timestamp> dateTime = selectedTimestamps.field(DATE_TIME, Timestamp.class);
+
+        Field<Integer> overlapCount = DSL.inline(0);
+        if (regularSeries) {
+            Interval interval = resolveExpectedInterval(intervalPart);
+            Condition onInterval;
+            if (interval != null && interval.isLessThanMonthly()) {
+                Field<Timestamp> intervalTime = isLrts
+                        ? CWMS_UTIL_PACKAGE.call_CHANGE_TIMEZONE(
+                                dateTime, DSL.val(UTC), DSL.val(timeZoneId))
+                        : dateTime;
+                Field<BigDecimal> wallClockSeconds = DSL.field(
+                        "round(({0} - date '1970-01-01') * 86400)", BigDecimal.class, intervalTime);
+                onInterval = DSL.condition("mod({0} - {1}, {2}) = 0", wallClockSeconds,
+                        DSL.val(TimeUnit.MINUTES.toSeconds(intervalOffset)), DSL.val(interval.getSeconds()));
+            } else {
+                String intervalTimeZone = isLrts ? timeZoneId : UTC;
+                Field<Timestamp> expectedTime = CWMS_TS_PACKAGE.call_TOP_OF_INTERVAL_UTC(
+                        dateTime, DSL.val(intervalPart), DSL.val(intervalTimeZone), DSL.val("F"));
+                onInterval = dateTime.eq(DSL.field("{0} + numtodsinterval({1}, 'MINUTE')",
+                        Timestamp.class, expectedTime, DSL.val(intervalOffset)));
+            }
+            overlapCount = countDistinct(DSL.when(onInterval, dateTime));
+        }
+
+        ResultQuery<org.jooq.Record4<Integer, Timestamp, Timestamp, Integer>> query = dsl.select(
+                        DSL.count(), DSL.min(dateTime), DSL.max(dateTime), overlapCount)
+                .from(selectedTimestamps);
+        logger.atFine().log("%s", lazy(() -> query.getSQL(ParamType.INLINED)));
+        org.jooq.Record4<Integer, Timestamp, Timestamp, Integer> counts = query.fetchOne();
+        int rawCount = counts == null || counts.value1() == null ? 0 : counts.value1();
+        if (!regularSeries) {
+            return rawCount;
+        }
+
+        boolean shouldTrim = requestParameters.isShouldTrim();
+        if (shouldTrim && rawCount == 0) {
+            return 0;
+        }
+        Timestamp rangeStart = shouldTrim
+                ? counts.value2()
+                : toOracleDateTimestamp(requestParameters.getBeginTime());
+        Timestamp rangeEnd = shouldTrim
+                ? counts.value3()
+                : toOracleDateTimestamp(requestParameters.getEndTime());
+        int expectedCount = countExpectedRegularTimes(rangeStart, rangeEnd, intervalOffset,
+                intervalPart, timeZoneId, isLrts);
+        int overlappingRawTimes = counts.value4() == null ? 0 : counts.value4();
+        // Regular responses are the union of scheduled timestamps and selected raw timestamps.
+        return Math.addExact(expectedCount, rawCount - overlappingRawTimes);
+    }
+
+    private Table<?> buildSelectedTimestampTable(long tsCode, String officeId, String requestedUnits,
+                                                   TimeSeriesRequestParameters requestParameters) {
+        AV_TSV_DQU view = AV_TSV_DQU.AV_TSV_DQU;
+        Field<Timestamp> dateTime = field(name("CWMS_20", "AV_TSV_DQU", DATE_TIME), Timestamp.class);
+        Field<Timestamp> versionDate = field(name("CWMS_20", "AV_TSV_DQU", VERSION_DATE), Timestamp.class);
+        Condition condition = buildTsvDquBaseCondition(view, dateTime, tsCode, officeId, requestedUnits,
+                requestParameters, null, null);
+
+        if (requestParameters.getVersionDate() != null) {
+            return dsl.select(dateTime.as(DATE_TIME))
+                    .from(view)
+                    .where(condition.and(buildVersionDateCondition(versionDate,
+                            requestParameters.getVersionDate())))
+                    .asTable("selected_timestamps");
+        }
+
+        Table<?> rankedTimestamps = dsl.select(
+                        dateTime.as(DATE_TIME),
+                        DSL.rowNumber()
+                                .over(partitionBy(dateTime)
+                                        .orderBy(versionDate.desc(), view.DATA_ENTRY_DATE.desc()))
+                                .as("version_rank"))
+                .from(view)
+                .where(condition)
+                .asTable("ranked_timestamps");
+        Field<Timestamp> rankedDateTime = rankedTimestamps.field(DATE_TIME, Timestamp.class);
+        Field<Integer> versionRank = rankedTimestamps.field("version_rank", Integer.class);
+        return dsl.select(rankedDateTime.as(DATE_TIME))
+                .from(rankedTimestamps)
+                .where(versionRank.eq(1))
+                .asTable("selected_timestamps");
+    }
+
+    private int countExpectedRegularTimes(Timestamp rangeStart, Timestamp rangeEnd, long intervalOffset,
+                                          String intervalPart, String timeZoneId, boolean isLrts) {
+        if (rangeStart.after(rangeEnd)) {
+            return 0;
+        }
+
+        Interval expectedInterval = resolveExpectedInterval(intervalPart);
+        if (expectedInterval != null) {
+            IntervalOffset expectedOffset = IntervalOffset.fromSeconds(Math.toIntExact(
+                    TimeUnit.MINUTES.toSeconds(intervalOffset)));
+            ZoneId expectedTimeZone = getExpectedTimeZone(timeZoneId, isLrts);
+            try {
+                Instant firstTime = expectedInterval.getTimeOnNextOrCurrentInterval(rangeStart.toInstant(),
+                        expectedOffset, expectedTimeZone);
+                if (firstTime.isAfter(rangeEnd.toInstant())) {
+                    return 0;
+                }
+                if (isLrts) {
+                    // Local intervals can cross offset changes, so count with the value path's calendar stepping.
+                    int count = 0;
+                    Instant nextTime = firstTime;
+                    while (!nextTime.isAfter(rangeEnd.toInstant())) {
+                        count = Math.incrementExact(count);
+                        nextTime = expectedInterval.getNextIntervalTime(nextTime, expectedTimeZone);
+                    }
+                    return count;
+                }
+                return Math.toIntExact(expectedInterval.getNumIntervalPoints(firstTime, rangeEnd.toInstant(),
+                        expectedTimeZone));
+            } catch (mil.army.usace.hec.metadata.DataSetIllegalArgumentException ex) {
+                throw new IllegalArgumentException("Unable to count expected times for " + intervalPart, ex);
+            }
+        }
+
+        String intervalTimeZone = isLrts ? timeZoneId : UTC;
+        DATE_RANGE_T dateRange = new DATE_RANGE_T(rangeStart, rangeEnd, UTC, "T", "T", null);
+        Field<DATE_TABLE_TYPE> expectedTimes = CWMS_TS_PACKAGE.call_GET_REG_TS_TIMES_UTC_F(
+                dateRange, intervalPart, String.valueOf(intervalOffset), intervalTimeZone);
+        Field<Integer> expectedCount = DSL.field("cardinality({0})", Integer.class, expectedTimes);
+        Integer count = dsl.select(expectedCount).fetchOne(0, Integer.class);
+        return count == null ? 0 : count;
     }
 
     private ResultQuery<org.jooq.Record4<Timestamp, Double, BigDecimal, Timestamp>> buildMaxVersionRowsQuery(

@@ -366,9 +366,21 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             seriesId, "ft", beginTime, endTime, 10, false, null, true));
 
         assertEquals(10, response.getValues().size(), "values size");
+        int expectedTotal = Math.toIntExact(Duration.between(beginTime, endTime).toMinutes() + 1L);
+        assertEquals(expectedTotal, response.getTotal(), "total");
         assertNotNull(response.getValues().get(0).getValue(), "first value");
         assertNull(response.getValues().get(1).getValue(), "first gap value");
         assertNotNull(response.getNextPage(), "next-page");
+
+        TimeSeries countOnlyResponse = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 0, false, null, true));
+
+        assertEquals(0, countOnlyResponse.getPageSize(), "count-only page-size");
+        assertNotNull(countOnlyResponse.getValues(), "count-only values");
+        assertEquals(0, countOnlyResponse.getValues().size(), "count-only values size");
+        assertEquals(expectedTotal, countOnlyResponse.getTotal(), "count-only total");
+        assertNull(countOnlyResponse.getPage(), "count-only page");
+        assertNull(countOnlyResponse.getNextPage(), "count-only next-page");
     }
 
     @Test
@@ -388,6 +400,8 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
         assertEquals(10, firstPage.getValues().size(), "first page values size");
         assertEquals(10, secondPage.getValues().size(), "second page values size");
+        assertEquals(rowCount, firstPage.getTotal(), "first page total");
+        assertEquals(rowCount, secondPage.getTotal(), "second page total");
         assertEquals(firstPage.getValues().get(9).getDateTime().toInstant().plusSeconds(60),
             secondPage.getValues().get(0).getDateTime().toInstant(), "page boundary");
         assertNotNull(firstPage.getNextPage(), "first next-page");
