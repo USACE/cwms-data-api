@@ -1,4 +1,4 @@
-package cwms.cda;
+package fixtures;
 
 import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.eclipse.jetty.session.ManagedSession;
