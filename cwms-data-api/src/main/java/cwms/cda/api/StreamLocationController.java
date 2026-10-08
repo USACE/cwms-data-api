@@ -98,7 +98,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             },
             description = "Returns matching CWMS Stream Location Data for a Reservoir Project.",
             tags = {TAG},
-            path = "/stream-loations",
+            path = "/stream-locations",
             methods = {HttpMethod.GET}
     )
     @Override

@@ -85,7 +85,7 @@ public class ParametersController implements CrudHandler {
             }),
         },
         tags = {"Parameters"},
-        path = "/paramters"
+        path = "/parameters"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
