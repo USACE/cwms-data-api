@@ -39,6 +39,7 @@ import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JsonRatingUtils;
+import cwms.cda.data.dto.rating.document.RatingsDocument;
 import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.formatters.ContentType;
@@ -134,7 +135,8 @@ public class RatingLatestController implements Handler {
             ratingSet = ratingDao.retrieveLatestXML(officeId, rating);
 
             if (contentType.toString().equals(Formats.JSONV2)) {
-                ratingSet = JsonRatingUtils.xmlToJson(ratingSet);
+                RatingsDocument ratings = JsonRatingUtils.readXml(ratingSet);
+                ratingSet = JsonRatingUtils.writeJson(ratings);
             }
         }
 

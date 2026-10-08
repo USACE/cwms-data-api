@@ -20,10 +20,6 @@
 
 package cwms.cda.api.location.kind;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.STATUS_201;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
@@ -44,6 +40,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import static cwms.cda.api.Controllers.*;
 
 
 public class GateChangeCreateController extends BaseHandler {
@@ -60,8 +57,13 @@ public class GateChangeCreateController extends BaseHandler {
             },
             required = true),
         queryParams = {
-            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                description = "Create will fail if provided Gate Changes already exist. Default: true")
+            @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class,
+                    description = "A flag ('True'/'False') specifying whether to delete protected data. "
+                            + "Default is True"),
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class, deprecated = true,
+                    description = "A flag ('True'/'False') specifying whether to delete protected data. "
+                            + "Default is True"
+                            + "  Deprecated, use " + OVERRIDE_PROTECTION)
         },
         description = "Create CWMS Gate Changes",
         method = HttpMethod.POST,
@@ -72,7 +74,7 @@ public class GateChangeCreateController extends BaseHandler {
     )
     @Override
     public void handle(@NotNull Context context) throws Exception {
-        boolean failIfExists = context.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+        boolean overrideProtection = queryParamAsClass(context, new String[] { OVERRIDE_PROTECTION, FAIL_IF_EXISTS }, Boolean.class, true);
         String formatHeader = context.header(Header.ACCEPT) != null ? context.header(Header.ACCEPT) : Formats.JSONV1;
         ContentType contentType = Formats.parseHeader(formatHeader, GateChange.class);
         List<GateChange> changes = Formats.parseContentList(contentType, context.body(), GateChange.class);
@@ -83,7 +85,7 @@ public class GateChangeCreateController extends BaseHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = JooqDao.getDslContext(context);
             OutletDao dao = new OutletDao(dsl);
-            dao.storeOperationalChanges(changes, failIfExists);
+            dao.storeOperationalChanges(changes, overrideProtection);
             context.status(HttpServletResponse.SC_CREATED);
         }
     }

@@ -3,6 +3,9 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -52,7 +55,10 @@ public final class UserListMembersController implements Handler {
                 content = {
                     @OpenApiContent(from = UserListMembers.class, type = Formats.JSON)
                 }
-            )
+            ),
+            @OpenApiResponse(status = STATUS_400, description = "A list parameter is missing or invalid."),
+            @OpenApiResponse(status = STATUS_404, description = "User list not found."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")

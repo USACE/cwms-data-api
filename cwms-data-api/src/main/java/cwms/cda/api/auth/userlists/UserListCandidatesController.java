@@ -2,6 +2,8 @@ package cwms.cda.api.auth.userlists;
 
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
@@ -38,7 +40,9 @@ public final class UserListCandidatesController implements Handler {
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
-                content = @OpenApiContent(from = UserListCandidates.class, type = Formats.JSON))
+                content = @OpenApiContent(from = UserListCandidates.class, type = Formats.JSON)),
+            @OpenApiResponse(status = STATUS_400, description = "Search or page-size is missing or invalid."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Search existing CWMS users for user-list membership.",
