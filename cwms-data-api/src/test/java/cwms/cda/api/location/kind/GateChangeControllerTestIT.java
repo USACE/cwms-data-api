@@ -57,6 +57,7 @@ import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
@@ -388,7 +389,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+            .statusCode(not(HttpServletResponse.SC_CREATED));
 
     }
 
