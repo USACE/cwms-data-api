@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -289,7 +290,8 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
     @Test
     void pageSizeNegativeOneReturnsWholeWindowWithoutPagination() throws Exception {
-        List<SeedRow> rows = denseRows();
+        List<SeedRow> rows = new ArrayList<>(denseRows());
+        rows.add(row("2024-01-01T00:04:30Z", 7.0, 0, "2024-01-02T00:06:00Z", null));
         Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
         Instant endTime = Instant.parse("2024-01-01T00:05:00Z");
         seedTimeSeries("ITPARALL", "ITPARALL.Stage.Inst.1Minute.0.BENCH", rows, false);
@@ -310,6 +312,135 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         assertEquals(rows.size(), response.getTotal(), "total");
         assertNull(response.getPage(), "page");
         assertNull(response.getNextPage(), "next-page");
+    }
+
+    @Test
+    void pagedRegularReadPreservesLongGapAcrossCursors() throws Exception {
+        String seriesId = "ITPARPAGE.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-01-01T00:09:00Z");
+        seedTimeSeries("ITPARPAGE", seriesId, longGapRows(), false);
+        TimeSeries unpaged = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, -1, false, null, true);
+
+        List<TimeSeries.Record> values = new ArrayList<>();
+        String page = null;
+        int pageCount = 0;
+        do {
+            TimeSeries response = fetchCdaRowsWithPageSize(
+                seriesId,
+                "ft",
+                beginTime,
+                endTime,
+                3,
+                false,
+                null,
+                true,
+                null,
+                page
+            );
+            pageCount++;
+            values.addAll(response.getValues());
+            page = response.getNextPage();
+        } while (page != null);
+
+        assertEquals(4, pageCount, "page count");
+        assertEquals(unpaged.getValues().size(), values.size(), "values size");
+        for (int index = 0; index < values.size(); index++) {
+            assertRecordsEqual(unpaged.getValues().get(index), values.get(index), index);
+        }
+        assertNull(values.get(3).getValue(), "first gap value");
+        assertNull(values.get(4).getValue(), "second gap value");
+    }
+
+    @Test
+    void fixedIntervalPagingCountsOffGridObservationBeyondFirstPage() throws Exception {
+        String seriesId = "ITPAROFFGRID.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-01-01T00:05:00Z");
+        seedTimeSeries("ITPAROFFGRID", seriesId, List.of(
+            row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-02T00:00:00Z", null),
+            row("2024-01-01T00:04:30Z", 2.0, 0, "2024-01-02T00:01:00Z", null)
+        ), false);
+
+        TimeSeries firstPage = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 3, false, null, false);
+        TimeSeries secondPage = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 3, false, null, false, null,
+            firstPage.getNextPage());
+        TimeSeries countOnly = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 0, false, null, false);
+
+        int expectedTotal = 7;
+        assertEquals(expectedTotal, firstPage.getTotal(), "first page total");
+        assertEquals(expectedTotal, secondPage.getTotal(), "second page total");
+        assertNotNull(firstPage.getNextPage(), "first next-page");
+        assertNotNull(secondPage.getValues().get(2).getValue(), "off-grid value");
+        assertEquals(0, countOnly.getPageSize(), "count-only page-size");
+        assertEquals(0, countOnly.getValues().size(), "count-only values size");
+        assertEquals(expectedTotal, countOnly.getTotal(), "count-only total");
+    }
+
+    @Test
+    void smallPageFromYearLongSparseRegularSeriesCompletesWithoutScanningWindow() throws Exception {
+        String seriesId = "ITPARLONGREG.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-12-31T23:59:00Z");
+        seedTimeSeries("ITPARLONGREG", seriesId, List.of(
+            row(beginTime.toString(), 1.0, 0, "2025-01-01T00:00:00Z", null),
+            row(endTime.toString(), 2.0, 0, "2025-01-01T00:01:00Z", null)
+        ), false);
+
+        TimeSeries response = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 10, false, null, true));
+
+        assertEquals(10, response.getValues().size(), "values size");
+        int expectedTotal = Math.toIntExact(Duration.between(beginTime, endTime).toMinutes() + 1L);
+        assertEquals(expectedTotal, response.getTotal(), "total");
+        assertNotNull(response.getValues().get(0).getValue(), "first value");
+        assertNull(response.getValues().get(1).getValue(), "first gap value");
+        assertNotNull(response.getNextPage(), "next-page");
+
+        TimeSeries countOnlyResponse = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, 0, false, null, true));
+
+        assertEquals(0, countOnlyResponse.getPageSize(), "count-only page-size");
+        assertNotNull(countOnlyResponse.getValues(), "count-only values");
+        assertEquals(0, countOnlyResponse.getValues().size(), "count-only values size");
+        assertEquals(expectedTotal, countOnlyResponse.getTotal(), "count-only total");
+        assertNull(countOnlyResponse.getPage(), "count-only page");
+        assertNull(countOnlyResponse.getNextPage(), "count-only next-page");
+    }
+
+    @Test
+    void smallPagesFromLongIrregularSeriesRemainOrdered() throws Exception {
+        String seriesId = "ITPARLONGIRR.Flow.Inst.0.0.BENCH";
+        Instant beginTime = Instant.parse("2024-02-01T00:00:00Z");
+        int rowCount = 20_000;
+        Instant endTime = beginTime.plusSeconds((rowCount - 1L) * 60L);
+        seedTimeSeries("ITPARLONGIRR", seriesId,
+            regularRows(beginTime, rowCount, 1.0, Duration.ofDays(1)), false);
+
+        TimeSeries firstPage = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "cfs", beginTime, endTime, 10, false, null, true));
+        TimeSeries secondPage = assertTimeout(Duration.ofSeconds(10), () -> fetchCdaRowsWithPageSize(
+            seriesId, "cfs", beginTime, endTime, 10, false, null, true, null,
+            firstPage.getNextPage()));
+
+        assertEquals(10, firstPage.getValues().size(), "first page values size");
+        assertEquals(10, secondPage.getValues().size(), "second page values size");
+        assertNull(firstPage.getTotal(), "first page total");
+        assertNull(secondPage.getTotal(), "second page total");
+        for (int index = 1; index < 10; index++) {
+            assertEquals(firstPage.getValues().get(index - 1).getDateTime().toInstant().plusSeconds(60),
+                firstPage.getValues().get(index).getDateTime().toInstant(), "first page ordering");
+            assertEquals(secondPage.getValues().get(index - 1).getDateTime().toInstant().plusSeconds(60),
+                secondPage.getValues().get(index).getDateTime().toInstant(), "second page ordering");
+        }
+        assertEquals(firstPage.getValues().get(9).getDateTime().toInstant().plusSeconds(60),
+            secondPage.getValues().get(0).getDateTime().toInstant(), "page boundary");
+        assertNotNull(firstPage.getNextPage(), "first next-page");
+        assertNotNull(secondPage.getNextPage(), "second next-page");
     }
 
     @Test
@@ -409,6 +540,13 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
             row("2024-01-01T00:06:00Z", 7.0, 0, "2024-01-03T00:06:00Z", null),
             row("2024-01-01T00:07:00Z", 8.0, 0, "2024-01-03T00:07:00Z", null),
             row("2024-01-01T00:08:00Z", 9.0, 0, "2024-01-03T00:08:00Z", null),
+            row("2024-01-01T00:09:00Z", 10.0, 0, "2024-01-03T00:09:00Z", null)
+        );
+    }
+
+    private static List<SeedRow> longGapRows() {
+        return List.of(
+            row("2024-01-01T00:00:00Z", 1.0, 0, "2024-01-03T00:00:00Z", null),
             row("2024-01-01T00:09:00Z", 10.0, 0, "2024-01-03T00:09:00Z", null)
         );
     }
@@ -819,6 +957,15 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
                                                        Instant endTime, int pageSize, boolean includeEntryDate,
                                                        Instant versionDate, boolean trim, Boolean lrtsFormatting)
         throws Exception {
+        return fetchCdaRowsWithPageSize(seriesId, units, beginTime, endTime, pageSize, includeEntryDate,
+            versionDate, trim, lrtsFormatting, null);
+    }
+
+    private static TimeSeries fetchCdaRowsWithPageSize(String seriesId, String units, Instant beginTime,
+                                                       Instant endTime, int pageSize, boolean includeEntryDate,
+                                                       Instant versionDate, boolean trim, Boolean lrtsFormatting,
+                                                       String page)
+        throws Exception {
         RequestSpecification request = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -835,6 +982,9 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         }
         if (versionDate != null) {
             request = request.queryParam(Controllers.VERSION_DATE, versionDate.toString());
+        }
+        if (page != null) {
+            request = request.queryParam(Controllers.PAGE, page);
         }
 
         ExtractableResponse<Response> response = request.when()
