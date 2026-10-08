@@ -16,7 +16,7 @@
 /**
  * This file was pulled in from 
  * https://raw.githubusercontent.com/remkop/picocli/refs/heads/main/src/main/java/picocli/CommandLine.java
- * Do *NOT* already the license header.
+ * Do *NOT* alter the license header.
  */
 package picocli;
 
