@@ -10,12 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.eclipse.jetty.security.AuthenticationState;
-import org.eclipse.jetty.security.ServerAuthException;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Response;
-import org.eclipse.jetty.util.Callback;
-
 public final class Authenticator implements Handler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private final ArrayList<IdentityProvider> providers = new ArrayList<>();

@@ -34,6 +34,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.UnsupportedParametersException;
@@ -266,7 +268,7 @@ public class CatalogController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = JooqDao.getDslContext(ctx);
 
-            String valDataSet = ctx.appData(new Key<PolicyFactory>("PolicyFactory")).sanitize(dataSet); // TODO: key constant
+            String valDataSet = ctx.appData(CwmsDataApiAttributes.POLICY_FACTORY_KEY).sanitize(dataSet);
 
             String cursor = queryParamAsClass(ctx, new String[] {PAGE, CURSOR},
                 String.class, "", metrics, name(CatalogController.class.getName(), GET_ONE));
