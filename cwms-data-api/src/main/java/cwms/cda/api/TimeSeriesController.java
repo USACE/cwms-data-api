@@ -731,7 +731,9 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
             var bodyTsId = timeSeries.getName();
-            if (!timeseries.equals(bodyTsId)) {
+            // allow case insensitivity. Otherwise expect them to match
+            // E.g. no mixing and matching 1DayLocal with ~1Day differences.
+            if (!timeseries.equalsIgnoreCase(bodyTsId)) {
                 throw new InvalidItemException(
                 "Provided object time series name and path url time series name do not match.", null);
             }

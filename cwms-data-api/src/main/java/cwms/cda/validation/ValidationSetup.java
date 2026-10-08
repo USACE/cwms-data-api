@@ -19,7 +19,6 @@ public final class ValidationSetup {
 
     public static void registerValidation(ValidationConfig validation) {
         validation.register(UnitSystem.class, UnitSystem::systemFor);
-        validation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);    
         validation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
         validation.register(VersionType.class, VersionType::versionTypeFor);
         validation.register(StoreRule.class, StoreRule::getStoreRule);

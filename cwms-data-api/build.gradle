@@ -10,8 +10,6 @@ configurations {
     ui
     docker
     baseLibs
-    tomcatLibs
-    testImplementation.extendsFrom(tomcatLibs)
     jooqCodegenLatest
     jooqCodegenLegacy
 }
@@ -195,7 +193,7 @@ test {
         excludeTags "integration"
     }
     classpath += configurations.baseLibs
-    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback-tests.xml"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback-test.xml"
 }
 
 description = 'CWMS-Data-API'
@@ -246,7 +244,6 @@ tasks.register('seedDevApiKeys', JavaExec) {
 
     classpath = sourceSets.test.runtimeClasspath
     classpath += configurations.baseLibs
-    classpath += configurations.tomcatLibs
 
     mainClass = "fixtures.SeedDevApiKeys"
 
@@ -281,8 +278,7 @@ task timeseriesReadBenchmark(type: JavaExec) {
 
     workingDir = projectDir
     classpath = sourceSets.test.runtimeClasspath
-    classpath += configurations.baseLibs
-    classpath += configurations.tomcatLibs
+    classpath += configurations.baseLibs    
 
     mainClass = "helpers.TimeSeriesReadBenchmark"
 
