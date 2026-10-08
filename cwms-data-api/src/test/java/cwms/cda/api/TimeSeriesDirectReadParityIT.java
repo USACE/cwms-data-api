@@ -290,7 +290,8 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
 
     @Test
     void pageSizeNegativeOneReturnsWholeWindowWithoutPagination() throws Exception {
-        List<SeedRow> rows = denseRows();
+        List<SeedRow> rows = new ArrayList<>(denseRows());
+        rows.add(row("2024-01-01T00:04:30Z", 7.0, 0, "2024-01-02T00:06:00Z", null));
         Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
         Instant endTime = Instant.parse("2024-01-01T00:05:00Z");
         seedTimeSeries("ITPARALL", "ITPARALL.Stage.Inst.1Minute.0.BENCH", rows, false);

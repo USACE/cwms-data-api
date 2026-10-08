@@ -1021,7 +1021,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
 
         Future<Integer> totalQueryFuture = CompletableFuture.completedFuture(total);
         long totalQueryDeadlineNanos = Long.MAX_VALUE;
-        if (regularSeries && total == null) {
+        if (regularSeries && total == null && pageSize >= 0) {
             if (effectiveWindowStart == null || effectiveWindowEnd == null) {
                 totalQueryFuture = CompletableFuture.completedFuture(0);
             } else {
@@ -1081,7 +1081,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         if (!regularSeries && (pageSize < 0 || (cursor == null && rawRows.size() <= pageSize))) {
             total = rawRows.size();
         }
-        if (regularSeries) {
+        if (regularSeries && pageSize < 0) {
+            total = countMergedRows(rawRows, expectedTimes);
+        } else if (regularSeries) {
             total = resolveTotalQueryFuture(totalQueryFuture, totalQueryDeadlineNanos,
                     names, office, beginTime, endTime);
         }
@@ -1584,6 +1586,26 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         }
 
         return Duration.ZERO;
+    }
+
+    private int countMergedRows(List<TimeSeries.Record> rawRows, List<Timestamp> expectedTimes) {
+        int rawIndex = 0;
+        int expectedIndex = 0;
+        int overlapCount = 0;
+        while (rawIndex < rawRows.size() && expectedIndex < expectedTimes.size()) {
+            int comparison = compareTimestampOrder(
+                    rawRows.get(rawIndex).getDateTime(), expectedTimes.get(expectedIndex));
+            if (comparison < 0) {
+                rawIndex++;
+            } else if (comparison > 0) {
+                expectedIndex++;
+            } else {
+                overlapCount++;
+                rawIndex++;
+                expectedIndex++;
+            }
+        }
+        return Math.toIntExact((long) rawRows.size() + expectedTimes.size() - overlapCount);
     }
 
     private void populateTimeSeriesValues(TimeSeries timeseries,
