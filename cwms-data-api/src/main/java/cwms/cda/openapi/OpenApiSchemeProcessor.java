@@ -34,7 +34,8 @@ public class OpenApiSchemeProcessor {
                     api.withGlobalSecurity(identityProvider.getName());
                 }
             });
-            api.withGlobalSecurity("");
+            
+            api.withGlobalSecurity("", c -> c.getScopes().clear());
         }
         return api;
     }

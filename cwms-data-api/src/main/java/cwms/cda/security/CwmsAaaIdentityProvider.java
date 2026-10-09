@@ -22,6 +22,7 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
 
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     private static final String SESSION_COOKIE_NAME = "JSESSIONIDSSO";
+    public static final String NAME =  "CwmsAAACacAuth";
 
     private DataApiPrincipal getApiPrincipal(Context ctx) {
         Optional<String> user = getUser(ctx);
@@ -70,7 +71,7 @@ public class CwmsAaaIdentityProvider implements IdentityProvider {
 
     @Override
     public String getName() {
-        return "CwmsAAACacAuth";
+        return NAME;
     }
 
     @Override

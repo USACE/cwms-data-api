@@ -399,11 +399,19 @@ public final class CwmsDataApi {
                 CwmsDataApi.this.schemeProcessor.apply(null, builder);
                 builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
                 builder.server(server -> server.url(appContext));
+                config.unsafe.internalRouter.allHttpHandlers().forEach(handler -> {
+                    var endpoint = handler.endpoint;
+                    
+                    logger.atInfo()
+                          .log("Handler Method = %s, class = %s",
+                          endpoint.method, endpoint.handler.getClass().getName());
+                });
             });
             openapi.definitionProcessor = json -> {
                 json.get("paths")
                     .forEach(pathNode -> {
                         pathNode.forEach(methodNode -> {
+                            
                             mutateResponseNode(methodNode.get("responses"));
                         });
                     });
