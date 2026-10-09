@@ -128,8 +128,8 @@ public class RatingController extends BaseCrudHandler {
         description = "Create new RatingSet",
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(type = Formats.XMLV2, from = RatingAliasMarker.class),
-                @OpenApiContent(type = Formats.JSONV2, from = RatingAliasMarker.class)
+                @OpenApiContent(type = Formats.XMLV2, from = RatingsDocument.class),
+                @OpenApiContent(type = Formats.JSONV2, from = RatingsDocument.class)
         },
         required = true),
         queryParams = {
