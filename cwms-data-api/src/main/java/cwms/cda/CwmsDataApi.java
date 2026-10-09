@@ -25,8 +25,10 @@
 package cwms.cda;
 
 import com.codahale.metrics.MetricRegistry;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
 import com.zaxxer.hikari.HikariConfig;
@@ -392,7 +394,15 @@ public final class CwmsDataApi {
                 builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
                 builder.server(server -> server.url(appContext));
             });
-            
+            openapi.definitionProcessor = json -> {
+                json.get("paths")
+                    .forEach(pathNode -> {
+                        pathNode.forEach(methodNode -> {
+                            mutateResponseNode(methodNode.get("responses"));
+                        });
+                    });
+                return json.toPrettyString();
+            };
         }));
 
         
@@ -407,16 +417,6 @@ public final class CwmsDataApi {
         //         api.getPaths().forEach((key,path) -> {
         //             setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
         //             setUserListTags(key, path);
-        //             // yeah, we really need to figure out how to update everything,
-        //             // this is supported as an annotation in newer versions.
-        //             if (key.startsWith("/rss")) {
-        //                 path.getGet().getResponses().forEach((p, r) -> {
-        //                     var retryAfter = new io.swagger.v3.oas.models.headers.Header();
-        //                     retryAfter.description(
-        //                         "Amount of time (in seconds) to wait before making the next request.");
-        //                     r.addHeaderObject(Header.RETRY_AFTER, retryAfter);
-        //                 });
-        //             }
         //         });
         //         Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();
         //         try (ScanResult scanResult = new ClassGraph()
@@ -453,28 +453,50 @@ public final class CwmsDataApi {
         //         });
         //         return api;
         //     })
-        //     .defaultDocumentation(doc -> {
-        //         doc.json("500", CdaError.class);
-        //         doc.json("400", CdaError.class);
-        //         doc.json("401", CdaError.class);
-        //         doc.json("403", CdaError.class);
-        //         doc.json("404", CdaError.class);
-        //         doc.json("429", CdaError.class);
-        //         doc.header(IS_NEW_LRTS,
-        //             Boolean.class,
-        //             p -> p.description(
-        //                 "If True, will use use the new 'Local Regular Time Series" 
-        //                 + " naming scheme. For example 1DayLocal. Instead of the original"
-        //                 + " PsuedoRegular based scheme, for example ~1DayLocal."
-        //                 + " NOTE: this parameter only applies to the input and output of"
-        //                 + " Time Series names. It is added to all endpoints and will be ignored" 
-        //                 + " when not required. Default values is false if not set.")
-        //         );
-        //     })
-        //     .activateAnnotationScanningFor("cwms.cda.api");
         // addEndpointExamples(ops);
         
 
+    }
+
+    /**
+     * Hack from https://github.com/javalin/javalin-openapi/issues/49 until javalin-openapi improves the process
+     * @param key
+     * @param child
+     * @return
+     */
+    private ObjectNode childNode(String key, ObjectNode child) {
+        final var objectMapper = this.app.unsafe.appDataManager.get(CwmsDataApiAttributes.OBJECT_MAPPER_KEY);
+        ObjectNode object = objectMapper.createObjectNode();
+        object.set(key, child);
+        return object;
+    }
+
+    private void mutateResponseNode(JsonNode node) {
+        final var objectMapper = this.app.unsafe.appDataManager.get(CwmsDataApiAttributes.OBJECT_MAPPER_KEY);
+        var mutableNode = (ObjectNode) node;
+        var schemaNode = objectMapper.createObjectNode();
+        schemaNode.put("$ref", "#/components/schemas/CdaError");
+        var error500 = buildError("Server error", schemaNode);
+        var error503 = buildError("Service unavailable", schemaNode);
+        var error400 = buildError("Bad User input", schemaNode);
+        var error401 = buildError("Not Authenticated", schemaNode);
+        var error403 = buildError("Unauthorized", schemaNode);
+        var error404 = buildError("Not Found", schemaNode);
+        var error429 = buildError("Rate Limit", schemaNode);
+
+        mutableNode.putIfAbsent("400", error400);
+        mutableNode.putIfAbsent("401", error401);
+        mutableNode.putIfAbsent("403", error403);
+        mutableNode.putIfAbsent("404", error404);
+        mutableNode.putIfAbsent("429", error429);
+        mutableNode.putIfAbsent("500", error500);
+        mutableNode.putIfAbsent("503", error503);
+    }
+
+    private ObjectNode buildError(String description, ObjectNode schemaNode) {
+        var error = childNode("content", childNode("application/json", childNode("schema", schemaNode)));
+        error.put("description", description);
+        return error;
     }
 
     private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
