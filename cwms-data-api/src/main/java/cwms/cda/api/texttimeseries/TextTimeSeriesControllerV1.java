@@ -37,6 +37,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
@@ -81,6 +83,7 @@ public final class TextTimeSeriesControllerV1 extends TextTimeSeriesController {
                 @OpenApiParam(name = BEGIN, required = true, description = "The start of the time window"),
                 @OpenApiParam(name = END, required = true, description = "The end of the time window.")
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             responses = {
                 @OpenApiResponse(status = STATUS_200,
                     content = {
@@ -112,6 +115,7 @@ public final class TextTimeSeriesControllerV1 extends TextTimeSeriesController {
             @OpenApiParam(name = REPLACE_ALL, type = Boolean.class, description = "Whether to "
                     + "replace any and all existing text with the specified text. "
                     + "Default is " + DEFAULT_CREATE_REPLACE_ALL)},
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.POST,
         tags = {TAG},
         path = "/timeseries/text"
@@ -137,6 +141,7 @@ public final class TextTimeSeriesControllerV1 extends TextTimeSeriesController {
                     },
                     required = true
             ),
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             methods = HttpMethod.PATCH,
             tags = {TAG},
             path = "/timeseries/text/{" + NAME + "}"
@@ -181,6 +186,7 @@ public final class TextTimeSeriesControllerV1 extends TextTimeSeriesController {
             @OpenApiParam(name = VERSION_DATE, description = "The version date for the time "
                     + "series.  If not specified, maximum version date is used.")
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.DELETE,
         tags = {TAG},
         path = "/timeseries/text/{" + NAME + "}"

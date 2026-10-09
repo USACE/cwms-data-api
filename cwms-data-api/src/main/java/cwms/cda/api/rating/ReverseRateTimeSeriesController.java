@@ -37,6 +37,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -91,6 +93,7 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         description = "Reverse rates input values using CWMS ratings. The input format `RateInputTimeSeries` requires " +
             "a singular time series id corresponding to the dependent parameter in the rating curve. " +
             "The output format `RatedOutputTimeSeries` will contain a singular double array corresponding to the " +

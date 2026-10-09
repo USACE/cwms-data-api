@@ -30,6 +30,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.api.errors.CdaError;
@@ -109,7 +111,8 @@ public final class RssHandler extends BaseHandler {
         },
         headers = {
             @OpenApiParam (name = "Retry-After", type = Integer.class,
-                           description = "Amount of time (in seconds) to wait before making the next request.")
+                           description = "Amount of time (in seconds) to wait before making the next request."),
+            @OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION),
         },
         description = "Returns RSS feed items limited to the last week. End point is limited to 1 request per 10 seconds per client per feed.",
         tags = {TAG},

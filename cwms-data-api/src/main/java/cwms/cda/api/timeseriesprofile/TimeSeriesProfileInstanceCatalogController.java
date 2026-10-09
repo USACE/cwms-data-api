@@ -37,6 +37,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
@@ -75,6 +77,7 @@ public final class TimeSeriesProfileInstanceCatalogController extends TimeSeries
             @OpenApiParam(name = VERSION_MASK, description = "The version mask of the"
                 + " time series profile instance. Default is *"),
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.GET,
         summary = "Get all time series profile instances that match the provided masks. This endpoint will return a "
                 + "list of time series profile instances without the associated data. Data for an instance can be "

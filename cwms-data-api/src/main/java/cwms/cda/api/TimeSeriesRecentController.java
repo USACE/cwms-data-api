@@ -40,6 +40,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -126,6 +128,7 @@ public class TimeSeriesRecentController implements Handler {
             },
             path = "/timeseries/recent",
             description = "Returns CWMS Timeseries Groups Data",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = TimeSeriesController.TAG,
             methods = {HttpMethod.GET}
     )

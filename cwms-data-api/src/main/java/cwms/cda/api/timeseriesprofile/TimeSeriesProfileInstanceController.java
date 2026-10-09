@@ -52,6 +52,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
@@ -118,6 +120,7 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
             @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "The page size of the"
                 + " time series profile instance. Default is 500"),
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         pathParams = {
             @OpenApiParam(name = LOCATION_ID, description = "The location ID of the"
                     + " time series profile instance.", required = true),
