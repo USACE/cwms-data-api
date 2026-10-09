@@ -71,7 +71,7 @@ export default function KeyHelpGuide() {
           </ul>
         </KeyHelpStep>
         <KeyHelpStep number={3} title="Send an authenticated request">
-          <KeyUsageExample office={office} />
+          <KeyUsageExample />
         </KeyHelpStep>
         <KeyHelpStep number={4} title="Replace or revoke the key">
           <KeyReplacementSteps />
