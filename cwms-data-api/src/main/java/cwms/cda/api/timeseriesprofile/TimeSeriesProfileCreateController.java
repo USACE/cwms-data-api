@@ -32,6 +32,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
 import cwms.cda.formatters.Formats;
@@ -59,6 +61,7 @@ public final class TimeSeriesProfileCreateController extends TimeSeriesProfileBa
             @OpenApiParam(name = FAIL_IF_EXISTS, type = boolean.class, description = "If true, the parser will "
                 + "fail to save if the TimeSeriesProfile already exists. Default true."),
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.POST,
         summary = "Create a new time series profile",
         tags = {TAG},

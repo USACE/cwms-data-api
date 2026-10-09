@@ -44,6 +44,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.binarytimeseries.TimeSeriesBinaryDao;
@@ -189,6 +191,7 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
             queryParams = {
                 @OpenApiParam(name = REPLACE_ALL, type = Boolean.class)
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             methods = HttpMethod.POST,
             tags = {TAG},
             path = "/timeseries/binary"

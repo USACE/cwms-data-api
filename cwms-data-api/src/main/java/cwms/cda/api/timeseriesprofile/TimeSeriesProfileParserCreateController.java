@@ -32,6 +32,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserColumnar;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileParserIndexed;
@@ -67,6 +69,7 @@ public final class TimeSeriesProfileParserCreateController extends TimeSeriesPro
             },
             required = true
         ),
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.POST,
         summary = "Store a TimeSeriesProfile Parser",
         tags = {TAG},

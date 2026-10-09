@@ -46,6 +46,8 @@ import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
@@ -99,6 +101,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
                         + "inputs provided the timeseries group(s) were not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
             path = "/timeseries/groups")
     @Override

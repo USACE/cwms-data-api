@@ -40,6 +40,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -129,6 +131,7 @@ public class TimeSeriesRecentController implements Handler {
             description = "Returns CWMS Timeseries Groups Data. NOTE: as groups may be defined with restricted time series"
                         + "for internal use, instead of the whole request returning a 403 error the restricted data is"
                         + "instead silently removed so that rest of the group may be retrieved.",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = TimeSeriesController.TAG,
             methods = {HttpMethod.GET}
     )

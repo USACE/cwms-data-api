@@ -36,6 +36,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileParserDao;
@@ -84,6 +86,7 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                 + "implemented")
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.GET,
         summary = "Retrieve a list of TimeSeries Profile Parsers that match the provided mask parameters",
         tags = {TAG},
