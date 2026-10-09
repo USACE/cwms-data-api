@@ -26,6 +26,9 @@ import jakarta.servlet.http.HttpServletResponse;
 public final class OpenIdConnectIdentityProvider implements IdentityProvider {
     private static final FluentLogger log = FluentLogger.forEnclosingClass();
 
+
+    public static final String NAME = "OpenIDConnect";
+
     public static final String WELL_KNOWN_PROPERTY = "cwms.dataapi.access.openid.wellKnownUrl";
     public static final String CLIENT_ID = "cwms.dataapi.access.openid.clientId";
     public static final String IDP_HINT = "cwms.dataapi.access.openid.idpHint";
@@ -160,7 +163,7 @@ public final class OpenIdConnectIdentityProvider implements IdentityProvider {
 
     @Override
     public String getName() {
-        return "OpenIDConnect";
+        return NAME;
     }
 
     @Override

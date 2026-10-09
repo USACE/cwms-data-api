@@ -41,8 +41,10 @@ import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.JsonV1;
+import cwms.cda.security.CwmsAaaIdentityProvider;
 import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.OpenIdConnectIdentityProvider;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
@@ -97,6 +99,9 @@ public class ApiKeyController implements CrudHandler {
                 + "to the caller. A provided key will be ignored." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"},
         path = "/auth/keys",
+        security = {
+            @OpenApiSecurity(name = CwmsAaaIdentityProvider.NAME), @OpenApiSecurity (name = OpenIdConnectIdentityProvider.NAME)
+        },
         methods = {HttpMethod.POST}
     )
     @Override
