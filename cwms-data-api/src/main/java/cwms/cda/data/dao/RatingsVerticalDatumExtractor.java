@@ -19,12 +19,7 @@ public class RatingsVerticalDatumExtractor {
                 .flatMap(RatingsVerticalDatumExtractor::getVerticalDatumInfo)
                 .map(VerticalDatumInfo::getNativeDatum)
                 .filter(s -> !s.isEmpty())
-                .map(s -> {
-                    if (s.equalsIgnoreCase(VerticalDatum.OTHER.toString())) {
-                        throw new IllegalArgumentException("Vertical Datum of OTHER is not currently supported.");
-                    }
-                    return VerticalDatum.getVerticalDatum(s);
-                });
+                .map(VerticalDatum::getVerticalDatum);
     }
 
     public static Optional<VerticalDatumInfo> getVerticalDatumInfo(String ratingSet) {
