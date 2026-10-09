@@ -84,22 +84,6 @@ Duplicate handling is independent of ``store-rule``. The
 that is already stored.
 
 
-Opinions
-========
-
-Opinion 1
----------
-
-Summary: Adopt the four strategies and default described in this proposal.
-
-Charles Graham
-
-Defining duplicate handling at the API boundary gives every caller the same
-behavior. Defaulting to ``error`` avoids silently discarding or changing data,
-while the other strategies allow callers to make an explicit choice when their
-source data can contain collisions.
-
-
 Consequences
 ============
 
