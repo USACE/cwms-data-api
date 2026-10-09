@@ -203,6 +203,19 @@ application {
     applicationDefaultJvmArgs += "-Dlogback.configurationFile=logback.xml"
 }
 
+jar {
+    manifest {
+        attributes "build-version": project.version
+        attributes "Main-Class": 'cwms.cda.CwmsDataApi' // duplicating this here because doing this appears to interfere
+                                                        // with the application setup aove.
+    }
+    doFirst {
+        def manifestDir = layout.buildDirectory.dir("resources/main/META-INF").get()
+        manifestDir.asFile.mkdirs()
+        manifest.writeTo(manifestDir.file(("MANIFEST.MF")))
+    }
+}
+
 distributions {
     main {
         contents {
@@ -216,10 +229,10 @@ distributions {
 
 run() {
     dependsOn configurations.ui
+    dependsOn jar // to make sure the /META-INF/MANIFEST.MF is build to render the version
     classpath sourceSets.main.runtimeClasspath +
               configurations.baseLibs
 
-    mainClass = "cwms.cda.CwmsDataApi"    
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
 

@@ -13,7 +13,6 @@ import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jetty.session.DefaultSessionCache;
 import org.eclipse.jetty.session.NullSessionDataStore;
-import org.eclipse.jetty.ee10.servlet.SessionHandler;
 
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainers;
@@ -29,7 +28,6 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
 import com.google.common.flogger.FluentLogger;
 
 import cwms.cda.CwmsDataApi;
-import cwms.cda.TestSessionHandler;
 import cwms.cda.data.dao.Dao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.security.OpenIdConnectIdentityProvider;
