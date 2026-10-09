@@ -83,6 +83,7 @@ public class AccountingCatalogController implements Handler {
     private static final String TAG = "Pump Accounting";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
+    private static final int DEFAULT_ROW_LIMIT = 500;
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -117,7 +118,7 @@ public class AccountingCatalogController implements Handler {
             @OpenApiParam(name = ASCENDING, description = "Whether or not the entries should be returned "
                 + "in ascending order. Defaults to TRUE.", type = Boolean.class),
             @OpenApiParam(name = ROW_LIMIT, description = "The maximum number of rows to return. "
-                + "Defaults to 0, which means no limit.", type = Integer.class)
+                + "Defaults to " + DEFAULT_ROW_LIMIT + ".", type = Integer.class)
         },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office ID of the project the "
@@ -167,7 +168,15 @@ public class AccountingCatalogController implements Handler {
                 .getOrDefault(true);
             final boolean endInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
             final boolean ascending = ctx.queryParamAsClass(ASCENDING, Boolean.class).getOrDefault(true);
-            final int rowLimit = ctx.queryParamAsClass(ROW_LIMIT, Integer.class).getOrDefault(0);
+            final int rowLimit = ctx.queryParamAsClass(ROW_LIMIT, Integer.class).getOrDefault(DEFAULT_ROW_LIMIT);
+
+            if (rowLimit == 0) {
+                CdaError error = new CdaError("Unable to retrieve accounting - " + ROW_LIMIT + " must be greater than 0.");
+                LOGGER.atSevere().log("Unable to retrieve accounting - " + ROW_LIMIT + " must be greater than 0.");
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(error);
+                return;
+            }
+
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.headerAsClass(Header.ACCEPT, String.class).getOrDefault(Formats.JSONV1);
