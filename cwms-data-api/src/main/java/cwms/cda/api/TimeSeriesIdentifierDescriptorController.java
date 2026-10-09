@@ -31,6 +31,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
@@ -112,6 +114,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "inputs provided the time series identifier descriptors were not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             description = "Returns CWMS timeseries identifier descriptor"
                     + "Data. Currently includes aliased items in results.",
             tags = {TAG},
@@ -181,6 +184,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
             path = "/timeseries/identifier-descriptor/{" + TIMESERIES_ID + "}"
     )
@@ -240,6 +244,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             methods = {HttpMethod.POST},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
             path = "/timeseries/identifier-descriptor"
     )
@@ -292,6 +297,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = ACTIVE, type = Boolean.class,
                             description = "'True' or 'true' if the time series is active")
             }, tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             path = "/timeseries/identitifer-descriptor/{" + NAME + "}"
     )
     @Override
@@ -347,6 +353,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             description = "Deletes requested timeseries identifier",
             methods = {HttpMethod.DELETE},
             tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             path = "/timeseries/identifier/{" + TIMESERIES_ID + "}"
     )
     @Override

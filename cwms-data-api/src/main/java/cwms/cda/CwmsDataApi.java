@@ -145,6 +145,12 @@ public final class CwmsDataApi {
     public static final String CAC_USER = "cac_auth";
     public static final String DATABASE = "database";
     public static final String IS_NEW_LRTS = "X-CWMS-LRTS-Formatting";
+    public static final String LRTS_DESCRIPTION = """
+        If True, will use use the new 'Local Regular Time Series' naming scheme. For example 1DayLocal. Instead
+        of the original PsuedoRegular based scheme, for example ~1DayLocal. NOTE: this parameter only applies to
+        the input and output of Time Series names. It is added to all endpoints and will be ignored when not required.
+        Default values is false if not set.
+    """;
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13

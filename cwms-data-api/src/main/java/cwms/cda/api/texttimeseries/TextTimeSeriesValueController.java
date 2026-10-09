@@ -26,6 +26,8 @@ package cwms.cda.api.texttimeseries;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.RangeRequestUtil;
 import cwms.cda.data.dao.ClobDao;
@@ -67,6 +69,7 @@ public class TextTimeSeriesValueController extends BaseHandler {
                                     @OpenApiContent(from = String.class)
                             }
                     )},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TextTimeSeriesController.TAG},
             path = "/timeseries/text/{" + NAME + "}/value"
     )

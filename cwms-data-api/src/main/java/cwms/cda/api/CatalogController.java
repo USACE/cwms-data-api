@@ -35,6 +35,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
 
+import cwms.cda.CwmsDataApi;
 import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
@@ -258,6 +259,7 @@ public class CatalogController implements CrudHandler {
                 @OpenApiContent(from = Catalog.class, type = Formats.XML)
             })
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         security = {},
         tags = {TAG},
         path = "/catalog/{dataset}"

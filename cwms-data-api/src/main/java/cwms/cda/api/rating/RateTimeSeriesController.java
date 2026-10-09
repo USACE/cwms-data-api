@@ -35,6 +35,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.data.dao.RateDao;
 import cwms.cda.data.dto.rating.RateInputTimeSeries;
@@ -91,6 +93,7 @@ public final class RateTimeSeriesController extends BaseHandler {
             "each corresponding to an independent parameter in the rating curve." +
             "The output format `RatedOutputTimeSeries` will contain a singular double array corresponding to the " +
             "dependent parameter of the rating curve. ",
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.POST,
         tags = {TAG},
         path = "/ratings/rate-ts/{" + OFFICE + "}/{" + RATING_ID + "}"

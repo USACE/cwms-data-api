@@ -38,6 +38,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
@@ -76,6 +78,7 @@ public final class TimeSeriesProfileCatalogController extends TimeSeriesProfileB
             @OpenApiParam(name = PAGE, description = "The page cursor. Default is null"),
             @OpenApiParam(name = PAGE_SIZE, description = "The page size. Default is 500")
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.GET,
         summary = "Get a catalog of time series profiles",
         tags = {TAG},

@@ -39,6 +39,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -68,6 +70,7 @@ public final class TimeSeriesProfileDeleteController extends TimeSeriesProfileBa
                 @OpenApiParam(name = PARAMETER_ID, description = "The key parameter associated with the "
                     + "time series profile")
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             methods = HttpMethod.DELETE,
             summary = "Delete a time series profile",
             tags = {TAG},

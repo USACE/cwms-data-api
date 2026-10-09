@@ -41,6 +41,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.TimeSeries;
@@ -114,6 +116,7 @@ public class LevelsAsTimeSeriesController extends BaseHandler {
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             description = "Retrieves requested Location Level",
             tags = LevelsController.TAG,
             path = "/levels/{" + LEVEL_ID + "}/timeseries"

@@ -40,6 +40,8 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.PublishedRetrievalParameters;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -115,6 +117,7 @@ public final class PublishedController implements CrudHandler {
                             @OpenApiContent(type = Formats.JSONV1, from = LocationToPublishedDataList[].class)
                     })
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             description = "Returns matching time series identifiers for published data.",
             tags = {TAG},
             path = "/published",

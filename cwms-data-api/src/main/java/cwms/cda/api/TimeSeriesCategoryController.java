@@ -32,6 +32,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
@@ -88,6 +90,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                         + "implemented")}, description = "Returns CWMS timeseries category "
                         + "Data",
             tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             path = "/timeseries/category"
                     )
     @Override
@@ -143,6 +146,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries category", tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             path = "/timeseries/category/{" + CATEGORY_ID + "}")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String categoryId) {
@@ -194,6 +198,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
         },
         methods = {HttpMethod.POST},
         path = "/timeseries/category",
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         tags = {TAG}
     )
     @Override
@@ -231,6 +236,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
             },
         methods = {HttpMethod.PATCH},
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         tags = {TAG},
         path = "/timeseries/category/{" + CATEGORY_ID + "}"
     )
@@ -265,6 +271,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
         },
         methods = {HttpMethod.DELETE},
         tags = {TAG},
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         path = "/timeseries/category/{" + CATEGORY_ID + "}"
     )
     @Override

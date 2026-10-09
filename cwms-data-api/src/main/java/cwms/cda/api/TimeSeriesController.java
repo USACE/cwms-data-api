@@ -165,6 +165,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                         + "and should be converted to the as-stored datum before being saved.")
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             methods = {HttpMethod.POST},
             path = "/timeseries",
             tags = TAG
@@ -250,6 +251,7 @@ public class TimeSeriesController implements CrudHandler {
         },
         methods = {HttpMethod.DELETE},
         path = "/timeseries/{timeseries}",
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         tags = TAG
     )
     @Override
@@ -433,6 +435,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             methods = {HttpMethod.GET},
             security = @OpenApiSecurity(name = ""),
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             path = "/timeseries",
             tags = TAG
     )
@@ -720,6 +723,7 @@ public class TimeSeriesController implements CrudHandler {
             },
             methods = {HttpMethod.PATCH},
             path = "/timeseries/{" + TIMESERIES + "}",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = TAG
     )
     @Override

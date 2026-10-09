@@ -31,6 +31,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
@@ -73,6 +75,7 @@ public final class TimeSeriesProfileInstanceCreateController extends TimeSeriesP
             @OpenApiParam(name = VERSION, description = "The version of the"
                 + " time series profile instance.", required = true),
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.POST,
         summary = "Create a new time series profile instance by parsing provided data",
         tags = {TAG},
