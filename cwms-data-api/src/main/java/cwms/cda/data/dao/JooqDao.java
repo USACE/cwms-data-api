@@ -180,8 +180,11 @@ public abstract class JooqDao<T> extends Dao<T> {
         // Snapshot client-info and the requested office up front so the per-checkout
         // preparer lambdas don't capture the Javalin Context — async work (e.g. the
         // total-count future in TimeSeriesDaoImpl) can outlive the request facade.
+        logger.atInfo().log("%s", ctx.method());
+        final var matched = ctx.endpoints().matchedHttpEndpoint();
         final String module = (ctx.method() == HandlerType.BEFORE)
-                ? "BEFORE-HANDLER" : ctx.endpoints().matchedHttpEndpoint().path;
+                ? "BEFORE-HANDLER" :
+                (matched != null ? matched.path : "no matching path"); // NOSONAR
         final String action = ctx.method().name();
         final String clientId = ctx.url().replace(ctx.path(), "") + ctx.contextPath();
         DelegatingConnectionPreparer preparer = new DelegatingConnectionPreparer(
