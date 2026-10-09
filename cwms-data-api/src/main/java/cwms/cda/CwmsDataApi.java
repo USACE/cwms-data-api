@@ -59,13 +59,21 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import javax.sql.DataSource;
 
+import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.entity.ContentType;
@@ -138,7 +146,7 @@ public final class CwmsDataApi {
 
     // The VERSION should match the gradle version but not contain the patch version.
     // For example 2.4 not 2.4.13
-    private static String VERSION;
+    private static String VERSION = obtainFullVersion();
 
     public static final String APPLICATION_TITLE = "CWMS Data API";
     public static final String PROVIDER_KEY = "cwms.dataapi.access.provider";
@@ -161,7 +169,7 @@ public final class CwmsDataApi {
         final var appContext = args.length > 0 ? args[0] : "/cwms-data";
         final var uiPath = args.length > 1 ? args[1] : null;
         final var port = args.length > 2 ? Integer.parseInt(args[2]) : 7000;
-        System.out.println("Using Port " + port);
+        logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
         var ds = buildDataSource();
         var api = CwmsDataApi.builder()
                              .withContext(appContext)
@@ -170,14 +178,13 @@ public final class CwmsDataApi {
                              .withDataSource(ds)
                              .build();
         api.start();
+        logger.atInfo().log("Using listening on http://127.0.0.1:%d", api.getPort());
     }
     
     private CwmsDataApi(int port, String context, File uiWar, DataSource ds, SessionHandler sessionHandler) {
         this.port = port;
         this.appContext = context;
         logger.atInfo().log("Initializing Javalin.");
-        CwmsDataApi.VERSION = obtainFullVersion();
-        logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
 
         var totalRequests = metrics.meter("cwms.dataapi.total_requests");
         ObjectMapper om = new ObjectMapper();
@@ -305,7 +312,7 @@ public final class CwmsDataApi {
     }
 
     public void start() {
-        app.start(port);
+        app.start("127.0.0.1", port); // Always localhost, we only allow containerization or through proxy.
         logger.atInfo().log("Listening on port %d", getPort());
     }
 
@@ -322,8 +329,38 @@ public final class CwmsDataApi {
         ApiServletRouteConfiguration.configureRoutes(routes, metrics, requiredRoles, cdaAccessManager);
     }
 
-    private  String obtainFullVersion() {
-        return "99.99.99"; // TODO: actually get
+    /**
+     * Obtain the build version, whether from within the jar or the class files location during development.
+     * @return
+     */
+    private static String obtainFullVersion() {
+        final String manifestPath = "META-INF/MANIFEST.MF";
+        var loc = CwmsDataApi.class.getProtectionDomain().getCodeSource().getLocation();
+        String absoluteDiskPath = loc.getFile();
+        Path path = Paths.get(absoluteDiskPath);
+        Manifest manifest = null;
+        try {
+            if (absoluteDiskPath.endsWith("jar")) {
+                try (var jarFile = new JarFile(absoluteDiskPath)) {
+                    var entry = jarFile.getEntry(manifestPath);
+                    try (var is = jarFile.getInputStream(entry)) {
+                        manifest = new Manifest(is);
+                    }
+                }
+            } else {
+                // an unavoidable edge case. When run with way './gradew run' the jar itself is not referenced
+                // so the location is the build/classes/java/main instead of being embedded within a jar.
+                // adding this allows for correct rendering of the version when doing certain development.
+                try (var is = Files.newInputStream(path.resolve("../../../resources/main/").resolve(manifestPath))) {
+                    manifest = new Manifest(is);
+                }
+            }
+        
+        
+            return manifest.getMainAttributes().getValue("build-version");
+        } catch (IOException e) {
+            throw new RuntimeException("Error obtaining cda version", e);
+        }
     }
 
     private void getOpenApiOptions(JavalinConfig config, String appContext) {
