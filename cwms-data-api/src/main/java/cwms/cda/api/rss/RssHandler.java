@@ -107,6 +107,10 @@ public final class RssHandler extends BaseHandler {
             @OpenApiResponse(status = STATUS_404, description = "Unknown Feed"),
             @OpenApiResponse(status = STATUS_429, description = "Rate Limit exceeded.")
         },
+        headers = {
+            @OpenApiParam (name = "Retry-After", type = Integer.class,
+                           description = "Amount of time (in seconds) to wait before making the next request.")
+        },
         description = "Returns RSS feed items limited to the last week. End point is limited to 1 request per 10 seconds per client per feed.",
         tags = {TAG},
         path = "/rss/{" + OFFICE + "}/{" + NAME + "}"
