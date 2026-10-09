@@ -59,27 +59,26 @@ import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.HttpResponseException;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -113,7 +112,7 @@ public class LevelsController implements CrudHandler {
                         @OpenApiContent(from = LocationLevel.class, type = Formats.JSON),
                     },
                     required = true),
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             path = "/levels",
             tags = TAG
     )
@@ -142,10 +141,10 @@ public class LevelsController implements CrudHandler {
     }
 
     private LocationLevel deserializeLocationLevel(Context ctx) throws IOException {
-        String formatHeader = ctx.req.getContentType();
+        String formatHeader = ctx.contentType();
         ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
         StringWriter writer = new StringWriter();
-        IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
+        IOUtils.copy(ctx.bodyInputStream(), writer, StandardCharsets.UTF_8);
         String body = writer.toString();
         if (body.contains("constituent")) {
             return Formats.parseContent(contentType, body, VirtualLocationLevel.class);
@@ -184,8 +183,8 @@ public class LevelsController implements CrudHandler {
                         + "specified).If this field is not specified, the default time zone of UTC "
                         + "shall be used."),
             },
-            method = HttpMethod.DELETE,
-            path = "/levels",
+            methods = HttpMethod.DELETE,
+            path = "/levels/{" + LEVEL_ID + "}",
             tags = TAG)
     @Override
     public void delete(@NotNull Context ctx, @NotNull String levelId) {
@@ -276,7 +275,8 @@ public class LevelsController implements CrudHandler {
                     @OpenApiContent(from = LocationLevels.class, type = Formats.JSONV2),
                 })
             },
-            tags = TAG)
+            tags = TAG,
+            path = "/levels")
     @Override
     public void getAll(@NotNull Context ctx) {
 
@@ -333,7 +333,7 @@ public class LevelsController implements CrudHandler {
                 ctx.status(HttpServletResponse.SC_OK);
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 //Use the type string, not the full string with properties.
                 //i.e. application/json not application/json;version=1
@@ -350,7 +350,7 @@ public class LevelsController implements CrudHandler {
 
                 byte[] bytes = results.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             }
             addDeprecatedContentTypeWarning(ctx, contentType);
         } catch (IOException ex) {
@@ -404,7 +404,8 @@ public class LevelsController implements CrudHandler {
                 })
             },
             description = "Retrieves requested Location Level",
-            tags = TAG
+            tags = TAG,
+            path = "/levels/{" + LEVEL_ID + "}"
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {EFFECTIVE_DATE})
     @Override
@@ -438,7 +439,7 @@ public class LevelsController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError re = new CdaError(ERROR_MSG);
             LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
@@ -464,8 +465,8 @@ public class LevelsController implements CrudHandler {
                     },
                     required = true),
             description = "Update CWMS Location Level",
-            method = HttpMethod.PATCH,
-            path = "/levels",
+            methods = HttpMethod.PATCH,
+            path = "/levels/{" + LEVEL_ID + "}",
             tags = TAG
     )
     @Override
@@ -473,12 +474,12 @@ public class LevelsController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LocationLevel.class);
             LocationLevel levelFromBody = deserializeLocationLevel(ctx);
             String officeId = levelFromBody.getOfficeId();
             if (officeId == null) {
-                throw new HttpResponseException(HttpCode.BAD_REQUEST.getStatus(),
+                throw new HttpResponseException(HttpStatus.BAD_REQUEST.getCode(),
                     "The request body must specify the office.");
             }
             String newLevelId = levelFromBody.getLocationLevelId();

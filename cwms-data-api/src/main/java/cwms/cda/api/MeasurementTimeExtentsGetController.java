@@ -41,16 +41,17 @@ import cwms.cda.data.dao.MeasurementDao;
 import cwms.cda.data.dto.CwmsIdTimeExtentsEntry;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -75,11 +76,13 @@ public final class MeasurementTimeExtentsGetController implements Handler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = CwmsIdTimeExtentsEntry.class)
+                            @OpenApiContent(type = Formats.JSONV1, from = CwmsIdTimeExtentsEntry[].class)
                     })
             },
             description = "Returns matching downstream stream locations.",
-            tags = {MeasurementController.TAG}
+            tags = {MeasurementController.TAG},
+            path = "/measurements/time-extents",
+            methods = {HttpMethod.GET}
     )
     public void handle(@NotNull Context ctx) throws Exception {
         String officeIdMask = ctx.queryParam(OFFICE_MASK);
@@ -97,7 +100,7 @@ public final class MeasurementTimeExtentsGetController implements Handler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve downstream locations", ex);

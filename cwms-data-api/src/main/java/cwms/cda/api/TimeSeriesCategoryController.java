@@ -32,6 +32,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
@@ -39,18 +41,18 @@ import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -80,14 +82,17 @@ public class TimeSeriesCategoryController implements CrudHandler {
                     + " all offices shall be returned."),},
             responses = {
                 @OpenApiResponse(status = STATUS_200,
-                    content = {@OpenApiContent(isArray = true, from = TimeSeriesCategory.class,
-                            type = Formats.JSON)
+                    content = {@OpenApiContent(from = TimeSeriesCategory[].class, type = Formats.JSON)
                     }),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the categories were not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")}, description = "Returns CWMS timeseries category "
-                        + "Data", tags = {TAG})
+                        + "Data",
+            tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            path = "/timeseries/category"
+                    )
     @Override
     public void getAll(@NotNull Context ctx) {
         try (final Timer.Context timeContext = markAndTime(GET_ALL)) {
@@ -110,7 +115,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve TimeSeries Categories", ex);
@@ -140,7 +145,9 @@ public class TimeSeriesCategoryController implements CrudHandler {
                             + "inputs provided the timeseries category was not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
-            description = "Retrieves requested timeseries category", tags = {TAG})
+            description = "Retrieves requested timeseries category", tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            path = "/timeseries/category/{" + CATEGORY_ID + "}")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String categoryId) {
         try (final Timer.Context timeContext = markAndTime(GET_ONE)) {
@@ -163,7 +170,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find category based on parameters given");
                 logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
@@ -189,7 +196,9 @@ public class TimeSeriesCategoryController implements CrudHandler {
             @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
                 description = "Ignore null values in the request body. Default: true")
         },
-        method = HttpMethod.POST,
+        methods = {HttpMethod.POST},
+        path = "/timeseries/category",
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         tags = {TAG}
     )
     @Override
@@ -197,7 +206,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
 
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesCategory.class);
@@ -226,15 +235,17 @@ public class TimeSeriesCategoryController implements CrudHandler {
                     description = "Ignore null values in the request body. Default: true")
 
             },
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = {HttpMethod.PATCH},
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+        tags = {TAG},
+        path = "/timeseries/category/{" + CATEGORY_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String categoryId) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
 
             boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
@@ -258,8 +269,10 @@ public class TimeSeriesCategoryController implements CrudHandler {
             @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class,
                 description = "Specifies whether to delete any time series groups in this time series category. Default: false"),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = {HttpMethod.DELETE},
+        tags = {TAG},
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+        path = "/timeseries/category/{" + CATEGORY_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String categoryId) {

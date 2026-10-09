@@ -18,15 +18,15 @@ import cwms.cda.data.dao.UserListDao;
 import cwms.cda.data.dto.auth.userlists.UserList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class UserListController implements Handler {
@@ -65,8 +65,9 @@ public final class UserListController implements Handler {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "Retrieve user list metadata.",
-        method = HttpMethod.GET,
-        tags = {TAG}
+        methods = HttpMethod.GET,
+        tags = {TAG},
+        path = "/user/lists/{" + USER_LIST_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

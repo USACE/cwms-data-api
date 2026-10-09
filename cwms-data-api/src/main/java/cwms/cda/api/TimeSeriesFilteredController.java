@@ -7,6 +7,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.FilteredTimeSeriesParameters;
@@ -19,21 +21,21 @@ import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
-import io.javalin.core.util.Header;
-import io.javalin.core.validation.Validator;
+import io.javalin.http.Header;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jetbrains.annotations.NotNull;
@@ -167,8 +169,9 @@ public class TimeSeriesFilteredController implements Handler {
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
-            method = HttpMethod.GET,
+            methods = {HttpMethod.GET},
             path = "/timeseries/filtered",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = TAG
     )
     @Override
@@ -247,7 +250,7 @@ public class TimeSeriesFilteredController implements Handler {
 
             byte[] bytes = results.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IllegalArgumentException ex) {
             CdaError re = new CdaError("Invalid arguments supplied");
             logger.atSevere().withCause(ex).log("%s", re);
@@ -284,8 +287,8 @@ public class TimeSeriesFilteredController implements Handler {
     }
 
     public String buildRequestUrl(Context ctx, String cursor) throws URISyntaxException {
-        URIBuilder builder = new URIBuilder(ctx.req.getRequestURL().toString()); // requestURL stops just before ?
-        builder.setParameters(URLEncodedUtils.parse(ctx.req.getQueryString(), StandardCharsets.UTF_8));
+        URIBuilder builder = new URIBuilder(ctx.url()); // requestURL stops just before ?
+        builder.setParameters(URLEncodedUtils.parse(ctx.queryString(), StandardCharsets.UTF_8));
 
         // override or add the paging cursor
         if (cursor != null && !cursor.isEmpty()) {
@@ -294,6 +297,4 @@ public class TimeSeriesFilteredController implements Handler {
 
         return builder.build().toString();
     }
-
-
 }

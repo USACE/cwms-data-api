@@ -57,17 +57,17 @@ import cwms.cda.data.dto.stream.StreamReach;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -101,12 +101,14 @@ public final class StreamReachController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = StreamReach.class),
-                            @OpenApiContent(isArray = true, type = Formats.JSON, from = StreamReach.class)
+                            @OpenApiContent(type = Formats.JSONV1, from = StreamReach[].class),
+                            @OpenApiContent(type = Formats.JSON, from = StreamReach[].class)
                     })
             },
             description = "Returns matching CWMS Stream Reach Data for a Reservoir Project.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/stream-reaches",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -128,7 +130,7 @@ public final class StreamReachController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Stream Reaches", ex);
@@ -153,12 +155,14 @@ public final class StreamReachController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(isArray = true, type = Formats.JSONV1, from = StreamReach.class),
-                                    @OpenApiContent(isArray = true, type = Formats.JSON, from = StreamReach.class)
+                                    @OpenApiContent(type = Formats.JSONV1, from = StreamReach[].class),
+                                    @OpenApiContent(type = Formats.JSON, from = StreamReach[].class)
                             })
             },
             description = "Returns CWMS Stream Reach Data",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/stream-reaches/{" + NAME + "}",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String reachId) {
@@ -179,7 +183,7 @@ public final class StreamReachController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Stream Reach", ex);
@@ -199,8 +203,9 @@ public final class StreamReachController implements CrudHandler {
                             description = "Create will fail if provided ID already exists. Default: true")
             },
             description = "Create CWMS Stream Reach",
-            method = HttpMethod.POST,
+            methods = {HttpMethod.POST},
             tags = {TAG},
+            path = "/stream-reaches",
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Stream Reach successfully stored to CWMS.")
             }
@@ -208,7 +213,7 @@ public final class StreamReachController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, StreamReach.class);
             StreamReach streamReach = Formats.parseContent(contentType, ctx.body(), StreamReach.class);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
@@ -232,8 +237,9 @@ public final class StreamReachController implements CrudHandler {
                     @OpenApiParam(name = NAME, required = true, description = "Specifies the new reach-id. ")
             },
             description = "Rename CWMS Stream Reach",
-            method = HttpMethod.PATCH,
+            methods = {HttpMethod.PATCH},
             tags = {TAG},
+            path = "/stream-reaches/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Stream Reach successfully renamed in CWMS.")
             }
@@ -261,8 +267,9 @@ public final class StreamReachController implements CrudHandler {
                             + "the stream reach to be deleted.")
             },
             description = "Delete CWMS Stream Reach",
-            method = HttpMethod.DELETE,
+            methods = {HttpMethod.DELETE},
             tags = {TAG},
+            path = "/stream-reaches/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Stream Reach successfully deleted from CWMS.")
             }

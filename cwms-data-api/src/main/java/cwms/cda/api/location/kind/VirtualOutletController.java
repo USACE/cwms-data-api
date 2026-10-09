@@ -42,16 +42,16 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -62,7 +62,7 @@ public class VirtualOutletController extends BaseCrudHandler {
         super(metrics);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void create(@NotNull Context ctx) {
         //Implemented in VirtualOutletCreateController
@@ -78,12 +78,13 @@ public class VirtualOutletController extends BaseCrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(from = VirtualOutlet.class, isArray = true, type = Formats.JSONV1),
-                            @OpenApiContent(from = VirtualOutlet.class, isArray = true, type = Formats.JSON)
+                            @OpenApiContent(from = VirtualOutlet[].class, type = Formats.JSONV1),
+                            @OpenApiContent(from = VirtualOutlet[].class, type = Formats.JSON)
                     })
             },
             description = "Returns matching CWMS Virtual Outlet Data for a Reservoir Project.",
-            tags = {OutletController.TAG}
+            tags = {OutletController.TAG},
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/virtual-outlets"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -102,7 +103,7 @@ public class VirtualOutletController extends BaseCrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Virtual Outlets", ex);
@@ -128,7 +129,8 @@ public class VirtualOutletController extends BaseCrudHandler {
                             })
             },
             description = "Returns CWMS Virtual Outlet Data",
-            tags = {OutletController.TAG}
+            tags = {OutletController.TAG},
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/virtual-outlets/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -147,7 +149,7 @@ public class VirtualOutletController extends BaseCrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Virtual Outlet", ex);
@@ -156,7 +158,7 @@ public class VirtualOutletController extends BaseCrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context ctx, @NotNull String s) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -177,8 +179,9 @@ public class VirtualOutletController extends BaseCrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Delete CWMS Virtual Outlet",
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
             tags = {OutletController.TAG},
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/virtual-outlets/{" + NAME + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Virtual Outlet successfully deleted from CWMS."),
                     @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

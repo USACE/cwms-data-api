@@ -1,16 +1,16 @@
 package cwms.cda.security;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.spi.IdentityProvider;
-import io.javalin.core.security.AccessManager;
-import io.javalin.core.security.RouteRole;
+import io.javalin.security.RouteRole;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.http.HttpResponseException;
-import io.javalin.http.util.NaiveRateLimit;
+import io.javalin.plugin.bundled.RateLimitPlugin;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiPredicate;
 
-public final class CdaAccessManager implements AccessManager {
+public final class CdaAccessManager implements Handler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
     // specify the maximum number of requests allowed per time unit
@@ -30,9 +30,10 @@ public final class CdaAccessManager implements AccessManager {
     private final Map<String, BiPredicate<DataApiPrincipal, Set<RouteRole>>> customAuthorizers = new HashMap<>();
 
     @Override
-    public void  manage(Handler handler, Context ctx, Set<RouteRole> routeRoles) throws Exception {
+    public void handle(Context ctx) throws Exception {
         DataApiPrincipal principal = getApiPrincipal(ctx);
-        String path = ctx.endpointHandlerPath();
+        String path = ctx.endpoints().matchedHttpEndpoint().path; // we want the generic path here
+        var routeRoles = ctx.routeRoles();
         if (customAuthorizers.containsKey(path)) {
             AuthDao.isAuthorized(ctx, principal, routeRoles, customAuthorizers.get(path));
         } else {
@@ -40,15 +41,15 @@ public final class CdaAccessManager implements AccessManager {
         }
         checkRateLimit(ctx);
         prepareContext(ctx, principal);
-        handler.handle(ctx);
     }
 
     private void checkRateLimit(Context ctx) {
-        String path = ctx.endpointHandlerPath();
+        // we need the registered path name without variables here.
+        String path = ctx.endpoints().matchedHttpEndpoint().path;
         RouteRole[] routeRoles = rateLimitedPaths.get(path);
         if (routeRoles != null && routeRoles.length != 0) {
             try {
-                NaiveRateLimit.requestPerTimeUnit(ctx, REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
+                ctx.with(RateLimitPlugin.class).requestPerTimeUnit(REQUEST_LIMIT, REQUEST_LIMIT_UNIT);
             } catch (HttpResponseException ex) {
                 try {
                     DataApiPrincipal principal = getApiPrincipal(ctx);
@@ -74,7 +75,8 @@ public final class CdaAccessManager implements AccessManager {
 
     private void prepareContext(Context ctx, DataApiPrincipal p) {
         if (p == null) {
-            AuthDao authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),ctx.attribute(ApiServlet.OFFICE_ID));
+            AuthDao authDao = AuthDao.getInstance(JooqDao.getDslContext(ctx),
+                                                  ctx.appData(CwmsDataApiAttributes.OFFICE_ID_KEY));
             authDao.prepareGuestContext(ctx);
         } else {
             AuthDao.prepareContextWithUser(ctx, p);

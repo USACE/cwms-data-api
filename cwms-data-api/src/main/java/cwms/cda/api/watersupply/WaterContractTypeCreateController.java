@@ -28,24 +28,26 @@ package cwms.cda.api.watersupply;
 
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
+import static cwms.cda.api.Controllers.requiredPathParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -66,12 +68,15 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
             @OpenApiParam(name = FAIL_IF_EXISTS, type = boolean.class, description = "Create will fail if provided"
                     + "display value already exists. Default: true")
         },
+        pathParams = {
+            @OpenApiParam(name = Controllers.OFFICE, type = String.class, description = Controllers.OFFICE)
+        },
         responses = {
             @OpenApiResponse(status = "201", description = "Contract type successfully stored to CWMS."),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
         description = "Create a new water contract type",
-        method = HttpMethod.POST,
+        methods = HttpMethod.POST,
         path = "/projects/{office}/contract-types",
         tags = {TAG}
     )
@@ -79,9 +84,10 @@ public final class WaterContractTypeCreateController extends WaterSupplyControll
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
+            var office = requiredPathParam(ctx, Controllers.OFFICE);
+            DSLContext dsl = getDslContext(ctx, office);
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
             LookupType contractType = Formats.parseContent(contentType, ctx.body(), LookupType.class);

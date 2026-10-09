@@ -29,13 +29,13 @@ import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import static cwms.cda.api.Controllers.*;
@@ -59,8 +59,9 @@ public class VirtualOutletCreateController extends BaseHandler {
                             description = "Create will fail if provided ID already exists. Default: true"),
             },
             description = "Create CWMS Virtual Outlet",
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             tags = {OutletController.TAG},
+            path = "/projects/virtual-outlets",
             responses = {
                     @OpenApiResponse(status = STATUS_204, description = "Virtual Outlet successfully stored to CWMS.")
             }
@@ -68,7 +69,7 @@ public class VirtualOutletCreateController extends BaseHandler {
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, VirtualOutlet.class);
             VirtualOutlet virtualOutlet = Formats.parseContent(contentType, ctx.body(), VirtualOutlet.class);
             boolean failIfExists = queryParamAsClass(ctx, Boolean.class, true, FAIL_IF_EXISTS);

@@ -35,18 +35,20 @@ import cwms.cda.features.CdaFeatures;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.togglz.core.context.FeatureContext;
@@ -116,7 +118,9 @@ public class BlobController extends BaseCrudHandler {
                             @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
                     })
             },
-            tags = {TAG}
+            security = {},
+            tags = {TAG},
+            path = "/blobs"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -130,7 +134,7 @@ public class BlobController extends BaseCrudHandler {
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new CdaError("cursor or page passed in but failed validation"))
-                        .status(HttpCode.BAD_REQUEST);
+                        .status(HttpStatus.BAD_REQUEST);
                 return;
             }
 
@@ -155,7 +159,7 @@ public class BlobController extends BaseCrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Blobs", ex);
             LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Blobs");
@@ -190,7 +194,9 @@ public class BlobController extends BaseCrudHandler {
                                     @OpenApiContent(type = "application/octet-stream", from = byte[].class)
                             })
             },
-            tags = {TAG}
+            security = {@OpenApiSecurity(name = "")},
+            tags = {TAG},
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
@@ -209,7 +215,7 @@ public class BlobController extends BaseCrudHandler {
 
             final Long offset;
             final Long end;
-            long[] ranges = RangeParser.parseFirstRange(ctx.header(io.javalin.core.util.Header.RANGE));
+            long[] ranges = RangeParser.parseFirstRange(ctx.header(Header.RANGE));
             if (ranges != null) {
                 offset = ranges[0];
                 end = ranges[1];
@@ -251,20 +257,21 @@ public class BlobController extends BaseCrudHandler {
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            tags = {TAG},
+            path = "/blobs"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
-            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyInputStream(), Blob.class);
             BlobAccess dao = chooseBlobAccess(dsl);
             dao.create(blob, failIfExists, false);
-            ctx.status(HttpCode.CREATED);
+            ctx.status(HttpStatus.CREATED);
         }
     }
 
@@ -287,8 +294,9 @@ public class BlobController extends BaseCrudHandler {
                             + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
                             + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
-            method = HttpMethod.PATCH,
-            tags = {TAG}
+            methods = HttpMethod.PATCH,
+            tags = {TAG},
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
@@ -301,11 +309,11 @@ public class BlobController extends BaseCrudHandler {
             }
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
+            String reqContentType = ctx.contentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
-            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyInputStream(), Blob.class);
 
             if (blob.getOfficeId() == null) {
                 throw new FormattingException("An officeId is required when updating a blob");
@@ -347,8 +355,9 @@ public class BlobController extends BaseCrudHandler {
                             + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
                             + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = HttpMethod.DELETE,
+            tags = {TAG},
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {

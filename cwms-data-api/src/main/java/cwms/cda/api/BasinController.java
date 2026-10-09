@@ -52,18 +52,18 @@ import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -113,7 +113,9 @@ public class BasinController implements CrudHandler {
         description = "Returns CWMS Basin Data. "
             + "This endpoint handles multiple accept header types, including named pg json. "
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/basins",
+        methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -147,7 +149,7 @@ public class BasinController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (SQLException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx, "Error retrieving all basins", ex);
             LOGGER.atSevere().withCause(ex).log("Error retrieving all basins");
@@ -193,7 +195,9 @@ public class BasinController implements CrudHandler {
         description = "Returns CWMS Basin Data. "
             + "This endpoint handles multiple accept header types, including named pg json. "
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/basins/{" + NAME + "}",
+        methods = {HttpMethod.GET}
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -226,7 +230,7 @@ public class BasinController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Basin", ex);
             LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Basin");
@@ -250,9 +254,11 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                     + "implemented")
         },
-        method = HttpMethod.PATCH,
+        methods = {HttpMethod.PATCH},
         description = "Renames CWMS Basin",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/basins/{" + NAME + "}"
+
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {
@@ -278,14 +284,15 @@ public class BasinController implements CrudHandler {
             @OpenApiResponse(status = STATUS_204, description = "Basin successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        method = HttpMethod.POST,
+        methods = {HttpMethod.POST},
         description = "Creates CWMS Basin",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/basins/"
     )
     @Override
     public void create(@NotNull Context ctx) {
         DSLContext dsl = getDslContext(ctx);
-        String formatHeader = ctx.req.getContentType();
+        String formatHeader = ctx.contentType();
         ContentType contentType = Formats.parseHeader(formatHeader, cwms.cda.data.dto.basin.Basin.class);
         ctx.contentType(contentType.toString());
 
@@ -312,7 +319,9 @@ public class BasinController implements CrudHandler {
                     + "the basin to be deleted.")
         },
         description = "Deletes CWMS Basin",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/basins/{" + NAME + "}",
+        methods = {HttpMethod.DELETE}
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {

@@ -5,6 +5,6 @@ export default defineConfig({
   use: { baseURL: "http://127.0.0.1:18741", headless: true },
   webServer: {
     command: "npx vite --mode test --host 127.0.0.1 --port 18741 --strictPort",
-    url: "http://127.0.0.1:18741/cwms-data/",
+    url: "http://127.0.0.1:18741/",
   },
 });

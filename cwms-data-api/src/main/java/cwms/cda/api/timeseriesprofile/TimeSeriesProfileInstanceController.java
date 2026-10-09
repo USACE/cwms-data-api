@@ -52,6 +52,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
@@ -59,19 +61,19 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -118,6 +120,7 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
             @OpenApiParam(name = PAGE_SIZE, type = Integer.class, description = "The page size of the"
                 + " time series profile instance. Default is 500"),
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         pathParams = {
             @OpenApiParam(name = LOCATION_ID, description = "The location ID of the"
                     + " time series profile instance.", required = true),
@@ -126,7 +129,8 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
             @OpenApiParam(name = VERSION, description = "The version of the"
                     + " time series profile instance.", required = true),
         },
-        method = HttpMethod.GET,
+        methods = HttpMethod.GET,
+        path = "/timeseries/profile-instance/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}/{" + VERSION + "}",
         summary = "Get a time series profile instance that matches the provided parameters.",
         tags = {TAG},
         responses = {
@@ -175,7 +179,7 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve time series profile instance", ex);

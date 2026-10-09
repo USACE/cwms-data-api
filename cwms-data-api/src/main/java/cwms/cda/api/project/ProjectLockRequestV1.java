@@ -39,12 +39,12 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.security.DataApiPrincipal;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 
 public final class ProjectLockRequestV1 extends ProjectLockRequest<ProjectLockV1> {
@@ -61,9 +61,9 @@ public final class ProjectLockRequestV1 extends ProjectLockRequest<ProjectLockV1
 
     @Override
     protected ProjectLockV1 parseAndValidateLock(@NotNull Context ctx) {
-        String formatHeader = ctx.req.getContentType();
+        String formatHeader = ctx.contentType();
         ContentType contentType = Formats.parseHeader(formatHeader, ProjectLockV1.class);
-        ProjectLockV1 lock = Formats.parseContent(contentType, ctx.bodyAsInputStream(), ProjectLockV1.class);
+        ProjectLockV1 lock = Formats.parseContent(contentType, ctx.bodyInputStream(), ProjectLockV1.class);
         if (lock.getSessionUser() == null) {
             Object principal = ctx.attribute(AuthDao.DATA_API_PRINCIPAL);
             if (principal == null || !(principal instanceof DataApiPrincipal)) {
@@ -98,7 +98,7 @@ public final class ProjectLockRequestV1 extends ProjectLockRequest<ProjectLockV1
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON, from = ProjectLockId.class)}
                 )},
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             path = PATH,
             tags = {TAGS}
     )

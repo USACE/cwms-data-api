@@ -37,12 +37,12 @@ import cwms.cda.data.dao.project.ProjectLockDaoV2;
 import cwms.cda.data.dto.project.ProjectLockV2;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import org.jetbrains.annotations.NotNull;
 
 public final class ProjectLockGetOneV2 extends ProjectLockGetOne<ProjectLockV2> {
@@ -88,7 +88,8 @@ public final class ProjectLockGetOneV2 extends ProjectLockGetOne<ProjectLockV2> 
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             tags = {TAGS},
-            method = HttpMethod.GET
+            methods = HttpMethod.GET,
+            path = "/project/lock/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {

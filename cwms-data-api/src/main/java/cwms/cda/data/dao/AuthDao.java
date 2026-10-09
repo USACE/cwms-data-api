@@ -3,7 +3,8 @@ package cwms.cda.data.dao;
 import com.google.common.flogger.FluentLogger;
 import com.password4j.Hash;
 import com.password4j.HashUpdate;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.data.dto.auth.ApiKey;
 import cwms.cda.datasource.ConnectionPreparer;
@@ -18,9 +19,9 @@ import cwms.cda.security.CwmsAuthException;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
-import io.javalin.core.security.RouteRole;
+import io.javalin.security.RouteRole;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import org.togglz.core.context.FeatureContext;
 
 import com.password4j.Password;
@@ -387,17 +388,15 @@ public class AuthDao extends Dao<DataApiPrincipal> {
         logger.atInfo()
               .atMostEvery(5,TimeUnit.SECONDS)
               .log("Validated Api Key for user=%s", p.getName());
-        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        DataSource dataSource = JooqDao.getDataSourceFromContext(ctx);
         ConnectionPreparer userPreparer = new DirectUserPreparer(p.getName());
         ctx.attribute(DATA_API_PRINCIPAL,p);
-        if (dataSource instanceof ConnectionPreparingDataSource) {
-            ConnectionPreparingDataSource cpDs = (ConnectionPreparingDataSource)dataSource;
+        if (dataSource instanceof ConnectionPreparingDataSource cpDs) {
             ConnectionPreparer existingPreparer = cpDs.getPreparer();
-
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, userPreparer));
         } else {
-            ctx.attribute(ApiServlet.DATA_SOURCE,
+            ctx.attribute(CwmsDataApiAttributes.DATA_SOURCE_KEY.getId(),
                           new ConnectionPreparingDataSource(userPreparer, dataSource));
         }
     }
@@ -446,7 +445,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
      * Set the Context and datasource to be suitable for processing guest requests.
      */
     public void prepareGuestContext(Context ctx) {
-        DataSource dataSource = ctx.attribute(ApiServlet.DATA_SOURCE);
+        DataSource dataSource = ctx.appData(CwmsDataApiAttributes.DATA_SOURCE_KEY);
         SessionTimeZonePreparer utcPrep = new SessionTimeZonePreparer();
         ConnectionPreparer officePreparer = new SessionOfficePreparer(defaultOffice);
         ConnectionPreparer userPreparer = new DirectUserPreparer(connectionUser);
@@ -459,7 +458,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             // Have it do our extra step last.
             cpDs.setPreparer(new DelegatingConnectionPreparer(existingPreparer, guestPreparer));
         } else {
-            ctx.attribute(ApiServlet.DATA_SOURCE,
+            ctx.attribute(CwmsDataApiAttributes.DATA_SOURCE_KEY.getId(),
                           new ConnectionPreparingDataSource(guestPreparer, dataSource));
         }
     }
@@ -488,7 +487,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
         try {
             if (!p.getName().equalsIgnoreCase(sourceData.getUserId())) {
-                throw new CwmsAuthException(ONLY_OWN_KEY_MESSAGE, HttpCode.UNAUTHORIZED.getStatus());
+                throw new CwmsAuthException(ONLY_OWN_KEY_MESSAGE, HttpStatus.UNAUTHORIZED.getCode());
             }
             SecureRandom randomSource = SecureRandom.getInstanceStrong();
             String secretKey = generateSecretKey(randomSource);
@@ -527,7 +526,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
             return newKey;
         } catch (NoSuchAlgorithmException ex) {
             throw new CwmsAuthException("Unable to generate appropriate key.", ex,
-                    HttpCode.INTERNAL_SERVER_ERROR.getStatus());
+                    HttpStatus.INTERNAL_SERVER_ERROR.getCode());
         }
 
 

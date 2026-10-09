@@ -1,15 +1,15 @@
 package fixtures;
 
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Locale;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 
 
@@ -18,7 +18,7 @@ public class TestHttpServletResponse implements HttpServletResponse {
     /**
      * We will default to OK in all handlers as that is the behavior we see from javalin.
      */
-    private int status = HttpCode.OK.getStatus();
+    private int status = HttpStatus.OK.getCode();
     private String contentType="<not set by application>";
 
     private ServletOutputStream output = new TestServletOutputStream();
@@ -153,19 +153,7 @@ public class TestHttpServletResponse implements HttpServletResponse {
     }
 
     @Override
-    public String encodeRedirectUrl(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public String encodeURL(String arg0) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String encodeUrl(String arg0) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -233,10 +221,4 @@ public class TestHttpServletResponse implements HttpServletResponse {
         status = arg0;
 
     }
-
-    @Override
-    public void setStatus(int arg0, String arg1) {
-        throw new UnsupportedOperationException("Don't use this form");
-    }
-
 }

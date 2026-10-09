@@ -1,4 +1,4 @@
-package cwms.cda.servlet;
+package cwms.cda.ui;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.Mockito.mock;
@@ -7,13 +7,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterChain;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebFilter;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -51,7 +51,7 @@ class SpaErrorStatusFilterTest {
         "/user-roles/mvsc/"
     })
     void returnsOkForClientRoutes(String route) throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("GET", "/cwms-data" + route);
+        HttpServletRequest request = buildRequest("GET", route);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -63,7 +63,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void returnsOkForHeadRequest() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("HEAD", "/cwms-data/swagger-ui");
+        HttpServletRequest request = buildRequest("HEAD", "/swagger-ui");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -75,7 +75,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void returnsOkForAlternateContextPath() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("GET", "/spk-data/swagger-ui", "/spk-data");
+        HttpServletRequest request = buildRequest("GET", "/cwms-data-ui/swagger-ui", "/cwms-data");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -87,7 +87,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void preservesNotFoundStatusForUnknownRoutes() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("GET", "/cwms-data/not-a-client-route");
+        HttpServletRequest request = buildRequest("GET", "not-a-client-route");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 
@@ -99,7 +99,7 @@ class SpaErrorStatusFilterTest {
 
     @Test
     void preservesNotFoundStatusForNonPageRequests() throws ServletException, IOException {
-        HttpServletRequest request = buildRequest("POST", "/cwms-data/swagger-ui");
+        HttpServletRequest request = buildRequest("POST", "/swagger-ui");
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
 

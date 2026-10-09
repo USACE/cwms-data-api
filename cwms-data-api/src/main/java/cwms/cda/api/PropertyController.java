@@ -52,18 +52,18 @@ import cwms.cda.data.dto.Property;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 public final class PropertyController extends BaseCrudHandler {
@@ -83,14 +83,15 @@ public final class PropertyController extends BaseCrudHandler {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                        @OpenApiContent(isArray = true, type = Formats.JSON, from = Property.class)
+                        @OpenApiContent(type = Formats.JSON, from = Property[].class)
                 })
             },
             security = {
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             description = "Returns matching CWMS Property Data.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/property"
     )
     @Override
     public void getAll(Context ctx) {
@@ -111,7 +112,7 @@ public final class PropertyController extends BaseCrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Properties", ex);
@@ -143,7 +144,8 @@ public final class PropertyController extends BaseCrudHandler {
                 @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             description = "Returns CWMS Property Data",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/property/{" + NAME + "}"
     )
     @Override
     public void getOne(Context ctx, String name) {
@@ -163,7 +165,7 @@ public final class PropertyController extends BaseCrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Property", ex);
@@ -180,8 +182,9 @@ public final class PropertyController extends BaseCrudHandler {
                     },
                     required = true),
             description = "Create CWMS Property",
-            method = HttpMethod.POST,
+            methods = HttpMethod.POST,
             tags = {TAG},
+            path = "/properties",
             responses = {
                 @OpenApiResponse(status = STATUS_204, description = "Property successfully stored to CWMS.")
             }
@@ -189,7 +192,7 @@ public final class PropertyController extends BaseCrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
             DSLContext dsl = getDslContext(ctx);
@@ -199,7 +202,6 @@ public final class PropertyController extends BaseCrudHandler {
                     "Property successfully stored to CWMS.", property.getName());
             ctx.status(HttpServletResponse.SC_CREATED).json(re);
         }
-
     }
 
     @OpenApi(
@@ -213,7 +215,8 @@ public final class PropertyController extends BaseCrudHandler {
                     },
                     required = true),
             description = "Update CWMS Property",
-            method = HttpMethod.PATCH,
+            methods = HttpMethod.PATCH,
+            path = "/property/{" + NAME + "}",
             tags = {TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Property successfully updated in CWMS.")
@@ -223,7 +226,7 @@ public final class PropertyController extends BaseCrudHandler {
     public void update(Context ctx, String name) {
         logUnusedPathParameter(ctx, NAME, "Body contains required information");
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Property.class);
             Property property = Formats.parseContent(contentType, ctx.body(), Property.class);
             DSLContext dsl = getDslContext(ctx);
@@ -248,7 +251,8 @@ public final class PropertyController extends BaseCrudHandler {
                         + "the property to be deleted."),
             },
             description = "Delete CWMS Property",
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
+            path = "/properties/{" + NAME + "}",
             tags = {TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Property successfully deleted from CWMS."),

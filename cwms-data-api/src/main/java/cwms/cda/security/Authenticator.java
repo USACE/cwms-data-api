@@ -47,4 +47,5 @@ public final class Authenticator implements Handler {
     public List<IdentityProvider> getActiveProviders() {
         return Collections.unmodifiableList(providers);
     }
+
 }

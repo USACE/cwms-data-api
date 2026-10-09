@@ -34,6 +34,9 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.UnsupportedParametersException;
@@ -48,13 +51,14 @@ import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.config.Key;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,7 +69,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.owasp.html.PolicyFactory;
@@ -113,19 +117,19 @@ public class CatalogController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(tags = {TAG}, ignore = true)
+    @OpenApi(tags = {TAG}, ignore = true, path = "")
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(tags = {"Catalog"}, ignore = true)
+    @OpenApi(tags = {"Catalog"}, ignore = true, path = "")
     @Override
     public void delete(Context ctx, @NotNull String entry) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(tags = {"Catalog"}, ignore = true)
+    @OpenApi(tags = {"Catalog"}, ignore = true, path = "")
     @Override
     public void getAll(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -255,7 +259,10 @@ public class CatalogController implements CrudHandler {
                 @OpenApiContent(from = Catalog.class, type = Formats.XML)
             })
         },
-        tags = {TAG}
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+        security = {},
+        tags = {TAG},
+        path = "/catalog/{dataset}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String dataSet) {
@@ -263,8 +270,7 @@ public class CatalogController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = JooqDao.getDslContext(ctx);
 
-            String valDataSet =
-                ((PolicyFactory) ctx.appAttribute("PolicyFactory")).sanitize(dataSet);
+            String valDataSet = ctx.appData(CwmsDataApiAttributes.POLICY_FACTORY_KEY).sanitize(dataSet);
 
             String cursor = queryParamAsClass(ctx, new String[] {PAGE, CURSOR},
                 String.class, "", metrics, name(CatalogController.class.getName(), GET_ONE));
@@ -278,9 +284,9 @@ public class CatalogController implements CrudHandler {
                 String.class, UnitSystem.SI.getValue(), metrics,
                 name(CatalogController.class.getName(), GET_ONE));
 
-            String office = ctx.queryParamAsClass(OFFICE, String.class).allowNullable()
+            String office = ctx.queryParamAsClass(OFFICE, String.class)
                 .check(Office::validOfficeCanNull, "Invalid office provided")
-                .get();
+                .getOrNull();
 
             String like = ctx.queryParamAsClass(LIKE, String.class).getOrDefault(".*");
 
@@ -313,7 +319,7 @@ public class CatalogController implements CrudHandler {
             boolean includeAliases = ctx.queryParamAsClass(INCLUDE_ALIASES, Boolean.class)
                 .getOrDefault(false);
             String searchText = validateSearchText(ctx.queryParamAsClass(SEARCH_TEXT, String.class)
-                .getOrDefault(null));
+                .getOrNull());
             String acceptHeader = ctx.header(ACCEPT);
             ContentType contentType = Formats.parseHeader(acceptHeader, Catalog.class);
             Catalog cat = null;
@@ -379,13 +385,13 @@ public class CatalogController implements CrudHandler {
 
                 byte[] bytes = data.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 final CdaError re = new CdaError("Cannot create catalog of requested "
                     + "information");
 
                 logger.atInfo().log("%s with url:%s", re, ctx.fullUrl());
-                ctx.json(re).status(HttpCode.NOT_FOUND);
+                ctx.json(re).status(HttpStatus.NOT_FOUND);
             }
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to retrieve catalog");
@@ -465,7 +471,7 @@ public class CatalogController implements CrudHandler {
         return trimmed;
     }
 
-    @OpenApi(tags = {"Catalog"}, ignore = true)
+    @OpenApi(tags = {"Catalog"}, ignore = true, path = "")
     @Override
     public void update(Context ctx, @NotNull String entry) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());

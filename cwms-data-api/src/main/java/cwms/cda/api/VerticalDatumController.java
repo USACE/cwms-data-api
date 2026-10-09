@@ -35,6 +35,7 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.UNIT;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.requiredParam;
+import static cwms.cda.api.Controllers.requiredPathParam;
 import static cwms.cda.api.LocationController.LOCATIONS_TAG;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
@@ -50,16 +51,16 @@ import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -81,6 +82,7 @@ public final class VerticalDatumController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
+    @OpenApi (ignore = true, path = "/")
     @Override
     public void getAll(@NotNull Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -123,7 +125,7 @@ public final class VerticalDatumController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Vertical Datum Info", ex);
@@ -140,11 +142,13 @@ public final class VerticalDatumController implements CrudHandler {
                     },
                     required = true),
             queryParams = {
-                    @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the location id for this vertical-datum-info."),
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office.")
             },
+            pathParams = {
+                @OpenApiParam(name = LOCATION_ID, required = true, description = "Specifies the location id for this vertical-datum-info.")
+            },
             description = "Create Vertical Datum Info for a Location",
-            method = HttpMethod.POST,
+            methods = {HttpMethod.POST},
             path = VDI_PATH,
             tags = {LOCATIONS_TAG},
             responses = {
@@ -154,14 +158,14 @@ public final class VerticalDatumController implements CrudHandler {
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
             VerticalDatumInfo info = Formats.parseContent(contentType, ctx.body(), VerticalDatumInfo.class);
             //allow locationId and office to be specified in either the body or as query params, but require them to be present in one of those places
             String locationId = info.getLocation();
             String office = info.getOffice();
             if(locationId == null || locationId.isBlank()) {
-                locationId = requiredParam(ctx, LOCATION_ID);
+                locationId = requiredPathParam(ctx, LOCATION_ID);                
             }
             if(office == null || office.isBlank()) {
                 office = requiredParam(ctx, OFFICE);
@@ -189,7 +193,7 @@ public final class VerticalDatumController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office.")
             },
             description = "Update Vertical Datum Info for a Location",
-            method = HttpMethod.PATCH,
+            methods = {HttpMethod.PATCH},
             path = VDI_PATH,
             tags = {LOCATIONS_TAG},
             responses = {
@@ -199,7 +203,7 @@ public final class VerticalDatumController implements CrudHandler {
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationId) {
         try (Timer.Context ignored = markAndTime(UPDATE)) {
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, VerticalDatumInfo.class);
             VerticalDatumInfo info = Formats.parseContent(contentType, ctx.body(), VerticalDatumInfo.class);
             //allow locationId and office to be specified in either the body or as query params, but require them to be present in one of those places
@@ -224,7 +228,7 @@ public final class VerticalDatumController implements CrudHandler {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning office.")
             },
             description = "Delete Vertical Datum Info for a Location",
-            method = HttpMethod.DELETE,
+            methods = {HttpMethod.DELETE},
             path = VDI_PATH,
             tags = {LOCATIONS_TAG},
             responses = {

@@ -37,7 +37,7 @@ test("published user hooks search across offices, assign membership, and save a 
     user.roles.SWT = [...new Set([...(user.roles.SWT ?? []), ...roles])];
     return route.fulfill({ status: 204 });
   });
-  await page.goto("/cwms-data/user-roles");
+  await page.goto("/user-roles");
   await page.getByRole("button", { name: "Assign office", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog
@@ -134,7 +134,7 @@ async function mockDeployment(page, flow) {
     specRequests += 1;
     return route.fulfill({
       json: {
-        openapi: "3.0.3",
+        openapi: "3.1.0",
         info: { title: "Refresh test", version: "1" },
         servers: [{ url: `${origin}/cwms-data` }],
         components: {
@@ -193,7 +193,7 @@ for (const flow of ["direct-grant", "pkce"]) {
     page.on("framenavigated", (frame) => {
       if (frame === page.mainFrame()) navigations += 1;
     });
-    await page.goto("/cwms-data/swagger-ui");
+    await page.goto("/swagger-ui");
     await expect(
       page.getByRole("button", { name: "Log out", exact: true }),
     ).toBeVisible();
@@ -257,7 +257,7 @@ test("the application preserves a user-list form during background refresh", asy
     });
     return route.fulfill({ json: {} });
   });
-  await page.goto("/cwms-data/user-lists");
+  await page.goto("/user-lists");
   await page.getByRole("button", { name: "New list", exact: true }).click();
   await page.getByRole("textbox", { name: "List ID", exact: true }).fill("DRAFT-LIST");
   await page
@@ -282,7 +282,7 @@ test("an expired OpenID session leaves the Swagger draft available", async ({
   page,
 }) => {
   const deployment = await mockDeployment(page, "pkce");
-  await page.goto("/cwms-data/swagger-ui");
+  await page.goto("/swagger-ui");
   await expect(
     page.getByRole("button", { name: "Log out", exact: true }),
   ).toBeVisible();

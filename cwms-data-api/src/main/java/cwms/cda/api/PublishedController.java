@@ -40,6 +40,8 @@ import static cwms.cda.api.Controllers.SIZE;
 import static cwms.cda.api.Controllers.STATUS_200;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.queryParamAsClass;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.PublishedRetrievalParameters;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -49,16 +51,17 @@ import cwms.cda.data.dto.LocationToPublishedDataList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.util.Arrays;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -78,7 +81,7 @@ public final class PublishedController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void create(@NotNull Context context) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
@@ -86,7 +89,7 @@ public final class PublishedController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void delete(@NotNull Context context, @NotNull String s) {
         try (final Timer.Context ignored = markAndTime(DELETE)) {
@@ -111,11 +114,14 @@ public final class PublishedController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, type = Formats.JSONV1, from = LocationToPublishedDataList.class)
+                            @OpenApiContent(type = Formats.JSONV1, from = LocationToPublishedDataList[].class)
                     })
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             description = "Returns matching time series identifiers for published data.",
-            tags = {TAG}
+            tags = {TAG},
+            path = "/published",
+            methods = {HttpMethod.GET}
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -125,7 +131,7 @@ public final class PublishedController implements CrudHandler {
                 String.class, "", metrics, name(PublishedController.class.getName(), GET_ALL));
         if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
             ctx.json(new CdaError("cursor or page passed in but failed validation"))
-                    .status(HttpCode.BAD_REQUEST);
+                    .status(HttpStatus.BAD_REQUEST);
             return;
         }
         int pageSize = queryParamAsClass(ctx, new String[]{PAGE_SIZE}, Integer.class, DEFAULT_PAGE_SIZE, metrics,
@@ -148,7 +154,7 @@ public final class PublishedController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context context, @NotNull String s) {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {
@@ -156,7 +162,7 @@ public final class PublishedController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context context, @NotNull String s) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {

@@ -37,6 +37,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -46,17 +48,17 @@ import cwms.cda.data.dto.rating.RatedOutput;
 import cwms.cda.data.dto.rating.RatedOutputTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -91,14 +93,16 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
         security = {
             @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         description = "Reverse rates input values using CWMS ratings. The input format `RateInputTimeSeries` requires " +
             "a singular time series id corresponding to the dependent parameter in the rating curve. " +
             "The output format `RatedOutputTimeSeries` will contain a singular double array corresponding to the " +
             "independent parameter of the rating curve. " +
             "Note: This endpoint only works on monotonically increase/decreasing table ratings with " +
             "a single independent parameter.",
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/ratings/reverse-rate-ts/{" + OFFICE + "}/{" + RATING_ID + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
@@ -107,7 +111,7 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
             RateDao ratingDao = new RateDao(dsl);
             String office = ctx.pathParam(OFFICE);
             String ratingId = ctx.pathParam(RATING_ID);
-            String contentTypeHeader = ctx.req.getContentType();
+            String contentTypeHeader = ctx.contentType();
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputTimeSeries.class);
             RateInputTimeSeries input = Formats.parseContent(contentType, body, RateInputTimeSeries.class);
@@ -120,7 +124,7 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to reverse rate input values", ex);

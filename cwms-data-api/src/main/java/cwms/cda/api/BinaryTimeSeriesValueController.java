@@ -24,33 +24,27 @@
 
 package cwms.cda.api;
 
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.BlobDao;
 import cwms.cda.data.dao.StreamConsumer;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 
 public class BinaryTimeSeriesValueController extends BaseHandler {
-    private static final FluentLogger LOGGER = FluentLogger.forEnclosingClass();
-
     public BinaryTimeSeriesValueController(MetricRegistry metrics) {
         super(metrics);
     }
@@ -73,7 +67,8 @@ public class BinaryTimeSeriesValueController extends BaseHandler {
                                     @OpenApiContent(from = byte[].class)
                             }
                     )},
-            tags = {BinaryTimeSeriesController.TAG}
+            tags = {BinaryTimeSeriesController.TAG},
+            path = "/timeseries/binary/{" + NAME + "}/value"
     )
     public void handle(@NotNull Context ctx) {
         //Implementation will change with new CWMS schema
@@ -89,7 +84,7 @@ public class BinaryTimeSeriesValueController extends BaseHandler {
 
             final Long offset;
             final Long end ;
-            long[] ranges = RangeParser.parseFirstRange(ctx.header(io.javalin.core.util.Header.RANGE));
+            long[] ranges = RangeParser.parseFirstRange(ctx.header(Header.RANGE));
             if (ranges != null) {
                 offset = ranges[0];
                 end = ranges[1];

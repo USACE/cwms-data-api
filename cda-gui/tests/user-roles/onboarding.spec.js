@@ -6,7 +6,7 @@ test.beforeEach(async ({ request }) => {
 });
 
 async function openRoles(page) {
-  await page.goto("/cwms-data/user-roles");
+  await page.goto("/user-roles");
   const login = page.getByRole("button", { name: "Log in", exact: true });
   await login.last().click();
   await expect(
@@ -130,7 +130,7 @@ test("missing PD hides office assignment while retaining the office role editor"
   await page.route("**/demo-api/user/profile*", (route) =>
     route.fulfill({ json: { ...demoProfile, roles: { SWT: ["CWMS User Admins"] } } }),
   );
-  await page.goto("/cwms-data/user-roles");
+  await page.goto("/user-roles");
   await page.getByRole("button", { name: "Log in", exact: true }).last().click();
   await expect(page.getByText("Office users", { exact: true })).toBeVisible();
   await expect(

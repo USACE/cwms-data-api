@@ -8,6 +8,7 @@ dependencies {
         exclude group: "org.eclipse.jetty"
         exclude group: "org.eclipse.jetty.websocket"        
     }
+    compileOnly (libs.bundles.javalin.openapi)
     compileOnly(libs.swagger.core) {
         exclude group: "jakarta.xml.bind", module: "*"
     }

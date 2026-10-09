@@ -6,7 +6,7 @@ import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
 plugins {
     id 'base'
     id 'com.github.node-gradle.node' version '7.1.0'
-    id 'org.openapi.generator' version '7.15.0'
+    id 'org.openapi.generator' version '7.25.0'
 }
 
 def npmCacheDir = layout.buildDirectory.dir("npm-cache")
@@ -40,11 +40,12 @@ clean.dependsOn cleanGeneration
 tasks.register('copyOpenApiSpec') {
     group 'openapi'
     description 'Copy the locally generated CDA OpenAPI spec into the TypeScript client workspace.'
-    dependsOn ':cwms-data-api:executeOpenAPIConversion'
+    dependsOn ':cwms-data-api:compileJava'
+    inputs.file "$rootDir/cwms-data-api/build/classes/java/main/openapi-plugin/openapi-default.json"
     outputs.file rawSpecFile
     doLast {
         copy {
-            from "$rootDir/cwms-data-api/build/openapi.json"
+            from "$rootDir/cwms-data-api/build/classes/java/main/openapi-plugin/openapi-default.json"
             into projectDir
             rename { 'cwms-swagger-raw.json' }
         }
@@ -68,7 +69,7 @@ tasks.register('validateOpenApiSpec', ValidateTask) {
     group 'openapi'
     description 'Validate the adjusted TypeScript client OpenAPI spec.'
     dependsOn modSpec
-    inputSpec.set(modifiedSpecFile.asFile.absolutePath)
+    inputSpec.set(modifiedSpecFile.asFile)
 }
 
 tasks.register('generateTypeScriptClient', GenerateTask) {
@@ -76,9 +77,9 @@ tasks.register('generateTypeScriptClient', GenerateTask) {
     description 'Generate the cwmsjs TypeScript client with the Gradle OpenAPI plugin.'
     dependsOn validateOpenApiSpec
     validateSpec = true
-    inputSpec = modifiedSpecFile.asFile.absolutePath
-    outputDir = generatedClientDir.asFile.absolutePath
-    configFile = layout.projectDirectory.file('openapi.config.json').asFile.absolutePath
+    inputSpec = modifiedSpecFile.asFile
+    outputDir = generatedClientDir.asFile
+    configFile = layout.projectDirectory.file('openapi.config.json').asFile
     generatorName = 'typescript-fetch'
     globalProperties.set([
             modelDocs             : 'true',
@@ -87,7 +88,7 @@ tasks.register('generateTypeScriptClient', GenerateTask) {
             apiTests              : 'false',
             enabledPostProcessFile: 'false'
     ])
-    ignoreFileOverride = layout.projectDirectory.file('.openapi-generator-ignore').asFile.absolutePath
+    ignoreFileOverride = layout.projectDirectory.file('.openapi-generator-ignore').asFile
 }
 
 tasks.register('modPackage', NpxTask) {

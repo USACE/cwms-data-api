@@ -60,17 +60,17 @@ import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -102,12 +102,13 @@ public final class LockController implements CrudHandler {
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
-                @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Lock.class),
-                @OpenApiContent(isArray = true, type = Formats.JSON, from = Lock.class)
+                @OpenApiContent(type = Formats.JSONV1, from = Lock[].class),
+                @OpenApiContent(type = Formats.JSON, from = Lock[].class)
             })
         },
         description = "Returns matching CWMS Lock Data for a Reservoir Project.",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/projects/locks"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -128,7 +129,7 @@ public final class LockController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx, ERROR_MSG, ex);
             LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
@@ -150,12 +151,13 @@ public final class LockController implements CrudHandler {
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 content = {
-                    @OpenApiContent(isArray = true, type = Formats.JSONV1, from = Lock.class),
-                    @OpenApiContent(isArray = true, type = Formats.JSON, from = Lock.class)
+                    @OpenApiContent(type = Formats.JSONV1, from = Lock[].class),
+                    @OpenApiContent(type = Formats.JSON, from = Lock[].class)
                 })
         },
         description = "Returns CWMS Lock Data",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/projects/locks/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -180,7 +182,7 @@ public final class LockController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx, ERROR_MSG, ex);
             LOGGER.atSevere().withCause(ex).log(ERROR_MSG);
@@ -199,8 +201,9 @@ public final class LockController implements CrudHandler {
                 description = "Create will fail if provided ID already exists. Default: true")
         },
         description = "Create CWMS Lock",
-        method = HttpMethod.POST,
+        methods = HttpMethod.POST,
         tags = {TAG},
+        path = "/projects/locks",
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Lock successfully stored to CWMS.")
         }
@@ -208,7 +211,7 @@ public final class LockController implements CrudHandler {
     @Override
     public void create(Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            String acceptHeader = ctx.req.getContentType();
+            String acceptHeader = ctx.contentType();
             String formatHeader = acceptHeader != null ? acceptHeader : Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
             Lock lock = Formats.parseContent(contentType, ctx.body(), Lock.class);
@@ -240,8 +243,9 @@ public final class LockController implements CrudHandler {
             @OpenApiParam(name = NAME, required = true, description = "Specifies the new lock name.")
         },
         description = "Rename CWMS Lock",
-        method = HttpMethod.PATCH,
+        methods = HttpMethod.PATCH,
         tags = {TAG},
+        path = "/projects/locks/{" + NAME + "}",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "Lock successfully renamed in CWMS.")
         }
@@ -271,8 +275,9 @@ public final class LockController implements CrudHandler {
                 + "Defaults to \"DELETE_KEY\"", type = JooqDao.DeleteMethod.class)
         },
         description = "Delete CWMS Lock",
-        method = HttpMethod.DELETE,
+        methods = HttpMethod.DELETE,
         tags = {TAG},
+        path = "/projects/locks/{" + NAME + "}",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "Lock successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

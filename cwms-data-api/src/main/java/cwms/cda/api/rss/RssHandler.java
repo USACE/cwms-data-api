@@ -30,6 +30,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.BaseHandler;
 import cwms.cda.api.enums.MessageQueue;
 import cwms.cda.api.errors.CdaError;
@@ -40,15 +42,16 @@ import cwms.cda.data.dto.rss.RssFeed;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.javalin.http.HttpResponseException;
-import io.javalin.http.util.NaiveRateLimit;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.plugin.bundled.RateLimitPlugin;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -57,7 +60,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.client.utils.URIBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -106,8 +109,14 @@ public final class RssHandler extends BaseHandler {
             @OpenApiResponse(status = STATUS_404, description = "Unknown Feed"),
             @OpenApiResponse(status = STATUS_429, description = "Rate Limit exceeded.")
         },
+        headers = {
+            @OpenApiParam (name = "Retry-After", type = Integer.class,
+                           description = "Amount of time (in seconds) to wait before making the next request."),
+            @OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION),
+        },
         description = "Returns RSS feed items limited to the last week. End point is limited to 1 request per 10 seconds per client per feed.",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/rss/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
@@ -116,7 +125,7 @@ public final class RssHandler extends BaseHandler {
             ctx.header("Retry-After", "10")
                .header("RateLimit-Policy", "\"default\";q=6;w=60");
             // Limit is 1 request per 10 seconds, or 6 a minute.
-            NaiveRateLimit.requestPerTimeUnit(ctx, 6, TimeUnit.MINUTES);
+            ctx.with(RateLimitPlugin.class).requestPerTimeUnit(6, TimeUnit.MINUTES);
 
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE).toUpperCase();
@@ -127,7 +136,7 @@ public final class RssHandler extends BaseHandler {
                 StandardCharsets.UTF_8);
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new CdaError("cursor or page passed in but failed validation"))
-                    .status(HttpCode.BAD_REQUEST);
+                    .status(HttpStatus.BAD_REQUEST);
                 return;
             }
             Instant since = queryParamAsInstant(ctx, SINCE);
@@ -141,8 +150,9 @@ public final class RssHandler extends BaseHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (HttpResponseException ex) {
+            // TODO: this may need to move as the rate limiting will happen before this code would be called.
             // an exception to our error handling rules. HttpResponseException, includes multiple other exception
             // and we don't want to deal with trying to distinguish in ApiServlet. For the time being this logic will
             // remain here.

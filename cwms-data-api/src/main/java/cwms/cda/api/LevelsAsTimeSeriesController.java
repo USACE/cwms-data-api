@@ -41,21 +41,23 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.LocationLevelsDao;
 import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import hec.data.level.JDomLocationLevelRef;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.metadata.Interval;
 import mil.army.usace.hec.metadata.IntervalFactory;
 import org.jooq.DSLContext;
@@ -114,8 +116,10 @@ public class LevelsAsTimeSeriesController extends BaseHandler {
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             description = "Retrieves requested Location Level",
-            tags = LevelsController.TAG
+            tags = LevelsController.TAG,
+            path = "/levels/{" + LEVEL_ID + "}/timeseries"
     )
     public void handle(Context ctx) {
         logUnusedPathParameter(ctx, LEVEL_ID, "Body contains required information");
@@ -149,6 +153,5 @@ public class LevelsAsTimeSeriesController extends BaseHandler {
             ctx.json(timeSeries);
             ctx.status(HttpServletResponse.SC_OK);
         }
-
     }
 }

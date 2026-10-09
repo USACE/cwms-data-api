@@ -7,7 +7,7 @@ Guidance for coding agents working in `USACE/cwms-data-api`.
 - GitHub repository: `USACE/cwms-data-api`
 - Primary branch: `develop`
 - Product: CWMS Data API (CDA), formerly RADAR, a REST API for USACE CWMS water data.
-- Runtime/build target: Java 11. Newer JDKs may work, but do not introduce Java APIs beyond Java 11.
+- Runtime/build target: Java 17. Newer JDKs may work, but do not introduce Java APIs beyond Java 17.
 - License/contribution model: MIT license with DCO sign-off expectations in `CONTRIBUTING.md` and `CONTRIBUTORS.md`.
 - Formal `CODEOWNERS` is not present. Treat maintainership/review routing as social context, not policy. Visible long-running contributors include Mike Neilson, Ryan Ripken/RMA, Adam Korynta, Bryson Spilman, Ryan Miles, Zach Olson, and Charles Graham. Verify current reviewers on GitHub before assigning or naming people in PR text.
 

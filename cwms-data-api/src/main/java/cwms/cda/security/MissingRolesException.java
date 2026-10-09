@@ -1,7 +1,7 @@
 package cwms.cda.security;
 
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class MissingRolesException extends CwmsAuthException {
     private final List<String> missingRoles;

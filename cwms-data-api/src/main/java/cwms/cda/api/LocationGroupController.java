@@ -26,8 +26,6 @@ package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
 import static cwms.cda.api.Controllers.*;
-import static cwms.cda.api.Controllers.queryParamAsClass;
-import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.Histogram;
@@ -44,21 +42,22 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.csv.CsvV1LocationGroup;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.config.Key;
+import io.javalin.http.Header;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -102,11 +101,12 @@ public class LocationGroupController implements CrudHandler {
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 content = {
-                    @OpenApiContent(isArray = true, from = LocationGroup.class, type = Formats.JSON),
-                    @OpenApiContent(isArray = true, from = CsvV1LocationGroup.class, type = Formats.CSV)
+                    @OpenApiContent(from = LocationGroup[].class, type = Formats.JSON),
+                    @OpenApiContent(from = CsvV1LocationGroup[].class, type = Formats.CSV)
                 })
         },
-        description = "Returns CWMS Location Groups Data", tags = {TAG}
+        description = "Returns CWMS Location Groups Data", tags = {TAG},
+        path = "/location/group"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -142,7 +142,7 @@ public class LocationGroupController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("No location groups for office provided");
                 logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
@@ -184,7 +184,8 @@ public class LocationGroupController implements CrudHandler {
         description = "Retrieves requested Location Group. This endpoint supports GEO JSON responses with "
             + Formats.GEOJSON + "."
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/location/group/{"  + GROUP_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {
@@ -206,7 +207,7 @@ public class LocationGroupController implements CrudHandler {
                 contentType = new ContentType(Formats.GEOJSON);
                 FeatureCollection fc = cdm.buildFeatureCollectionForLocationGroup(locationOfficeId,
                         groupOfficeId, categoryOfficeId, categoryId, groupId, "EN");
-                ObjectMapper mapper = ctx.appAttribute("ObjectMapper");
+                ObjectMapper mapper = ctx.appData(new Key<ObjectMapper>("ObjectMapper"));
                 result = mapper.writeValueAsString(fc);
             } else {
                 contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
@@ -229,7 +230,7 @@ public class LocationGroupController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (JsonProcessingException e) {
             CdaError re = new CdaError("Failed to process request");
             logger.atSevere().withCause(e).log("%s", re);
@@ -252,15 +253,16 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = IGNORE_MISSING, description = "Specifies whether to fail when attempting "
                 + "to assign a location that does not exist. Default is false.", type = Boolean.class)
         },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = {HttpMethod.POST},
+        tags = {TAG},
+        path = "/location/group"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
@@ -287,7 +289,7 @@ public class LocationGroupController implements CrudHandler {
                 sb.delete(sb.length() - 2, sb.length());
                 details.put("missing-locations", sb.toString());
                 if (ignoreMissing) {
-                    ctx.status(HttpCode.MULTI_STATUS);
+                    ctx.status(HttpStatus.MULTI_STATUS);
                 } else {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                     details.put("message", "One or more locations could not be assigned to the location group.");
@@ -320,15 +322,16 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = IGNORE_MISSING, description = "Specifies whether to fail when attempting "
                 + "to assign a location that does not exist. Default is false.", type = Boolean.class)
         },
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = {HttpMethod.PATCH},
+        tags = {TAG},
+        path = "/location/group/{" + GROUP_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String groupId) {
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
             String office = requiredParam(ctx, OFFICE);
             ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
@@ -350,7 +353,7 @@ public class LocationGroupController implements CrudHandler {
                 Map<String, String> details = new HashMap<>();
                 details.put("missing_locations", Formats.format(contentType, missingLocations, CwmsId.class));
                 if (ignoreMissing) {
-                    ctx.status(HttpCode.MULTI_STATUS);
+                    ctx.status(HttpStatus.MULTI_STATUS);
                 } else {
                     ctx.status(HttpServletResponse.SC_BAD_REQUEST);
                     details.put("message", "One or more locations could not be assigned to the location group.");
@@ -373,8 +376,9 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = CASCADE_DELETE, type = Boolean.class, description = "Specifies whether "
                 + "to unassign any location assignments. Default: false"),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/location/group/{" + GROUP_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {

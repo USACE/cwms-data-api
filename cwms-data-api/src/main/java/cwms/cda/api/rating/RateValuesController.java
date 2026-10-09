@@ -42,16 +42,16 @@ import cwms.cda.data.dto.rating.RatedOutput;
 import cwms.cda.data.dto.rating.RatedOutputValues;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -91,8 +91,9 @@ public final class RateValuesController extends BaseHandler {
             "in the rating curve. " +
             "The output format `RatedOutputTimeSeries` will contain a singular double array corresponding to the " +
             "dependent parameter of the rating curve. ",
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/ratings/rate-values/{" + OFFICE + "}/{" + RATING_ID + "}"
     )
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
@@ -101,7 +102,7 @@ public final class RateValuesController extends BaseHandler {
             RateDao ratingDao = new RateDao(dsl);
             String office = ctx.pathParam(OFFICE);
             String ratingId = ctx.pathParam(RATING_ID);
-            String contentTypeHeader = ctx.req.getContentType();
+            String contentTypeHeader = ctx.contentType();
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(contentTypeHeader, RateInputValues.class);
             RateInputValues input = Formats.parseContent(contentType, body, RateInputValues.class);
