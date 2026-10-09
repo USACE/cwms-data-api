@@ -160,6 +160,7 @@ public final class CwmsDataApi {
     private final String appContext;
     private final MetricRegistry metrics = new MetricRegistry(); 
     private final Javalin app;
+    private final DataSource ds;
     private final int port;
     final OpenApiSchemeProcessor schemeProcessor;
 
@@ -171,17 +172,34 @@ public final class CwmsDataApi {
         final var port = args.length > 2 ? Integer.parseInt(args[2]) : 7000;
         logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
         var ds = buildDataSource();
+        var sessions = builderDefaultSessionHandler();
         var api = CwmsDataApi.builder()
                              .withContext(appContext)
                              .withPort(port)
                              .withUiWar(new File(uiPath))
                              .withDataSource(ds)
+                             .withSessionManager(sessions)
                              .build();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.atInfo().log("JVM Shutting down, stopping CDA and DataSource.");
+            api.stop();
+            if (ds instanceof AutoCloseable closeable) {
+                try {
+                    closeable.close();
+                } catch (Exception ex) {
+                    logger.atWarning().withCause(ex).log("Error closing data source.");
+                }
+            }
+        }, "cda-shutdown"));
+
         api.start();
+
         logger.atInfo().log("Using listening on http://127.0.0.1:%d", api.getPort());
     }
     
     private CwmsDataApi(int port, String context, File uiWar, DataSource ds, SessionHandler sessionHandler) {
+        this.ds = ds;
         this.port = port;
         this.appContext = context;
         logger.atInfo().log("Initializing Javalin.");
@@ -307,11 +325,13 @@ public final class CwmsDataApi {
                 });
                 configureRoutes(config.routes, metrics, cdaAccessManager);
             });
-        QueueManager.ensureRssSubscribers(ds);
         logger.atInfo().log("Javalin initialized.");
     }
 
     public void start() {
+        logger.atFine().log("Starting queue subscriber for RSS feed.");
+        QueueManager.ensureRssSubscribers(ds);
+        logger.atFine().log("Starting CDA.");
         app.start("127.0.0.1", port); // Always localhost, we only allow containerization or through proxy.
         logger.atInfo().log("Listening on port %d", getPort());
     }
@@ -484,29 +504,6 @@ public final class CwmsDataApi {
         }
     }
 
-    // @Override
-    // protected void service(HttpServletRequest req, HttpServletResponse resp)
-    //         throws IOException {
-    //     totalRequests.mark();
-    //     try {
-    //         String office = officeFromContext(req.getContextPath());
-    //         req.setAttribute(OFFICE_ID, office);
-    //         //logger.atInfo().log("Connection user name is: %s")
-    //         req.setAttribute(DATA_SOURCE, cwms);
-    //         req.setAttribute(RAW_DATA_SOURCE,cwms);
-    //         javalin.service(req, resp);
-    //     } catch (Exception ex) {
-    //         CdaError re = new CdaError("Major Database Issue");
-    //         logger.atSevere().withCause(ex).log(re + " for url " + req.getRequestURI());
-    //         resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-    //         resp.setContentType(ContentType.APPLICATION_JSON.toString());
-    //         try (PrintWriter out = resp.getWriter()) {
-    //             ObjectMapper om = new ObjectMapper();
-    //             out.println(om.writeValueAsString(re));
-    //         }
-    //     }
-    // }
-
     /**
      * Retrieve the specific office name.
      * @param contextPath applicatio context path
@@ -533,6 +530,20 @@ public final class CwmsDataApi {
         dsConfig.setPassword(ConfigVariables.getConfigString("CDA_JDBC_PASSWORD"));
         dsConfig.setMaximumPoolSize(ConfigVariables.getConfigInt("CDA_POOL_MAX_ACTIVE", 1));
         return new HikariDataSource(dsConfig);
+    }
+
+    /** 
+     * Basic default session handler. Default currently uses in-memory handler.
+     */
+    public static SessionHandler builderDefaultSessionHandler() {
+        var sessionManager = new SessionHandler();
+        sessionManager.setSameSite(HttpCookie.SameSite.STRICT);
+        sessionManager.setHttpOnly(true);
+        sessionManager.setMaxInactiveInterval(900);
+        var cache = new DefaultSessionCache(sessionManager);
+        cache.setSessionDataStore(new NullSessionDataStore());
+        sessionManager.setSessionCache(cache);
+        return sessionManager;
     }
 
     public static Builder builder()
@@ -581,15 +592,6 @@ public final class CwmsDataApi {
 
         public CwmsDataApi build()
         {
-            if (sessionManager == null) {
-                this.sessionManager = new SessionHandler();
-                sessionManager.setSameSite(HttpCookie.SameSite.STRICT);
-                sessionManager.setHttpOnly(true);
-                sessionManager.setMaxInactiveInterval(900);
-                var cache = new DefaultSessionCache(sessionManager);
-                cache.setSessionDataStore(new NullSessionDataStore());
-                sessionManager.setSessionCache(cache);
-            }
             return new CwmsDataApi(port, context, uiWar, dataSource, sessionManager);
         }
     }
