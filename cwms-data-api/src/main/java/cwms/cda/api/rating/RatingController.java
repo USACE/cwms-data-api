@@ -84,7 +84,6 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
-import io.javalin.openapi.JsonSchema;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
@@ -184,7 +183,7 @@ public class RatingController extends BaseCrudHandler {
     }
 
     private RatingsDocument deserializeRatingSet(Context ctx, boolean storeTemplate) throws IOException {
-        String formatHeader = ctx.req.getContentType();
+        String formatHeader = ctx.contentType();
         //Using placeholder CwmsDTOBase.class since we do not have a RatingSet DTO
         //The contentType will match against the standard listing of Formats constants
         ContentType contentType = Formats.parseHeader(formatHeader, Ratings.class);
