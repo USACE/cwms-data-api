@@ -1,0 +1,35 @@
+{
+  "ratings": {
+    "ratings": [
+      {
+        "transitional-rating": {
+          "office": "SWT",
+          "name": "A.Stage;Flow.Transitional.Production",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "1900-01-01T06:00:00Z",
+          "description": null,
+          "cases": [
+            {
+              "when": "I1 GT 25",
+              "then": "R1"
+            },
+            {
+              "when": "I1 GT 10",
+              "then": "R2"
+            }
+          ],
+          "default": "R2",
+          "references": [
+            {
+              "R1": "A.Stage;Flow.Linear.Dummy"
+            },
+            {
+              "R2": "A.Stage;Flow.Linear.Production"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
