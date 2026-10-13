@@ -12,7 +12,7 @@ Retrieve rating data for a location and effective date. The time window may be a
 When to use
 -----------
 
-- View rating data for a given rating specification ID
+- Viewing available rating data for a given rating specification ID
 - View rating data for a given rating specification ID in different units
 
 

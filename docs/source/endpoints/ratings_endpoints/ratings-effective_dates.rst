@@ -9,7 +9,7 @@ can be set to filter the effective dates retrieved.
 
 When to use
 -----------
-- Retrieving available effective dates for a rating
+- Retrieving available effective dates for a specific rating specification ID
 
 
 .. csv-table:: GET /ratings/effective-dates - Endpoint Parameters

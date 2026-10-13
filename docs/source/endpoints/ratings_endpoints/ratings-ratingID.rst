@@ -51,6 +51,17 @@ Examples
 
         GET /ratings/KEYS.Elev%3BArea.Linear.Production?office=SWT&begin=2020-01-01T05%3A00%3A00Z
 
+3. | The user wants to retrieve the rating data for the rating ID of `KEYS.Elev;Area.Linear.Production`
+   | using the `LAZY` retrieval method:
+   | (**rating-id**) :code:`KEYS.Elev;Area.Linear.Production`
+   |
+   | (**office**) :code:`SWT`
+   |
+   | (**method**) :code:`LAZY`
+
+   .. code-block:: urlencoded
+
+        GET /ratings/KEYS.Elev%3BArea.Linear.Production?office=SWT&method=LAZY&_cb=1791902125861
 
 See the consolidated API documentation: :doc:`/api-references`.
 
