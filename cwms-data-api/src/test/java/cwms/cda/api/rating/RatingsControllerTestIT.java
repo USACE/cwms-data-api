@@ -44,6 +44,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import javax.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import static cwms.cda.api.Controllers.*;
 import static io.restassured.RestAssured.given;
@@ -540,6 +541,236 @@ class RatingsControllerTestIT extends DataApiTestIT
             .assertThat()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
+    @Test
+    void test_1758_rating_post() throws IOException {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String ratingId = "FSMI.Stage;Flow.EXSA.PRODUCTION";
+        ratingId = ratingId.replaceAll("FSMI", EXISTING_LOC);
+        String body = readResourceFile("cwms/cda/data/dto/rating/rating_post.json");
+        body = body.replaceAll("FSMI", EXISTING_LOC);
+        String template = readResourceFile("cwms/cda/api/spk/rating_template.json");
+
+        //Create Template
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.JSONV2)
+                .body(template)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings/template")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Create the set
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.JSONV2)
+                .accept(Formats.JSONV2)
+                .body(body)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/ratings/" + ratingId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .contentType(is(Formats.JSONV2))
+                .body("rating-spec.office-id", is(SPK))
+                .body("simple-rating.office-id", is(SPK));
+    }
+
+    @Test
+    void test_1758_rating_post_usgs_stream_rating() throws IOException {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String ratingId = "USGSTEST.Stage;Flow.USGS-EXSA.USGS-NWIS".replace("USGSTEST", EXISTING_LOC);
+        // json as returned by GET /ratings
+        String body = readResourceFile("cwms/cda/data/dto/rating/rating_post_usgs.json")
+                .replace("USGSTEST", EXISTING_LOC);
+
+        // Create the set
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.JSONV2)
+                .body(body)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/ratings/" + ratingId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .contentType(is(Formats.JSONV2))
+                .body("rating-spec.office-id", is(SPK))
+                .body("rating-spec.source-agency", is("USGS"))
+                .body("usgs-stream-rating.office-id", is(SPK))
+                .body("usgs-stream-rating.rating-spec-id", is(ratingId))
+                .body("usgs-stream-rating.units-id", is("ft;cfs"))
+                .body("usgs-stream-rating.height-shifts.point.size()", is(2))
+                .body("usgs-stream-rating.rating-points.point.size()", is(4));
+    }
+
+    @Test
+    void test_1758_rating_post_virtual_rating() throws IOException {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String ratingId = "VIRTTEST.Stage;Flow.Virtual.Production".replace("VIRTTEST", EXISTING_LOC);
+        // json as returned by GET /ratings, including the source ratings the virtual rating references
+        String body = readResourceFile("cwms/cda/data/dto/rating/rating_post_virtual.json")
+                .replace("VIRTTEST", EXISTING_LOC);
+
+        // Create the set
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.JSONV2)
+                .body(body)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/ratings/" + ratingId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .contentType(is(Formats.JSONV2))
+                .body("virtual-rating.office-id", is(SPK))
+                .body("virtual-rating.rating-spec-id", is(ratingId))
+                .body("virtual-rating.connections", is("R2I1=R1D"))
+                .body("virtual-rating.source-ratings.source-rating.size()", is(2));
+    }
+
+    @Test
+    void test_1758_rating_post_transitional_rating() throws IOException {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String ratingId = "TRANSTEST.Stage;Flow.Transitional.Production".replace("TRANSTEST", EXISTING_LOC);
+        // json as returned by GET /ratings, including the source ratings the transitional rating references
+        String body = readResourceFile("cwms/cda/data/dto/rating/rating_post_transitional.json")
+                .replace("TRANSTEST", EXISTING_LOC);
+
+        // Create the set
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.JSONV2)
+                .body(body)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .post("/ratings")
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        String retrieved = given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/ratings/" + ratingId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .contentType(is(Formats.JSONV2))
+                .body("transitional-rating.office-id", is(SPK))
+                .body("transitional-rating.rating-spec-id", is(ratingId))
+                .body("transitional-rating.units-id", is("ft;cfs"))
+                // the database normalizes the condition from "I1 GT 20"
+                .body("transitional-rating.select.case.when", is("I1 gt 20.0"))
+                .body("transitional-rating.select.default", is("R1"))
+                .body("transitional-rating.source-ratings.rating-spec-id.size()", is(2))
+                .extract()
+                .asString();
+
+        // The source rating spec ids in that json keep the whitespace from the rating xml
+        // (e.g. "\n    LOC.Stage;Flow.TransSrc.Low\n   "), make sure it can still be stored as is.
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .contentType(Formats.JSONV2)
+                .body(retrieved)
+                .header("Authorization", user.toHeaderValue())
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .patch("/ratings/" + ratingId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK));
+
+        // The sources still resolve, so the whitespace wasn't stored with the ids
+        given()
+                .log().ifValidationFails(LogDetail.ALL,true)
+                .accept(Formats.JSONV2)
+                .queryParam(OFFICE, SPK)
+        .when()
+                .redirects().follow(true)
+                .redirects().max(3)
+                .get("/ratings/" + ratingId)
+        .then()
+                .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+                .statusCode(is(HttpServletResponse.SC_OK))
+                .body("transitional-rating.source-ratings.rating-spec-id.element-value.collect { it.trim() }",
+                        is(Arrays.asList(EXISTING_LOC + ".Stage;Flow.TransSrc.Low",
+                                EXISTING_LOC + ".Stage;Flow.TransSrc.High")));
     }
 
 }

@@ -1,0 +1,158 @@
+{
+  "ratings": {
+    "rating-templates": [
+      {
+        "office": "SPK",
+        "name": "Stage;Stage.VirtSrc",
+        "parameters-string": "Stage;Stage",
+        "version": "VirtSrc",
+        "ind-parameters": [
+          {
+            "name": "Stage",
+            "value-lookup-in-range": "LINEAR",
+            "value-lookup-below-range": "NEAREST",
+            "value-lookup-above-range": "NEAREST"
+          }
+        ],
+        "dep-parameter": "Stage",
+        "description": null
+      },
+      {
+        "office": "SPK",
+        "name": "Stage;Flow.VirtSrc",
+        "parameters-string": "Stage;Flow",
+        "version": "VirtSrc",
+        "ind-parameters": [
+          {
+            "name": "Stage",
+            "value-lookup-in-range": "LINEAR",
+            "value-lookup-below-range": "NEAREST",
+            "value-lookup-above-range": "NEAREST"
+          }
+        ],
+        "dep-parameter": "Flow",
+        "description": null
+      },
+      {
+        "office": "SPK",
+        "name": "Stage;Flow.Virtual",
+        "parameters-string": "Stage;Flow",
+        "version": "Virtual",
+        "ind-parameters": [
+          {
+            "name": "Stage",
+            "value-lookup-in-range": "LINEAR",
+            "value-lookup-below-range": "NEAREST",
+            "value-lookup-above-range": "NEAREST"
+          }
+        ],
+        "dep-parameter": "Flow",
+        "description": null
+      }
+    ],
+    "rating-specs": [
+      {
+        "office": "SPK",
+        "name": "VIRTTEST.Stage;Stage.VirtSrc.Production",
+        "location": "VIRTTEST",
+        "version": "Production",
+        "source-agency": null,
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": ["2223456782"],
+          "dep-parameter": "2223456782"
+        },
+        "description": "Stage correction"
+      },
+      {
+        "office": "SPK",
+        "name": "VIRTTEST.Stage;Flow.VirtSrc.Production",
+        "location": "VIRTTEST",
+        "version": "Production",
+        "source-agency": null,
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": ["2223456782"],
+          "dep-parameter": "2222233332"
+        },
+        "description": "Stream rating"
+      },
+      {
+        "office": "SPK",
+        "name": "VIRTTEST.Stage;Flow.Virtual.Production",
+        "location": "VIRTTEST",
+        "version": "Production",
+        "source-agency": null,
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": ["2223456782"],
+          "dep-parameter": "2222233332"
+        },
+        "description": "Corrected stage to flow"
+      }
+    ],
+    "ratings": [
+      {
+        "simple-rating": {
+          "office": "SPK",
+          "name": "VIRTTEST.Stage;Stage.VirtSrc.Production",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Stage (ft)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "values": [
+            [0, 0.5],
+            [10, 10.5],
+            [20, 20.5],
+            [30, 30.5]
+          ]
+        }
+      },
+      {
+        "simple-rating": {
+          "office": "SPK",
+          "name": "VIRTTEST.Stage;Flow.VirtSrc.Production",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "values": [
+            [0, 0],
+            [10, 1000],
+            [20, 5000],
+            [30, 12000]
+          ]
+        }
+      },
+      {
+        "virtual-rating": {
+          "office": "SPK",
+          "name": "VIRTTEST.Stage;Flow.Virtual.Production",
+          "ind-parameters": ["Stage"],
+          "dep-parameter": "Flow",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "connections": ["R2I1=R1D"],
+          "references": [
+            {
+              "name": "R1",
+              "reference": "VIRTTEST.Stage;Stage.VirtSrc.Production",
+              "units": "ft;ft"
+            },
+            {
+              "name": "R2",
+              "reference": "VIRTTEST.Stage;Flow.VirtSrc.Production",
+              "units": "ft;cfs"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
