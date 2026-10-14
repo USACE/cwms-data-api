@@ -289,15 +289,71 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     }
 
     @Test
-    void pageSizeNegativeOneReturnsWholeWindowWithoutPagination() throws Exception {
+    void unpagedTrimmedRegularReadFillsGaps() throws Exception {
+        String seriesId = "ITPARALLGAP.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2023-12-31T23:59:00Z");
+        Instant endTime = Instant.parse("2024-01-01T00:10:00Z");
+        seedTimeSeries("ITPARALLGAP", seriesId, gapRows(), false);
+
+        List<TimeSeries.Record> expectedRows = fetchOracleRows(
+            seriesId, "ft", beginTime, endTime, false, null);
+        TimeSeries response = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, -1, false, null, true);
+
+        assertUnpagedResponse(expectedRows, response);
+        assertNull(response.getValues().get(3).getValue(), "first gap value");
+        assertNull(response.getValues().get(4).getValue(), "second gap value");
+    }
+
+    @Test
+    void unpagedTrimmedLrtsReadPreservesLocalDaysAcrossDst() throws Exception {
+        String seriesId = "ITPARALLDST.Flow.Inst.1DayLocal.0.BENCH";
+        Instant beginTime = Instant.parse("2024-03-07T00:00:00Z");
+        Instant endTime = Instant.parse("2024-03-13T00:00:00Z");
+        List<SeedRow> rows = List.of(
+            row("2024-03-08T08:00:00Z", 1.0, 0, "2024-03-14T00:00:00Z", null),
+            row("2024-03-09T08:00:00Z", 2.0, 0, "2024-03-14T00:01:00Z", null),
+            row("2024-03-11T07:00:00Z", 4.0, 0, "2024-03-14T00:03:00Z", null),
+            row("2024-03-12T07:00:00Z", 5.0, 0, "2024-03-14T00:04:00Z", null)
+        );
+        seedTimeSeries("ITPARALLDST", seriesId, rows, false, 0, true,
+            "PST8PDT");
+
+        List<TimeSeries.Record> expectedRows = fetchOracleRows(
+            seriesId, "cfs", beginTime, endTime, false, null, true);
+        TimeSeries response = fetchCdaRowsWithPageSize(
+            seriesId, "cfs", beginTime, endTime, -1, false, null, true, true);
+
+        assertUnpagedResponse(expectedRows, response);
+        assertEquals("PST8PDT", response.getTimeZone(), "time zone");
+    }
+
+    @Test
+    void unpagedEmptyTrimmedWindowDoesNotGenerateSyntheticValues() throws Exception {
+        String seriesId = "ITPARALLEMPTY.Stage.Inst.1Minute.0.BENCH";
+        Instant beginTime = Instant.parse("2024-02-01T00:00:00Z");
+        Instant endTime = Instant.parse("2024-02-01T00:05:00Z");
+        seedTimeSeries("ITPARALLEMPTY", seriesId, denseRows(), false);
+
+        TimeSeries response = fetchCdaRowsWithPageSize(
+            seriesId, "ft", beginTime, endTime, -1, false, null, true);
+
+        assertUnpagedResponse(List.of(), response);
+        assertEquals(beginTime, response.getBegin().toInstant(), "begin");
+        assertEquals(endTime, response.getEnd().toInstant(), "end");
+    }
+
+    @Test
+    void unpagedRegularReadIncludesOffGridObservations() throws Exception {
         List<SeedRow> rows = new ArrayList<>(denseRows());
         rows.add(row("2024-01-01T00:04:30Z", 7.0, 0, "2024-01-02T00:06:00Z", null));
         Instant beginTime = Instant.parse("2024-01-01T00:00:00Z");
         Instant endTime = Instant.parse("2024-01-01T00:05:00Z");
-        seedTimeSeries("ITPARALL", "ITPARALL.Stage.Inst.1Minute.0.BENCH", rows, false);
+        String seriesId = "ITPARALL.Stage.Inst.1Minute.0.BENCH";
+        seedTimeSeries("ITPARALL", seriesId, rows, false);
 
         TimeSeries response = fetchCdaRowsWithPageSize(
-            "ITPARALL.Stage.Inst.1Minute.0.BENCH",
+            seriesId,
             "ft",
             beginTime,
             endTime,
@@ -312,6 +368,25 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         assertEquals(rows.size(), response.getTotal(), "total");
         assertNull(response.getPage(), "page");
         assertNull(response.getNextPage(), "next-page");
+    }
+
+    @Test
+    void unpagedSpecificVersionReadIncludesEntryDates() throws Exception {
+        String seriesId = "ITPARALLVER.Flow.Inst.1Hour.0.BENCH";
+        Instant beginTime = Instant.parse("2024-05-01T15:00:00Z");
+        Instant endTime = Instant.parse("2024-05-01T18:00:00Z");
+        Instant versionDate = Instant.parse("2024-06-21T08:00:00Z");
+        seedTimeSeries("ITPARALLVER", seriesId, versionedRows(), true);
+
+        List<TimeSeries.Record> expectedRows = fetchOracleRows(
+            seriesId, "cfs", beginTime, endTime, true, versionDate);
+        TimeSeries response = fetchCdaRowsWithPageSize(
+            seriesId, "cfs", beginTime, endTime, -1, true, versionDate, true);
+
+        assertUnpagedResponse(expectedRows, response);
+        assertEquals(VersionType.SINGLE_VERSION, response.getDateVersionType(), "date version type");
+        assertEquals(versionDate, response.getVersionDate().toInstant(), "version date");
+        assertNotNull(response.getValues().get(0).getDataEntryDate(), "entry date");
     }
 
     @Test
@@ -637,6 +712,17 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
         assertEquals(expected.getDataEntryDate(), actual.getDataEntryDate(), "Row " + index + " entry date");
     }
 
+    private static void assertUnpagedResponse(List<TimeSeries.Record> expectedRows, TimeSeries response) {
+        assertEquals(-1, response.getPageSize(), "page-size");
+        assertEquals(expectedRows.size(), response.getTotal(), "total");
+        assertEquals(expectedRows.size(), response.getValues().size(), "values size");
+        assertNull(response.getPage(), "page");
+        assertNull(response.getNextPage(), "next-page");
+        for (int index = 0; index < expectedRows.size(); index++) {
+            assertRecordsEqual(expectedRows.get(index), response.getValues().get(index), index);
+        }
+    }
+
     private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
                                        boolean versioned) throws SQLException {
         seedTimeSeries(locationId, seriesId, rows, versioned, false);
@@ -655,7 +741,13 @@ final class TimeSeriesDirectReadParityIT extends DataApiTestIT {
     private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
                                        boolean versioned, Integer intervalOffset,
                                        boolean useNewLrtsInterval) throws SQLException {
-        createLocation(locationId, true, OFFICE);
+        seedTimeSeries(locationId, seriesId, rows, versioned, intervalOffset, useNewLrtsInterval, "UTC");
+    }
+
+    private static void seedTimeSeries(String locationId, String seriesId, List<SeedRow> rows,
+                                       boolean versioned, Integer intervalOffset,
+                                       boolean useNewLrtsInterval, String timeZoneId) throws SQLException {
+        createLocation(locationId, true, OFFICE, 0.0, 0.0, "WGS84", timeZoneId, "STREAM");
         if (useNewLrtsInterval) {
             createTimeseriesWithNewLRTSInterval(OFFICE, seriesId, intervalOffset != null ? intervalOffset : 0);
         } else if (intervalOffset != null) {
