@@ -39,6 +39,7 @@ import cwms.cda.data.dao.CdaVersionDao;
 import cwms.cda.data.dto.CdaVersion;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -46,6 +47,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -71,6 +74,7 @@ public final class CdaVersionHandler implements Handler {
                 @OpenApiContent(type = Formats.JSON, from = CdaVersion.class)})
         },
         tags = {TAG},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/version",
         methods = HttpMethod.GET
     )

@@ -20,7 +20,6 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class UserListMemberController implements Handler {
@@ -46,7 +45,6 @@ public final class UserListMemberController implements Handler {
             @OpenApiResponse(status = "404", description = "List, office, or member not found."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Remove a member from an office-scoped user list.",
         methods = HttpMethod.DELETE,
         tags = UserListController.TAG,

@@ -78,9 +78,6 @@ public final class WaterUserController extends WaterSupplyControllerBase {
                     @OpenApiContent(type = Formats.JSONV1, from = WaterUserContract.class)
                 })
         },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "Gets a specified water user.",
         methods = HttpMethod.GET,
         path = "/projects/{office}/{project-id}/water-user/{water-user}",

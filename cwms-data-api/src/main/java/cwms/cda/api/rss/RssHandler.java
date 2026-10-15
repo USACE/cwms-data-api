@@ -42,6 +42,7 @@ import cwms.cda.data.dto.rss.RssFeed;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
@@ -50,6 +51,7 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import io.javalin.plugin.bundled.RateLimitPlugin;
 
 import java.io.IOException;
@@ -114,6 +116,7 @@ public final class RssHandler extends BaseHandler {
                            description = "Amount of time (in seconds) to wait before making the next request."),
             @OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION),
         },
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         description = "Returns RSS feed items limited to the last week. End point is limited to 1 request per 10 seconds per client per feed.",
         tags = {TAG},
         path = "/rss/{" + OFFICE + "}/{" + NAME + "}"

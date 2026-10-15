@@ -28,6 +28,7 @@ import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.flogger.FluentLogger;
@@ -57,12 +58,10 @@ import io.javalin.plugin.bundled.RouteOverviewPlugin;
 import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -75,7 +74,6 @@ import java.util.jar.Manifest;
 
 import javax.sql.DataSource;
 
-import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.http.entity.ContentType;
@@ -396,25 +394,23 @@ public final class CwmsDataApi {
             openapi.prettyOutputEnabled = true;
             openapi.documentationPath = "/swagger-docs";
             openapi.withDefinitionConfiguration((v,builder) -> {
-                CwmsDataApi.this.schemeProcessor.apply(null, builder);
+                CwmsDataApi.this.schemeProcessor.apply(config, builder);
                 builder.info(info -> info.title(APPLICATION_TITLE).version(CwmsDataApi.VERSION));
                 builder.server(server -> server.url(appContext));
-                config.unsafe.internalRouter.allHttpHandlers().forEach(handler -> {
-                    var endpoint = handler.endpoint;
-                    
-                    logger.atInfo()
-                          .log("Handler Method = %s, class = %s",
-                          endpoint.method, endpoint.handler.getClass().getName());
-                });
             });
             openapi.definitionProcessor = json -> {
+                final var objectMapper = this.app.unsafe.appDataManager.get(CwmsDataApiAttributes.OBJECT_MAPPER_KEY);
+                var globalSecurity = json.get("security");
+                schemeProcessor.establishCorrectAnonymous(globalSecurity, objectMapper, false);
                 json.get("paths")
-                    .forEach(pathNode -> {
-                        pathNode.forEach(methodNode -> {
-                            
+                    .forEachEntry((path, pathNode) -> {
+                        pathNode.forEachEntry((method, methodNode) -> {
                             mutateResponseNode(methodNode.get("responses"));
+                            schemeProcessor.establishCorrectAnonymous(methodNode.get("security"), objectMapper, true);
                         });
                     });
+
+
                 return json.toPrettyString();
             };
         }));
@@ -423,13 +419,13 @@ public final class CwmsDataApi {
         
         //TODO: The rest
               
-            //                        .addSecurityItem(new SecurityRequirement().addList(provider))
+            
         
         // ops.path("/swagger-docs")
         //     .responseModifier((ctx,api) -> {
-        //         schemeProcessor.apply(ctx, api);
+        //  
         //         api.getPaths().forEach((key,path) -> {
-        //             setSecurityRequirements(key,path, schemeProcessor.getSecurityRequirements());
+        //  
         //             setUserListTags(key, path);
         //         });
         //         Map<String, Class<? extends CwmsCsvDTO>> schemaToClass = new HashMap<>();

@@ -55,6 +55,7 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
@@ -63,6 +64,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -99,6 +102,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             description = "Returns matching CWMS Stream Location Data for a Reservoir Project.",
             tags = {TAG},
             path = "/stream-locations",
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             methods = {HttpMethod.GET}
     )
     @Override
@@ -156,6 +160,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             description = "Returns CWMS Stream Location Data",
             tags = {TAG},
             path = "/stream-locations/{" + NAME + "}",
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             methods = {HttpMethod.GET}
     )
     @Override

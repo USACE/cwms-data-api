@@ -100,7 +100,8 @@ public class ApiKeyController implements CrudHandler {
         tags = {"Authorization"},
         path = "/auth/keys",
         security = {
-            @OpenApiSecurity(name = CwmsAaaIdentityProvider.NAME), @OpenApiSecurity (name = OpenIdConnectIdentityProvider.NAME)
+            @OpenApiSecurity(name = CwmsAaaIdentityProvider.NAME),
+            @OpenApiSecurity (name = OpenIdConnectIdentityProvider.NAME)
         },
         methods = {HttpMethod.POST}
     )
@@ -148,6 +149,10 @@ public class ApiKeyController implements CrudHandler {
         description = "Delete API key for a user." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"},
         path = "/auth/keys/{key-name}",
+        security = {
+            @OpenApiSecurity(name = CwmsAaaIdentityProvider.NAME),
+            @OpenApiSecurity (name = OpenIdConnectIdentityProvider.NAME)
+        },
         methods = {HttpMethod.DELETE}
     )
     @Override
@@ -167,12 +172,13 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_200
         ),
-        // security = {
-        //         @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        //     },
         description = "View all keys for the current user." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"},
         path = "/auth/keys",
+        security = {
+            @OpenApiSecurity(name = CwmsAaaIdentityProvider.NAME),
+            @OpenApiSecurity (name = OpenIdConnectIdentityProvider.NAME)
+        },
         methods = {HttpMethod.GET}
     )
     public void getAll(Context ctx) {
@@ -197,12 +203,13 @@ public class ApiKeyController implements CrudHandler {
                     },
                     status = STATUS_200
         ),
-        // security = {
-        //     @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        // },
         description = "View specific key metadata. The secret cannot be retrieved." + KEY_MANAGEMENT_HELP,
         tags = {"Authorization"},
         path = "/auth/keys/{key-name}",
+        security = {
+            @OpenApiSecurity(name = CwmsAaaIdentityProvider.NAME),
+            @OpenApiSecurity (name = OpenIdConnectIdentityProvider.NAME)
+        },
         methods = {HttpMethod.GET}
     )
     @Override

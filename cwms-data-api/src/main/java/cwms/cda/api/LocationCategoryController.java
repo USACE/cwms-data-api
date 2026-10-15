@@ -47,6 +47,7 @@ import cwms.cda.data.dao.LocationCategoryDao;
 import cwms.cda.data.dto.LocationCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -56,6 +57,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -95,6 +98,7 @@ public class LocationCategoryController implements CrudHandler {
 
             description = "Returns CWMS Location Category Data",
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/locations/category"
     )
     @Override
@@ -155,6 +159,7 @@ public class LocationCategoryController implements CrudHandler {
             },
             description = "Retrieves requested Location Category",
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/locations/category/{" + CATEGORY_ID + "}")
     @Override
     public void getOne(Context ctx, @NotNull String categoryId) {

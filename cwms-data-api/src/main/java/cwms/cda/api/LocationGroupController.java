@@ -41,6 +41,7 @@ import cwms.cda.data.dto.LocationGroup;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.csv.CsvV1LocationGroup;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.config.Key;
 import io.javalin.http.Header;
@@ -51,6 +52,7 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import io.javalin.http.Context;
 import java.io.IOException;
 import java.util.HashMap;
@@ -105,6 +107,7 @@ public class LocationGroupController implements CrudHandler {
                     @OpenApiContent(from = CsvV1LocationGroup[].class, type = Formats.CSV)
                 })
         },
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         description = "Returns CWMS Location Groups Data", tags = {TAG},
         path = "/location/group"
     )
@@ -185,6 +188,7 @@ public class LocationGroupController implements CrudHandler {
             + Formats.GEOJSON + "."
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/location/group/{"  + GROUP_ID + "}"
     )
     @Override

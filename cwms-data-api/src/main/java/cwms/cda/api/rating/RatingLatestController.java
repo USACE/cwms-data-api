@@ -44,6 +44,7 @@ import cwms.cda.data.dao.RatingDao;
 import cwms.cda.data.dao.RatingSetDao;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -52,6 +53,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -93,7 +96,9 @@ public class RatingLatestController implements Handler {
         },
         description = "Returns CWMS Rating Data",
         tags = {TAG},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/ratings/{" + RATING_ID + "}/latest")
+        
     @Override
     public void handle(@NotNull Context ctx) throws Exception {
         try (final Timer.Context ignored = markAndTime(GET_ONE)) {

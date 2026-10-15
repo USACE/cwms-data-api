@@ -50,6 +50,7 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.data.dto.LocationToPublishedDataList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.HttpStatus;
@@ -59,6 +60,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.util.Arrays;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -121,6 +124,7 @@ public final class PublishedController implements CrudHandler {
             description = "Returns matching time series identifiers for published data.",
             tags = {TAG},
             path = "/published",
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             methods = {HttpMethod.GET}
     )
     @Override

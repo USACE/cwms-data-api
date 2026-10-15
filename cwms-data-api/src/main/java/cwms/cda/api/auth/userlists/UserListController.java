@@ -26,7 +26,6 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class UserListController implements Handler {
@@ -60,9 +59,6 @@ public final class UserListController implements Handler {
             @OpenApiResponse(status = STATUS_400, description = "A list parameter is missing or invalid."),
             @OpenApiResponse(status = STATUS_404, description = "User list not found."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
-        },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "Retrieve user list metadata.",
         methods = HttpMethod.GET,

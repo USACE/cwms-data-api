@@ -21,7 +21,6 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class CreateUserListController implements Handler {
@@ -43,7 +42,6 @@ public final class CreateUserListController implements Handler {
             @OpenApiResponse(status = "409", description = "The office already has this list ID."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Create an office-scoped user list owned by the authenticated user.",
         methods = HttpMethod.POST,
         tags = UserListController.TAG,

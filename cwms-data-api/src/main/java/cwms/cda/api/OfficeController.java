@@ -20,6 +20,7 @@ import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.OfficeFormatV1;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -27,6 +28,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -86,8 +89,11 @@ public class OfficeController implements CrudHandler {
                     @OpenApiContent(from = Office[].class, type = Formats.JSON),
                     @OpenApiContent(from = OfficeFormatV1[].class, type = Formats.JSONV1),
                     @OpenApiContent(from = Office[].class, type = Formats.JSONV2),
-                }),
-        }, tags = { "Offices" }, path = "/offices"
+                }),                
+        },
+        tags = { "Offices" },
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+        path = "/offices"
     )
     @Override
     public void getAll(Context ctx) {
@@ -141,8 +147,10 @@ public class OfficeController implements CrudHandler {
                         @OpenApiContent(from = OfficeFormatV1.class, type = Formats.XMLV1),
                         @OpenApiContent(from = Office.class, type = Formats.XMLV2)
                     })
-            }, tags = { "Offices" }
-        , path = "/office/{office}")
+            }, 
+        tags = { "Offices" },
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+        path = "/office/{office}")
     @Override
     public void getOne(Context ctx, String officeId) {
         try (final Timer.Context timeContext = markAndTime(GET_ONE)) {

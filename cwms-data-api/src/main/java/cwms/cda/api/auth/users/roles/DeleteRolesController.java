@@ -18,7 +18,6 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 
 public class DeleteRolesController implements Handler {
     private final MetricRegistry metrics;
@@ -43,9 +42,6 @@ public class DeleteRolesController implements Handler {
                         @OpenApiContent(from = String[].class, type = Formats.JSON)
                     }
         ),
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "Remove roles from user",
         tags = {"User Management"},
         path = "/user/{user-name}/roles/{office-id}"

@@ -53,6 +53,7 @@ import cwms.cda.data.dto.binarytimeseries.BinaryTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.ReplaceUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
@@ -61,6 +62,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -119,6 +122,7 @@ public class BinaryTimeSeriesController extends BaseCrudHandler {
                         @OpenApiContent(type = Formats.JSONV2, from = BinaryTimeSeries.class)
                     }
                 )},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             tags = {TAG},
             path = "/timeseries/binary"
     )

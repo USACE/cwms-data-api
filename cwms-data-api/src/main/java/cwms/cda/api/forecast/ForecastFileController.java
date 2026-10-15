@@ -34,6 +34,7 @@ import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.forecast.ForecastInstanceDao;
 import cwms.cda.data.dao.StreamConsumer;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -41,6 +42,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import org.jetbrains.annotations.NotNull;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -95,6 +98,7 @@ public final class ForecastFileController implements Handler {
                     @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")
             },
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             tags = {ForecastSpecController.TAG},
             path = "/forecast-instance/{" + NAME + "}/file-data"
     )

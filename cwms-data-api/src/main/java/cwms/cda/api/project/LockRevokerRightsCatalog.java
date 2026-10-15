@@ -52,7 +52,6 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -90,9 +89,6 @@ public class LockRevokerRightsCatalog implements Handler {
                         "Specifies the "
                                 + "application mask to be used to filter the lock revoker rights. "
                                 + "Defaults to '*'"),
-            },
-            security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {

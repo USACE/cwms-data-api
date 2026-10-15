@@ -22,6 +22,7 @@ import cwms.cda.data.dto.TimeZoneId;
 import cwms.cda.data.dto.TimeZoneIds;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -29,6 +30,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -85,6 +88,7 @@ public class TimeZoneController implements CrudHandler {
                 + "implemented")
         },
         tags = {"TimeZones"},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/timezone"
     )
     @Override

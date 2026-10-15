@@ -73,9 +73,6 @@ public final class WaterContractTypeCatalogController extends WaterSupplyControl
                     + " did not find any contracts."),
             @OpenApiResponse(status = "501", description = "Requested format is not implemented.")
         },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "Get all water contract types",
         path = "/projects/contracts/{office}/contract-types",
         methods = HttpMethod.GET,

@@ -50,7 +50,6 @@ public final class AddUserListMemberController implements Handler {
             @OpenApiResponse(status = "409", description = "User is already a member."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Add an existing CWMS user to an office-scoped user list.",
         methods = HttpMethod.POST,
         tags = UserListController.TAG,

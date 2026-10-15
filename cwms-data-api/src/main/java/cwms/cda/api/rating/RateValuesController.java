@@ -83,9 +83,6 @@ public final class RateValuesController extends BaseHandler {
             @OpenApiResponse(status = STATUS_404, description = "The rating curve was not found."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "Rates input values using CWMS ratings. The input format `RatingInputValues` includes " +
             "a two dimensional array with each dimension corresponding to an independent parameter " +
             "in the rating curve. " +

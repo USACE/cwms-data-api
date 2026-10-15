@@ -56,6 +56,7 @@ import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
@@ -63,6 +64,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -118,6 +121,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                         + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/timeseries/group"
         )
     @Override

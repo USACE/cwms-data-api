@@ -20,7 +20,6 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class UserListsController implements Handler {
@@ -39,7 +38,6 @@ public final class UserListsController implements Handler {
             @OpenApiResponse(status = STATUS_400, description = "The office parameter is missing or invalid."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "List office-scoped reusable user lists.",
         methods = HttpMethod.GET,
         tags = UserListController.TAG,

@@ -19,6 +19,7 @@ import cwms.cda.data.dao.forecast.ForecastSpecDaoV2;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.forecast.ForecastSpecV2;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
@@ -26,6 +27,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -59,6 +62,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
                     required = true
             ),
             methods = HttpMethod.POST,
+            
             tags = TAG,
             path = "/v2/forecasts-spec"
     )
@@ -129,6 +133,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/v2/forecast-spec"
     )
     @Override
@@ -163,6 +168,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/v2/forecast-spec/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override

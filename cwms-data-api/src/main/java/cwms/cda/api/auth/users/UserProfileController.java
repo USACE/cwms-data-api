@@ -19,7 +19,6 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
@@ -38,9 +37,6 @@ public class UserProfileController implements Handler {
                     },
                     status = STATUS_200
         ),
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "View users' own information",
         methods = HttpMethod.GET,
         tags = {"User Management"},

@@ -22,12 +22,15 @@ import cwms.cda.data.dao.UnitsDao;
 import cwms.cda.data.dto.Unit;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -82,6 +85,7 @@ public class UnitsController implements CrudHandler {
                 + "implemented")
         },
         tags = {"Units"},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/units"
     )
     @Override

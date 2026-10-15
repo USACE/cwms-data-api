@@ -41,6 +41,7 @@ import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -50,6 +51,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -118,6 +121,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             description = "Returns CWMS timeseries identifier descriptor"
                     + "Data. Currently includes aliased items in results.",
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/timeseries/identifier-descriptor"
     )
     @Override
@@ -186,6 +190,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
             description = "Retrieves requested timeseries identifier descriptor",
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/timeseries/identifier-descriptor/{" + TIMESERIES_ID + "}"
     )
     @Override

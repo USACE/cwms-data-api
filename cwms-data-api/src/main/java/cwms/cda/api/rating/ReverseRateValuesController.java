@@ -88,9 +88,6 @@ public final class ReverseRateValuesController extends BaseHandler {
             @OpenApiResponse(status = STATUS_404, description = "The rating or input time series were not found."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "Reverse rates input values using CWMS ratings. The input format `RateInputValues` requires " +
             "a singular array of doubles corresponding to the dependent parameter in the rating curve. " +
             "The output format `RatedOutputValues` will contain a singular double array corresponding to the " +

@@ -44,6 +44,7 @@ import cwms.cda.data.dao.texttimeseries.TimeSeriesTextDao;
 import cwms.cda.data.dto.texttimeseries.TextTimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
@@ -51,6 +52,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -189,6 +192,7 @@ public final class TextTimeSeriesControllerV1 extends TextTimeSeriesController {
         headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.DELETE,
         tags = {TAG},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/timeseries/text/{" + NAME + "}"
     )
     @Override

@@ -90,9 +90,6 @@ public final class ReverseRateTimeSeriesController extends BaseHandler {
             @OpenApiResponse(status = STATUS_404, description = "The rating or input time series were not found."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         description = "Reverse rates input values using CWMS ratings. The input format `RateInputTimeSeries` requires " +
             "a singular time series id corresponding to the dependent parameter in the rating curve. " +

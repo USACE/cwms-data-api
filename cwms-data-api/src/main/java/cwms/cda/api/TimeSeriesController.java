@@ -31,6 +31,7 @@ import cwms.cda.formatters.csv.CsvConfiguration;
 import cwms.cda.data.dto.csv.TimeSeriesCsv;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.validation.Validator;
@@ -434,7 +435,7 @@ public class TimeSeriesController implements CrudHandler {
                         + "implemented")
             },
             methods = {HttpMethod.GET},
-            security = @OpenApiSecurity(name = ""),
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             path = "/timeseries",
             tags = TAG

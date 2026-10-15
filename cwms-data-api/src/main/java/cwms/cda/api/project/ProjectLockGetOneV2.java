@@ -42,7 +42,6 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jetbrains.annotations.NotNull;
 
 public final class ProjectLockGetOneV2 extends ProjectLockGetOne<ProjectLockV2> {
@@ -83,9 +82,6 @@ public final class ProjectLockGetOneV2 extends ProjectLockGetOne<ProjectLockV2> 
                     @OpenApiContent(type = Formats.JSON, from = ProjectLockV2.class)}
                 ),
                 @OpenApiResponse(status = STATUS_404, description = "No matching Lock was found.")
-            },
-            security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             tags = {TAGS},
             methods = HttpMethod.GET,
