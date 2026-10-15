@@ -100,7 +100,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
                     )},
             tags = {TAG},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/timeseries/text"
+            path = "/v2/timeseries/text/{" + OFFICE + "}"
     )
     @Override
     public void getAll(@NotNull Context ctx) {

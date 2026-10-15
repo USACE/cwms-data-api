@@ -146,7 +146,7 @@ public class AccountingCatalogController implements Handler {
                 + Formats.JSONV1 + " will be used as the default.")
         },
         description = "Get pump accounting entries associated with a water supply contract.",
-        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-name}/accounting",
         methods = HttpMethod.GET,
         tags = {TAG}
     )
