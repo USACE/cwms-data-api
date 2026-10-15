@@ -124,7 +124,7 @@ public class LevelRefsController implements Handler {
             },
             tags = LevelsController.TAG,
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/levels-refs")
+            path = "/level-refs")
     @Override
     public void handle(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(metrics, getClass().getName(), GET_ALL)) {

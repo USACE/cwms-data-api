@@ -162,7 +162,6 @@ import cwms.cda.security.CdaAccessManager;
 import cwms.cda.security.DataApiPrincipal;
 import cwms.cda.security.MissingRolesException;
 import cwms.cda.security.Role;
-import io.javalin.Javalin;
 import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.config.RoutesConfig;
@@ -170,14 +169,12 @@ import io.javalin.security.RouteRole;
 import io.javalin.http.Header;
 import io.javalin.http.HttpStatus;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import org.jetbrains.annotations.NotNull;
 import org.togglz.core.context.FeatureContext;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 

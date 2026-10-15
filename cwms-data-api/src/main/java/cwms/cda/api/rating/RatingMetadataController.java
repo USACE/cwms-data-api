@@ -129,7 +129,7 @@ public class RatingMetadataController implements CrudHandler {
                     )},
             tags = {"Ratings"},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/ratings/metadata" // TODO: check
+            path = "/ratings/metadata"
     )
     @Override
     public void getAll(Context ctx) {

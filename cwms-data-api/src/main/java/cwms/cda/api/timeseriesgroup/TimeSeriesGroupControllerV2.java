@@ -122,7 +122,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/timeseries/group"
+            path = "/v2/timeseries/group"
         )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -155,7 +155,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             },
             description = "Retrieves requested timeseries group",
             tags = {"Timeseries Groups"},
-            path = "/timeseries/group"
+            path = "/v2/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
         )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {
@@ -193,7 +193,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         },
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/timeseries/group/{" + OFFICE +"}"
+        path = "/v2/timeseries/group/{" + OFFICE +"}"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -233,7 +233,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         },
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
+        path = "/v2/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
 
     )
     @Override
@@ -373,7 +373,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
+        path = "/v2/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {
