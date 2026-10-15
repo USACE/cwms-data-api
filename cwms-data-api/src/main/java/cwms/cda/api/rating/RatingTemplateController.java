@@ -42,6 +42,7 @@ import cwms.cda.data.dto.rating.RatingTemplates;
 import cwms.cda.data.dto.rating.document.RatingsDocument;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -51,6 +52,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.Optional;
 import com.google.common.flogger.FluentLogger;
@@ -110,6 +113,7 @@ public class RatingTemplateController implements CrudHandler {
                             }
                     )},
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/ratings/template"
     )
     @Override

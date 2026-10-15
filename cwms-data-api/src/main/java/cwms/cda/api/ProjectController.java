@@ -57,6 +57,7 @@ import cwms.cda.data.dto.project.Project;
 import cwms.cda.data.dto.project.Projects;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -66,6 +67,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -112,6 +115,7 @@ public class ProjectController implements CrudHandler {
             @OpenApiResponse(status = STATUS_501, description = "request format is not"
                     + " implemented")},
         description = "Returns Projects Data",
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         tags = {TAG}, path = "/projects")
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -171,6 +175,7 @@ public class ProjectController implements CrudHandler {
                         + "implemented")},
             description = "Retrieves requested Project", tags = {"Projects"},
         path = "/projects/{" + NAME + "}",
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         methods = {HttpMethod.GET})
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {

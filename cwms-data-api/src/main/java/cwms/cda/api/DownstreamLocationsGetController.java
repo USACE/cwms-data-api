@@ -48,6 +48,7 @@ import cwms.cda.data.dao.StreamLocationDao;
 import cwms.cda.data.dto.stream.StreamLocation;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -56,6 +57,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -95,6 +98,7 @@ public final class DownstreamLocationsGetController implements Handler {
             description = "Returns matching downstream stream locations.",
             tags = {StreamLocationController.TAG},
             path = "/stream-locations/{" + OFFICE + "}/{" + NAME + "}/downstream-locations",
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             methods = {HttpMethod.GET}
     )
     public void handle(@NotNull Context ctx) throws Exception {

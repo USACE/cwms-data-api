@@ -48,6 +48,7 @@ import cwms.cda.data.dao.SpecifiedLevelDao;
 import cwms.cda.data.dto.SpecifiedLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -57,6 +58,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -107,6 +110,7 @@ public class SpecifiedLevelController implements CrudHandler {
         },
         tags = {TAG},
         path = "/specified-level",
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         methods = {HttpMethod.GET}
     )
     @Override

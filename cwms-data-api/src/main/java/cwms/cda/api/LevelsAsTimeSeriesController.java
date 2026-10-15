@@ -48,6 +48,7 @@ import cwms.cda.data.dao.LocationLevelsDaoImpl;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import hec.data.level.JDomLocationLevelRef;
 import io.javalin.validation.Validator;
 import io.javalin.http.Context;
@@ -55,6 +56,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import jakarta.servlet.http.HttpServletResponse;
@@ -119,6 +122,7 @@ public class LevelsAsTimeSeriesController extends BaseHandler {
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             description = "Retrieves requested Location Level",
             tags = LevelsController.TAG,
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/levels/{" + LEVEL_ID + "}/timeseries"
     )
     public void handle(Context ctx) {

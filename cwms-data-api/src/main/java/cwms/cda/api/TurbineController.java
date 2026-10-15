@@ -55,6 +55,7 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.Turbine;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -64,6 +65,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -104,6 +107,7 @@ public final class TurbineController implements CrudHandler {
                     })
             },
             description = "Returns matching CWMS Turbine Data for a Reservoir Project.",
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             tags = {TAG},
             path = "/projects/turbines"
     )
@@ -151,6 +155,7 @@ public final class TurbineController implements CrudHandler {
             },
             description = "Returns CWMS Turbine Data",
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/project/turbines/{" + NAME + "}"
     )
     @Override

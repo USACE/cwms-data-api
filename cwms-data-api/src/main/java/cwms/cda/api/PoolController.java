@@ -16,6 +16,7 @@ import cwms.cda.data.dto.Pools;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -25,6 +26,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
@@ -89,6 +92,7 @@ public final class PoolController implements CrudHandler {
                             + " implemented")},
             description = "Returns Pools Data",
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/pools",
         methods = {HttpMethod.GET})
     @Override
@@ -180,6 +184,7 @@ public final class PoolController implements CrudHandler {
                             + "implemented")},
             description = "Retrieves requested Pool",
         tags = {TAG},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/pools/{" + POOL_ID + "}",
         methods = {HttpMethod.GET})
     @Override

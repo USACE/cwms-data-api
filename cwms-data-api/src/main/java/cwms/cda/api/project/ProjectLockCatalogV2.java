@@ -41,7 +41,6 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jetbrains.annotations.NotNull;
 
 public final class ProjectLockCatalogV2 extends ProjectLockCatalog<ProjectLockV2> {
@@ -85,10 +84,7 @@ public final class ProjectLockCatalogV2 extends ProjectLockCatalog<ProjectLockV2
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
                     @OpenApiContent(type = Formats.JSON, from = ProjectLockV2.class)}
-                )},
-                security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
-            },
+            )},    
             tags = {TAGS},
             path = PATH,
             methods = HttpMethod.GET

@@ -85,9 +85,6 @@ public final class RateTimeSeriesController extends BaseHandler {
             @OpenApiResponse(status = STATUS_404, description = "The rating curve was not found."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "Rates input values using CWMS ratings. The input format `RateInputTimeSeries` DTO " +
             "supports an array of CWMS time series ids, " +
             "each corresponding to an independent parameter in the rating curve." +

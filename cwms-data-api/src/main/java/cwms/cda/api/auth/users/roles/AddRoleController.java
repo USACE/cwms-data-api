@@ -20,7 +20,6 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 
 public class AddRoleController implements Handler {
     private final MetricRegistry metrics;
@@ -47,9 +46,6 @@ public class AddRoleController implements Handler {
                         @OpenApiContent(from = String[].class, type = Formats.JSON)
                     }
         ),
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "Add roles to user",
         tags = {"User Management"},
         path = "/user/{user-name}/roles/{office-id}"

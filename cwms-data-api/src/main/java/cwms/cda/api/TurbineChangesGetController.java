@@ -54,6 +54,7 @@ import cwms.cda.data.dto.location.kind.TurbineChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -61,6 +62,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -129,6 +132,7 @@ public final class TurbineChangesGetController implements Handler {
         },
         description = "Returns matching CWMS Turbine Change Data for a Reservoir Project.",
         tags = {TurbineController.TAG},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/projects/{" + OFFICE + "}/{" + NAME + "}/turbine-changes"
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})

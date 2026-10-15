@@ -41,6 +41,7 @@ import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
@@ -97,7 +98,7 @@ public class BlobControllerV1 extends BlobController {
                             @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
                     })
             },
-            security = {},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             tags = {TAG},
             path = "/blobs"
     )
@@ -135,7 +136,7 @@ public class BlobControllerV1 extends BlobController {
                                     @OpenApiContent(type = "application/octet-stream", from = byte[].class)
                             })
             },
-            security = {@OpenApiSecurity(name = "")},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             tags = {TAG},
             path = "/blobs/{" + BLOB_ID + "}"
     )

@@ -58,6 +58,7 @@ import cwms.cda.formatters.FormattingException;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.BadRequestResponse;
@@ -70,6 +71,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
@@ -276,6 +279,7 @@ public class LevelsController implements CrudHandler {
                 })
             },
             tags = TAG,
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/levels")
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -405,6 +409,7 @@ public class LevelsController implements CrudHandler {
             },
             description = "Retrieves requested Location Level",
             tags = TAG,
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/levels/{" + LEVEL_ID + "}"
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {EFFECTIVE_DATE})

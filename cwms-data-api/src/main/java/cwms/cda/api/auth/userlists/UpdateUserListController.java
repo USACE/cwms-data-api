@@ -15,6 +15,7 @@ import cwms.cda.data.dao.UserListDao;
 import cwms.cda.data.dto.auth.userlists.UserList;
 import cwms.cda.data.dto.auth.userlists.UserListInput;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.openapi.OpenApi;
@@ -47,8 +48,7 @@ public final class UpdateUserListController implements Handler {
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
             @OpenApiResponse(status = "404", description = "User list or office not found."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
-        },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
+        },        
         description = "Update user-list metadata. Creator ownership is immutable.",
         methods = HttpMethod.PATCH,
         tags = UserListController.TAG,

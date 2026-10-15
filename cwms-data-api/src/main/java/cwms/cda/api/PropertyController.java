@@ -86,9 +86,6 @@ public final class PropertyController extends BaseCrudHandler {
                         @OpenApiContent(type = Formats.JSON, from = Property[].class)
                 })
             },
-            security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
-            },
             description = "Returns matching CWMS Property Data.",
             tags = {TAG},
             path = "/property"
@@ -139,9 +136,6 @@ public final class PropertyController extends BaseCrudHandler {
                         content = {
                                 @OpenApiContent(type = Formats.JSON, from = Property.class)
                         })
-            },
-            security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
             },
             description = "Returns CWMS Property Data",
             tags = {TAG},

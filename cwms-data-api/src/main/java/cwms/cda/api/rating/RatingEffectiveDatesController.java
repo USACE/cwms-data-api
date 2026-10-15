@@ -23,6 +23,7 @@ import cwms.cda.data.dao.RatingSpecDao;
 import cwms.cda.data.dto.rating.RatingEffectiveDatesMap;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -30,6 +31,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.time.Instant;
 import jakarta.servlet.http.HttpServletResponse;
@@ -72,6 +75,7 @@ public final class RatingEffectiveDatesController implements Handler {
             },
             description = "Returns mapping of office -> spec id -> effective date-times for all matching offices and spec ids.",
             tags = {RatingController.TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/ratings/effective-dates"
     )
     @Override

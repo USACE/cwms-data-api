@@ -55,6 +55,7 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.Embankment;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -64,6 +65,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -106,6 +109,7 @@ public final class EmbankmentController  implements CrudHandler {
             description = "Returns matching CWMS Embankment Data for a Reservoir Project.",
             tags = {TAG},
             path = "/projects/embankment",
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             methods = {HttpMethod.GET}
     )
     @Override
@@ -153,6 +157,7 @@ public final class EmbankmentController  implements CrudHandler {
             description = "Returns CWMS Embankment Data",
             tags = {TAG},
             path = "/projects/embankment/{" + NAME + "}",
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             methods = {HttpMethod.GET}
     )
     @Override

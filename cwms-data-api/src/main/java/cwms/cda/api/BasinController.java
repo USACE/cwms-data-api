@@ -51,6 +51,7 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.basinconnectivity.Basin;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -59,6 +60,8 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -115,6 +118,7 @@ public class BasinController implements CrudHandler {
             + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
         tags = {TAG},
         path = "/basins",
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         methods = {HttpMethod.GET}
     )
     @Override

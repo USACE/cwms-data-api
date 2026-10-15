@@ -72,6 +72,7 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.UnsupportedFormatException;
 import cwms.cda.helpers.ZoneIdHelper;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.config.Key;
 import io.javalin.http.Header;
@@ -82,6 +83,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -169,6 +172,7 @@ public class LocationController implements CrudHandler {
             description = "Returns CWMS Location Data.  The Catalog end-point is also capable of "
                     + "retrieving lists of locations and can filter on additional fields.",
             tags = {LOCATIONS_TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/locations"
     )
     @Override
@@ -271,6 +275,7 @@ public class LocationController implements CrudHandler {
             },
             description = "Returns CWMS Location Data",
             tags = {LOCATIONS_TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/locations/{" + LOCATION_ID + "}"
     )
     @Override

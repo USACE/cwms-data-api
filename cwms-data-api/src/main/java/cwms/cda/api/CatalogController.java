@@ -50,6 +50,7 @@ import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.Office;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.config.Key;
 import io.javalin.http.Header;
@@ -59,6 +60,8 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -260,7 +263,7 @@ public class CatalogController implements CrudHandler {
             })
         },
         headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
-        security = {},
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         tags = {TAG},
         path = "/catalog/{dataset}"
     )

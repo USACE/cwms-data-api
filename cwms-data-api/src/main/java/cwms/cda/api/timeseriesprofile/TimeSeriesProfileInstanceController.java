@@ -61,6 +61,7 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfileInstance;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -69,6 +70,8 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
@@ -132,6 +135,7 @@ public final class TimeSeriesProfileInstanceController extends TimeSeriesProfile
         methods = HttpMethod.GET,
         path = "/timeseries/profile-instance/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}/{" + VERSION + "}",
         summary = "Get a time series profile instance that matches the provided parameters.",
+        security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         tags = {TAG},
         responses = {
             @OpenApiResponse(status = STATUS_200,

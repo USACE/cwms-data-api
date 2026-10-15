@@ -76,6 +76,7 @@ import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv2;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import io.javalin.http.Header;
@@ -88,6 +89,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
@@ -312,6 +315,7 @@ public class RatingController extends BaseCrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                             + "implemented")},
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/ratings")
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -408,6 +412,7 @@ public class RatingController extends BaseCrudHandler {
             description = "Returns CWMS Rating Data. Supports accept header formatting. "
                 + "For more information about accept header usage, <a href=\"legacy-format/\">see this page.</a>",
             tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         path = "/ratings/{" + RATING_ID + "}")
 
     @Override

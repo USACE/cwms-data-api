@@ -19,7 +19,6 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class UserListCandidatesController implements Handler {
@@ -44,7 +43,6 @@ public final class UserListCandidatesController implements Handler {
             @OpenApiResponse(status = STATUS_400, description = "Search or page-size is missing or invalid."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Search existing CWMS users for user-list membership.",
         methods = HttpMethod.GET,
         tags = UserListController.TAG,

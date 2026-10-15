@@ -17,7 +17,6 @@ import io.javalin.http.HttpStatus;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 
 public class GetRolesController implements Handler {
     private final MetricRegistry metrics;
@@ -33,9 +32,6 @@ public class GetRolesController implements Handler {
                     },
                     status = STATUS_200
         ),
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "View all roles",
         tags = {"User Management"},
         path = "/roles"

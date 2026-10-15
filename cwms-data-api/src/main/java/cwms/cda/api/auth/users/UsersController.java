@@ -36,7 +36,6 @@ import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import java.io.IOException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
@@ -106,9 +105,6 @@ public class UsersController implements CrudHandler {
             @OpenApiResponse(status = STATUS_400, description = "The page or page-size parameter is invalid."),
             @OpenApiResponse(status = "500", description = "The users could not be retrieved.")
         },
-        security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
-            },
         description = "View all users",
         tags = {TAG},
         path = "/users"
@@ -171,9 +167,6 @@ public class UsersController implements CrudHandler {
             ),
             @OpenApiResponse(status = STATUS_404, description = "User not found."),
             @OpenApiResponse(status = "500", description = "The user could not be retrieved.")
-        },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
         },
         description = "View specific user",
         tags = {TAG},

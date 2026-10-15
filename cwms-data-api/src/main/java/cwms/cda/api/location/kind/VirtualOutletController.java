@@ -42,6 +42,7 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.location.kind.VirtualOutlet;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
@@ -49,6 +50,8 @@ import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
@@ -84,6 +87,7 @@ public class VirtualOutletController extends BaseCrudHandler {
             },
             description = "Returns matching CWMS Virtual Outlet Data for a Reservoir Project.",
             tags = {OutletController.TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/virtual-outlets"
     )
     @Override

@@ -30,6 +30,7 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ReplaceUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
@@ -38,6 +39,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.Instant;
@@ -151,6 +154,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             },
             methods = HttpMethod.GET,
             tags = TAG,
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/forecasts-instance"
     )
     @Override
@@ -230,6 +234,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             },
             methods = HttpMethod.GET,
             tags = TAG,
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/forecast-instance/{" + NAME + "}"
     )
     @Override

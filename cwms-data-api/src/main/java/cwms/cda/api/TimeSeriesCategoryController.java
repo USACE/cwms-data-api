@@ -40,6 +40,7 @@ import cwms.cda.data.dao.TimeSeriesCategoryDao;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
@@ -49,6 +50,8 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
@@ -91,6 +94,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                         + "Data",
             tags = {TAG},
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/timeseries/category"
                     )
     @Override
@@ -147,6 +151,7 @@ public class TimeSeriesCategoryController implements CrudHandler {
                             + "implemented")},
             description = "Retrieves requested timeseries category", tags = {TAG},
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             path = "/timeseries/category/{" + CATEGORY_ID + "}")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String categoryId) {

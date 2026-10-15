@@ -32,12 +32,15 @@ import cwms.cda.api.BaseHandler;
 import cwms.cda.api.RangeRequestUtil;
 import cwms.cda.data.dao.ClobDao;
 import cwms.cda.data.dao.StreamConsumer;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import org.jooq.DSLContext;
 
 import static cwms.cda.api.Controllers.*;
@@ -70,6 +73,7 @@ public class TextTimeSeriesValueController extends BaseHandler {
                             }
                     )},
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             tags = {TextTimeSeriesController.TAG},
             path = "/timeseries/text/{" + NAME + "}/value"
     )
