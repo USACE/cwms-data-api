@@ -415,12 +415,15 @@ public final class CwmsDataApi {
             };
         }));
 
-        
-        
-        //TODO: The rest
-              
-            
-        
+        // TODO: 
+        // This is being intentionally left in place and not done at this particular time.
+        // While it *is* frustrating to not have these examples.
+        // 1. The endpoints will still work
+        // 2. They will be available on the prod URL until such time as we deploy these changes
+        //   which will be after we get them in.
+        // *************
+        // **** Commented code is left for reference, may or may not be required. *****
+        // *************
         // ops.path("/swagger-docs")
         //     .responseModifier((ctx,api) -> {
         //  
@@ -509,30 +512,10 @@ public final class CwmsDataApi {
         return error;
     }
 
-    private static void setSecurityRequirements(String key, PathItem path,List<SecurityRequirement> secReqs) {
-        /* clear the lock icon from the GET handlers to reduce user confusion */
-        logger.atFinest().log("setting security constraints for " + key);
-        if ((path.getGet() != null && path.getGet().getSecurity() != null)) {
-            setSecurity(path.getGet(), secReqs);
-        } else {
-            setSecurity(path.getGet(), new ArrayList<>());
-        }
-        setSecurity(path.getDelete(),secReqs);
-        setSecurity(path.getPost(), secReqs);
-        setSecurity(path.getPut(), secReqs);
-        setSecurity(path.getPatch(),secReqs);
-    }
-
     static void setUserListTags(String key, PathItem path) {
         if (key.startsWith("/user/list")) {
             path.readOperations().forEach(operation ->
                     operation.setTags(List.of(UserListController.TAG)));
-        }
-    }
-
-    private static void setSecurity(Operation op,List<SecurityRequirement> reqs) {
-        if (op != null) {
-            op.setSecurity(reqs);
         }
     }
 
@@ -560,7 +543,10 @@ public final class CwmsDataApi {
         dsConfig.setJdbcUrl(ConfigVariables.getConfigString("CDA_JDBC_URL"));
         dsConfig.setUsername(ConfigVariables.getConfigString("CDA_JDBC_USERNAME"));
         dsConfig.setPassword(ConfigVariables.getConfigString("CDA_JDBC_PASSWORD"));
-        dsConfig.setMaximumPoolSize(ConfigVariables.getConfigInt("CDA_POOL_MAX_ACTIVE", 1));
+        // for local testing 10 or initial deployment is a reasonable balance of allowing some
+        // parallelism without excess use of resources.
+        // If you think you are having pool leak issues, set this value to 1.
+        dsConfig.setMaximumPoolSize(ConfigVariables.getConfigInt("CDA_POOL_MAX_ACTIVE", 10));
         return new HikariDataSource(dsConfig);
     }
 
