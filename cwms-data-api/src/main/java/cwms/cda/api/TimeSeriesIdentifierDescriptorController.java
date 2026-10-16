@@ -279,7 +279,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = NAME, description = "The timeseries id"),
+                    @OpenApiParam(name = TIMESERIES_ID, description = "The timeseries id"),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -303,10 +303,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             description = "'True' or 'true' if the time series is active")
             }, tags = {TAG},
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
-            path = "/timeseries/identitifer-descriptor/{" + NAME + "}"
+            path = "/timeseries/identitifer-descriptor/{" + TIMESERIES_ID + "}"
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String name) {
+    public void update(@NotNull Context ctx, @NotNull String timeSeriesId) {
 
         String office = requiredParam(ctx, OFFICE);
         String newTimeseriesId = ctx.queryParam(TIMESERIES_ID);
@@ -332,13 +332,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             if (foundUpdateKeys.isEmpty()) {
                 // basic rename.
-                dao.rename(office, name, newTimeseriesId, intervalOffset);
+                dao.rename(office, timeSeriesId, newTimeseriesId, intervalOffset);
             } else {
                 Long forward = ctx.queryParamAsClass(SNAP_FORWARD, Long.class).getOrNull();
                 Long backward = ctx.queryParamAsClass(SNAP_BACKWARD, Long.class).getOrNull();
                 boolean active = ctx.queryParamAsClass(ACTIVE, Boolean.class).getOrDefault(true);
 
-                dao.update(office, name, intervalOffset, forward, backward, active);
+                dao.update(office, timeSeriesId, intervalOffset, forward, backward, active);
             }
         }
 

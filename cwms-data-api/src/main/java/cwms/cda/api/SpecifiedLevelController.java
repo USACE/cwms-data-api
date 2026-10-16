@@ -109,7 +109,7 @@ public class SpecifiedLevelController implements CrudHandler {
             )
         },
         tags = {TAG},
-        path = "/specified-level",
+        path = "/specified-levels",
         security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
         methods = {HttpMethod.GET}
     )

@@ -229,7 +229,7 @@ public class ProjectController implements CrudHandler {
             },
             methods = HttpMethod.POST,
             tags = {TAG},
-            path = "/project"
+            path = "/projects"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -265,7 +265,7 @@ public class ProjectController implements CrudHandler {
         ),
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/project/{" + NAME + "}"
+        path = "/projects/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldName) {
@@ -294,7 +294,7 @@ public class ProjectController implements CrudHandler {
             },
             methods = HttpMethod.DELETE,
             tags = {TAG},
-            path = "/project/{" + NAME + "}"
+            path = "/projects/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String name) {

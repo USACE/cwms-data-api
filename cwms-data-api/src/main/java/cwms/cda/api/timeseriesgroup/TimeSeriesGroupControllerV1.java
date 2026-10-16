@@ -107,7 +107,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/timeseries/groups")
+            path = "/timeseries/group")
     @Override
     public void getAll(@NotNull Context ctx) {
         String groupOffice = ctx.queryParam(GROUP_OFFICE_ID);
@@ -171,7 +171,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
         },
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/timeseries/groups"
+        path = "/timeseries/group"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -203,7 +203,7 @@ public class TimeSeriesGroupControllerV1 extends TimeSeriesGroupController {
         },
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/timeseries/groups/{" + GROUP_ID + "}"
+        path = "/timeseries/group/{" + GROUP_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldGroupId) {

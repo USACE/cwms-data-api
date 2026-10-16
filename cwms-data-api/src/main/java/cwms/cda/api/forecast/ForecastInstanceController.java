@@ -155,7 +155,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             methods = HttpMethod.GET,
             tags = TAG,
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/forecasts-instance"
+            path = "/forecast-instance"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -301,7 +301,7 @@ public final class ForecastInstanceController extends BaseCrudHandler {
             },
             methods = HttpMethod.PATCH,
             tags = TAG,
-            path = "/forecasts-instance/{" + NAME + "}"
+            path = "/forecast-instance/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

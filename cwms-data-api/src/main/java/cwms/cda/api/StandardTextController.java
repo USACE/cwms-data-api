@@ -110,7 +110,7 @@ public class StandardTextController implements CrudHandler {
             methods = {HttpMethod.GET},
             tags = {TAG},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/text"
+            path = "/standard-text-id"
     )
     @Override
     public void getAll(Context ctx) {
@@ -159,7 +159,7 @@ public class StandardTextController implements CrudHandler {
                     )},
             methods = {HttpMethod.GET},
             tags = {TAG},
-            path = "/text/{" + STANDARD_TEXT_ID + "}"
+            path = "/standard-text-id/{" + STANDARD_TEXT_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String stdTextId) {
@@ -198,7 +198,7 @@ public class StandardTextController implements CrudHandler {
             },
             methods = HttpMethod.POST,
             tags = {TAG},
-            path = "/text/"
+            path = "/standard-text-id"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -237,7 +237,7 @@ public class StandardTextController implements CrudHandler {
             },
             methods = HttpMethod.DELETE,
             tags = {TAG},
-            path = "/text/{" + STANDARD_TEXT_ID + "}"
+            path = "/standard-text-id/{" + STANDARD_TEXT_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String stdTextId) {

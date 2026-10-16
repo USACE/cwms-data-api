@@ -85,7 +85,7 @@ public class OutletController extends BaseCrudHandler {
         description = "Create CWMS Outlet",
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/project/outlets",
+        path = "/projects/outlets",
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Outlet successfully stored to CWMS.")
         }

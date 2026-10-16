@@ -150,7 +150,7 @@ public class OfficeController implements CrudHandler {
             }, 
         tags = { "Offices" },
         security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-        path = "/office/{office}")
+        path = "/offices/{office}")
     @Override
     public void getOne(Context ctx, String officeId) {
         try (final Timer.Context timeContext = markAndTime(GET_ONE)) {

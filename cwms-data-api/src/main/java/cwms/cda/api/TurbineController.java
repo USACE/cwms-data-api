@@ -156,7 +156,7 @@ public final class TurbineController implements CrudHandler {
             description = "Returns CWMS Turbine Data",
             tags = {TAG},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/project/turbines/{" + NAME + "}"
+            path = "/projects/turbines/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {

@@ -89,7 +89,7 @@ public class TimeZoneController implements CrudHandler {
         },
         tags = {"TimeZones"},
         security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-        path = "/timezone"
+        path = "/timezones"
     )
     @Override
     public void getAll(@NotNull Context ctx) {

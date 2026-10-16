@@ -63,7 +63,7 @@ public final class UserListController implements Handler {
         description = "Retrieve user list metadata.",
         methods = HttpMethod.GET,
         tags = {TAG},
-        path = "/user/lists/{" + USER_LIST_ID + "}"
+        path = "/user/list/{" + USER_LIST_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

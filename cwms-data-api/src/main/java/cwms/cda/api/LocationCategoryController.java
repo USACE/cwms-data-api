@@ -99,7 +99,7 @@ public class LocationCategoryController implements CrudHandler {
             description = "Returns CWMS Location Category Data",
             tags = {TAG},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/locations/category"
+            path = "/location/category"
     )
     @Override
     public void getAll(Context ctx) {
@@ -160,7 +160,7 @@ public class LocationCategoryController implements CrudHandler {
             description = "Retrieves requested Location Category",
             tags = {TAG},
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-            path = "/locations/category/{" + CATEGORY_ID + "}")
+            path = "/location/category/{" + CATEGORY_ID + "}")
     @Override
     public void getOne(Context ctx, @NotNull String categoryId) {
 
@@ -208,7 +208,7 @@ public class LocationCategoryController implements CrudHandler {
             required = true),
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/locations/category"
+        path = "/location/category"
     )
     @Override
     public void create(Context ctx) {
@@ -244,7 +244,7 @@ public class LocationCategoryController implements CrudHandler {
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/locations/category/{" + CATEGORY_ID + "}"
+        path = "/location/category/{" + CATEGORY_ID + "}"
     )
     @Override
     public void delete(Context ctx, @NotNull String categoryId) {
