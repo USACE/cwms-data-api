@@ -799,6 +799,77 @@ class WaterSupplyAccountingControllerIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
         ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(START_TIME, "2005-04-05T00:00:00Z")
+            .queryParam(END_TIME, "2335-04-06T00:00:00Z")
+            .queryParam(START_INCLUSIVE, "true")
+            .queryParam(END_INCLUSIVE, "true")
+            .queryParam(ASCENDING, "true")
+            .queryParam(ROW_LIMIT, 100)
+            .queryParam(UNIT, "cfs")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                         + contract.getWaterUser().getEntityName() + "/contracts/"
+                         + contract.getContractId().getName() + "/accounting")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+    }
+
+    @Test
+    void testGet0RowLimit() throws Exception {
+        // 1 Store data
+        // 2 Retrieve accounting with 0 row limit
+        // 3 Verify failure from row limit
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+        String json = JsonV1.buildObjectMapper().writeValueAsString(waterSupplyAccounting);
+
+        // create pump accounting
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .body(json)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                          + contract.getWaterUser().getEntityName() + "/contracts/"
+                          + contract.getContractId().getName() + "/accounting")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(START_TIME, "2005-04-05T00:00:00Z")
+            .queryParam(END_TIME, "2335-04-06T00:00:00Z")
+            .queryParam(START_INCLUSIVE, "true")
+            .queryParam(END_INCLUSIVE, "true")
+            .queryParam(ASCENDING, "true")
+            .queryParam(ROW_LIMIT, 0)
+            .queryParam(UNIT, "cfs")
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/projects/" + OFFICE_ID + "/" + contract.getWaterUser().getProjectId().getName() + "/water-user/"
+                         + contract.getWaterUser().getEntityName() + "/contracts/"
+                         + contract.getContractId().getName() + "/accounting")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
     }
 
     private static Location buildTestLocation(String name, String locationKind) {
