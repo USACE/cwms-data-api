@@ -31,19 +31,22 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.api.Controllers;
+import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.data.dao.watersupply.WaterContractDao;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.watersupply.WaterUser;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -64,23 +67,33 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase {
                 @OpenApiContent(from = WaterUser.class, type = Formats.JSONV1)
             },
             required = true),
+        pathParams = {
+            @OpenApiParam(name = Controllers.OFFICE, type = String.class, description = Controllers.OFFICE_DESCRIPTION),
+            @OpenApiParam(name = Controllers.PROJECT_ID, type = String.class)
+        },
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Water user successfully stored to CWMS."),
             @OpenApiResponse(status = STATUS_501, description = "Requested format is not implemented")
         },
         description = "Stores a water user to CWMS.",
-        method = HttpMethod.POST,
+        methods = HttpMethod.POST,
         path = "/projects/{office}/{project-id}/water-user",
         tags = {TAG}
     )
     @Override
     public void handle(@NotNull Context ctx) {
         try (Timer.Context ignored = markAndTime(CREATE)) {
-            DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            var office = requiredPathParam(ctx, Controllers.OFFICE);
+            var projectId = requiredPathParam(ctx, Controllers.PROJECT_ID);
+            DSLContext dsl = getDslContext(ctx, office);
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
             WaterUser user = Formats.parseContent(contentType, ctx.body(), WaterUser.class);
+            if (!projectId.equals(user.getProjectId().getName())) {
+                throw new InvalidItemException("Project ID in provided data and project ID in URL path do not match", null);
+            }
+            
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             WaterContractDao contractDao = getContractDao(dsl);
             contractDao.storeWaterUser(user, failIfExists);

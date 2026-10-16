@@ -1,6 +1,6 @@
 package cwms.cda.api;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import fixtures.TestAccounts;
 import fixtures.users.UserSpecSource;

@@ -35,7 +35,7 @@ import fixtures.TestAccounts;
 import hec.data.cwmsRating.io.RatingTemplateContainer;
 import io.restassured.filter.log.LogDetail;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 
 import org.junit.jupiter.api.Tag;

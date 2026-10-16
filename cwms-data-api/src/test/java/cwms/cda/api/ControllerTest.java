@@ -1,6 +1,8 @@
 package cwms.cda.api;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,6 +10,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Scanner;
+
+import javax.sql.DataSource;
+
 import org.jetbrains.annotations.NotNull;
 import org.jooq.tools.jdbc.MockConnection;
 import org.jooq.tools.jdbc.MockFileDatabase;
@@ -23,7 +28,7 @@ public class ControllerTest {
     protected PolicyFactory sanitizer =
             new HtmlPolicyBuilder().disallowElements("<script>").toFactory();
 
-    public Connection getTestConnection() throws IOException {
+    public DataSource getTestConnection() throws IOException, SQLException {
         if (conn == null) {
             InputStream stream = ControllerTest.class.getResourceAsStream("/ratings_db.txt");
             assertNotNull(stream);
@@ -34,7 +39,9 @@ public class ControllerTest {
             assertNotNull(this.conn, "Connection is null; something has gone wrong with the "
                     + "fixture setup");
         }
-        return conn;
+        var ds = mock(DataSource.class);
+        when(ds.getConnection()).thenReturn(conn);
+        return ds;
     }
 
     public String loadResourceAsString(String fileName) {

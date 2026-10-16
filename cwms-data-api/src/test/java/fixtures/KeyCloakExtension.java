@@ -26,7 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
@@ -85,7 +85,7 @@ public final class KeyCloakExtension implements BeforeAllCallback {
                 .get(WELL_KNOWN);
         response
             .then()
-            .statusCode(is(HttpCode.OK.getStatus()))
+            .statusCode(is(HttpStatus.OK.getCode()))
             ;
         
         JsonNode oidcConfig = mapper.readTree(response.asPrettyString());

@@ -31,6 +31,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.data.dao.JooqDao;
@@ -39,22 +41,25 @@ import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptors;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -112,9 +117,12 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "inputs provided the time series identifier descriptors were not found."),
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             description = "Returns CWMS timeseries identifier descriptor"
                     + "Data. Currently includes aliased items in results.",
-            tags = {TAG}
+            tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            path = "/timeseries/identifier-descriptor"
     )
     @Override
     public void getAll(Context ctx) {
@@ -149,7 +157,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve timeseries identifiers", ex);
@@ -180,7 +188,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_501, description = "request format is not "
                             + "implemented")},
             description = "Retrieves requested timeseries identifier descriptor",
-            tags = {TAG}
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            path = "/timeseries/identifier-descriptor/{" + TIMESERIES_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String timeseriesId) {
@@ -210,7 +221,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find identifier based on parameters "
                         + "given");
@@ -237,15 +248,17 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = {HttpMethod.POST},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            tags = {TAG},
+            path = "/timeseries/identifier-descriptor"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             String body = ctx.body();
 
             ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesIdentifierDescriptor.class);
@@ -266,7 +279,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
     @OpenApi(
             pathParams = {
-                    @OpenApiParam(name = NAME, description = "The timeseries id"),
+                    @OpenApiParam(name = TIMESERIES_ID, description = "The timeseries id"),
             },
             queryParams = {
                     @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
@@ -288,14 +301,16 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             + "that data will be considered to be on time."),
                     @OpenApiParam(name = ACTIVE, type = Boolean.class,
                             description = "'True' or 'true' if the time series is active")
-            }, tags = {TAG}
+            }, tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            path = "/timeseries/identitifer-descriptor/{" + TIMESERIES_ID + "}"
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String name) {
+    public void update(@NotNull Context ctx, @NotNull String timeSeriesId) {
 
         String office = requiredParam(ctx, OFFICE);
         String newTimeseriesId = ctx.queryParam(TIMESERIES_ID);
-        Long intervalOffset = ctx.queryParamAsClass(INTERVAL_OFFSET, Long.class).getOrDefault(null);
+        Long intervalOffset = ctx.queryParamAsClass(INTERVAL_OFFSET, Long.class).getOrNull();
 
         List<String> updateKeys = Arrays.asList(SNAP_FORWARD, SNAP_BACKWARD, ACTIVE, INTERVAL_OFFSET);
 
@@ -317,13 +332,13 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
 
             if (foundUpdateKeys.isEmpty()) {
                 // basic rename.
-                dao.rename(office, name, newTimeseriesId, intervalOffset);
+                dao.rename(office, timeSeriesId, newTimeseriesId, intervalOffset);
             } else {
-                Long forward = ctx.queryParamAsClass(SNAP_FORWARD, Long.class).getOrDefault(null);
-                Long backward = ctx.queryParamAsClass(SNAP_BACKWARD, Long.class).getOrDefault(null);
+                Long forward = ctx.queryParamAsClass(SNAP_FORWARD, Long.class).getOrNull();
+                Long backward = ctx.queryParamAsClass(SNAP_BACKWARD, Long.class).getOrNull();
                 boolean active = ctx.queryParamAsClass(ACTIVE, Boolean.class).getOrDefault(true);
 
-                dao.update(office, name, intervalOffset, forward, backward, active);
+                dao.update(office, timeSeriesId, intervalOffset, forward, backward, active);
             }
         }
 
@@ -341,8 +356,10 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Deletes requested timeseries identifier",
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = {HttpMethod.DELETE},
+            tags = {TAG},
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            path = "/timeseries/identifier/{" + TIMESERIES_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String timeseriesId) {

@@ -44,6 +44,8 @@ import static cwms.cda.api.Controllers.UPDATE;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.CollectionPatchStrategy;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
@@ -54,13 +56,16 @@ import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupPatch;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -108,14 +113,17 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200,
-                        content = {@OpenApiContent(isArray = true, from =
-                                TimeSeriesGroup.class, type = Formats.JSON)
+                        content = {@OpenApiContent(from = TimeSeriesGroup[].class, type = Formats.JSON)
                         }),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the timeseries group(s) were not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")}, description = "Returns CWMS Timeseries Groups Data",
-            tags = {TAG})
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            path = "/v2/timeseries/group"
+        )
     @Override
     public void getAll(@NotNull Context ctx) {
         String groupOffice = ctx.pathParam(OFFICE);
@@ -145,7 +153,10 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                     @OpenApiContent(from = TimeSeriesGroup.class, type = Formats.JSON),
                 })
             },
-            description = "Retrieves requested timeseries group", tags = {"Timeseries Groups"})
+            description = "Retrieves requested timeseries group",
+            tags = {"Timeseries Groups"},
+            path = "/v2/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
+        )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String groupId) {
         String groupOffice = ctx.pathParam(OFFICE);
@@ -180,8 +191,9 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                                 + "with an empty list."
                                 + "Default: true")
         },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/v2/timeseries/group/{" + OFFICE +"}"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -219,8 +231,10 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                     + "are added to the group's existing assignments. Explicit unassignments in the request body "
                     + "are applied after assignments are stored in either case. Default: MERGE")
         },
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = HttpMethod.PATCH,
+        tags = {TAG},
+        path = "/v2/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
+
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String oldGroupId) {
@@ -228,7 +242,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             Boolean ignoreNulls = ctx.queryParamAsClass(IGNORE_NULLS, Boolean.class).getOrDefault(true);
-            ContentType contentType = Formats.parseHeader(ctx.req.getContentType(), TimeSeriesGroupPatch.class);
+            ContentType contentType = Formats.parseHeader(ctx.contentType(), TimeSeriesGroupPatch.class);
             TimeSeriesGroupPatch patch = Formats.parseContent(contentType, ctx.body(), TimeSeriesGroupPatch.class);
             validateOffice(office, patch.getOfficeId());
 
@@ -357,8 +371,9 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                         description = "Specifies whether to unassign time series in this group before deleting. "
                             + "Default: false"),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/v2/timeseries/group/{" + OFFICE + "}/{" + GROUP_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String groupId) {

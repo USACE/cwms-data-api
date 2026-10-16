@@ -33,7 +33,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import io.restassured.filter.log.LogDetail;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;
