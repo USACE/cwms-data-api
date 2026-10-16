@@ -48,6 +48,7 @@ import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.openapi.OpenApi;
@@ -109,10 +110,10 @@ public class AccountingCreateController extends BaseHandler {
         methods = HttpMethod.POST,
         tags = {TAG}
     )
-
     @Override
     public void handle(@NotNull Context ctx) {
         logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
+        logUnusedPathParameter(ctx, PROJECT_ID, "Body contains required information.");
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;
