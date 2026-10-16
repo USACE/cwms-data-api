@@ -64,7 +64,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             methods = HttpMethod.POST,
             
             tags = TAG,
-            path = "/v2/forecasts-spec"
+            path = "/v2/forecast-spec"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -195,7 +195,7 @@ public final class ForecastSpecControllerV2 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.PATCH,
             tags = TAG,
-            path = "/v2/forecasts-spec/{" + OFFICE + "}/{" + NAME + "}"
+            path = "/v2/forecast-spec/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

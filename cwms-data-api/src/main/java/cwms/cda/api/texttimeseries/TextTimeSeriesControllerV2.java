@@ -127,7 +127,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
             methods = HttpMethod.POST,
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = {TAG},
-            path = "/timeseries/text"
+            path = "/v2/timeseries/text"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -177,7 +177,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
         headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}"
+        path = "/v2/timeseries/text/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String tsId) {
@@ -229,7 +229,7 @@ public final class TextTimeSeriesControllerV2 extends TextTimeSeriesController {
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             methods = HttpMethod.DELETE,
             tags = {TAG},
-            path = "/timeseries/text/{" + OFFICE + "}/{" + NAME + "}"
+            path = "/v2/timeseries/text/{" + OFFICE + "}/{" + NAME + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String textTimeSeriesId) {

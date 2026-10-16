@@ -94,7 +94,7 @@ public final class TimeSeriesProfileParserCatalogController extends TimeSeriesPr
         summary = "Retrieve a list of TimeSeries Profile Parsers that match the provided mask parameters",
         tags = {TAG},
         security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
-        path = "/timeseries/profile-catalog"
+        path = "/timeseries/profile-parser"
     )
     @Override
     public void handle(@NotNull Context ctx) {

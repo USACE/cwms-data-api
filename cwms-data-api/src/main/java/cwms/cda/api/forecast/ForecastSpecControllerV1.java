@@ -87,7 +87,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
                         + "parameters did not find a forecast spec."),
             },
             methods = HttpMethod.DELETE,
-            path = "/forecasts-spec/{" + NAME + "}",
+            path = "/forecast-spec/{" + NAME + "}",
             security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
             tags = TAG
 
@@ -127,7 +127,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecasts-spec"
+            path = "/forecast-spec"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -161,7 +161,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.GET,
             tags = TAG,
-            path = "/forecasts-spec/{" + NAME + "}"
+            path = "/forecast-spec/{" + NAME + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String name) {
@@ -185,7 +185,7 @@ public final class ForecastSpecControllerV1 extends ForecastSpecController<Forec
             },
             methods = HttpMethod.PATCH,
             tags = TAG,
-            path = "/forecasts/spec/{" + NAME + "}"
+            path = "/forecast-spec/{" + NAME + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String name) {

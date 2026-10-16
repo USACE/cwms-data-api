@@ -48,7 +48,7 @@ public final class UserListMemberController implements Handler {
         description = "Remove a member from an office-scoped user list.",
         methods = HttpMethod.DELETE,
         tags = UserListController.TAG,
-        path = "/users/list/{" + USER_LIST_ID + "}/members/{" + USER_ID + "}"
+        path = "/user/list/{" + USER_LIST_ID + "}/members/{" + USER_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

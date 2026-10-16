@@ -206,7 +206,7 @@ public final class StreamLocationController extends BaseCrudHandler {
             description = "Create CWMS Stream Location",
             methods = {HttpMethod.POST},
             tags = {TAG},
-            path = "/stream-location",
+            path = "/stream-locations",
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Stream Location successfully stored to CWMS.")
             }

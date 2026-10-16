@@ -30,6 +30,7 @@ import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.WATER_USER;
@@ -88,6 +89,8 @@ public class AccountingCreateController extends BaseHandler {
                     required = true),
             @OpenApiParam(name = WATER_USER, description = "The water user the accounting is associated with.",
                     required = true),
+            @OpenApiParam(name = PROJECT_ID, description = "Project for this accounting.",
+                    required = true),
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with the "
                     + "accounting. For names with special characters (such as '/'), use the JSONV2 accept header "
                     + "with a name encoded using URL-safe BASE64.", required = true),
@@ -102,7 +105,7 @@ public class AccountingCreateController extends BaseHandler {
                 + "In this case, the contract name should be encoded using URL-safe BASE64 encoding.")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",
-        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-name}/accounting",
         methods = HttpMethod.POST,
         tags = {TAG}
     )
