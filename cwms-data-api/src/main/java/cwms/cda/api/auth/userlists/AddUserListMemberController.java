@@ -3,6 +3,8 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_201;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
 
@@ -42,9 +44,11 @@ public final class AddUserListMemberController implements Handler {
         responses = {
             @OpenApiResponse(status = STATUS_201,
                 content = @OpenApiContent(from = UserListMember.class, type = Formats.JSON)),
+            @OpenApiResponse(status = STATUS_400, description = "The request body or a list parameter is invalid."),
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
             @OpenApiResponse(status = "404", description = "List or CWMS user not found."),
-            @OpenApiResponse(status = "409", description = "User is already a member.")
+            @OpenApiResponse(status = "409", description = "User is already a member."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Add an existing CWMS user to an office-scoped user list.",
