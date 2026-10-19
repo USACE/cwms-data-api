@@ -3,6 +3,8 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
@@ -31,8 +33,12 @@ public final class UserListsController implements Handler {
     @OpenApi(
         queryParams = @OpenApiParam(name = OFFICE, required = true,
             description = "The office whose user lists should be returned."),
-        responses = @OpenApiResponse(status = STATUS_200,
-            content = @OpenApiContent(from = UserLists.class, type = Formats.JSON)),
+        responses = {
+            @OpenApiResponse(status = STATUS_200,
+                content = @OpenApiContent(from = UserLists.class, type = Formats.JSON)),
+            @OpenApiResponse(status = STATUS_400, description = "The office parameter is missing or invalid."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
+        },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "List office-scoped reusable user lists.",
         method = HttpMethod.GET,

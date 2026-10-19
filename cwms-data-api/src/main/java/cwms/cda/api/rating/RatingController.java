@@ -54,6 +54,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.BaseCrudHandler;
@@ -68,6 +69,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.rating.Ratings;
+import cwms.cda.data.dto.rating.document.RatingsDocument;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
@@ -92,7 +94,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.transform.TransformerException;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 import mil.army.usace.hec.metadata.VerticalDatumException;
 import org.jetbrains.annotations.NotNull;
@@ -157,7 +158,8 @@ public class RatingController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
             RatingDao ratingDao = getRatingDao(dsl);
             boolean storeTemplate = ctx.queryParamAsClass(STORE_TEMPLATE, Boolean.class).getOrDefault(true);
-            String ratingSet = deserializeRatingSet(ctx, storeTemplate);
+            RatingsDocument ratings = deserializeRatingSet(ctx, storeTemplate);
+            String ratingSet = JsonRatingUtils.writeXml(ratings);
             String datum = ctx.queryParam(DATUM);
             VerticalDatum vd = null;
             if(datum != null) {
@@ -181,7 +183,7 @@ public class RatingController extends BaseCrudHandler {
         }
     }
 
-    private String deserializeRatingSet(Context ctx, boolean storeTemplate) throws IOException, RatingException {
+    private RatingsDocument deserializeRatingSet(Context ctx, boolean storeTemplate) throws IOException {
         String formatHeader = ctx.req.getContentType();
         //Using placeholder CwmsDTOBase.class since we do not have a RatingSet DTO
         //The contentType will match against the standard listing of Formats constants
@@ -191,33 +193,29 @@ public class RatingController extends BaseCrudHandler {
     }
 
     //Package private for unit testing
-    String deserializeRatingSet(String body, String contentType, boolean storeTemplate) throws IOException {
-        String retval;
-        if (Formats.XML.equals(contentType)) {
-            retval = body;
-        } else if (Formats.JSON.equals(contentType)) {
-            retval = translateJsonToXml(body);
-        } else {
-            throw new IOException("Unexpected format:" + contentType);
+    RatingsDocument deserializeRatingSet(String body, String contentType, boolean storeTemplate) throws IOException {
+        RatingsDocument retval;
+        try {
+            if (Formats.XML.equals(contentType)) {
+                retval = JsonRatingUtils.readXml(body);
+            } else if (Formats.JSON.equals(contentType)) {
+                retval = JsonRatingUtils.readJson(body);
+            } else {
+                throw new IOException("Unexpected format:" + contentType);
+            }
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Failed to parse request into a rating set", ex);
         }
         if (!storeTemplate) {
-            retval = removeTemplate(retval);
+            retval = removeTemplates(retval);
         }
         return retval;
     }
 
-    private static String translateJsonToXml(String body) {
-        String retval;
-        try {
-            retval = JsonRatingUtils.jsonToXml(body);
-        } catch (IOException | TransformerException ex) {
-            throw new IllegalArgumentException("Failed to translate request into rating spec XML", ex);
-        }
-        return retval;
-    }
-
-    private String removeTemplate(String xml) {
-        return xml.replaceAll("(?s)<rating-template.*?</rating-template>", "");
+    private static RatingsDocument removeTemplates(RatingsDocument ratings) {
+        return new RatingsDocument.Builder(ratings)
+                .withRatingTemplates(null)
+                .build();
     }
 
     @OpenApi(
@@ -588,7 +586,8 @@ public class RatingController extends BaseCrudHandler {
                     .getOrDefault(true);
             boolean replaceBaseCurve = ctx.queryParamAsClass(REPLACE_BASE_CURVE, Boolean.class)
                     .getOrDefault(false);
-            String ratingSet = deserializeRatingSet(ctx, storeTemplate);
+            RatingsDocument ratings = deserializeRatingSet(ctx, storeTemplate);
+            String ratingSet = JsonRatingUtils.writeXml(ratings);
             String datum = ctx.queryParam(DATUM);
             VerticalDatum vd = null;
             if(datum != null) {

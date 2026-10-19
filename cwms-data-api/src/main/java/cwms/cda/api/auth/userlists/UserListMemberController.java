@@ -3,6 +3,8 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.USER_ID;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -39,8 +41,10 @@ public final class UserListMemberController implements Handler {
             description = "The office that owns the list."),
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "Member removed."),
+            @OpenApiResponse(status = STATUS_400, description = "A list parameter is missing or invalid."),
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
-            @OpenApiResponse(status = "404", description = "List or member not found.")
+            @OpenApiResponse(status = "404", description = "List, office, or member not found."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Remove a member from an office-scoped user list.",
