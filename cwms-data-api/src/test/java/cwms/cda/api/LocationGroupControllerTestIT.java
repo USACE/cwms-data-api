@@ -1289,7 +1289,6 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .body(newGroupXml)
             .header("Authorization", user.toHeaderValue())
             .header(CATEGORY_ID, group.getLocationCategory().getId())
-            .queryParam(REPLACE_METADATA, true)
             .queryParam(OFFICE, group.getOfficeId())
         .when()
             .redirects().follow(true)

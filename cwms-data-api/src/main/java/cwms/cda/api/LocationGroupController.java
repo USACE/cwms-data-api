@@ -37,6 +37,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LocationGroup;
@@ -314,8 +315,6 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = REPLACE_ASSIGNED_LOCS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing locations before assigning new locations specified in the content body "
                 + "Default: false"),
-            @OpenApiParam(name = REPLACE_METADATA, type = Boolean.class, description = "Specifies whether to "
-                + "replace group metadata with that specified in the content body. Default: false"),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "office of the user making the request. This is the office that the location, group, and category "
                 + "belong to. If the group and/or category belong to the CWMS office, "
@@ -338,17 +337,19 @@ public class LocationGroupController implements CrudHandler {
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
-            boolean replaceMetadata = ctx.queryParamAsClass(REPLACE_METADATA, Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
+            String categoryId = deserialize.getLocationCategory().getId();
+            Optional<LocationGroup> oldGroup = locationGroupDao.getLocationGroup(office, categoryId, groupId);
+            if (oldGroup.isEmpty()) {
+                throw new NotFoundException(String.format("Location Group not found with ID: %s", groupId));
+            }
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !groupId.equals(deserialize.getId())) {
                 locationGroupDao.renameLocationGroup(groupId, deserialize);
             }
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);
             }
-            if (replaceMetadata) {
-                locationGroupDao.replaceWithMetadata(deserialize, replaceAssignedLocs);
-            }
+            locationGroupDao.replaceMetadata(deserialize, oldGroup.get(), replaceAssignedLocs);
             boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             List<CwmsId> missingLocations = locationGroupDao.assignLocs(deserialize, office, ignoreMissing);
             if (missingLocations.isEmpty()) {
