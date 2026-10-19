@@ -210,7 +210,7 @@ public final class PropertyController extends BaseCrudHandler {
                     required = true),
             description = "Update CWMS Property",
             methods = HttpMethod.PATCH,
-            path = "/properties{" + NAME + "}",
+            path = "/properties/{" + NAME + "}",
             tags = {TAG},
             responses = {
                 @OpenApiResponse(status = STATUS_200, description = "Property successfully updated in CWMS.")

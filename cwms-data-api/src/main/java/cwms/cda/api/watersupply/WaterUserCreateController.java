@@ -90,7 +90,7 @@ public final class WaterUserCreateController extends WaterSupplyControllerBase {
             ContentType contentType = Formats.parseHeader(formatHeader, WaterUser.class);
             ctx.contentType(contentType.toString());
             WaterUser user = Formats.parseContent(contentType, ctx.body(), WaterUser.class);
-            if (!projectId.equals(user.getProjectId().getName())) {
+            if (!projectId.equalsIgnoreCase(user.getProjectId().getName())) {
                 throw new InvalidItemException("Project ID in provided data and project ID in URL path do not match", null);
             }
             
