@@ -1,0 +1,4682 @@
+[
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780282800000,
+    "pool-elevation": 489.76,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.28999999999996,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 0.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780484400000,
+    "pool-elevation": 489.8499999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 459.84,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 6.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780498800000,
+    "pool-elevation": 489.8099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.21999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 4.999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780603200000,
+    "pool-elevation": 490.01,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.6899999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 14.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780668000000,
+    "pool-elevation": 489.69999999999993,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.49999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 9.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780714800000,
+    "pool-elevation": 489.63,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.28666666666663,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780743600000,
+    "pool-elevation": 489.43,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.04749999999996,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 0.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780779600000,
+    "pool-elevation": 490.01,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.9321666666666,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 7.999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780786800000,
+    "pool-elevation": 489.9799999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.971,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 14.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780794000000,
+    "pool-elevation": 489.91999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.9408333333333,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 23.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780801200000,
+    "pool-elevation": 489.88,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 31.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780923600000,
+    "pool-elevation": 489.73999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.09,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 24.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780934400000,
+    "pool-elevation": 489.64,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.95000000000005,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 19.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1780974000000,
+    "pool-elevation": 489.90999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.3999999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 26.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781017200000,
+    "pool-elevation": 489.5599999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.16999999999996,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 19.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781042400000,
+    "pool-elevation": 489.5799999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.025,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 15.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781060400000,
+    "pool-elevation": 489.8599999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.4249999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 25.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781074800000,
+    "pool-elevation": 489.66999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.11999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 18.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781125200000,
+    "pool-elevation": 489.8299999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.46999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 24.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781218800000,
+    "pool-elevation": 490.0299999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.48,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 31.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781240400000,
+    "pool-elevation": 489.8099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.9099999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 35.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781251200000,
+    "pool-elevation": 490.09,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.49999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 42.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781258400000,
+    "pool-elevation": 490.0199999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.27,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 48.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781287200000,
+    "pool-elevation": 489.65999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.69499999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 36.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781301600000,
+    "pool-elevation": 489.46999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.84999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 29.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781420400000,
+    "pool-elevation": 489.73499999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.26,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 34.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781424000000,
+    "pool-elevation": 489.68,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.26,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 44.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781467200000,
+    "pool-elevation": 489.6499999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.6599999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 39.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781503200000,
+    "pool-elevation": 489.54999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.98,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 33.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781553600000,
+    "pool-elevation": 489.59,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.375,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 27.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781575200000,
+    "pool-elevation": 489.6099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.385,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 24.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781618400000,
+    "pool-elevation": 489.96,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.37999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 29.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781632800000,
+    "pool-elevation": 489.94999999999993,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.48999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 37.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781719200000,
+    "pool-elevation": 489.5799999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.48499999999996,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 36.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781748000000,
+    "pool-elevation": 489.76,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.5449999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 37.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781794800000,
+    "pool-elevation": 489.53999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.17533333333324,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 34.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781823600000,
+    "pool-elevation": 489.61999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.45399999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 24.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781838000000,
+    "pool-elevation": 489.61999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.295,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 19.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781881200000,
+    "pool-elevation": 489.5599999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.03249999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 15.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781913600000,
+    "pool-elevation": 489.84,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.07249999999993,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 23.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1781982000000,
+    "pool-elevation": 489.51,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.1799999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 18.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782093600000,
+    "pool-elevation": 490.01,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.31999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 22.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782144000000,
+    "pool-elevation": 489.96999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.31999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 26.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782151200000,
+    "pool-elevation": 489.9449999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.48533333333324,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 31.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782169200000,
+    "pool-elevation": 489.93,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.19499999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 42.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782198000000,
+    "pool-elevation": 489.91999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.23999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 46.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782248400000,
+    "pool-elevation": 490.0599999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.87999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 53.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782277200000,
+    "pool-elevation": 489.96999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 464.96999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 65.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782291600000,
+    "pool-elevation": 490.0299999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 464.99999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 70.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782298800000,
+    "pool-elevation": 490.2699999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 464.99999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 79.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782302400000,
+    "pool-elevation": 490.19999999999993,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 464.99999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 90.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782331200000,
+    "pool-elevation": 489.48999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.6064999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 79.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782342000000,
+    "pool-elevation": 490.0199999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.5346666666667,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 90.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782352800000,
+    "pool-elevation": 489.93,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.96,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 97.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782370800000,
+    "pool-elevation": 489.8999999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 467.46999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 102.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782388800000,
+    "pool-elevation": 490.06999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 467.46999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 107.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782410400000,
+    "pool-elevation": 489.59,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.6974999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 99.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782432000000,
+    "pool-elevation": 489.48999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.73999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 93.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782547200000,
+    "pool-elevation": 489.01,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 465.8299999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 83.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782608400000,
+    "pool-elevation": 489.68999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.16249999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 93.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782648000000,
+    "pool-elevation": 489.24999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.62999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 83.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782684000000,
+    "pool-elevation": 489.89,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.71,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 92.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782824400000,
+    "pool-elevation": 489.96,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.96,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 97.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782907200000,
+    "pool-elevation": 490.03999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 467.34999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 102.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782950400000,
+    "pool-elevation": 489.40999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 467.6099999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 99.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782957600000,
+    "pool-elevation": 489.3099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 467.00499999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 94.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1782990000000,
+    "pool-elevation": 489.3099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.9799999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 89.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783015200000,
+    "pool-elevation": 489.5799999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.6816666666666,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 92.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783036800000,
+    "pool-elevation": 489.34,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.59999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 90.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783076400000,
+    "pool-elevation": 489.48999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.96999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 93.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783213200000,
+    "pool-elevation": 489.43999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.9399999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 90.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783263600000,
+    "pool-elevation": 489.89,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.7299999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 92.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783400400000,
+    "pool-elevation": 489.66999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.8599999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 91.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783594800000,
+    "pool-elevation": 489.3599999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 466.68,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 84.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783630800000,
+    "pool-elevation": 489.71999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 465.945,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 76.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783641600000,
+    "pool-elevation": 489.73999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 465.36766666666654,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 67.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783648800000,
+    "pool-elevation": 489.5299999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 464.2149999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 56.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783666800000,
+    "pool-elevation": 489.3099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.17999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 47.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783713600000,
+    "pool-elevation": 489.91999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.12999999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 50.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783728000000,
+    "pool-elevation": 489.96,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.3599999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 55.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783756800000,
+    "pool-elevation": 489.49999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.55499999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 50.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783821600000,
+    "pool-elevation": 489.5599999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.46249999999986,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 48.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783868400000,
+    "pool-elevation": 489.5299999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.01,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 45.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783947600000,
+    "pool-elevation": 489.5299999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 463.02,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 39.99999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783958400000,
+    "pool-elevation": 489.53999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.01,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 37.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1783976400000,
+    "pool-elevation": 489.5199999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.0299999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 34.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784214000000,
+    "pool-elevation": 489.56999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.06,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 28.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784260800000,
+    "pool-elevation": 489.8499999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 462.03999999999996,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 33.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784293200000,
+    "pool-elevation": 489.56999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.64,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 29.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784332800000,
+    "pool-elevation": 489.49999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.59,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 26.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784386800000,
+    "pool-elevation": 489.40999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.86999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 23.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784466000000,
+    "pool-elevation": 490.0599999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.2099999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 27.999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784548800000,
+    "pool-elevation": 489.39,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.23,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 24.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784588400000,
+    "pool-elevation": 489.41999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.1599999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 21.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784631600000,
+    "pool-elevation": 489.34,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.1599999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 13.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784642400000,
+    "pool-elevation": 489.46999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.1599999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 6.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784646000000,
+    "pool-elevation": 489.5999999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.1599999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 0.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784656800000,
+    "pool-elevation": 489.84,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 459.96999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 4.999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784678400000,
+    "pool-elevation": 489.98999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.11766666666654,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 7.999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784689200000,
+    "pool-elevation": 489.99999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.04999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 9.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784703600000,
+    "pool-elevation": 490.03999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.3999999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 12.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784728800000,
+    "pool-elevation": 490.03999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.00499999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 18.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784772000000,
+    "pool-elevation": 489.66999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.80266666666665,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 13.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784797200000,
+    "pool-elevation": 489.6099999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.82749999999993,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 7.999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784808000000,
+    "pool-elevation": 489.64,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.5799999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 0.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784840400000,
+    "pool-elevation": 490.03999999999996,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 459.77466666666663,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 6.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784844000000,
+    "pool-elevation": 490.06999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.6715,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 12.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784851200000,
+    "pool-elevation": 490.06999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 461.1424999999999,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 18.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784872800000,
+    "pool-elevation": 489.71,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.76,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 9.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1784890800000,
+    "pool-elevation": 489.63,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.76,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1785006000000,
+    "pool-elevation": 489.56999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.11499999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 9.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1785031200000,
+    "pool-elevation": 489.81999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 459.89699999999993,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 14.999999999999998,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1785045600000,
+    "pool-elevation": 489.8299999999999,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 459.94499999999994,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 7.999999999999999,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1785052800000,
+    "pool-elevation": 489.86999999999995,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 459.98,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1785063600000,
+    "pool-elevation": 489.84,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.01,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 0.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1785200400000,
+    "pool-elevation": 490.06999999999994,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 460.29999999999995,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 3.9999999999999996,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  },
+  {
+    "project-id": {
+      "office-id": "SWT",
+      "name": "WEBB"
+    },
+    "change-date": 1785250800000,
+    "pool-elevation": 489.65999999999997,
+    "protected": true,
+    "discharge-computation-type": {
+      "office-id": "SWT",
+      "display-value": "C",
+      "tooltip": "Calculated from gate opening-elev curves",
+      "active": true
+    },
+    "reason-type": {
+      "office-id": "SWT",
+      "display-value": "F",
+      "tooltip": "Flood control release",
+      "active": true
+    },
+    "type": "gate-change",
+    "new-total-discharge-override": "NaN",
+    "old-total-discharge-override": "NaN",
+    "discharge-units": "cfs",
+    "tailwater-elevation": 459.84999999999997,
+    "elevation-units": "ft",
+    "settings": [
+      {
+        "type": "gate-setting",
+        "location-id": {
+          "office-id": "SWT",
+          "name": "WEBB-TG1"
+        },
+        "opening": 0.0,
+        "opening-parameter": "Opening",
+        "opening-units": "ft",
+        "invert-elevation": 0.0
+      }
+    ]
+  }
+]

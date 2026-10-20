@@ -73,6 +73,58 @@
   },
   {
     "office-id": "SWT",
+    "id": "FCOB-ConduitGate",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "FCOB.%-Opening-Conduit_Gates,Elev;Flow-Conduit_Gates.Standard.Production",
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-CG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "FCOB-CG2",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "FCOB-LowFlowGate",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "FCOB.%-Opening-Low_Flow_Gates,Elev;Flow-Low_Flow_Gates.Standard.Production",
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-LF1",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "FCOB-UncontrolledSpillway",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "shared-loc-alias-id": "FCOB.Elev;Flow-Uncontrolled_Spillway.Linear.Production",
+    "shared-ref-location-id": "FCOB",
+    "assigned-locations": [
+      {
+        "location-id": "FCOB-UC",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
     "id": "KEYS-LOW flow pipes",
     "location-category": {
       "office-id": "SWT",
@@ -216,6 +268,67 @@
       },
       {
         "location-id": "KEYS-TG9",
+        "office-id": "SWT"
+      }
+    ]
+  },
+  {
+    "office-id": "SWT",
+    "id": "WEBB-TainterGate",
+    "location-category": {
+      "office-id": "SWT",
+      "id": "Rating"
+    },
+    "description": "Opening;GateSettings_elevation_pool;;;;",
+    "shared-loc-alias-id": "WEBB.Opening-Spillway_Gates,Elev;Flow-Spillway_Gates.Standard.Production",
+    "shared-ref-location-id": "WEBB",
+    "assigned-locations": [
+      {
+        "location-id": "WEBB-TG1",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG10",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG11",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG12",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG2",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG3",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG4",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG5",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG6",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG7",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG8",
+        "office-id": "SWT"
+      },
+      {
+        "location-id": "WEBB-TG9",
         "office-id": "SWT"
       }
     ]
