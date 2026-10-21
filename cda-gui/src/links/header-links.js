@@ -19,7 +19,7 @@ export default [
       {
         id: "swagger-schema",
         text: "Swagger Docs Schema",
-        href: `${getBasePath()}swagger-docs`,
+        href: `${getBasePath()}/swagger-docs`,
       },
     ],
   },
