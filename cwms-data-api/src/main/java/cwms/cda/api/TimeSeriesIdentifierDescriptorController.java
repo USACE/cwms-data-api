@@ -303,7 +303,7 @@ public class TimeSeriesIdentifierDescriptorController implements CrudHandler {
                             description = "'True' or 'true' if the time series is active")
             }, tags = {TAG},
             headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
-            path = "/timeseries/identifer-descriptor/{" + TIMESERIES_ID + "}"
+            path = "/timeseries/identifier-descriptor/{" + TIMESERIES_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String timeSeriesId) {

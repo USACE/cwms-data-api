@@ -45,7 +45,10 @@ public final class CdaAccessManager implements Handler {
 
     private void checkRateLimit(Context ctx) {
         // we need the registered path name without variables here.
-        String path = ctx.endpoints().matchedHttpEndpoint().path;
+        var matchedEndPoint = ctx.endpoints().matchedHttpEndpoint();
+        // while this should likely never be null by the time things get to here
+        // we should still guard against the possible null.
+        String path = matchedEndPoint == null ? "" : matchedEndPoint.path;
         RouteRole[] routeRoles = rateLimitedPaths.get(path);
         if (routeRoles != null && routeRoles.length != 0) {
             try {

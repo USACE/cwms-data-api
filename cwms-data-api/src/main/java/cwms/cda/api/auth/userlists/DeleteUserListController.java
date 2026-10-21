@@ -43,7 +43,7 @@ public final class DeleteUserListController implements Handler {
         description = "Delete a user list and its membership rows.",
         methods = HttpMethod.DELETE,
         tags = UserListController.TAG,
-        path = "/user/lists/{" + USER_LIST_ID + "}"
+        path = "/user/list/{" + USER_LIST_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

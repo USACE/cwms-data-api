@@ -15,7 +15,6 @@ import cwms.cda.data.dao.UserListDao;
 import cwms.cda.data.dto.auth.userlists.UserList;
 import cwms.cda.data.dto.auth.userlists.UserListInput;
 import cwms.cda.formatters.Formats;
-import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.openapi.OpenApi;
@@ -24,7 +23,6 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class UpdateUserListController implements Handler {
@@ -52,7 +50,7 @@ public final class UpdateUserListController implements Handler {
         description = "Update user-list metadata. Creator ownership is immutable.",
         methods = HttpMethod.PATCH,
         tags = UserListController.TAG,
-        path = "/user/lists/{" + USER_LIST_ID + "}"
+        path = "/user/list/{" + USER_LIST_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

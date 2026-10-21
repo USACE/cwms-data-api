@@ -24,7 +24,6 @@ import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
-import io.javalin.openapi.OpenApiSecurity;
 import org.jooq.DSLContext;
 
 public final class AddUserListMemberController implements Handler {
@@ -53,7 +52,7 @@ public final class AddUserListMemberController implements Handler {
         description = "Add an existing CWMS user to an office-scoped user list.",
         methods = HttpMethod.POST,
         tags = UserListController.TAG,
-        path = "/user/lists/{" + USER_LIST_ID + "}/members"
+        path = "/user/list/{" + USER_LIST_ID + "}/members"
     )
     @Override
     public void handle(Context ctx) {
