@@ -1,0 +1,37 @@
+{
+  "project-id": {
+    "office-id": "SWT",
+    "name": "FCOB"
+  },
+  "location": {
+    "office-id": "SWT",
+    "name": "FCOB-CG2",
+    "latitude": 35.1578366,
+    "longitude": -98.4567251,
+    "active": true,
+    "public-name": "CG2",
+    "long-name": "CG2",
+    "timezone-name": "US/Central",
+    "location-kind": "OUTLET",
+    "nation": "US",
+    "state-initial": "OK",
+    "county-name": "Caddo",
+    "nearest-city": "Fort Cobb, OK",
+    "horizontal-datum": "NAD83",
+    "published-longitude": 0.0,
+    "published-latitude": 0.0,
+    "vertical-datum": "NGVD29",
+    "elevation": 389.8392,
+    "bounding-office-id": "SWT",
+    "elevation-units": "m"
+  },
+  "rating-group-id": {
+    "office-id": "SWT",
+    "name": "FCOB-ConduitGate"
+  },
+  "rating-spec-id": "FCOB.%-Opening-Conduit_Gates,Elev;Flow-Conduit_Gates.Standard.Production",
+  "rating-category-id": {
+    "office-id": "SWT",
+    "name": "Rating"
+  }
+}

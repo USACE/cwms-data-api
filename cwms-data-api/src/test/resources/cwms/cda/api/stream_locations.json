@@ -1,0 +1,56 @@
+[
+  {
+    "stream-location-node": {
+      "id": {
+        "office-id": "SWT",
+        "name": "DIEB"
+      },
+      "stream-node": {
+        "stream-id": {
+          "office-id": "SWT",
+          "name": "Saline_R"
+        },
+        "station": 53,
+        "station-units": "mi"
+      }
+    },
+    "area-units": "mile2",
+    "stage-units": "ft"
+  },
+  {
+    "stream-location-node": {
+      "id": {
+        "office-id": "SWT",
+        "name": "DIES"
+      },
+      "stream-node": {
+        "stream-id": {
+          "office-id": "SWT",
+          "name": "Saline_R"
+        },
+        "station": 48,
+        "station-units": "mi"
+      }
+    },
+    "area-units": "mile2",
+    "stage-units": "ft"
+  },
+  {
+    "stream-location-node": {
+      "id": {
+        "office-id": "SWT",
+        "name": "LOCK"
+      },
+      "stream-node": {
+        "stream-id": {
+          "office-id": "SWT",
+          "name": "Saline_R"
+        },
+        "station": 31,
+        "station-units": "mi"
+      }
+    },
+    "area-units": "mile2",
+    "stage-units": "ft"
+  }
+]

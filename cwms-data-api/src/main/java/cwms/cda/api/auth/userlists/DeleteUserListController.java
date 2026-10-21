@@ -3,6 +3,8 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
 
@@ -34,8 +36,10 @@ public final class DeleteUserListController implements Handler {
             description = "The office that owns the list."),
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "User list deleted."),
+            @OpenApiResponse(status = STATUS_400, description = "A list parameter is missing or invalid."),
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
-            @OpenApiResponse(status = "404", description = "User list not found.")
+            @OpenApiResponse(status = "404", description = "User list or office not found."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
         security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Delete a user list and its membership rows.",

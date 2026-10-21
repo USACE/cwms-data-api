@@ -1,0 +1,22 @@
+{
+  "office-id": "SWT",
+  "name": "FCOB-WFEC Pump",
+  "latitude": 35.165,
+  "longitude": -98.461666666667,
+  "active": true,
+  "public-name": "Western Farmers Elec Coop Pump",
+  "timezone-name": "US/Central",
+  "location-kind": "PUMP",
+  "nation": "US",
+  "state-initial": "OK",
+  "county-name": "Caddo",
+  "nearest-city": "Fort Cobb, OK",
+  "horizontal-datum": "WGS84",
+  "published-longitude": 98.461666666667,
+  "published-latitude": 35.165,
+  "vertical-datum": "NGVD29",
+  "elevation": 1278.9999999999998,
+  "map-label": "Ft Cobb Lake",
+  "bounding-office-id": "SWT",
+  "elevation-units": "ft"
+}

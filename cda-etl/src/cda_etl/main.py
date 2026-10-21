@@ -89,10 +89,12 @@ def pipeline(config: DownloadConfig, session_manager: SessionManager) -> None:
 
     with session_manager.dest_session(detail=detail):
         for office in config.offices(enabled_only=True):
-            _publish_office_data(office)
+            _publish_office_properties(office)
 
             for project_config in office.projects(enabled_only=True):
                 _publish_project_data(project_config, config)
+
+            _publish_office_groups(office)
 
 
 def _project_inputs(project_config: ProjectConfig) -> dict[str, list]:
@@ -252,13 +254,22 @@ def _stage_office_data(office_config: OfficeConfig) -> None:
     timeseries_group.stage_timeseries_groups(office_config.id, timeseries_groups)
 
 
-def _publish_office_data(office_config: OfficeConfig) -> None:
+def _publish_office_properties(office_config: OfficeConfig) -> None:
     office_properties = list(office_config.properties(enabled_only=True))
-    location_groups = list(office_config.location_groups(enabled_only=True))
-    timeseries_groups = list(office_config.timeseries_groups(enabled_only=True))
 
     logger.info("Publishing office properties for %s", office_config.id)
     property.publish_staged_properties(office_config.id, office_properties)
+
+
+def _publish_office_groups(office_config: OfficeConfig) -> None:
+    """
+    Location/timeseries groups assign specific project locations and time
+    series, so they can only be published once those projects exist -
+    publish them after every project in the office, not before.
+    """
+    location_groups = list(office_config.location_groups(enabled_only=True))
+    timeseries_groups = list(office_config.timeseries_groups(enabled_only=True))
+
     logger.info("Publishing location groups for %s", office_config.id)
     location_group.publish_staged_location_groups(office_config.id, location_groups)
     logger.info("Publishing timeseries groups for %s", office_config.id)
@@ -286,6 +297,17 @@ def _publish_project_data(project_config: ProjectConfig, config: DownloadConfig)
     location.publish_staged_locations(project_config.office_id, inputs["location"])
     logger.info("Publishing project record for %s", project_config.id)
     project.publish_staged_projects([project_config])
+    logger.info("Publishing outlets for project %s", project_config.id)
+    outlet.publish_staged_outlets(project_config.office_id, inputs["outlet"])
+    _publish_outlet_rating_dependencies(project_config, config, inputs["outlet"])
+    logger.info("Publishing turbines for project %s", project_config.id)
+    turbine.publish_staged_turbines(project_config.office_id, inputs["turbine"])
+    logger.info("Publishing locks for project %s", project_config.id)
+    lock.publish_staged_locks(project_config.office_id, inputs["lock"])
+    # Timeseries, clobs, location levels, and ratings may be based on an
+    # outlet/turbine/lock location (e.g. a lock's own timeseries) rather than
+    # just the project location, so they can only be published once every
+    # location-creating resource above has been published.
     logger.info("Publishing timeseries data for project %s", project_config.id)
     timeseries.publish_staged_timeseries(
         project_config.office_id,
@@ -307,11 +329,6 @@ def _publish_project_data(project_config: ProjectConfig, config: DownloadConfig)
         config.settings.end_time,
     )
     property.publish_staged_properties(project_config.office_id, inputs["property"])
-    logger.info("Publishing outlets for project %s", project_config.id)
-    outlet.publish_staged_outlets(project_config.office_id, inputs["outlet"])
-    _publish_outlet_rating_dependencies(project_config, config, inputs["outlet"])
-    logger.info("Publishing turbines for project %s", project_config.id)
-    turbine.publish_staged_turbines(project_config.office_id, inputs["turbine"])
     turbine.publish_staged_turbine_changes(
         project_config.office_id,
         project_config.id,
@@ -319,8 +336,6 @@ def _publish_project_data(project_config: ProjectConfig, config: DownloadConfig)
         config.settings.start_time,
         config.settings.end_time,
     )
-    logger.info("Publishing locks for project %s", project_config.id)
-    lock.publish_staged_locks(project_config.office_id, inputs["lock"])
     gate_change.publish_staged_gate_changes(
         project_config.office_id,
         project_config.id,

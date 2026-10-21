@@ -31,6 +31,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
@@ -38,6 +39,7 @@ import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingTemplateDao;
 import cwms.cda.data.dto.rating.RatingTemplate;
 import cwms.cda.data.dto.rating.RatingTemplates;
+import cwms.cda.data.dto.rating.document.RatingsDocument;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
@@ -53,7 +55,6 @@ import java.io.IOException;
 import java.util.Optional;
 import com.google.common.flogger.FluentLogger;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.transform.TransformerException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -255,13 +256,12 @@ public class RatingTemplateController implements CrudHandler {
     }
 
     private static String translateJsonToXml(String body) {
-        String retval;
         try {
-            retval = JsonRatingUtils.jsonToXml(body);
-        } catch (IOException | TransformerException ex) {
-            throw new IllegalArgumentException("Failed to translate request into rating spec XML", ex);
+            RatingsDocument ratings = JsonRatingUtils.readJson(body);
+            return JsonRatingUtils.writeXml(ratings);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Failed to translate request into rating template XML", ex);
         }
-        return retval;
     }
 
     @OpenApi(ignore = true)

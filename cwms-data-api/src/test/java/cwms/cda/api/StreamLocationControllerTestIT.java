@@ -476,4 +476,29 @@ final class StreamLocationControllerTestIT extends DataApiTestIT {
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
     }
+
+
+    @Test
+    void test_create_multiple_streams() throws Exception {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        String streamLocationJson = readResourceFile("cwms/cda/api/stream_locations.json");
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSON)
+            .queryParam(FAIL_IF_EXISTS, false)
+            .body(streamLocationJson)
+            .header(AUTH_HEADER, user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/stream-locations/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("source", equalTo("Parser"))
+            .body("message", startsWith("Formatting error:Could not deserialize:"));
+    }
 }
