@@ -3,7 +3,7 @@ package cwms.cda.security;
 import cwms.cda.api.errors.ApplicationException;
 import java.util.HashMap;
 import java.util.logging.Level;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class CwmsAuthException extends ApplicationException {
     private static final String INVALID_USER = "Invalid User";

@@ -1,7 +1,7 @@
 package cwms.cda.api;
 
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.Formats;
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -670,7 +670,7 @@ final class ForecastSpecControllerV1TestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(specData)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -687,7 +687,7 @@ final class ForecastSpecControllerV1TestIT extends DataApiTestIT {
             .accept(format)
             .queryParam(Controllers.OFFICE, OFFICE)
             .queryParam(DESIGNATOR, designator)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

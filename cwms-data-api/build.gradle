@@ -1,23 +1,17 @@
 plugins {
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
-    id 'war'
     id 'com.gradleup.shadow' version '8.3.10'
+    id 'application'
 }
 
 configurations {
     info
-    webjars
+    ui
     docker
     baseLibs
-    tomcatLibs
-    testImplementation.extendsFrom(tomcatLibs)
     jooqCodegenLatest
     jooqCodegenLegacy
-}
-
-configurations.implementation {
-    exclude group: 'com.oracle.database.jdbc'
 }
 
 configurations.all {
@@ -30,6 +24,7 @@ configurations.all {
 
 dependencies {
     annotationProcessor(libs.com.google.auto.service)
+    annotationProcessor(libs.javalin.openapi.annotation.processor)
     compileOnly(libs.com.google.auto.service.annotations)
     implementation(libs.jaxb.api)
     implementation(libs.jaxb.core)
@@ -79,6 +74,8 @@ dependencies {
         //exclude group: "org.python", module: "jython-standalone"
         //exclude group: "mil.army.usace.hec.swingx"
         exclude group: "*"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
 
     implementation(libs.google.flogger.api)
@@ -88,18 +85,24 @@ dependencies {
 
     implementation(libs.nucleus.data) {
         exclude group: "org.jdom"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
     implementation(libs.nucleus.metadata)
     implementation(libs.cwms.ratings.core) {
         
         //exclude group: "mil.army.usace.hec.swingx"
         exclude group: "*"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
 
     implementation(libs.cwms.ratings.io.xml)
     implementation(libs.cwms.ratings.io.jdbc) {
         exclude group: "mil.army.usace.hec", module: "cwms-db-jooq-codegen"
         exclude group: "org.jooq.pro-java-11", module: "jooq"
+        exclude group: "com.oracle", module: "*"
+        exclude group: "com.oracle.database.jdbc", module: "*"
     }
 
     implementation(libs.jooq) {
@@ -113,23 +116,17 @@ dependencies {
     implementation(libs.geojson.jackson)
 
     implementation(libs.jackson.datatype.jdk8)
+    
+    implementation(libs.com.zaxxer.hikaricp)
+    implementation(libs.javalin.core)
+    implementation(libs.bundles.javalin.openapi)
 
-    implementation(libs.javalin.core) {
-        exclude group: "org.eclipse.jetty"
-        exclude group: "org.eclipse.jetty.websocket"
-    }
-    implementation(libs.javalin.openapi) {
-        //exclude group: "org.eclipse.jetty"
-        exclude group: "org.eclipse.jetty.websocket"
-        exclude group: "jakarta.xml.bind", module: "*"
-    }
     implementation(libs.swagger.core) {
         exclude group: "jakarta.xml.bind", module: "*"
     }
     implementation(libs.password4j)
     implementation 'cz.jirutka.rsql:rsql-parser:2.1.0'
 
-    compileOnly(libs.javaee.web.api)
     compileOnly(libs.cwms.tomcat.auth)
 
 
@@ -154,27 +151,24 @@ dependencies {
     testImplementation(libs.mockito.core)
     testRuntimeOnly(libs.jaxb.impl)
     testImplementation(libs.openapi.spec.validation)
+    testImplementation(libs.javalin.test.tools)
+    testImplementation(libs.javalin.context.mock) {
+        exclude group: "org.eclipse.jetty.toolchain", module: "jetty-jakarta-servlet-api"
+    }
 
-    baseLibs(libs.oracle.jdbc.driver)
-
-    compileOnly(libs.oracle.jdbc.driver)
-    testRuntimeOnly(libs.oracle.jdbc.driver)
+    implementation(libs.oracle.jdbc.driver)
 
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.rest.assured)
     testImplementation(libs.hamcrest.all)
     testImplementation(libs.slf4j.jul)
 
-    tomcatLibs(libs.bundles.tomcat.embedded)
-    tomcatLibs(libs.bundles.tomcat.support)
-    tomcatLibs(libs.google.flogger.api)
-    tomcatLibs(libs.google.flogger.system.backend)
-
     baseLibs(libs.google.flogger.slf4j.backend) {
         exclude group: "org.slf4j"
     }
 
-    baseLibs(libs.ch.qos.logback)
+    implementation(libs.ch.qos.logback)
+    //baseLibs(libs.ch.qos.logback)
     baseLibs(libs.io.opentelemetry.instrumentation.logback.mdc)
 
     testImplementation(libs.bundles.testcontainers)
@@ -183,7 +177,7 @@ dependencies {
     testImplementation(libs.cwms.tomcat.auth)
     testImplementation(libs.apache.freemarker)
 
-    webjars(project(":cda-gui"))
+    ui(project(path: ":cda-gui", configuration: "warOutput"))
 
 
     // override versions
@@ -194,95 +188,61 @@ dependencies {
     implementation(libs.minio)
 }
 
-task extractWebJars(type: Copy) {
-    dependsOn configurations.webjars
-    from zipTree(configurations.webjars.singleFile)
-    into file("$buildDir/extra")
-    includeEmptyDirs false
-    includeEmptyDirs = false
-}
-
-war {
-    dependsOn extractWebJars
-    from "$buildDir/extra"
-    from "src/resources/"
-
-    manifest {
-        attributes "build-version": project.version
-    }
-
-    doLast {
-        println(war.archiveFileName.toString())
-        println("::set-output name=WARFILE::${project.name}-${project.version}.war")
-    }
-}
-
-compileTestJava.classpath += configurations.tomcatLibs
-
-sourceSets {
-    formatList {
-        output.resourcesDir = layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main")
-        java.destinationDirectory = layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main")
-    }
-    main {
-        runtimeClasspath += formatList.runtimeClasspath
-    }
-    test {
-        runtimeClasspath += formatList.runtimeClasspath
-    }
-}
-
 test {
     useJUnitPlatform() {
         excludeTags "integration"
     }
-    classpath += configurations.tomcatLibs
+    classpath += configurations.baseLibs
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback-test.xml"
 }
 
 description = 'CWMS-Data-API'
 
-task generateConfig(type: Copy) {
-    doFirst {
-        project.delete "$buildDir/tomcat/"
-        project.mkdir "$buildDir/tomcat/logs"
-    }
-    from 'src/test/resources/tomcat'
-    into "$buildDir/tomcat"
-
-    //rename "context.xml", "context.xml.template"
-    rename "tomcat-server.xml", "server.xml"
-
-    inputs.dir "src/test/resources"
-    outputs.dir "$buildDir/tomcat/conf"
+application {
+    mainClass = 'cwms.cda.CwmsDataApi'
+    applicationDefaultJvmArgs += "-Dlogback.configurationFile=logback.xml"
 }
 
-task run(type: JavaExec) {
-    group "application"
-    dependsOn generateConfig
-    dependsOn war
+jar {
+    manifest {
+        attributes "build-version": project.version
+        attributes "Main-Class": 'cwms.cda.CwmsDataApi' // duplicating this here because doing this appears to interfere
+                                                        // with the application setup aove.
+    }
+    doFirst {
+        def manifestDir = layout.buildDirectory.dir("resources/main/META-INF").get()
+        manifestDir.asFile.mkdirs()
+        manifest.writeTo(manifestDir.file(("MANIFEST.MF")))
+    }
+}
 
-    classpath += configurations.baseLibs
-    classpath += configurations.tomcatLibs
-    classpath += sourceSets.test.output // to get the fixture
+distributions {
+    main {
+        contents {
+            into ('wars') {
+                from configurations.ui
+                rename '.*', 'ui.war'
+            }
+        }
+    }
+}
 
-    mainClass = "fixtures.TomcatServer"
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
+run() {
+    dependsOn configurations.ui
+    dependsOn jar // to make sure the /META-INF/MANIFEST.MF is build to render the version
+    classpath sourceSets.main.runtimeClasspath +
+              configurations.baseLibs
+
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
 
-    def context = project.findProperty("cda.war.context") ?: "spk-data"
+    def context = project.findProperty("cda.war.context") ?: "/cwms-data"
 
-    args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", context
-    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
-    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
-    jvmArgs += "-DTOMCAT_RESOURCES=$buildDir/tomcat/conf/context.xml"
-    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    args context, configurations.ui.asPath, 7010
     jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
-    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-    jvmArgs += "-DwarContext=/" + context
-    jvmArgs += "-Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true"
     jvmArgs += "-DAUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT=true"
     jvmArgs += "-Duser.timezone=UTC"
+    
     // If you have the docker-compose environment up and are trying to run
     // CDA from run to debug uncomment the following lines.
     //jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager,OpenID"
@@ -297,18 +257,15 @@ tasks.register('seedDevApiKeys', JavaExec) {
 
     classpath = sourceSets.test.runtimeClasspath
     classpath += configurations.baseLibs
-    classpath += configurations.tomcatLibs
 
     mainClass = "fixtures.SeedDevApiKeys"
 
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
-//    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
 }
 
 task integrationTests(type: Test) {
-//    dependsOn test
-    dependsOn generateConfig
-    dependsOn war
+    dependsOn test
+    dependsOn configurations.ui
 
     useJUnitPlatform() {
         includeTags "integration"
@@ -316,33 +273,25 @@ task integrationTests(type: Test) {
     shouldRunAfter test
     classpath += configurations.baseLibs
     // The before all extension will take care of these properties
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
-    jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
-    jvmArgs += "-DwarContext=/cwms-data"
-    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
-    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
+    jvmArgs += "-DuiWarFile=${configurations.ui.asPath}"
+    jvmArgs += "-DwarContext=/cwms-data"    
     jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
-    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
     jvmArgs += "-Dproperties.file=$projectDir/src/test/resources/features-integration.properties"
-    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-    //jvmArgs += "-Dflogger.backend_factory=com.google.common.flogger.backend.slf4j.Slf4jBackendFactory#getInstance"
 }
 
 task timeseriesReadBenchmark(type: JavaExec) {
     group "verification"
     description = "Run the local time-series read benchmark harness"
-    dependsOn generateConfig
-    dependsOn war
     dependsOn testClasses
 
     workingDir = projectDir
     classpath = sourceSets.test.runtimeClasspath
-    classpath += configurations.baseLibs
-    classpath += configurations.tomcatLibs
+    classpath += configurations.baseLibs    
 
     mainClass = "helpers.TimeSeriesReadBenchmark"
 
@@ -352,41 +301,9 @@ task timeseriesReadBenchmark(type: JavaExec) {
 
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
-    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
-    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
-    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
-    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
-}
-
-task prepareDockerBuild(type: Copy, dependsOn: war) {
-    doFirst {
-        project.mkdir("$buildDir/docker")
-    }
-    from "src/docker"
-    into "$buildDir/docker"
-
-    from(configurations.docker)
-
-    from(configurations.baseLibs) {
-        into "libs"
-    }
-
-    from(sourceSets.test.resources) {
-
-        include "**/conf/context.xml"
-        eachFile {
-            path = name
-        }
-        includeEmptyDirs = false
-    }
-
-    from(war.outputs.files.singleFile) {
-        //include "${project.name}-${project.version}.jar"
-        into "cda/webapps"
-        rename(".*\\.war", "cwms-data.war")
-    }
 }
 
 task generateTimeSeriesSamples(type: JavaExec) {
@@ -407,8 +324,6 @@ task generateTimeSeriesSamples(type: JavaExec) {
 
 tasks.register("executeOpenAPIConversion", Test) {
     group 'documentation'
-    dependsOn generateConfig
-    dependsOn war
 
     useJUnitPlatform() {
         includeTags "openapi"
@@ -419,14 +334,9 @@ tasks.register("executeOpenAPIConversion", Test) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
-    jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
-    jvmArgs += "-DwarContext=/cwms-data"
-    jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
-    jvmArgs += "-Djava.util.logging.config.file=$projectDir/logging.properties"
-    jvmArgs += "-Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
+    jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
-    jvmArgs += "-Dcatalina.base=$buildDir/tomcat"
 }
 
 tasks.register('shadeCodegenLegacy', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {

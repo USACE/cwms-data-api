@@ -18,7 +18,7 @@ import fixtures.users.annotation.AuthType.UserType;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.Cookie;
 
-import static cwms.cda.ApiServlet.CWMS_USERS_ROLE;
+import static cwms.cda.CwmsDataApi.CWMS_USERS_ROLE;
 
 public class UserSpecSource implements ArgumentsProvider {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
