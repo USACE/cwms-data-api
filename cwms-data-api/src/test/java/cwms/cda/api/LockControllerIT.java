@@ -993,6 +993,7 @@ final class LockControllerIT extends DataApiTestIT {
             .accept(format)
             .queryParam(Controllers.OFFICE, office)
             .queryParam(Controllers.PROJECT_ID, LOCK.getProjectId().getName())
+            .queryParam(UNIT, "EN")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1003,6 +1004,13 @@ final class LockControllerIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("[0].location.name", equalTo(LOCK.getLocation().getName()))
             .body("[0].location.office-id", equalTo(LOCK.getLocation().getOfficeId()))
+            .body("[0].lock-width", equalTo((float) LOCK.getLockWidth()))
+            .body("[0].lock-length", equalTo((float) LOCK.getLockLength()))
+            .body("[0].normal-lock-lift", equalTo((float) LOCK.getNormalLockLift()))
+            .body("[0].volume-per-lockage", equalTo((float) LOCK.getVolumePerLockage()))
+            .body("[0].minimum-draft", equalTo((float) LOCK.getMinimumDraft()))
+            .body("[0].length-units", equalTo(LOCK.getLengthUnits()))
+            .body("[0].volume-units", equalTo(LOCK.getVolumeUnits()))
         ;
 
         // Delete a Lock
