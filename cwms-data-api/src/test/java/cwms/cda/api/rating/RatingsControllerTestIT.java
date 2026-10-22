@@ -444,6 +444,23 @@ class RatingsControllerTestIT extends DataApiTestIT
             .contentType(is(Formats.JSONV2));
     }
 
+    @ParameterizedTest
+    @EnumSource(GetOneTest.class)
+    void test_get_one_spec_not_found_returns_404(GetOneTest test) {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(test.accept)
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings/NoSuchLoc.Stage;Flow.Standard.NoSuchSpec")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+    }
+
 	enum GetOneTest
 	{
 		DEFAULT(Formats.DEFAULT, Formats.XMLV2),
