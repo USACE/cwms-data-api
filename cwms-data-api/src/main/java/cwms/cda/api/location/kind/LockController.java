@@ -98,7 +98,9 @@ public final class LockController implements CrudHandler {
             @OpenApiParam(name = OFFICE, required = true, description = "Office id for the reservoir project location "
                 + "associated with the locks."),
             @OpenApiParam(name = PROJECT_ID, required = true, description = "Specifies the project ID of the "
-                + "Locks whose data is to be included in the response.")
+                + "Locks whose data is to be included in the response."),
+            @OpenApiParam(name = UNIT, description = "Specifies the unit system to be used in the response. "
+                + "Valid values are: \n* `SI` - Metric units. \n* `EN` - Imperial units. \nDefaults to SI.")
         },
         responses = {
             @OpenApiResponse(status = STATUS_200, content = {
@@ -114,10 +116,11 @@ public final class LockController implements CrudHandler {
         try (Timer.Context ignored = markAndTime(GET_ALL)) {
             String office = requiredParam(ctx, OFFICE);
             String projectId = requiredParam(ctx, PROJECT_ID);
+            UnitSystem unitSystem = ctx.queryParamAsClass(UNIT, UnitSystem.class).getOrDefault(UnitSystem.SI);
             CwmsId project = CwmsId.buildCwmsId(office, projectId);
             DSLContext dsl = getDslContext(ctx);
             LockDao dao = new LockDao(dsl);
-            List<Lock> locks = dao.retrieveLockCatalog(project);
+            List<Lock> locks = dao.retrieveLockCatalog(project, unitSystem);
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) :
                 Formats.JSONV1;
             ContentType contentType = Formats.parseHeader(formatHeader, Lock.class);
