@@ -129,25 +129,19 @@ public class LocationGroupController implements CrudHandler {
             List<LocationGroup> grps = cdm.getLocationGroups(locationOfficeId, groupOfficeId, categoryOfficeId,
                     includeAssigned, locCategoryLike);
 
-            if (!grps.isEmpty()) {
-                String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, LocationGroup.class);
 
-                String result = Formats.format(contentType, grps, LocationGroup.class);
+            String result = Formats.format(contentType, grps, LocationGroup.class);
 
-                ctx.contentType(contentType.toString());
-                requestResultSize.update(result.length());
+            ctx.contentType(contentType.toString());
+            requestResultSize.update(result.length());
 
-                ctx.status(HttpServletResponse.SC_OK);
+            ctx.status(HttpServletResponse.SC_OK);
 
-                byte[] bytes = result.getBytes();
-                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
-            } else {
-                CdaError re = new CdaError("No location groups for office provided");
-                logger.atInfo().log("%s%nfor request %s", re, ctx.fullUrl());
-                ctx.status(HttpServletResponse.SC_NOT_FOUND).json(re);
-            }
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failed to process request to retrieve location groups");
             logger.atSevere().withCause(ex).log("%s", re);
