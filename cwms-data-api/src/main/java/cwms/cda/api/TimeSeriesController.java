@@ -1,6 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.ApiServlet.CWMS_USERS_ROLE;
 import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
@@ -29,6 +30,9 @@ import cwms.cda.formatters.csv.CsvConfiguration;
 import cwms.cda.data.dto.csv.TimeSeriesCsv;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.security.CdaAccessManager;
+import cwms.cda.security.CwmsAuthException;
+import cwms.cda.security.Role;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.core.util.Header;
 import io.javalin.core.validation.JavalinValidation;
@@ -41,6 +45,9 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
+import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
@@ -52,11 +59,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
 
 public class TimeSeriesController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -120,6 +129,8 @@ public class TimeSeriesController implements CrudHandler {
 
     private final Histogram requestResultSize;
     static final int DEFAULT_PAGE_SIZE = 500;
+
+    private static final boolean USE_DMZ_LIST = Boolean.parseBoolean(System.getenv("TS_USE_DMZ_INCLUDE"));
 
 
     public TimeSeriesController(MetricRegistry metrics) {
@@ -445,7 +456,6 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = requiredParam(ctx, NAME);
-
             //try 'unit' if 'units' is not provided as that was the original parameter name
             String units = ctx.queryParamAsClass(UNITS, String.class)
                     .getOrDefault(ctx.queryParamAsClass(UNIT, String.class)
@@ -498,7 +508,7 @@ public class TimeSeriesController implements CrudHandler {
             ZonedDateTime endZdt = end != null
                     ? DateUtils.parseUserDate(end, timezone)
                     : ZonedDateTime.now(tz);
-
+            checkAuth(ctx, names, ctx.queryParam(OFFICE));
             if (version != null && version.equals("2")) {
 
                 String office = requiredParam(ctx, OFFICE);
@@ -618,6 +628,57 @@ public class TimeSeriesController implements CrudHandler {
             logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series");
             ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(re);
         }
+    }
+
+    /**
+     * Presumably a stop gap until formal authorization is in place. Compares provided time series id to DMZ include TS
+     * Group and if the session is authorized to determine if the request should proceed.
+     * @param ctx
+     * @param dsl
+     * @param names
+     * @param office
+     */
+    public static void checkAuth(Context ctx, String names, String office)
+    {
+        if (!USE_DMZ_LIST)
+        {
+                return;
+        }
+        final var authEx = new CwmsAuthException("Required time series is not authorized for public release at this time.", HttpStatus.SC_UNAUTHORIZED);
+        var p = CdaAccessManager.getApiPrincipal(ctx);
+        if (p != null && p.getRoles().contains(new Role(CWMS_USERS_ROLE)))
+        {
+            logger.atInfo().log("access allowed, authenticated. %s", p.getName());
+            return; // at this time there are no access restrictions on "CWMS Users"
+        }
+        final var TS_ID = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
+        final var TS_GROUP = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
+        var dsl = JooqDao.getDslContext(ctx, null);
+        var countQuery =
+                dsl.selectOne()
+                .from(TS_GROUP)
+                .where(
+                        TS_GROUP.GROUP_ID.eq("DMZ Include List")
+                        .and(TS_GROUP.TS_CODE.in(
+                                dsl.select(TS_ID.TS_CODE)
+                                .from(TS_ID)
+                                .where(
+                                        DSL.and(
+                                                DSL.val(office).isNull().or(TS_ID.DB_OFFICE_ID.eq(office)),
+                                                TS_ID.CWMS_TS_ID.eq(names))
+                                        )
+                                )
+                        )
+                );
+        boolean found = dsl.fetchExists(countQuery);
+
+        if (found)
+        {
+                logger.atInfo().log("access allowed, include list.");
+                return;
+        }
+        logger.atInfo().log("access denied, include list.");
+        throw authEx;
     }
 
     private void streamCsv(@NotNull Context ctx, CsvConfiguration csvConfig, int batchSize, TimeSeriesDao dao, TimeSeriesRequestParameters requestParameters) {

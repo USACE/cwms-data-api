@@ -179,6 +179,9 @@ public class TimeSeriesRecentController implements Handler {
                 // just group provided
                 latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit, unitSystem);
             } else {
+                for (var tsId: tsIds) {
+                    TimeSeriesController.checkAuth(ctx, tsId, office);
+                }
                 latestValues = dao.findMostRecentsInRange(office, tsIds, pastLimit, futureLimit, unitSystem);
             }
 

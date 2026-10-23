@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 import fixtures.TestAccounts;
 import fixtures.users.UserSpecSource;
 import fixtures.users.annotation.AuthType;
+import fixtures.users.annotation.AuthType.UserType;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.specification.RequestSpecification;
 
@@ -58,6 +59,58 @@ final class AccessManagerTestIT extends DataApiTestIT {
 			.assertThat()
 			.log().ifValidationFails(LogDetail.ALL,true)
 			.statusCode(is(HttpServletResponse.SC_UNAUTHORIZED));
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource (UserSpecSource.class)
+    @AuthType(userTypes = {UserType.GUEST_AND_PRIVS})
+    void test_ts_auth_not_in_dmz_list(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws Exception
+    {
+
+        final String tsName = "Restricted.Stage.Inst.1Hour.0.AuthTest";
+        final String office = user.getOperatingOffice() == null ? "SPK" : user.getOperatingOffice();
+        createLocation("Restricted", true, office);
+        createTimeseries(office, tsName, false);
+        given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.spec(authSpec)
+			.contentType("application/json")
+			.queryParam("office", office)
+            .queryParam("name", tsName)
+		.when()
+			.get(  "/timeseries")
+		.then()
+			.assertThat()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.statusCode(is(
+                user == TestAccounts.KeyUser.GUEST ||
+                user == TestAccounts.KeyUser.NONE ||
+                user == TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER
+                     ? HttpServletResponse.SC_UNAUTHORIZED : HttpServletResponse.SC_OK));
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource (UserSpecSource.class)
+    @AuthType(userTypes = {UserType.GUEST_AND_PRIVS})
+    void test_ts_auth_in_dmz_list(String authType, TestAccounts.KeyUser user, RequestSpecification authSpec) throws Exception
+    {
+
+        final String tsName = "NotRestricted.Stage.Inst.1Hour.0.AuthTest";
+        final String office = user.getOperatingOffice() == null ? "SPK" : user.getOperatingOffice();
+        createLocation("NotRestricted", true, office);
+        createTimeseries(office, tsName, true);
+        given()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.spec(authSpec)
+			.contentType("application/json")
+			.queryParam("office", office)
+            .queryParam("name", tsName)
+		.when()
+			.get(  "/timeseries")
+		.then()
+			.assertThat()
+			.log().ifValidationFails(LogDetail.ALL,true)
+			.statusCode(is(HttpServletResponse.SC_OK));
     }
 
     @ParameterizedTest
