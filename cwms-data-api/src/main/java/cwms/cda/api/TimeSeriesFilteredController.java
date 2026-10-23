@@ -217,7 +217,7 @@ public class TimeSeriesFilteredController implements Handler {
                     : ZonedDateTime.now(tz);
 
             String office = ctx.queryParam(OFFICE);
-
+            TimeSeriesController.checkAuth(ctx, names, office);
             FilteredTimeSeriesParameters ftsParams = FilteredTimeSeriesParameters.Builder.from(ctx)
                     .build();
 
