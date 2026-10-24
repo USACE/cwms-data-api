@@ -24,15 +24,12 @@
 
 package fixtures;
 
-import cwms.cda.data.dao.AuthDao;
-import java.sql.SQLException;
 import java.util.Objects;
-import org.jooq.impl.DSL;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class SchemaVersionCondition implements ExecutionCondition {
+public class SchemaMinimumVersionCondition implements ExecutionCondition {
 
     private static final ConditionEvaluationResult ENABLED = ConditionEvaluationResult
         .enabled("@MinimumSchemaVersion is not present");
