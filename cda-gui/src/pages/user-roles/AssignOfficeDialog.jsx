@@ -8,6 +8,7 @@ import {
 import PropTypes from "prop-types";
 import { Notice } from "../user-lists/components/StatusMessages";
 import { ManagedOfficeSelect } from "./ManagedOfficeSelect";
+import { toUsernameRegex } from "./username-search";
 
 export function AssignOfficeDialog({
   cdaUrl,
@@ -26,7 +27,7 @@ export function AssignOfficeDialog({
   const usersQuery = useCdaUsers({
     cdaUrl,
     token,
-    usernameLike: submittedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    usernameLike: toUsernameRegex(submittedSearch),
     queryOptions: { enabled: Boolean(submittedSearch) },
   });
   const updateRoles = useUpdateCdaUserRoles({ cdaUrl, token });
@@ -84,7 +85,7 @@ export function AssignOfficeDialog({
           <Input
             id="office-user-search"
             autoFocus
-            placeholder="Enter all or part of a username"
+            placeholder="Enter all or part of a username. Use * as a wildcard."
             value={search}
             disabled={working}
             onChange={(event) => setSearch(event.target.value)}
