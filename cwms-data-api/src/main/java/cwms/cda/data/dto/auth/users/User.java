@@ -35,6 +35,12 @@ public class User extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String principal;
 
+    @Schema(description = "User's first name, when available.")
+    private final String firstName;
+
+    @Schema(description = "User's last name, when available.")
+    private final String lastName;
+
     @Schema(description = "Is the current session based on CAC Authentication")
     @JsonProperty(access = Access.READ_ONLY)
     private final Boolean cacAuth;
@@ -45,6 +51,14 @@ public class User extends CwmsDTOBase {
 
     public String getPrincipal() {
         return this.principal;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
     }
 
     public Boolean getCacAuth() {
@@ -62,8 +76,7 @@ public class User extends CwmsDTOBase {
     }
 
 
-    @JsonProperty(required = true)
-    @Schema(format = "email")
+    @Schema(description = "User's email address, when available.", format = "email")
     private final String email;
 
 
@@ -71,11 +84,18 @@ public class User extends CwmsDTOBase {
     private final Map<String,List<String>> roles;
 
     public User(String userName, String principal, String email, Boolean cac_auth, Map<String, List<String>> roles) {
+        this(userName, principal, email, cac_auth, roles, null, null);
+    }
+
+    public User(String userName, String principal, String email, Boolean cac_auth, Map<String, List<String>> roles,
+                String firstName, String lastName) {
         this.userName = userName;
         this.principal = principal;
         this.email = email;
         this.roles = roles;
         this.cacAuth = cac_auth;
+        this.firstName = firstName;
+        this.lastName = lastName;
     }
 
     @Override
@@ -92,6 +112,8 @@ public class User extends CwmsDTOBase {
 
     public static class Builder {
         private final User tmp;
+        private String firstName;
+        private String lastName;
 
         @JsonCreator
         public Builder(@JsonProperty("user-name") String userName,
@@ -107,6 +129,18 @@ public class User extends CwmsDTOBase {
             return this;
         }
 
+        @JsonSetter("first-name")
+        public Builder firstName(String firstName) {
+            this.firstName = firstName;
+            return this;
+        }
+
+        @JsonSetter("last-name")
+        public Builder lastName(String lastName) {
+            this.lastName = lastName;
+            return this;
+        }
+
         @JsonSetter("roles")
         public Builder addRoles(Map<String, List<String>> roles) {
             tmp.roles.putAll(roles);
@@ -114,7 +148,7 @@ public class User extends CwmsDTOBase {
         }
 
         public User build() {
-            return tmp;
+            return new User(tmp.userName, tmp.principal, tmp.email, tmp.cacAuth, tmp.roles, firstName, lastName);
         }
     }
 }
