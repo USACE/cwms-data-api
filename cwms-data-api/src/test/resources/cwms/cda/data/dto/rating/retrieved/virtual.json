@@ -1,0 +1,34 @@
+{
+  "ratings": {
+    "ratings": [
+      {
+        "virtual-rating": {
+          "office": "SWT",
+          "name": "A.Elev;Flow.Virtual.Production",
+          "ind-parameters": ["Elev"],
+          "dep-parameter": "Flow",
+          "effective-date": "2021-01-01T00:00:00Z",
+          "description": null,
+          "connections": ["R2I1=R1D", "R3I1=R2D"],
+          "references": [
+            {
+              "name": "R1",
+              "reference": "A.Elev;Stage.Linear.Production",
+              "units": "ft;ft"
+            },
+            {
+              "name": "R2",
+              "reference": "I1 * 2.5",
+              "units": "ft;cfs"
+            },
+            {
+              "name": "R3",
+              "reference": "A.Flow;Flow.Linear.Production",
+              "units": "cfs;cfs"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
