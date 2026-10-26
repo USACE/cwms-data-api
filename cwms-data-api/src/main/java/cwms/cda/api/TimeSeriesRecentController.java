@@ -198,7 +198,7 @@ public class TimeSeriesRecentController implements Handler {
                                                return false;
                                            }
                                        })
-                                       .toList();
+                                       .collect(Collectors.toList());
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, RecentValue.class);
