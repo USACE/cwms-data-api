@@ -521,12 +521,25 @@ public class DataApiTestIT {
         }
     }
 
+    /**
+     * Stop gap to make establishing timeseries for tests easier
+     * without disabling the time series auth check.
+     * NOTE: this method currently assumes the database default is still using ~ for local regular
+     * instead of the new intervals with Local in the name. It will eventually need to be adjusted.
+     * Though preferably as this is part of a stop gap change, this method would just go away.
+     * @param office
+     * @param timeSeries
+     * @throws SQLException
+     */
     protected static void assignTsToDmzInclude(String office, String timeSeries) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         final String query = "begin cwms_ts.assign_ts_group(p_ts_category_id => 'Data Dissemination', p_ts_group_id => 'DMZ Include List', p_ts_id => ?, p_db_office_id => ?); end;";
+        String ts = timeSeries.replaceFirst("(\\d+.*?)Local", "~$1");
+        logger.atInfo().log("Replacing %s with %s", timeSeries, ts);
         db.connection((c) -> {
             try (PreparedStatement stmt = c.prepareStatement(query)) {
-                stmt.setString(1, timeSeries);
+                // at this time the default is using non-local names
+                stmt.setString(1, ts);
                 stmt.setString(2, office);
                 stmt.execute();
             } catch (SQLException ex) {
