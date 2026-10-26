@@ -49,6 +49,7 @@ import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.security.CwmsAuthException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -125,7 +126,9 @@ public class TimeSeriesRecentController implements Handler {
                         + "implemented")
             },
             path = "/timeseries/recent",
-            description = "Returns CWMS Timeseries Groups Data",
+            description = "Returns CWMS Timeseries Groups Data. NOTE: as groups may be defined with restricted time series"
+                        + "for internal use, instead of the whole request returning a 403 error the restricted data is"
+                        + "instead silently removed so that rest of the group may be retrieved.",
             tags = TimeSeriesController.TAG,
             method = HttpMethod.GET
     )
@@ -179,11 +182,23 @@ public class TimeSeriesRecentController implements Handler {
                 // just group provided
                 latestValues = dao.findRecentsInRange(office, categoryId, groupId, pastLimit, futureLimit, unitSystem);
             } else {
-                for (var tsId: tsIds) {
-                    TimeSeriesController.checkAuth(ctx, tsId, office);
-                }
                 latestValues = dao.findMostRecentsInRange(office, tsIds, pastLimit, futureLimit, unitSystem);
             }
+            latestValues = latestValues.stream()
+                                       .filter(rv -> {
+                                           // while not the most performant code,
+                                           // it'll work. Additionally for users with authorization
+                                            // checkAuth bypasses any database calls
+                                           try {
+                                               TimeSeriesController.checkAuth(ctx,
+                                                                              rv.getDqu().getCwmsTsId(),
+                                                                              rv.getDqu().getOfficeId());
+                                               return true;
+                                           } catch (CwmsAuthException ex) {
+                                               return false;
+                                           }
+                                       })
+                                       .toList();
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, RecentValue.class);

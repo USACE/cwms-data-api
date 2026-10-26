@@ -662,11 +662,13 @@ public class TimeSeriesController implements CrudHandler {
                         .and(TS_GROUP.TS_CODE.in(
                                 dsl.select(TS_ID.TS_CODE)
                                 .from(TS_ID)
-                                .where(
-                                        DSL.and(
-                                                DSL.val(office).isNull().or(TS_ID.DB_OFFICE_ID.eq(office)),
-                                                TS_ID.CWMS_TS_ID.eq(names))
-                                        )
+                                // There are a few endpoints which may not required the office id
+                                // with a time series id. in that case office will be null, possibly
+                                // restricting data when it should not be. Unfortunately, as their may
+                                // be duplicate names, there is not a better way to handle that beside
+                                // requiring the office id, which is the behavior of any new endpoint.
+                                .where(TS_ID.DB_OFFICE_ID.equalIgnoreCase(office).and(
+                                       TS_ID.CWMS_TS_ID.equalIgnoreCase(names)))
                                 )
                         )
                 );
