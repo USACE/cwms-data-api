@@ -74,7 +74,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -178,7 +178,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
 
         // Get versioned time series
         given()
@@ -330,7 +330,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -484,7 +484,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(format)

@@ -68,7 +68,7 @@ public final class CdaAccessManager implements AccessManager {
         }
     }
 
-    private DataApiPrincipal getApiPrincipal(Context ctx) {
+    public static DataApiPrincipal getApiPrincipal(Context ctx) {
         return ctx.sessionAttribute(IdentityProvider.PRINCIPAL_KEY);
     }
 

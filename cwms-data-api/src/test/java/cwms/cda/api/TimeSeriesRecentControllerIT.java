@@ -77,6 +77,7 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
     private static final String OFFICE_ID = "SPK";
     private static final String LOCATION = "Sacramento River Delta";
     private static final String TS_ID = LOCATION + ".Depth.Inst.15Minutes.0.OBS-Raw";
+    private static final String TS_ID_RESTRICTED = LOCATION + ".Depth.Inst.15Minutes.0.OBS-Raw-Restricted";
     private static final String CATEGORY_ID = "USACE Data Acquisition";
     private static final String GROUP_ID = "USACE Include List";
     private static final ZonedDateTime END = ZonedDateTime.now();
@@ -227,6 +228,160 @@ class TimeSeriesRecentControllerIT extends DataApiTestIT {
             .time(lessThan(5000L))
         ;
     }
+
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
+    void test_retrieving_recent_ts_data_mixed_auth(String format) throws Exception {
+        TimeSeries ts = buildTimeSeries(OFFICE_ID, TS_ID);
+        TimeSeries tsIdRestricted = buildTimeSeries(OFFICE_ID, TS_ID_RESTRICTED);
+        ContentType contentType = Formats.parseHeader(Formats.JSONV2, TimeSeries.class);
+        String json = Formats.format(contentType, ts);
+        String jsonRestricted = Formats.format(contentType, tsIdRestricted);
+
+        // create timeseries
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(json)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV2)
+            .accept(Formats.JSONV2)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .body(jsonRestricted)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+        ;
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
+
+        TimeSeriesCategory category = new TimeSeriesCategory(OFFICE_ID, CATEGORY_ID, "Data Acquisition category");
+        json = JsonV1.buildObjectMapper().writeValueAsString(category);
+
+        // add timeseries to category
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(format)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .body(json)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/category")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        group = new TimeSeriesGroup(category, OFFICE_ID, GROUP_ID, "USACE Include group", null, TS_ID);
+        List<AssignedTimeSeries> tsList = List.of(
+            new AssignedTimeSeries(OFFICE_ID, TS_ID, null, TS_ID, 0),
+            new AssignedTimeSeries(OFFICE_ID, TS_ID_RESTRICTED, null, TS_ID_RESTRICTED, 0)
+        );
+        group = new TimeSeriesGroup(group, tsList);
+        json = JsonV1.buildObjectMapper().writeValueAsString(group);
+
+        // add timeseries to group
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(format)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(FAIL_IF_EXISTS, false)
+            .body(json)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+        ;
+
+        // get recent data using category and group
+        // with authorization
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(format)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.CATEGORY_ID, CATEGORY_ID)
+            .queryParam(Controllers.GROUP_ID, GROUP_ID)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/recent/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(2))
+            .time(lessThan(5000L))
+        ;
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(format)
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(Controllers.CATEGORY_ID, CATEGORY_ID)
+            .queryParam(Controllers.GROUP_ID, GROUP_ID)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/recent/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(1))
+            .time(lessThan(5000L))
+        ;
+
+        // get recent data using timeseries id
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .contentType(Formats.JSONV1)
+            .accept(format)
+            .header(AUTH_HEADER, user.toHeaderValue())
+            .queryParam(OFFICE, OFFICE_ID)
+            .queryParam(TS_IDS, TS_ID)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/timeseries/recent/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("size()", is(1))
+            .time(lessThan(5000L))
+        ;
+    }
+
 
     @NotNull
     private TimeSeries buildTimeSeries(String officeId, String tsId) {

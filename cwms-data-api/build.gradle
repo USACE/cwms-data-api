@@ -269,7 +269,7 @@ task run(type: JavaExec) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
-
+    environment("TS_USE_DMZ_INCLUDE", "true")
     def context = project.findProperty("cda.war.context") ?: "spk-data"
 
     args "$buildDir/tomcat", "$buildDir/libs/${project.name}-${project.version}.war", context
@@ -319,6 +319,9 @@ task integrationTests(type: Test) {
     systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
     systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+
+    environment("TS_USE_DMZ_INCLUDE", "true")
+
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
     jvmArgs += "-Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager"
