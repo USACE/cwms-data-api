@@ -1,7 +1,7 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
-import static cwms.cda.ApiServlet.CWMS_USERS_ROLE;
+import static cwms.cda.CwmsDataApi.CWMS_USERS_ROLE;
 import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
