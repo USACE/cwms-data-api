@@ -33,6 +33,10 @@ public class OpenApiSchemeProcessor {
         synchronized (secReqs) {
             secReqs.clear();
             authenticator.getActiveProviders().forEach(identityProvider -> {
+                var scheme = identityProvider.getScheme();
+                if (scheme == null) {
+                    return;
+                }
                 api.withSecurityScheme(identityProvider.getName(), identityProvider.getScheme());
                 SecurityRequirement req = new SecurityRequirement();
                 if (!identityProvider.getName().equalsIgnoreCase("guestauth")
