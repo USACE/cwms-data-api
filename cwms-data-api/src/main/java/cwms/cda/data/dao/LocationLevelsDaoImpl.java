@@ -1450,6 +1450,20 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
         return builder.build();
     }
 
+    /**
+     * Determines if the database supports intervals of more than 99 years.
+     * @return boolean true if the database supports intervals of more than 99 years.
+     */
+    public boolean supportsLargeInterval() {
+        try {
+            CWMS_UTIL_PACKAGE.call_MONTHS_TO_YMINTERVAL(dsl.configuration(), BigInteger.valueOf(1250L));
+            return true;
+        } catch (Exception ex) {
+            logger.atFiner().withCause(ex).log("Database does not support intervals of more than 99 years.");
+            return false;
+        }
+    }
+
     private static void buildLocationLevelSelectFieldsNewView() {
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.CONNECTIONS);
         LOCATION_LEVEL_FIELDS_NEW_VIEW.add(values.ATTRIBUTE_UNIT_EN);
