@@ -183,6 +183,25 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
     }
 
+    @Test
+    void test_get_all_returns_empty_list_when_none_match() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(CATEGORY_OFFICE_ID, user.getOperatingOffice())
+            .queryParam(INCLUDE_ASSIGNED, false)
+            .queryParam(LOCATION_CATEGORY_LIKE, "NoSuchCategory_" + System.nanoTime())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("$.size()", is(0));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_create_read_delete(String format) throws Exception {

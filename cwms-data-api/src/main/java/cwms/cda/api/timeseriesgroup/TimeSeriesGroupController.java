@@ -93,26 +93,20 @@ public abstract class TimeSeriesGroupController extends BaseCrudHandler {
                     String.class, null, getMetrics(), name(getClass().getName(), GET_ALL));
 
             List<TimeSeriesGroup> grps = dao.getTimeSeriesGroups(tsOffice, groupOffice, categoryOffice,
-                    includeAssigned, tsCategoryLike, tsGroupLike);
-            if (grps.isEmpty()) {
-                CdaError re = new CdaError("No data found for The provided office");
-                logger.atInfo().log("%s for request %s", re, ctx.fullUrl());
-                ctx.status(HttpCode.NOT_FOUND).json(re);
-            } else {
-                String formatHeader = ctx.header(Header.ACCEPT);
-                ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
+                  includeAssigned, tsCategoryLike, tsGroupLike);
+            String formatHeader = ctx.header(Header.ACCEPT);
+            ContentType contentType = Formats.parseHeader(formatHeader, TimeSeriesGroup.class);
 
-                String result = Formats.format(contentType, grps, TimeSeriesGroup.class);
+            String result = Formats.format(contentType, grps, TimeSeriesGroup.class);
 
-                updateResultSize(result);
+            updateResultSize(result);
 
-                ctx.status(HttpServletResponse.SC_OK);
-                ctx.contentType(contentType.toString());
+            ctx.status(HttpServletResponse.SC_OK);
+            ctx.contentType(contentType.toString());
 
-                byte[] bytes = result.getBytes();
-                ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
-            }
+            byte[] bytes = result.getBytes();
+            ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
+            ctx.res.getOutputStream().write(bytes);
         } catch (IOException ex) {
             CdaError re = new CdaError("Failure to process request to retrieve time series groups");
             logger.atSevere().withCause(ex).log("Failed to process request to retrieve time series groups");

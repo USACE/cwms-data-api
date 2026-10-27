@@ -992,18 +992,20 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
         // The extra row is look-ahead data used to decide whether to create a next-page cursor.
         int maxPageRows = pageSize > 0 && pageSize < Integer.MAX_VALUE ? pageSize + 1 : Integer.MAX_VALUE;
         boolean regularSeries = isRegularSeries(intervalMinutes, intervalOffset, intervalPart, isLrts);
+        boolean unpaged = pageSize < 0;
         long effectiveIntervalOffset = intervalOffset;
         Timestamp firstObservedTime = null;
         Timestamp lastObservedTime = null;
-        if (regularSeries && (requestParameters.isShouldTrim() || intervalOffset == UTC_OFFSET_UNDEFINED)) {
+        if (regularSeries && !unpaged
+                && (requestParameters.isShouldTrim() || intervalOffset == UTC_OFFSET_UNDEFINED)) {
             firstObservedTime = fetchRequestedTimeSeriesBoundaryTimestamp(tsCode, metadataOfficeId,
                     metadataUnits, requestParameters, SortOrder.ASC);
         }
-        if (regularSeries && requestParameters.isShouldTrim() && firstObservedTime != null) {
+        if (regularSeries && !unpaged && requestParameters.isShouldTrim() && firstObservedTime != null) {
             lastObservedTime = fetchRequestedTimeSeriesBoundaryTimestamp(tsCode, metadataOfficeId,
                     metadataUnits, requestParameters, SortOrder.DESC);
         }
-        if (regularSeries) {
+        if (regularSeries && !unpaged) {
             effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts,
                     firstObservedTime);
         }
@@ -1075,8 +1077,23 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 metadataUnits, requestParameters, includeEntryDate,
                 pageSize > 0 ? maxPageRows : null, tsCursor, regularPageEnd);
 
+        Timestamp expectedWindowStart = effectiveWindowStart;
+        Timestamp expectedWindowEnd = effectiveWindowEnd;
+        if (regularSeries && unpaged) {
+            firstObservedTime = rawRows.isEmpty() ? null : rawRows.get(0).getDateTime();
+            if (requestParameters.isShouldTrim() && !rawRows.isEmpty()) {
+                lastObservedTime = rawRows.get(rawRows.size() - 1).getDateTime();
+            }
+            effectiveIntervalOffset = resolveIntervalOffset(intervalOffset, timeZoneId, intervalPart, isLrts,
+                    firstObservedTime);
+            if (requestParameters.isShouldTrim()) {
+                expectedWindowStart = firstObservedTime;
+                expectedWindowEnd = lastObservedTime;
+            }
+        }
+
         List<Timestamp> expectedTimes = fetchExpectedRegularTimes(intervalMinutes, effectiveIntervalOffset, timeZoneId,
-                intervalPart, isLrts, effectiveWindowStart, effectiveWindowEnd, regularPageStart, regularPageEnd,
+                intervalPart, isLrts, expectedWindowStart, expectedWindowEnd, regularPageStart, regularPageEnd,
                 maxPageRows);
         if (!regularSeries && (pageSize < 0 || (cursor == null && rawRows.size() <= pageSize))) {
             total = rawRows.size();

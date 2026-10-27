@@ -249,10 +249,10 @@ def _upload_one_contract_accounting(office_id: str, project_id: str, water_user_
 
 def _resolve_window(start: str | None, end: str | None) -> tuple[str, str]:
     """
-    Water supply accounting takes plain ISO-8601 strings (unlike the location
-    level / rating / turbine-change endpoints, which take real datetime
-    objects) - so this only needs to resolve the "now" shorthand and validate
-    that something was actually configured, not fully parse the value.
+    The CWMS pump-accounting endpoint requires a full ISO-8601 datetime, not a
+    bare date - a plain "YYYY-MM-DD" is rejected server-side. So a configured
+    date-only value must be normalized to midnight of that day, same as the
+    "now" shorthand normalizes to a full timestamp.
     """
     return _resolve_one(start, "start"), _resolve_one(end, "end")
 
@@ -265,7 +265,10 @@ def _resolve_one(value: str | None, label: str) -> str:
     if normalized.lower() == "now":
         return datetime.now().isoformat()
 
-    return normalized
+    try:
+        return datetime.fromisoformat(normalized).isoformat()
+    except ValueError as exc:
+        raise ValueError(f"Invalid {label} time '{value}'. Use ISO-8601 or YYYY-MM-DD.") from exc
 
 
 __all__ = ["publish_staged_water_contracts", "stage_water_contracts"]

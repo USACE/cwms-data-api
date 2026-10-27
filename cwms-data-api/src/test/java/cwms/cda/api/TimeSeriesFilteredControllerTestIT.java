@@ -66,7 +66,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -147,7 +147,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // get it back without filtering
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -236,7 +236,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // get it back with min-value
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -299,7 +299,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // get it back with max-value
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -362,7 +362,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // get it back with min-value and max-value
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -425,7 +425,7 @@ class TimeSeriesFilteredControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // get it back with filter-nulls, min-value, and max-value
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))

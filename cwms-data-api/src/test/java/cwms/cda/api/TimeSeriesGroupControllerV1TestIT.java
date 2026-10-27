@@ -2603,22 +2603,18 @@ final class TimeSeriesGroupControllerV1TestIT extends DataApiTestIT {
         .then()
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .statusCode(anyOf(is(200), is(404)))
+            .statusCode(is(200))
         .extract()
             .response();
 
-        // If we get a 404, that's fine (no groups for this office)
-        // If we get a 200, verify all returned groups are from the specified office
-        if (response.statusCode() == 200) {
-            JsonPath jsonPathEval = response.jsonPath();
-            List<String> officeIds = jsonPathEval.get("office-id");
+        // Verify all returned groups (if any) are from the specified office
+        JsonPath jsonPathEval = response.jsonPath();
+        List<String> officeIds = jsonPathEval.get("office-id");
 
-            if (officeIds != null && !officeIds.isEmpty()) {
-                // All returned groups should be from the specified office
-                for (String returnedOfficeId : officeIds) {
-                    assertThat("Expected all groups to be from office " + officeId + ", but found " + returnedOfficeId,
-                            returnedOfficeId, equalTo(officeId));
-                }
+        if (officeIds != null) {
+            for (String returnedOfficeId : officeIds) {
+                assertThat("Expected all groups to be from office " + officeId + ", but found " + returnedOfficeId,
+                        returnedOfficeId, equalTo(officeId));
             }
         }
     }

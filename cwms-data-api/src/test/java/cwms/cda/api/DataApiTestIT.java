@@ -490,6 +490,19 @@ public class DataApiTestIT {
      * @throws SQLException
      */
     protected static void createTimeseries(String office, String timeseries) throws SQLException {
+        createTimeseries(office, timeseries, true);
+    }
+
+    /**
+     * Create a timeseries (location must already exist), no data or other meta data will be set.
+     * This only creates the timeseries name. Not data or other parameters are set.
+     *
+     * @param office     owning office
+     * @param timeseries timeseries name
+     * @param inDmzList if this timeseries id should go in the DMZ include list.
+     * @throws SQLException
+     */
+    protected static void createTimeseries(String office, String timeseries, boolean inDmzList) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c) -> {
             try (PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery)) {
@@ -500,6 +513,36 @@ public class DataApiTestIT {
                 if (ex.getErrorCode() == 20003) {
                     return; // TS already exists. that's fine for these tests.
                 }
+                throw new RuntimeException("Unable to create timeseries", ex);
+            }
+        }, "cwms_20");
+        if (inDmzList) {
+            assignTsToDmzInclude(office, timeseries);
+        }
+    }
+
+    /**
+     * Stop gap to make establishing timeseries for tests easier
+     * without disabling the time series auth check.
+     * NOTE: this method currently assumes the database default is still using ~ for local regular
+     * instead of the new intervals with Local in the name. It will eventually need to be adjusted.
+     * Though preferably as this is part of a stop gap change, this method would just go away.
+     * @param office
+     * @param timeSeries
+     * @throws SQLException
+     */
+    protected static void assignTsToDmzInclude(String office, String timeSeries) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        final String query = "begin cwms_ts.assign_ts_group(p_ts_category_id => 'Data Dissemination', p_ts_group_id => 'DMZ Include List', p_ts_id => ?, p_db_office_id => ?); end;";
+        String ts = timeSeries.replaceFirst("(\\d+.*?)Local", "~$1");
+        logger.atInfo().log("Replacing %s with %s", timeSeries, ts);
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(query)) {
+                // at this time the default is using non-local names
+                stmt.setString(1, ts);
+                stmt.setString(2, office);
+                stmt.execute();
+            } catch (SQLException ex) {
                 throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
@@ -521,6 +564,7 @@ public class DataApiTestIT {
                 throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
+        assignTsToDmzInclude(office, timeseries);
     }
 
     protected static void createTimeseriesWithNewLRTSInterval(String office, String timeseries, int offset) throws SQLException {
@@ -541,6 +585,7 @@ public class DataApiTestIT {
                 throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
+        assignTsToDmzInclude(office, timeseries);
     }
 
     /**
