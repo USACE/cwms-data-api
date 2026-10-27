@@ -126,7 +126,7 @@ public final class VerticalDatumDao extends JooqDao<VerticalDatumInfo> {
     public boolean supportsGetAll() {
         boolean supported = false;
         Record result = dsl.select(DSL.count())
-            .from(DSL.table("USER_PROCEDURES"))
+            .from(DSL.table("ALL_PROCEDURES"))
             .where(DSL.field("OBJECT_NAME").eq("CWMS_LOC")
                 .and(DSL.field("PROCEDURE_NAME").eq("GET_VERTICAL_DATUM_INFO_LIST")))
             .fetchOne();

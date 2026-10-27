@@ -25,24 +25,30 @@ package cwms.cda.api;
 
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OVERWRITE;
+import static cwms.cda.data.dao.DaoTest.getDslContext;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import cwms.cda.data.dao.VerticalDatumDao;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.VerticalDatumInfoList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import fixtures.MaximumSchema;
-import fixtures.MinimumSchema;
+import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
+import java.sql.SQLException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
+import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -259,10 +265,11 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @MinimumSchema(261001) // setting to an unreleased future schema, will run on latest-dev
     @MethodSource("provideFormats")
     @ParameterizedTest
     void test_vertical_datum_getAll(ContentType contentType) {
+        assumeTrue(this::supportsGetAll);
+
         // Build a VerticalDatumInfo payload
         VerticalDatumInfo.Offset[] offsets = new VerticalDatumInfo.Offset[] {
             new VerticalDatumInfo.Offset(true, "NAVD-88", -0.5)
@@ -482,10 +489,11 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
-    @MaximumSchema(260716)
     @MethodSource("provideFormats")
     @ParameterizedTest
     void test_vertical_datum_getAll_unsupported(ContentType contentType) {
+        assumeFalse(this::supportsGetAll);
+
         // Build a VerticalDatumInfo payload
         VerticalDatumInfo.Offset[] offsets = new VerticalDatumInfo.Offset[] {
             new VerticalDatumInfo.Offset(true, "NAVD-88", -0.5)
@@ -842,5 +850,19 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
                 Arguments.of(Formats.parseHeader(Formats.XMLV1, VerticalDatumInfo.class)),
                 Arguments.of(Formats.parseHeader(Formats.JSONV1, VerticalDatumInfo.class))
         );
+    }
+
+    private boolean supportsGetAll() {
+        AtomicBoolean supportsGetAll = new AtomicBoolean(false);
+        try {
+            CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+            db.connection(c -> {
+                VerticalDatumDao streamDao = new VerticalDatumDao(getDslContext(c, OFFICE_ID));
+                supportsGetAll.set(streamDao.supportsGetAll());
+            }, CwmsDataApiSetupCallback.getWebUser());
+        } catch (SQLException e) {
+            supportsGetAll.set(false);
+        }
+        return supportsGetAll.get();
     }
 }

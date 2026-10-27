@@ -29,7 +29,7 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class SchemaMinimumVersionCondition implements ExecutionCondition {
+public class SchemaVersionCondition implements ExecutionCondition {
 
     private static final ConditionEvaluationResult ENABLED = ConditionEvaluationResult
         .enabled("@MinimumSchemaVersion is not present");
