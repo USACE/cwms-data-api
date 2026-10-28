@@ -2,8 +2,6 @@ package cwms.cda.data.dto.auth;
 
 import java.time.ZonedDateTime;
 
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,11 +11,13 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.json.adapters.ZonedDateTimeJsonDeserializer;
-import cwms.cda.formatters.xml.adapters.ZonedDateTimeAdapter;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.AccessMode;
 
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class ApiKey {
     @JsonProperty(required = true)
     private String userId;

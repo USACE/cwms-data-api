@@ -9,6 +9,9 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.Objects;
 
 @JsonRootName("alias")
@@ -16,6 +19,7 @@ import java.util.Objects;
 @JsonDeserialize(builder = TimeSeriesAlias.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class TimeSeriesAlias {
 
     @JacksonXmlProperty(isAttribute = true)

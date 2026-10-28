@@ -32,6 +32,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.List;
 
 @JsonDeserialize(builder = HeightShiftsElement.Builder.class)
@@ -41,6 +45,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"effective-date", "transition-start-date", "create-date", "active",
     "description", "point"})
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class HeightShiftsElement {
 
     @JsonProperty("effective-date")

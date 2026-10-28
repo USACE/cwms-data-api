@@ -32,6 +32,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.List;
 
 @JsonDeserialize(builder = VerticalDatumInfoElement.Builder.class)
@@ -41,6 +45,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"office", "unit", "location", "native-datum", "local-datum-name", "elevation",
     "offset"})
+    @OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class VerticalDatumInfoElement {
 
     @JsonProperty("office")

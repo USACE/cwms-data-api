@@ -5,8 +5,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 /**
  * Almost an exact copy of hec.data.timeSeriesText.StandardTextId.  Its duplicated here so that
@@ -17,6 +18,7 @@ import cwms.cda.data.dto.CwmsDTO;
 @JsonDeserialize(builder = StandardTextId.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class StandardTextId extends CwmsDTO {
 
     private final String id;
