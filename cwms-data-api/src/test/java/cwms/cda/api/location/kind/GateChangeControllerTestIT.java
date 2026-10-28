@@ -389,8 +389,33 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
-            .statusCode(not(HttpServletResponse.SC_CREATED));
+            .statusCode(is(HttpServletResponse.SC_CREATED));
 
+        String allJson = given().log()
+                                .ifValidationFails(LogDetail.ALL, true)
+                                .contentType(Formats.JSONV1)
+                                .accept(Formats.DEFAULT)
+                            .when()
+                                .redirects()
+                                .follow(true)
+                                .redirects()
+                                .max(3)
+                                .queryParam(BEGIN, JAN_FIRST.toString())
+                                .queryParam(END, JAN_SECOND.toString())
+                                .queryParam(START_TIME_INCLUSIVE, true)
+                                .queryParam(END_TIME_INCLUSIVE, true)
+                                .get("projects/" + OFFICE_ID + "/" + PROJECT_1_ID.getName() + "/gate-changes")
+                            .then()
+                                .log().ifValidationFails(LogDetail.ALL, true)
+                                .assertThat()
+                                .statusCode(is(HttpServletResponse.SC_OK))
+                                .extract()
+                                .body()
+                                .asString();
+        List<GateChange> changes = Formats.parseContentList(Formats.parseHeader(Formats.JSONV1, GateChange.class),
+                                                            allJson, GateChange.class);
+
+        DTOMatch.assertContainsDto(changes, CHANGE_1, this::isSimilar, DTOMatch::assertMatch, "Does not contain change for " + CHANGE_1.getChangeDate());
     }
 
     private boolean isSimilar(GateChange left, GateChange right) {
