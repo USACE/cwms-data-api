@@ -24,26 +24,32 @@
 
 package cwms.cda.data.dao.location.kind;
 
+import static cwms.cda.data.dao.JooqDao.buildDouble;
+import static cwms.cda.data.dao.JooqDao.parseBool;
 import static cwms.cda.data.dao.location.kind.LocationUtil.getLocationRef;
 import static cwms.cda.data.dao.location.kind.LocationUtil.getLookupType;
-import static java.util.stream.Collectors.toList;
 
+import cwms.cda.api.enums.Nation;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import cwms.cda.data.dto.LookupType;
 import cwms.cda.data.dto.location.kind.Lock;
 import cwms.cda.data.dto.location.kind.LockLocationLevelRef;
-import java.time.ZoneId;
+import cwms.cda.helpers.ZoneIdHelper;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.Record;
-import org.jooq.Result;
 import org.jooq.impl.DSL;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOCK_PACKAGE;
 import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
+import usace.cwms.db.jooq.codegen.tables.AT_LOCK_GATE_TYPE;
+import usace.cwms.db.jooq.codegen.tables.AV_LOC;
+import usace.cwms.db.jooq.codegen.tables.AV_LOCK;
+import usace.cwms.db.jooq.codegen.tables.CWMS_OFFICE;
 import usace.cwms.db.jooq.codegen.udt.records.LOCATION_REF_T;
 import usace.cwms.db.jooq.codegen.udt.records.LOCK_OBJ_T;
 
@@ -54,12 +60,35 @@ public final class LockDao extends JooqDao<Lock> {
     }
 
     public List<Lock> retrieveLockCatalog(CwmsId projectId) {
-        return connectionResult(dsl, c -> {
-            var configuration = getDslContext(c, projectId.getOfficeId()).configuration();
-            Result<Record> catalogResults = CWMS_LOCK_PACKAGE.call_CAT_LOCK(configuration,
-                    projectId.getName(), projectId.getOfficeId());
-            return catalogResults.stream().map(LockDao::catMap).collect(toList());
-        });
+        return retrieveLockCatalog(projectId, UnitSystem.SI);
+    }
+
+    public List<Lock> retrieveLockCatalog(CwmsId projectId, UnitSystem unitSystem) {
+        AV_LOCK lock = AV_LOCK.AV_LOCK;
+        AV_LOC loc = AV_LOC.AV_LOC;
+        AT_LOCK_GATE_TYPE chamber = AT_LOCK_GATE_TYPE.AT_LOCK_GATE_TYPE;
+        CWMS_OFFICE chamberOffice = CWMS_OFFICE.CWMS_OFFICE;
+        return dsl.select(lock.fields())
+              .select(loc.LOCATION_ID, loc.LOCATION_KIND_ID, loc.TIME_ZONE_NAME, loc.LATITUDE, loc.LONGITUDE,
+                    loc.HORIZONTAL_DATUM, loc.VERTICAL_DATUM, loc.ELEVATION, loc.UNIT_ID, loc.COUNTY_NAME,
+                    loc.STATE_INITIAL, loc.PUBLIC_NAME, loc.LONG_NAME, loc.DESCRIPTION, loc.ACTIVE_FLAG,
+                    loc.LOCATION_TYPE, loc.MAP_LABEL, loc.PUBLISHED_LATITUDE, loc.PUBLISHED_LONGITUDE,
+                    loc.BOUNDING_OFFICE_ID, loc.NATION_ID, loc.NEAREST_CITY)
+              .select(chamber.CHAMBER_TYPE_DISPLAY_VALUE, chamber.CHAMBER_TYPE_TOOLTIP,
+                    chamber.CHAMBER_TYPE_ACTIVE, chamberOffice.OFFICE_ID)
+              .from(lock)
+              .join(loc)
+              .on(loc.LOCATION_CODE.eq(lock.LOCK_LOCATION_CODE)
+                    .and(loc.UNIT_SYSTEM.eq(lock.UNIT_SYSTEM)))
+              .leftJoin(chamber)
+              .on(chamber.CHAMBER_TYPE_CODE.eq(lock.CHAMBER_LOCATION_DESCRIPTION_CODE))
+              .leftJoin(chamberOffice)
+              .on(chamberOffice.OFFICE_CODE.eq(chamber.DB_OFFICE_CODE.cast(Long.class)))
+              .where(lock.DB_OFFICE_ID.eq(projectId.getOfficeId())
+                    .and(lock.PROJECT_ID.eq(projectId.getName()))
+                    .and(lock.UNIT_SYSTEM.eq(unitSystem.value())))
+              .orderBy(lock.LOCK_ID)
+              .fetch(r -> catMap(r, projectId));
     }
 
     public Lock retrieveLock(CwmsId lockId, UnitSystem unitSystem) {
@@ -103,47 +132,78 @@ public final class LockDao extends JooqDao<Lock> {
         });
     }
 
-    static Lock catMap(Record r) {
-        String officeId = r.getValue("DB_OFFICE_ID", String.class);
-        String baseLocationId = r.getValue("BASE_LOCATION_ID", String.class);
-        String subLocationId = r.getValue("SUB_LOCATION_ID", String.class);
-        String projectOfficeId = r.getValue("PROJECT_OFFICE_ID", String.class);
-        String projectLocationId = r.getValue("PROJECT_LOCATION_ID", String.class);
-        String timeZone = r.getValue("TIME_ZONE_NAME", String.class);
-        double latitude = r.getValue("LATITUDE", Double.class);
-        double longitude = r.getValue("LONGITUDE", Double.class);
-        String horizDatum = r.getValue("HORIZONTAL_DATUM", String.class);
-        double elevation = r.getValue("ELEVATION", Double.class);
-        String elevUnit = r.getValue("ELEVATION_UNIT_ID", String.class);
-        String verticalDatum = r.getValue("VERTICAL_DATUM", String.class);
-        String publicName = r.getValue("PUBLIC_NAME", String.class);
-        String longName = r.getValue("LONG_NAME", String.class);
-        String description = r.getValue("DESCRIPTION", String.class);
-        boolean active = r.getValue("ACTIVE_FLAG", Boolean.class);
-        String lockId;
-        if (subLocationId == null) {
-            lockId = baseLocationId;
-        } else {
-            lockId = baseLocationId + "-" + subLocationId;
-        }
-        Location lockLoc = new Location.Builder(officeId, lockId)
-                .withLocationKind("LOCK")
-                .withTimeZoneName(ZoneId.of(timeZone))
-                .withLatitude(latitude)
-                .withLongitude(longitude)
-                .withLongName(longName)
-                .withDescription(description)
-                .withActive(active)
-                .withElevation(elevation)
-                .withElevationUnits(elevUnit)
-                .withHorizontalDatum(horizDatum)
-                .withVerticalDatum(verticalDatum)
-                .withPublicName(publicName)
+    static Lock catMap(Record r, CwmsId projectId) {
+        AV_LOCK lock = AV_LOCK.AV_LOCK;
+        AV_LOC loc = AV_LOC.AV_LOC;
+        AT_LOCK_GATE_TYPE chamber = AT_LOCK_GATE_TYPE.AT_LOCK_GATE_TYPE;
+        String officeId = r.get(lock.DB_OFFICE_ID);
+        String lockId = r.get(loc.LOCATION_ID);
+        Location lockLoc = new Location.Builder(lockId, r.get(loc.LOCATION_KIND_ID),
+                ZoneIdHelper.parseZoneIdWithAliases(r.get(loc.TIME_ZONE_NAME)),
+                buildDouble(r.get(loc.LATITUDE)), buildDouble(r.get(loc.LONGITUDE)),
+                r.get(loc.HORIZONTAL_DATUM), officeId)
+                .withActive(parseBool(r.get(loc.ACTIVE_FLAG)))
+                .withDescription(r.get(loc.DESCRIPTION))
+                .withElevation(r.get(loc.ELEVATION))
+                .withElevationUnits(r.get(loc.UNIT_ID))
+                .withCountyName(r.get(loc.COUNTY_NAME))
+                .withBoundingOfficeId(r.get(loc.BOUNDING_OFFICE_ID))
+                .withNation(Nation.nationForName(r.get(loc.NATION_ID)))
+                .withMapLabel(r.get(loc.MAP_LABEL))
+                .withPublicName(r.get(loc.PUBLIC_NAME))
+                .withPublishedLatitude(buildDouble(r.get(loc.PUBLISHED_LATITUDE)))
+                .withPublishedLongitude(buildDouble(r.get(loc.PUBLISHED_LONGITUDE)))
+                .withVerticalDatum(r.get(loc.VERTICAL_DATUM))
+                .withLongName(r.get(loc.LONG_NAME))
+                .withStateInitial(r.get(loc.STATE_INITIAL))
+                .withLocationType(r.get(loc.LOCATION_TYPE))
+                .withNearestCity(r.get(loc.NEAREST_CITY))
                 .build();
+        String baseLocationId = lockId.contains("-") ? lockId.substring(0, lockId.indexOf('-')) : lockId;
+        String boundingOffice = r.get(loc.BOUNDING_OFFICE_ID);
+        String levelOffice = boundingOffice != null ? boundingOffice : officeId;
+        LookupType chamberType = null;
+        if (r.get(chamber.CHAMBER_TYPE_DISPLAY_VALUE) != null) {
+            chamberType = new LookupType.Builder()
+                    .withOfficeId(r.get(CWMS_OFFICE.CWMS_OFFICE.OFFICE_ID))
+                    .withDisplayValue(r.get(chamber.CHAMBER_TYPE_DISPLAY_VALUE))
+                    .withTooltip(r.get(chamber.CHAMBER_TYPE_TOOLTIP))
+                    .withActive(parseBool(r.get(chamber.CHAMBER_TYPE_ACTIVE)))
+                    .build();
+        }
+        Double maxLift = r.get(lock.MAXIMUM_LOCK_LIFT);
         return new Lock.Builder()
                 .withLocation(lockLoc)
-                .withProjectId(CwmsId.buildCwmsId(projectOfficeId, projectLocationId))
+                .withProjectId(projectId)
+                .withChamberType(chamberType)
+                .withLockLength(nullToZero(r.get(lock.LOCK_LENGTH)))
+                .withLockWidth(nullToZero(r.get(lock.LOCK_WIDTH)))
+                .withNormalLockLift(nullToZero(r.get(lock.NORMAL_LOCK_LIFT)))
+                .withVolumePerLockage(nullToZero(r.get(lock.VOLUME_PER_LOCKAGE)))
+                .withMinimumDraft(nullToZero(r.get(lock.MINIMUM_DRAFT)))
+                .withMaximumLockLift(maxLift == null ? -9999 : maxLift)
+                .withLengthUnits(r.get(lock.LENGTH_UNIT_ID))
+                .withVolumeUnits(r.get(lock.VOLUME_UNIT_ID))
+                .withElevationUnits(r.get(lock.ELEV_UNIT_ID))
+                .withHighWaterUpperPoolWarningLevel(r.get(lock.ELEV_CLOSURE_HIGH_WATER_UPPER_POOL_WARNING))
+                .withHighWaterLowerPoolWarningLevel(r.get(lock.ELEV_CLOSURE_HIGH_WATER_LOWER_POOL_WARNING))
+                .withHighWaterUpperPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(levelOffice, baseLocationId + ".Elev-Closure.Inst.0.High Water Upper Pool"),
+                        r.get(lock.ELEV_CLOSURE_HIGH_WATER_UPPER_POOL)))
+                .withHighWaterLowerPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(levelOffice, baseLocationId + ".Elev-Closure.Inst.0.High Water Lower Pool"),
+                        r.get(lock.ELEV_CLOSURE_HIGH_WATER_LOWER_POOL)))
+                .withLowWaterUpperPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(levelOffice, baseLocationId + ".Elev-Closure.Inst.0.Low Water Upper Pool"),
+                        r.get(lock.ELEV_CLOSURE_LOW_WATER_UPPER_POOL)))
+                .withLowWaterLowerPoolLocationLevel(new LockLocationLevelRef(
+                        mapToLockRef(levelOffice, baseLocationId + ".Elev-Closure.Inst.0.Low Water Lower Pool"),
+                        r.get(lock.ELEV_CLOSURE_LOW_WATER_LOWER_POOL)))
                 .build();
+    }
+
+    private static double nullToZero(Double value) {
+        return value == null ? 0.0 : value;
     }
 
     static CwmsId map(Record r) {
