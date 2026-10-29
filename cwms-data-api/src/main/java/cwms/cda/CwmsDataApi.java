@@ -169,7 +169,7 @@ public final class CwmsDataApi {
     {
         //var cli = new CommandLine()
         final var appContext = args.length > 0 ? args[0] : "/cwms-data";
-        final var uiPath = args.length > 1 ? args[1] : null;
+        final var uiPath = args.length > 1 ? new File(args[1]) : null;
         final var port = args.length > 2 ? Integer.parseInt(args[2]) : 7000;
         logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
         var ds = buildDataSource();
@@ -177,7 +177,7 @@ public final class CwmsDataApi {
         var api = CwmsDataApi.builder()
                              .withContext(appContext)
                              .withPort(port)
-                             .withUiWar(new File(uiPath))
+                             .withUiWar(uiPath)
                              .withDataSource(ds)
                              .withSessionManager(sessions)
                              .build();
