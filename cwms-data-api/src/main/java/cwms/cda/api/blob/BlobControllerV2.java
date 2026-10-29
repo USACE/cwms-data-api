@@ -51,15 +51,16 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 import java.util.Locale;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -83,15 +84,16 @@ public final class BlobControllerV2 extends BlobController {
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "Specifies the owning office.")
         },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/v2/blob/"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             String office = ctx.pathParam(OFFICE);
             DSLContext dsl = getDslContext(ctx);
-            String reqContentType = ctx.req.getContentType();
+            String reqContentType = ctx.contentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
 
@@ -100,11 +102,11 @@ public final class BlobControllerV2 extends BlobController {
                 blob = parseMultipartBlob(ctx, office, null);
             } else {
                 ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
-                blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+                blob = Formats.parseContent(contentType, ctx.bodyInputStream(), Blob.class);
             }
             BlobAccess dao = chooseBlobAccess(dsl);
             dao.create(blob, failIfExists, false);
-            ctx.status(HttpCode.CREATED);
+            ctx.status(HttpStatus.CREATED);
         }
     }
 
@@ -131,8 +133,9 @@ public final class BlobControllerV2 extends BlobController {
                 + "Client libraries should detect slashes and choose the appropriate field. "
                 + "\"ignored\" is suggested for the path endpoint."),
         },
-        method = HttpMethod.PATCH,
-        tags = {TAG}
+        methods = HttpMethod.PATCH,
+        tags = {TAG},
+        path = "/v2/blob/{" + OFFICE + "}/{" + BLOB_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
@@ -144,7 +147,7 @@ public final class BlobControllerV2 extends BlobController {
                 blobId = idQueryParam;
             }
 
-            String reqContentType = ctx.req.getContentType();
+            String reqContentType = ctx.contentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
             Blob blob;
@@ -152,7 +155,7 @@ public final class BlobControllerV2 extends BlobController {
                 blob = parseMultipartBlob(ctx, office, blobId);
             } else {
                 ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
-                blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+                blob = Formats.parseContent(contentType, ctx.bodyInputStream(), Blob.class);
             }
 
             if (blob.getOfficeId() == null) {
@@ -198,8 +201,9 @@ public final class BlobControllerV2 extends BlobController {
                 + "Client libraries should detect slashes and choose the appropriate field. "
                 + "\"ignored\" is suggested for the path endpoint."),
         },
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/v2/blob/{" + OFFICE + "}/{" + BLOB_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
@@ -239,7 +243,9 @@ public final class BlobControllerV2 extends BlobController {
                 @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
             })
         },
-        tags = {TAG}
+        tags = {TAG},
+        methods = HttpMethod.GET,
+        path = "/v2/blob/"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -280,7 +286,9 @@ public final class BlobControllerV2 extends BlobController {
                     @OpenApiContent(type = "application/octet-stream", from = byte[].class)
                 })
         },
-        tags = {TAG}
+        tags = {TAG},
+        methods = HttpMethod.GET,
+        path = "/v2/blob/{" + OFFICE + "}/{" + BLOB_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {

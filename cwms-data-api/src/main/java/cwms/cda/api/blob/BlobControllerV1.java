@@ -40,11 +40,8 @@ import com.codahale.metrics.MetricRegistry;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
 import cwms.cda.formatters.Formats;
-import cwms.cda.formatters.FormattingException;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
-import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpStatus;
 import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
 import io.javalin.openapi.OpenApiContent;
@@ -53,9 +50,6 @@ import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
 
-import java.io.IOException;
-import java.util.Optional;
-import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 

@@ -62,12 +62,11 @@ import cwms.cda.features.CdaFeatures;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import java.io.IOException;
 import java.util.Optional;
-import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.togglz.core.context.FeatureContext;
@@ -113,7 +112,7 @@ public abstract class BlobController extends BaseCrudHandler {
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new CdaError("cursor or page passed in but failed validation"))
-                    .status(HttpCode.BAD_REQUEST);
+                    .status(HttpStatus.BAD_REQUEST);
                 return;
             }
 
@@ -134,15 +133,15 @@ public abstract class BlobController extends BaseCrudHandler {
             ctx.contentType(contentType.toString());
             updateResultSize(result.length());
 
-            ctx.status(HttpServletResponse.SC_OK);
+            ctx.status(HttpStatus.OK);
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx, "Failed to process request to retrieve Blobs", ex);
             LOGGER.atSevere().withCause(ex).log("Failed to process request to retrieve Blobs");
-            ctx.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).json(error);
+            ctx.status(HttpStatus.INTERNAL_SERVER_ERROR).json(error);
         }
     }
 
@@ -162,7 +161,7 @@ public abstract class BlobController extends BaseCrudHandler {
 
             final Long offset;
             final Long end;
-            long[] ranges = RangeParser.parseFirstRange(ctx.header(io.javalin.core.util.Header.RANGE));
+            long[] ranges = RangeParser.parseFirstRange(ctx.header(Header.RANGE));
             if (ranges != null) {
                 offset = ranges[0];
                 end = ranges[1];
@@ -175,7 +174,7 @@ public abstract class BlobController extends BaseCrudHandler {
 
             StreamConsumer consumer = (is, isPosition, mediaType, totalLength) -> {
                 if (is == null) {
-                    ctx.status(HttpServletResponse.SC_NOT_FOUND).json(new CdaError("Unable to find "
+                    ctx.status(HttpStatus.NOT_FOUND).json(new CdaError("Unable to find "
                         + "blob based on given parameters"));
                 } else {
                     updateResultSize(totalLength);
@@ -196,13 +195,13 @@ public abstract class BlobController extends BaseCrudHandler {
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             boolean failIfExists = ctx.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
-            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyInputStream(), Blob.class);
             BlobAccess dao = chooseBlobAccess(dsl);
             dao.create(blob, failIfExists, false);
-            ctx.status(HttpCode.CREATED);
+            ctx.status(HttpStatus.CREATED);
         }
     }
 
@@ -217,11 +216,11 @@ public abstract class BlobController extends BaseCrudHandler {
             }
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
+            String reqContentType = ctx.contentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.JSON;
 
             ContentType contentType = Formats.parseHeader(formatHeader, Blob.class);
-            Blob blob = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Blob.class);
+            Blob blob = Formats.parseContent(contentType, ctx.bodyInputStream(), Blob.class);
 
             if (blob.getOfficeId() == null) {
                 throw new FormattingException("An officeId is required when updating a blob");
@@ -244,7 +243,7 @@ public abstract class BlobController extends BaseCrudHandler {
 
             BlobAccess dao = chooseBlobAccess(dsl);
             dao.update(blob, false);
-            ctx.status(HttpServletResponse.SC_OK);
+            ctx.status(HttpStatus.OK);
         }
     }
 
@@ -259,7 +258,7 @@ public abstract class BlobController extends BaseCrudHandler {
             DSLContext dsl = getDslContext(ctx);
             BlobAccess dao = chooseBlobAccess(dsl);
             dao.delete(office, blobId);
-            ctx.status(HttpServletResponse.SC_NO_CONTENT);
+            ctx.status(HttpStatus.NO_CONTENT);
         }
     }
 }
