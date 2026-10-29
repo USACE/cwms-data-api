@@ -16,6 +16,7 @@ WORKDIR /builddir
 RUN ./gradlew installDist -x test --info --no-daemon
 
 FROM eclipse-temurin:17-jre-alpine-3.24 AS api
+RUN apk del brotli-libs
 RUN adduser -D cda
 COPY --from=builder /builddir/cwms-data-api/build/install/cwms-data-api /cda
 COPY --from=builder /builddir/cwms-data-api/src/docker/logback.xml /logback.xml
