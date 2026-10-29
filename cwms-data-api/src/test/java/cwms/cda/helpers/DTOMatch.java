@@ -32,6 +32,8 @@ import cwms.cda.data.dto.TimeExtents;
 import cwms.cda.data.dto.TimeSeriesExtents;
 import cwms.cda.data.dto.TimeSeriesVersions;
 import cwms.cda.data.dto.TimeSeriesIdentifierDescriptor;
+import cwms.cda.data.dto.VerticalDatumInfo;
+import cwms.cda.data.dto.VerticalDatumInfoList;
 import cwms.cda.data.dto.catalog.LocationAlias;
 import cwms.cda.data.dto.LocationToPublishedData;
 import cwms.cda.data.dto.LocationToPublishedDataList;
@@ -80,8 +82,10 @@ import cwms.cda.data.dto.watersupply.WaterUserContract;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
@@ -829,6 +833,65 @@ public final class DTOMatch {
             },
             () -> assertEquals(first.getTimeSeriesIds(), second.getTimeSeriesIds(), "Time series IDs do not match")
         );
+    }
+
+    public static void assertMatch(VerticalDatumInfo first, VerticalDatumInfo second) {
+        if (first == null || second == null) {
+            assertEquals(first, second, "VerticalDatumInfo null mismatch");
+            return;
+        }
+        assertAll(
+            () -> assertEquals(first.getOffice(), second.getOffice(), "Office does not match"),
+            () -> assertEquals(first.getUnit(), second.getUnit(), "Unit does not match"),
+            () -> assertEquals(first.getLocation(), second.getLocation(), "Location does not match"),
+            () -> assertEquals(first.getNativeDatum(), second.getNativeDatum(), "Native datum does not match"),
+            () -> assertEquals(first.getElevation(), second.getElevation(), "Elevation does not match"),
+            () -> assertEquals(first.getLocalDatumName(), second.getLocalDatumName(), "Local datum name does not match"),
+            () -> assertOffsetsMatchIgnoringOrder(first.getOffsets(), second.getOffsets())
+        );
+    }
+
+    private static void assertOffsetsMatchIgnoringOrder(VerticalDatumInfo.Offset[] first, VerticalDatumInfo.Offset[] second) {
+        if (first == null || second == null) {
+            assertEquals(first == null, second == null, "Offsets null mismatch");
+            return;
+        }
+        assertEquals(first.length, second.length, "Offsets sizes do not match");
+        List<VerticalDatumInfo.Offset> remaining = new ArrayList<>(Arrays.asList(second));
+        for (VerticalDatumInfo.Offset offset : first) {
+            assertTrue(remaining.remove(offset), "Offsets do not match. No matching offset found for: "
+                    + offset.getToDatum() + " " + offset.getValue() + " estimate=" + offset.isEstimate());
+        }
+    }
+
+    /**
+     * Assert VerticalDatumInfoList contents match, ignoring order.
+     * @param first the VerticalDatumInfoList to compare
+     * @param second the VerticalDatumInfoList to compare
+     */
+    public static void assertMatch(VerticalDatumInfoList first, VerticalDatumInfoList second) {
+        if (first == null || second == null) {
+            assertEquals(first, second, "VerticalDatumInfoList null mismatch");
+            return;
+        }
+        assertEquals(first.getDatumList().size(), second.getDatumList().size(), "Datum list size does not match");
+        List<VerticalDatumInfo> remaining = new ArrayList<>(second.getDatumList());
+        for (VerticalDatumInfo expected : first.getDatumList()) {
+            VerticalDatumInfo matched = null;
+            for (VerticalDatumInfo candidate : remaining) {
+                try {
+                    assertMatch(expected, candidate);
+                    matched = candidate;
+                    break;
+                } catch (AssertionError e) {
+                    // not the matching element, try the next one
+                }
+            }
+            if (matched == null) {
+                fail("No matching VerticalDatumInfo found in second list for location: " + expected.getLocation());
+            }
+            remaining.remove(matched);
+        }
     }
 
     private static boolean isEqual(CwmsId loc1, CwmsId loc2) {

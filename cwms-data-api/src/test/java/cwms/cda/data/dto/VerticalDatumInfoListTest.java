@@ -27,6 +27,7 @@
 package cwms.cda.data.dto;
 
 import static cwms.cda.data.dao.JsonRatingUtilsTest.readFully;
+import static cwms.cda.helpers.DTOMatch.assertMatch;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,11 +38,14 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 final class VerticalDatumInfoListTest {
 
-    @Test
-    void test_roundtrip() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.XML})
+    void test_roundtrip(String format) throws Exception {
         List<VerticalDatumInfo> list = new ArrayList<>();
         VerticalDatumInfo info = new VerticalDatumInfo.Builder()
             .withElevation(100.0)
@@ -62,19 +66,15 @@ final class VerticalDatumInfoListTest {
             .build();
         list.add(info2);
         VerticalDatumInfoList vdiList = new VerticalDatumInfoList(list);
-        String serialized = Formats.format(new ContentType(Formats.XML), vdiList);
-        InputStream stream = getClass().getClassLoader().getResourceAsStream("cwms/cda/data/dto/vertical-datum-bulk.xml");
+        String serialized = Formats.format(new ContentType(format), vdiList);
+        String resource = String.format("cwms/cda/data/dto/vertical-datum-bulk.%s", format.equals(Formats.JSON) ? "json" : "xml");
+        InputStream stream = getClass().getClassLoader().getResourceAsStream(resource);
         assertNotNull(stream);
         String expected = readFully(stream);
-        VerticalDatumInfoList deserializedFromFile = Formats.parseContent(new ContentType(Formats.XML), expected, VerticalDatumInfoList.class);
-        VerticalDatumInfoList deserialized = Formats.parseContent(new ContentType(Formats.XML), serialized, VerticalDatumInfoList.class);
-        for (VerticalDatumInfo vdi : deserialized.getDatumList()) {
-            assertTrue(vdi.equals(info) || vdi.equals(info2));
-        }
-        for (VerticalDatumInfo vdi : deserializedFromFile.getDatumList()) {
-            assertTrue(vdi.equals(info) || vdi.equals(info2));
-        }
-        assertEquals(2, deserialized.getDatumList().size());
-        assertEquals(2, deserializedFromFile.getDatumList().size());
+        VerticalDatumInfoList deserializedFromFile = Formats.parseContent(new ContentType(format), expected, VerticalDatumInfoList.class);
+        VerticalDatumInfoList deserialized = Formats.parseContent(new ContentType(format), serialized, VerticalDatumInfoList.class);
+        VerticalDatumInfoList expectedList = new VerticalDatumInfoList(List.of(info, info2));
+        assertMatch(deserialized, expectedList);
+        assertMatch(deserializedFromFile, expectedList);
     }
 }

@@ -61,18 +61,4 @@ public final class VerticalDatumInfoList extends CwmsDTOBase {
     public List<VerticalDatumInfo> getDatumList() {
         return datumList;
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        VerticalDatumInfoList that = (VerticalDatumInfoList) o;
-        return Objects.equals(datumList, that.datumList);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(datumList);
-    }
 }

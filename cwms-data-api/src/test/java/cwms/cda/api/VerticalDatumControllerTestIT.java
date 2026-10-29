@@ -26,6 +26,7 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OVERWRITE;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
+import static cwms.cda.helpers.DTOMatch.assertMatch;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
@@ -45,6 +46,7 @@ import fixtures.TestAccounts;
 import fixtures.TestAccounts.KeyUser;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletResponse;
@@ -414,19 +416,9 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
             .extract().asString();
 
         VerticalDatumInfoList list = Formats.parseContent(contentType, vdiList, VerticalDatumInfoList.class);
-
+        VerticalDatumInfoList expectedList = new VerticalDatumInfoList(List.of(vdi, vdi2));
         assertFalse(list.getDatumList().isEmpty());
-        boolean found1 = false;
-        boolean found2 = false;
-        for (VerticalDatumInfo vdiInfo : list.getDatumList()) {
-            if (vdiInfo.equals(vdi)) {
-                found1 = true;
-            } else if (vdiInfo.equals(vdi2)) {
-                found2 = true;
-            }
-        }
-        assertTrue(found1);
-        assertTrue(found2);
+        assertMatch(list, expectedList);
 
         // DELETE
         given()
