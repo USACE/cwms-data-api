@@ -37,6 +37,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.CdaError;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.LocationGroupDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.LocationGroup;
@@ -97,7 +98,8 @@ public class LocationGroupController implements CrudHandler {
                 + "owning office of the category the location group belongs to "
                 + "whose data is to be included in the response."),
             @OpenApiParam(name = LOCATION_OFFICE_ID, description = "Specifies the "
-                + "owning office of the location assigned to the location group whose data is to be included in the response."),
+                + "owning office of the location assigned to the location group whose data is "
+                + "to be included in the response."),
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
@@ -329,14 +331,20 @@ public class LocationGroupController implements CrudHandler {
             LocationGroup deserialize = Formats.parseContent(contentType, body, LocationGroup.class);
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
-            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
+            String categoryId = deserialize.getLocationCategory().getId();
+            Optional<LocationGroup> oldGroup = locationGroupDao.getLocationGroup(office, categoryId, groupId);
+            if (oldGroup.isEmpty()) {
+                throw new NotFoundException(String.format("Location Group not found with ID: %s", groupId));
+            }
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !groupId.equals(deserialize.getId())) {
                 locationGroupDao.renameLocationGroup(groupId, deserialize);
             }
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);
             }
+            locationGroupDao.replaceMetadata(deserialize, oldGroup.get(), replaceAssignedLocs);
+            boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             List<CwmsId> missingLocations = locationGroupDao.assignLocs(deserialize, office, ignoreMissing);
             if (missingLocations.isEmpty()) {
                 ctx.status(HttpServletResponse.SC_OK);
