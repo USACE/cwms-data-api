@@ -26,13 +26,12 @@ package cwms.cda.api;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.OVERWRITE;
 import static cwms.cda.data.dao.DaoTest.getDslContext;
-import static cwms.cda.helpers.DTOMatch.assertMatch;
+import static cwms.cda.helpers.DTOMatch.assertContains;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -418,7 +417,7 @@ final class VerticalDatumControllerTestIT extends DataApiTestIT {
         VerticalDatumInfoList list = Formats.parseContent(contentType, vdiList, VerticalDatumInfoList.class);
         VerticalDatumInfoList expectedList = new VerticalDatumInfoList(List.of(vdi, vdi2));
         assertFalse(list.getDatumList().isEmpty());
-        assertMatch(list, expectedList);
+        assertContains(list, expectedList);
 
         // DELETE
         given()

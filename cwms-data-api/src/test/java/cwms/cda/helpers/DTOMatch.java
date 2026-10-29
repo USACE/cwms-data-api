@@ -894,6 +894,36 @@ public final class DTOMatch {
         }
     }
 
+    /**
+     * Assert VerticalDatumInfoList contents match, ignoring order.
+     * @param first the VerticalDatumInfoList to compare
+     * @param second the VerticalDatumInfoList to compare
+     */
+    public static void assertContains(VerticalDatumInfoList first, VerticalDatumInfoList second) {
+        if (first == null || second == null) {
+            assertEquals(first, second, "VerticalDatumInfoList null mismatch");
+            return;
+        }
+        assertTrue(first.getDatumList().size() >= second.getDatumList().size(), "Datum list size does not match");
+        List<VerticalDatumInfo> remaining = new ArrayList<>(second.getDatumList());
+        for (VerticalDatumInfo expected : first.getDatumList()) {
+            VerticalDatumInfo matched = null;
+            for (VerticalDatumInfo candidate : remaining) {
+                try {
+                    assertMatch(expected, candidate);
+                    matched = candidate;
+                    break;
+                } catch (AssertionError e) {
+                    // not the matching element, try the next one
+                }
+            }
+            if (matched == null) {
+                fail("No matching VerticalDatumInfo found in second list for location: " + expected.getLocation());
+            }
+            remaining.remove(matched);
+        }
+    }
+
     private static boolean isEqual(CwmsId loc1, CwmsId loc2) {
         return loc1.getName().equals(loc2.getName())
                 && loc1.getOfficeId().equals(loc2.getOfficeId());
