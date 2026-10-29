@@ -1996,7 +1996,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
         final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.orderBy(cwmsTsIdFields.getDbOfficeId(),
-                        cwmsTsIdFields.getCwmsTsId());
+                        DSL.upper(cwmsTsIdFields.getCwmsTsId()));
         logger.atFine().log("%s", lazy(() -> overallQuery.getSQL(ParamType.INLINED)));
         Result<?> result = overallQuery.fetch();
 
@@ -2234,21 +2234,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                      .from(fromTable)
                                      .where(whereConditions).and(DSL.and(pagingConditions))
                                      .orderBy(cwmsTsIdFields.getDbOfficeId(),
-                                             cwmsTsIdFields.getCwmsTsId())
+                                             DSL.upper(cwmsTsIdFields.getCwmsTsId()))
                                      .asTable("limiterInner");
         if (forCount) {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
                     .orderBy(innerSelect.field(cwmsTsIdFields.getDbOfficeId()),
-                            innerSelect.field(cwmsTsIdFields.getCwmsTsId()))
+                            DSL.upper(innerSelect.field(cwmsTsIdFields.getCwmsTsId())))
                     );
         } else {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
                     .orderBy(innerSelect.field(cwmsTsIdFields.getDbOfficeId()),
-                            innerSelect.field(cwmsTsIdFields.getCwmsTsId()))
+                            DSL.upper(innerSelect.field(cwmsTsIdFields.getCwmsTsId())))
                     .limit(pageSize)
                     );
         }
