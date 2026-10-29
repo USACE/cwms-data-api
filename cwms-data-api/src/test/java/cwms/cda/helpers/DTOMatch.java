@@ -896,21 +896,21 @@ public final class DTOMatch {
 
     /**
      * Assert VerticalDatumInfoList contents match, ignoring order.
-     * @param first the VerticalDatumInfoList to compare
-     * @param second the VerticalDatumInfoList to compare
+     * @param actual the VerticalDatumInfoList to compare
+     * @param expected the VerticalDatumInfoList to compare
      */
-    public static void assertContains(VerticalDatumInfoList first, VerticalDatumInfoList second) {
-        if (first == null || second == null) {
-            assertEquals(first, second, "VerticalDatumInfoList null mismatch");
+    public static void assertContains(VerticalDatumInfoList actual, VerticalDatumInfoList expected) {
+        if (actual == null || expected == null) {
+            assertEquals(expected, actual, "VerticalDatumInfoList null mismatch");
             return;
         }
-        assertTrue(first.getDatumList().size() >= second.getDatumList().size(), "Datum list size does not match");
-        List<VerticalDatumInfo> remaining = new ArrayList<>(second.getDatumList());
-        for (VerticalDatumInfo expected : first.getDatumList()) {
+        assertTrue(actual.getDatumList().size() >= expected.getDatumList().size(), "Datum list size does not match");
+        List<VerticalDatumInfo> remaining = new ArrayList<>(expected.getDatumList());
+        for (VerticalDatumInfo expectedVdi : actual.getDatumList()) {
             VerticalDatumInfo matched = null;
             for (VerticalDatumInfo candidate : remaining) {
                 try {
-                    assertMatch(expected, candidate);
+                    assertMatch(expectedVdi, candidate);
                     matched = candidate;
                     break;
                 } catch (AssertionError e) {
@@ -918,7 +918,7 @@ public final class DTOMatch {
                 }
             }
             if (matched == null) {
-                fail("No matching VerticalDatumInfo found in second list for location: " + expected.getLocation());
+                fail("No matching VerticalDatumInfo found in second list for location: " + expectedVdi.getLocation());
             }
             remaining.remove(matched);
         }
