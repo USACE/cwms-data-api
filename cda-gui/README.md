@@ -46,6 +46,17 @@ To build the project:
 
 To see the available scripts for this project, including how to run and deploy, look at the `package.json` file.
 
+The shared header shows the environment selected by the Vite build mode:
+`development` displays **Development**, `test` displays **Test**, and `production`
+displays **Production**. `npm run dev` (`localhost`) and `dev-cda-compose` display
+**Local**; unrecognized modes display **Unknown**. This uses the same mode as the
+API configuration, without making an additional API request.
+
+Build CWBI development with `npm run build:development` and test with
+`npm run build:test`. WAR builds select the equivalent mode with
+`-PcdaGuiMode=development` / `-PcdaGuiMode=test` or `CDA_GUI_MODE`; the default is
+`production`.
+
 ## UI Tests and Development
 
 The UI tests use Storybook, Vitest, and Playwright. Stories provide an isolated place to
