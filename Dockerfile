@@ -14,7 +14,7 @@ ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 RUN gradle prepareDockerBuild --info --no-daemon
 
-FROM alpine:3.23.5 AS tomcat_base
+FROM alpine:3.24.3 AS tomcat_base
 RUN apk --no-cache upgrade && \
     apk --no-cache add \
         openjdk11-jre \
