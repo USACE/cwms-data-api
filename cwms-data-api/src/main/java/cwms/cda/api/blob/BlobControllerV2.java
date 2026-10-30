@@ -86,7 +86,7 @@ public final class BlobControllerV2 extends BlobController {
         },
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/v2/blob/"
+        path = "/v2/blobs/"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -135,7 +135,7 @@ public final class BlobControllerV2 extends BlobController {
         },
         methods = HttpMethod.PATCH,
         tags = {TAG},
-        path = "/v2/blob/{" + OFFICE + "}/{" + BLOB_ID + "}"
+        path = "/v2/blobs/{" + OFFICE + "}/{" + BLOB_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
@@ -203,7 +203,7 @@ public final class BlobControllerV2 extends BlobController {
         },
         methods = HttpMethod.DELETE,
         tags = {TAG},
-        path = "/v2/blob/{" + OFFICE + "}/{" + BLOB_ID + "}"
+        path = "/v2/blobs/{" + OFFICE + "}/{" + BLOB_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
@@ -245,7 +245,7 @@ public final class BlobControllerV2 extends BlobController {
         },
         tags = {TAG},
         methods = HttpMethod.GET,
-        path = "/v2/blob/"
+        path = "/v2/blobs/"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -288,7 +288,7 @@ public final class BlobControllerV2 extends BlobController {
         },
         tags = {TAG},
         methods = HttpMethod.GET,
-        path = "/v2/blob/{" + OFFICE + "}/{" + BLOB_ID + "}"
+        path = "/v2/blobs/{" + OFFICE + "}/{" + BLOB_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
