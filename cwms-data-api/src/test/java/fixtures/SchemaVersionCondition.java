@@ -24,10 +24,7 @@
 
 package fixtures;
 
-import cwms.cda.data.dao.AuthDao;
-import java.sql.SQLException;
 import java.util.Objects;
-import org.jooq.impl.DSL;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;

@@ -16,7 +16,6 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -125,13 +124,13 @@ public class VerticalDatumInfo extends CwmsDTOBase {
             String toDatum = offset.getToDatum();
             Set<String> existingDatums = newOffsets.stream().map(Offset::getToDatum)
                     .collect(Collectors.toSet());
-            if(!existingDatums.contains(offset.getToDatum())) {
+            if (!existingDatums.contains(offset.getToDatum())) {
                 if (!offset.isForDatum(convertTo.toString())) {
                     Double newOffsetValue = convertToOffsetToOriginal + offset.getValue();
                     boolean isEstimate = offset.isEstimate() || convertToOffset.isEstimate();
                     VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(isEstimate, toDatum, newOffsetValue);
                     newOffsets.add(newOffset);
-                } else if(hasZeroOffset) {
+                } else if (hasZeroOffset) {
                     //this is the one we converted to, its now zero offset
                     VerticalDatumInfo.Offset newOffset = new VerticalDatumInfo.Offset(false, toDatum, 0.0);
                     newOffsets.add(newOffset);
@@ -173,10 +172,10 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
         @JsonIgnore
         public boolean isForDatum(String verticalDatum) {
-            if(verticalDatum == null && toDatum == null) {
+            if (verticalDatum == null && toDatum == null) {
                 return true;
             }
-            if(verticalDatum == null || toDatum == null) {
+            if (verticalDatum == null || toDatum == null) {
                 return false;
             }
             return toDatum.replaceAll("-", "").equalsIgnoreCase(verticalDatum.replaceAll("-", ""));
@@ -280,7 +279,7 @@ public class VerticalDatumInfo extends CwmsDTOBase {
 
         @JsonIgnore
         public Builder from(VerticalDatumInfo vdi) {
-            if(vdi != null) {
+            if (vdi != null) {
                 this.office = vdi.getOffice();
                 this.unit = vdi.getUnit();
                 this.location = vdi.getLocation();
