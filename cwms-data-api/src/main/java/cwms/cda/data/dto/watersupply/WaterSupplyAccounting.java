@@ -35,6 +35,9 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +46,7 @@ import java.util.Map;
         aliases = {Formats.DEFAULT, Formats.JSON, Formats.JSONV2})
 @JsonDeserialize(builder = WaterSupplyAccounting.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class WaterSupplyAccounting extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String contractName;

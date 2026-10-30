@@ -36,7 +36,7 @@ import cwms.cda.helpers.JsonToYamlConverter;
 import io.restassured.filter.log.LogDetail;
 import java.io.File;
 import java.io.FileWriter;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 

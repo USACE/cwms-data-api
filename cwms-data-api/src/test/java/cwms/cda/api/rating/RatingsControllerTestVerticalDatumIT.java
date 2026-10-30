@@ -37,7 +37,7 @@ import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import java.io.IOException;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;

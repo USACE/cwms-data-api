@@ -1,11 +1,13 @@
 package cwms.cda.data.dto.basinconnectivity;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.data.dto.basinconnectivity.buildercontracts.stream.*;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 import java.util.*;
 
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class Stream extends CwmsDTO
 {
     private final String streamName;

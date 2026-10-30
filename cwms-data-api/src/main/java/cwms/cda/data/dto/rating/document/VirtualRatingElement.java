@@ -33,6 +33,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 @JsonDeserialize(builder = VirtualRatingElement.Builder.class)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY,
         getterVisibility = JsonAutoDetect.Visibility.NONE,
@@ -40,6 +43,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"office-id", "rating-spec-id", "effective-date", "transition-start-date",
     "create-date", "active", "description", "connections", "source-ratings"})
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class VirtualRatingElement {
 
     @JsonProperty("office-id")

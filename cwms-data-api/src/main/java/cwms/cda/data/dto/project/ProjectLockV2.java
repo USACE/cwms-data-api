@@ -35,11 +35,14 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 @JsonRootName("project-lock")
 @JsonDeserialize(builder = ProjectLockV2.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV1.class, aliases = {Formats.DEFAULT})
 public final class ProjectLockV2 extends ProjectLockDTO {
     @JsonProperty(required = true)

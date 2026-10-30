@@ -9,6 +9,9 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.time.Instant;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -17,6 +20,7 @@ import java.util.TreeSet;
 @JsonDeserialize(builder = RatingSpecEffectiveDates.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class RatingSpecEffectiveDates extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final String ratingSpecId;

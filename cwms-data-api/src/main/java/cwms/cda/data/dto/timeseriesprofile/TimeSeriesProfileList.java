@@ -34,6 +34,9 @@ import cwms.cda.data.dto.CwmsDTOPaginated;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +44,7 @@ import java.util.List;
 @JsonDeserialize(builder = TimeSeriesProfileList.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class TimeSeriesProfileList extends CwmsDTOPaginated {
     private final List<TimeSeriesProfile> profileList;
 

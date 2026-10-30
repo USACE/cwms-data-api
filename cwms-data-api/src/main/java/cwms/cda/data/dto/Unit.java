@@ -16,6 +16,8 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +29,7 @@ import java.util.Objects;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class Unit extends CwmsDTOBase
 {
 	private String abstractParameter;

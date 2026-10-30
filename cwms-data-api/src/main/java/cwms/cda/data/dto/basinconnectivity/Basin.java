@@ -6,11 +6,14 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.NamedPgJsonFormatter;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.json.PgJsonFormatter;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 @FormattableWith(contentType = Formats.NAMED_PGJSON, formatter = NamedPgJsonFormatter.class, 
     aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.PGJSON, formatter = PgJsonFormatter.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class Basin extends CwmsDTO
 {
     private final String basinName;

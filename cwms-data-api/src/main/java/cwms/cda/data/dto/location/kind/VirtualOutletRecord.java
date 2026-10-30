@@ -31,6 +31,9 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +41,7 @@ import java.util.List;
 @JsonDeserialize(builder = VirtualOutletRecord.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class VirtualOutletRecord extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId outletId;

@@ -3,6 +3,9 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -11,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * correctly.
  */
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public abstract class CwmsDTO extends CwmsDTOBase {
     @Schema(description = "Owning office of object.")
     @JsonProperty(required=true)

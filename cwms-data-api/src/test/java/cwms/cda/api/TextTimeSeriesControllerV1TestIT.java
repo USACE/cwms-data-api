@@ -37,7 +37,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;

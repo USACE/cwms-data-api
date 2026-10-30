@@ -27,9 +27,12 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Location;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public abstract class ProjectStructure extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId projectId;

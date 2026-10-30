@@ -48,7 +48,7 @@ public final class MultipartParser {
      * @return ParsedMultipart the parsed multipart form data
      */
     public static ParsedMultipart parseMultipart(Context ctx) {
-        String contentType = ctx.req.getContentType();
+        String contentType = ctx.contentType();
         if (contentType == null || !contentType.toLowerCase(Locale.ROOT).startsWith(MULTIPART_FORM_DATA)) {
             return new ParsedMultipart(Map.of(), null);
         }
@@ -72,7 +72,7 @@ public final class MultipartParser {
         }
 
         try {
-            byte[] bodyBytes = ctx.bodyAsInputStream().readAllBytes();
+            byte[] bodyBytes = ctx.bodyInputStream().readAllBytes();
             return parseMultipartBody(bodyBytes, boundary);
         } catch (IOException e) {
             throw new FormattingException("Unable to parse multipart form data", e);

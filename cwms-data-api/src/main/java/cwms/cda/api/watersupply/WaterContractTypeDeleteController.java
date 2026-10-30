@@ -38,11 +38,10 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -63,7 +62,7 @@ public final class WaterContractTypeDeleteController extends WaterSupplyControll
                 + "the contract type to delete"),
         },
         description = "Delete a water contract type",
-        method = HttpMethod.DELETE,
+        methods = HttpMethod.DELETE,
         path = "/projects/{office}/contract-types/{display-value}",
         tags = {TAG}
     )
@@ -74,7 +73,7 @@ public final class WaterContractTypeDeleteController extends WaterSupplyControll
             DSLContext dsl = getDslContext(ctx);
             String office = ctx.pathParam(OFFICE);
             String displayValue = ctx.pathParam(DISPLAY_VALUE);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, LookupType.class);
             ctx.contentType(contentType.toString());
             WaterContractDao dao = new WaterContractDao(dsl);

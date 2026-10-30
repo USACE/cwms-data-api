@@ -32,18 +32,21 @@ import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.Entity;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -81,10 +84,12 @@ public class EntityController implements CrudHandler {
             },
             responses = {
                     @OpenApiResponse(status = STATUS_200, content = {
-                            @OpenApiContent(isArray = true, from = Entity.class, type = Formats.JSONV1)
+                            @OpenApiContent(from = Entity[].class, type = Formats.JSONV1)
                     })
             },
-            tags = {TAG}
+            tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            path = "/entity"
     )
 
     @Override
@@ -119,7 +124,7 @@ public class EntityController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Entities", ex);
@@ -143,7 +148,9 @@ public class EntityController implements CrudHandler {
                                     @OpenApiContent(from = Entity.class, type = Formats.JSONV1)
                     })
             },
-            tags = {TAG}
+            tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            path = "/entity/{" + ENTITY_ID + "}"
     )
 
     @Override
@@ -168,7 +175,7 @@ public class EntityController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Entity", ex);
@@ -187,8 +194,9 @@ public class EntityController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_201, description = "Entity successfully stored to CWMS")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            tags = {TAG},
+            path = "/entity"
     )
 
     @Override
@@ -196,7 +204,7 @@ public class EntityController implements CrudHandler {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
             Entity entity = Formats.parseContent(contentType, ctx.body(), Entity.class);
             EntityDao dao = new EntityDao(dsl);
@@ -215,8 +223,9 @@ public class EntityController implements CrudHandler {
                     @OpenApiParam(name = ENTITY_ID, required = true, description = "Specifies the entity ID of the " +
                             " Entity to be updated. (e.g., NWS)")
             },
-            method = HttpMethod.PATCH,
+            methods = HttpMethod.PATCH,
             tags = {TAG},
+            path = "/entity/{" + ENTITY_ID + "}",
             responses = {
                     @OpenApiResponse(status = STATUS_200, description = "Entity updated successfully in CWMS"),
             }
@@ -226,9 +235,9 @@ public class EntityController implements CrudHandler {
     public void update(@NotNull Context ctx, @NotNull String entityId) {
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
-            String formatHeader = ctx.req.getContentType();
+            String formatHeader = ctx.contentType();
             ContentType contentType = Formats.parseHeader(formatHeader, Entity.class);
-            Entity entity = Formats.parseContent(contentType, ctx.bodyAsInputStream(), Entity.class);
+            Entity entity = Formats.parseContent(contentType, ctx.bodyInputStream(), Entity.class);
             // Validate the office ID and entity ID are provided.
             entity.validate();
 
@@ -261,7 +270,8 @@ public class EntityController implements CrudHandler {
                     @OpenApiResponse(status = STATUS_204, description = "Entity deleted successfully"),
                     @OpenApiResponse(status = STATUS_404, description = "Entity not found for the given parameters."),
             },
-            method = HttpMethod.DELETE,
+            methods = HttpMethod.DELETE,
+            path = "/entity/{" + ENTITY_ID + "}",
             tags = {TAG}
 
     )
