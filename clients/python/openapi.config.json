@@ -1,0 +1,9 @@
+{
+  "packageName": "cda",
+  "projectName": "cda-python",
+  "packageUrl": "https://github.com/USACE/cwms-data-api",
+  "gitUserId": "USACE",
+  "gitRepoId": "cwms-data-api",
+  "library": "urllib3",
+  "hideGenerationTimestamp": true
+}
