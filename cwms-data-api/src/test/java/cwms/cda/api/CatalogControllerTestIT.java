@@ -36,7 +36,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 
 import java.time.ZoneId;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterAll;

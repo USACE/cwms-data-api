@@ -36,7 +36,7 @@ import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dto.project.ProjectLock;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 
 /**

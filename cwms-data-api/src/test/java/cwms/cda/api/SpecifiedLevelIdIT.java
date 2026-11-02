@@ -38,7 +38,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 
 import java.time.Instant;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

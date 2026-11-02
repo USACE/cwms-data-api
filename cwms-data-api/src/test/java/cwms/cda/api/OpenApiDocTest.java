@@ -57,7 +57,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.function.Executable;
@@ -327,7 +327,8 @@ class OpenApiDocTest {
 
 
         Set<OpenApiParamUsageInfo> pathParams = methodCalls.stream()
-                                                     .filter(call -> call.getNameAsString().equals("pathParam"))
+                                                     .filter(call -> call.getNameAsString().equals("pathParam") ||
+                                                                     call.getNameAsString().equals("requiredPathParam"))
                                                      .map(call -> readUsageFromCall(unit, clazz, call, true))
                                                      .collect(Collectors.toSet());
         pathParams.addAll(ignoredPathParams);

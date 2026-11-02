@@ -15,7 +15,7 @@ test("office links override storage; dropdown labels are sorted and include HQ",
       JSON.stringify({ office: "SPK", userName: "gray.sacramento" }),
     ),
   );
-  await login(page, "/cwms-data/user-roles/swt");
+  await login(page, "/user-roles/swt");
   await expect(page.locator("#role-office")).toHaveValue("SWT");
   await expect(page.locator("#role-office option")).toHaveText([
     "HQ - Headquarters",
@@ -31,7 +31,7 @@ test("office links override storage; dropdown labels are sorted and include HQ",
 });
 
 test("HQ is viewable without granting HQ edit permissions", async ({ page }) => {
-  await login(page, "/cwms-data/user-roles/hq");
+  await login(page, "/user-roles/hq");
   await expect(page.locator("#role-office")).toHaveValue("HQ");
   await expect(
     page.getByText(
@@ -58,14 +58,14 @@ test("HQ administrators retain edit access and HQ occurs only once", async ({
       },
     }),
   );
-  await login(page, "/cwms-data/user-roles/HQ");
+  await login(page, "/user-roles/HQ");
   await expect(page).toHaveURL(/\/user-roles\/hq$/);
   await expect(page.locator('#role-office option[value="HQ"]')).toHaveCount(1);
   await expect(page.locator("#role-mode-custom")).toBeEnabled();
 });
 
 test("unknown office URLs fall back to the default office", async ({ page }) => {
-  await login(page, "/cwms-data/user-roles/unknown");
+  await login(page, "/user-roles/unknown");
   await expect(page).toHaveURL(/\/user-roles\/spk$/);
   await expect(page.locator("#role-office")).toHaveValue("SPK");
 });

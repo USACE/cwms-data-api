@@ -31,6 +31,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.List;
 
 @JsonDeserialize(builder = RatingPointsElement.Builder.class)
@@ -39,6 +43,7 @@ import java.util.List;
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"other-ind", "point"})
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class RatingPointsElement {
 
     @JsonProperty("other-ind")

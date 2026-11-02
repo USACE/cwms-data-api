@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { demoProfile, demoRoles } from "./demo-data";
 
 async function openRoles(page) {
-  await page.goto("/cwms-data/user-roles");
+  await page.goto("/user-roles");
   await page.getByRole("button", { name: "Log in", exact: true }).last().click();
 }
 
