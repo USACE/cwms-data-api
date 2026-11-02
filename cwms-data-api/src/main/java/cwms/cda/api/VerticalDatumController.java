@@ -115,7 +115,7 @@ public final class VerticalDatumController implements CrudHandler {
     public void getAll(@NotNull Context ctx) {
         String office = requiredParam(ctx, OFFICE);
         String unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, String.class).getOrDefault(UnitSystem.SI.getValue());
-        String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault(null);
+        String locationMask = ctx.queryParamAsClass(LOCATION_MASK, String.class).getOrDefault("%");
         try (Timer.Context ignored = markAndTime(GET_ONE)) {
             DSLContext dsl = getDslContext(ctx);
             VerticalDatumDao dao = new VerticalDatumDao(dsl);
