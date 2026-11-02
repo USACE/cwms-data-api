@@ -1,6 +1,7 @@
 plugins {
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
+    id 'cda.version-conventions'
     id 'com.gradleup.shadow' version '8.3.10'
     id 'application'
 }
@@ -233,8 +234,8 @@ run() {
     classpath sourceSets.main.runtimeClasspath +
               configurations.baseLibs
 
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("cwms") }
+    systemProperties(providers.gradlePropertiesPrefixedBy("CDA").get()) //project.properties.findAll { k, v -> k.startsWith("CDA") }
+    systemProperties(providers.gradlePropertiesPrefixedBy("cwms").get()) // += project.properties.findAll { k, v -> k.startsWith("cwms") }
     environment("TS_USE_DMZ_INCLUDE", "true")
     def context = project.findProperty("cda.war.context") ?: "/cwms-data"
 
@@ -260,7 +261,7 @@ tasks.register('seedDevApiKeys', JavaExec) {
 
     mainClass = "fixtures.SeedDevApiKeys"
 
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") }
+    systemProperties(providers.gradlePropertiesPrefixedBy("CDA").get())
 }
 
 task integrationTests(type: Test) {
@@ -273,8 +274,8 @@ task integrationTests(type: Test) {
     shouldRunAfter test
     classpath += configurations.baseLibs
     // The before all extension will take care of these properties
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    systemProperties(providers.gradlePropertiesPrefixedBy("CDA").map { map -> map.findAll { k,v -> !k.startsWith("CDA_JDBC")}}.get())
+    systemProperties(providers.gradlePropertiesPrefixedBy("testcontainer").get()) // += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
 
     environment("TS_USE_DMZ_INCLUDE", "true")
 
@@ -288,7 +289,7 @@ task integrationTests(type: Test) {
 }
 
 task timeseriesReadBenchmark(type: JavaExec) {
-    group "verification"
+    group = "verification"
     description = "Run the local time-series read benchmark harness"
     dependsOn testClasses
 
@@ -298,9 +299,9 @@ task timeseriesReadBenchmark(type: JavaExec) {
 
     mainClass = "helpers.TimeSeriesReadBenchmark"
 
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("benchmark.") }
+    systemProperties(providers.gradlePropertiesPrefixedBy("CDA").map { map -> map.findAll { k,v -> !k.startsWith("CDA_JDBC")}}.get())
+    systemProperties(providers.gradlePropertiesPrefixedBy("testcontainer").get())
+    systemProperties(providers.gradlePropertiesPrefixedBy("benchmark.").get())
 
     jvmArgs += "-DwarFile=$buildDir/libs/${project.name}-${project.version}.war"
     jvmArgs += "-DwarContext=/cwms-data"
@@ -334,9 +335,8 @@ tasks.register("executeOpenAPIConversion", Test) {
 
     classpath += configurations.baseLibs
     // The before all extension will take care of these properties
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("RADAR") && !k.startsWith("RADAR_JDBC") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("CDA") && !k.startsWith("CDA_JDBC") }
-    systemProperties += project.properties.findAll { k, v -> k.startsWith("testcontainer") }
+    systemProperties(providers.gradlePropertiesPrefixedBy("CDA").map { map -> map.findAll { k,v -> !k.startsWith("CDA_JDBC")}}.get())
+    systemProperties(providers.gradlePropertiesPrefixedBy("testcontainer").get())
     jvmArgs += "-Dlogback.configurationFile=${projectDir}/logback.xml"
     jvmArgs += "-Dcwms.dataapi.access.provider=MultipleAccessManager"
     jvmArgs += "-Dcwms.dataapi.access.providers=KeyAccessManager,CwmsAccessManager"
