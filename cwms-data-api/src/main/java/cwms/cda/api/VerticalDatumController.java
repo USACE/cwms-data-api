@@ -58,19 +58,18 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.openapi.OpenApi;
+import io.javalin.http.Header;
 import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
-
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import java.io.IOException;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -135,7 +134,9 @@ public final class VerticalDatumController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            try (ServletOutputStream out = ctx.outputStream()) {
+                out.write(bytes);
+            }
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 ERROR_MESSAGE, ex);
@@ -181,7 +182,9 @@ public final class VerticalDatumController implements CrudHandler {
 
             byte[] bytes = serialized.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.outputStream().write(bytes);
+            try (ServletOutputStream out = ctx.outputStream()) {
+                out.write(bytes);
+            }
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 ERROR_MESSAGE, ex);
