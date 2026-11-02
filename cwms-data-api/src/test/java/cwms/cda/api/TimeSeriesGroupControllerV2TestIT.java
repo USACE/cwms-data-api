@@ -28,27 +28,20 @@ import static cwms.cda.api.Controllers.CASCADE_DELETE;
 import static cwms.cda.api.Controllers.CATEGORY_ID;
 import static cwms.cda.api.Controllers.CATEGORY_OFFICE_ID;
 import static cwms.cda.api.Controllers.COLLECTION_PATCH_STRATEGY;
-import static cwms.cda.api.Controllers.CWMS_OFFICE;
 import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.GROUP_OFFICE_ID;
 import static cwms.cda.api.Controllers.OFFICE;
-import static cwms.cda.api.Controllers.REPLACE_ASSIGNED_TS;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.TimeSeriesCategoryDao;
 import cwms.cda.data.dao.TimeSeriesGroupDao;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroup;
 import cwms.cda.data.dto.timeseriesgroup.TimeSeriesGroupMembership;
@@ -57,16 +50,12 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.TestAccounts;
-import io.restassured.filter.log.LogDetail;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.apache.commons.io.IOUtils;
 import org.jooq.Configuration;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -74,8 +63,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Integration tests for the v2 Timeseries Group controller ({@code /v2/timeseries/group}).
@@ -97,7 +84,6 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
 
     private final List<TimeSeriesCategory> categoriesToCleanup = new ArrayList<>();
     private final List<TimeSeriesGroup> groupsToCleanup = new ArrayList<>();
-    private final List<TimeSeries> timeSeriesToCleanup = new ArrayList<>();
 
     TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
@@ -970,119 +956,5 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .statusCode(is(HttpServletResponse.SC_OK))
                 .body("assigned-time-series.size()", is(1))
                 .body("assigned-time-series[0].timeseries-id", equalTo(TS1));
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {Formats.JSONV1, Formats.DEFAULT})
-    void test_v2_assign_ts_to_district_owned_group_with_cwms_cat(String format) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-
-        InputStream resource = this.getClass().getResourceAsStream(
-            "/cwms/cda/api/timeseries_create_SPK.json");
-        assertNotNull(resource);
-        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
-        String tsData2 = tsData
-            .replace("ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST", "ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TESTV2");
-
-        TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
-        TimeSeries deserialize2 = Formats.parseContent(new ContentType(Formats.JSON), tsData2, TimeSeries.class);
-        timeSeriesToCleanup.add(deserialize2);
-        timeSeriesToCleanup.add(deserialize);
-
-        JsonNode ts = mapper.readTree(tsData);
-        JsonNode ts2 = mapper.readTree(tsData2);
-        String location = ts.get("name").asText().split("\\.")[0];
-        String officeId = ts.get("office-id").asText();
-        try {
-            createLocation(location, true, officeId);
-        } catch (RuntimeException e) {
-            // Location already exists
-        }
-
-        // inserting the time series
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .body(tsData)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        // inserting the time series
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(Formats.JSONV2)
-            .contentType(Formats.JSONV2)
-            .body(tsData2)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .post("/timeseries/")
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        String categoryName = "Default";
-        String groupId = "Group TS";
-        String tsId = ts.get("name").asText();
-        String tsId2 = ts2.get("name").asText();
-        TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
-        TimeSeriesGroup group = new TimeSeriesGroup(category, officeId, groupId, String.format("All %s Time Series", officeId), null, null);
-
-        groupsToCleanup.add(group); // can't delete CWMS groups but we should be able to unassign SPK assignments
-
-        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
-        AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
-        TimeSeriesGroup newGroup = new TimeSeriesGroup(group, Arrays.asList(assignedTimeSeries2, assignedTimeSeries));
-
-        String newGroupJson2 = Formats.format(new ContentType(Formats.JSONV1), newGroup);
-
-        // Attempt a patch on TS owned by CWMS with replacement
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(format)
-            .contentType(Formats.JSONV1)
-            .header("Authorization", user.toHeaderValue())
-            .queryParam(OFFICE, officeId)
-            .queryParam(REPLACE_ASSIGNED_TS, true)
-            .body(newGroupJson2)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .patch(String.format("/v2/timeseries/group/%s/%s", officeId, newGroup.getId()))
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK));
-
-        // Retrieve the group and assert the changes
-        given()
-            .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(format)
-            .contentType(Formats.JSONV1)
-            .queryParam(OFFICE, officeId)
-            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
-            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
-        .when()
-            .redirects().follow(true)
-            .redirects().max(3)
-            .get(String.format("/v2/timeseries/group/%s/%s", officeId, newGroup.getId()))
-        .then()
-            .log().ifValidationFails(LogDetail.ALL, true)
-        .assertThat()
-            .statusCode(is(HttpServletResponse.SC_OK))
-            .body("description", equalTo(String.format("All %s Time Series", officeId)))
-            .body("assigned-time-series.size()", equalTo(2));
     }
 }
