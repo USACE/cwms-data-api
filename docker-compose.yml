@@ -5,7 +5,7 @@ volumes:
 
 services:
   db:
-    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev
+    image: ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16
     environment:
       #- ORACLE_DATABASE=FREEPDB1
       - ORACLE_PASSWORD=badSYSpassword
@@ -64,15 +64,14 @@ services:
       context: .
       dockerfile: Dockerfile
     entrypoint: ["/api_entry.sh"]
-    command: ["/usr/local/tomcat/bin/catalina.sh", "run"]
-    #command: bash -c "/conf/installcerts.sh && /usr/local/tomcat/bin/catalina.sh run"
+    command: ["/cda/bin/cwms-data-api", "/cwms-data", "/cda/wars/ui.war"]
     restart: unless-stopped
     volumes:
       - ./compose_files/pki/certs:/conf/
       - ./compose_files/togglz/features.properties:/conf/features.properties:ro
       - ./compose_files/tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties:ro
-      - ./compose_files/api_entry.sh:/api_entry.sh:ro
-      - ./compose_files/proxy_auth.sh:/proxy_auth.sh:ro
+      - ./compose_files/api_entry.sh:/api_entry.sh:rox
+      - ./compose_files/proxy_auth.sh:/proxy_auth.sh:rox
     environment:
       - APP_PORT=${APP_PORT:-8081}
       - JAVA_OPTS=-Dproperties.file=/conf/features.properties -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Dorg.apache.tomcat.util.buf.UDecoder.ALLOW_ENCODED_SLASH=true
@@ -101,14 +100,14 @@ services:
       - 7000
       - 5005
     healthcheck:
-      test: ["CMD","/usr/bin/curl", "-I","localhost:7000/cwms-data/offices/HEC"]
+      test: ["CMD","/usr/bin/wget", "-q","localhost:7000/cwms-data/offices/HEC", "-O", "-"]
       interval: 5s
       timeout: 1s
       retries: 100
       start_period: 2s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.data-api.rule=PathPrefix(`/cwms-data`)"
+      - "traefik.http.routers.data-api.rule=PathPrefix(`/`)"
       - "traefik.http.routers.data-api.entryPoints=web"
       - "traefik.http.services.data-api.loadbalancer.server.port=7000"
 

@@ -30,6 +30,7 @@ import static cwms.cda.api.Controllers.ACCEPT;
 import static cwms.cda.api.Controllers.CONTRACT_NAME;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
+import static cwms.cda.api.Controllers.PROJECT_ID;
 import static cwms.cda.api.Controllers.STATUS_201;
 import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.WATER_USER;
@@ -47,20 +48,19 @@ import cwms.cda.data.dto.watersupply.PumpTransfer;
 import cwms.cda.data.dto.watersupply.WaterSupplyAccounting;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.nio.charset.StandardCharsets;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.metadata.DataSetIllegalArgumentException;
 import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
@@ -90,6 +90,8 @@ public class AccountingCreateController extends BaseHandler {
                     required = true),
             @OpenApiParam(name = WATER_USER, description = "The water user the accounting is associated with.",
                     required = true),
+            @OpenApiParam(name = PROJECT_ID, description = "Project for this accounting.",
+                    required = true),
             @OpenApiParam(name = CONTRACT_NAME, description = "The name of the contract associated with the "
                     + "accounting. For names with special characters (such as '/'), use the JSONV2 accept header "
                     + "with a name encoded using URL-safe BASE64.", required = true),
@@ -104,14 +106,14 @@ public class AccountingCreateController extends BaseHandler {
                 + "In this case, the contract name should be encoded using URL-safe BASE64 encoding.")
         },
         description = "Create a new pump accounting entry associated with a water supply contract.",
-        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
-        method = HttpMethod.POST,
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-name}/accounting",
+        methods = HttpMethod.POST,
         tags = {TAG}
     )
-
     @Override
     public void handle(@NotNull Context ctx) {
         logUnusedPathParameter(ctx, WATER_USER, "Body contains required information.");
+        logUnusedPathParameter(ctx, PROJECT_ID, "Body contains required information.");
 
         try (Timer.Context ignored = markAndTime(CREATE)) {
             String formatHeader = ctx.header(Header.ACCEPT) != null ? ctx.header(Header.ACCEPT) : Formats.JSONV1;

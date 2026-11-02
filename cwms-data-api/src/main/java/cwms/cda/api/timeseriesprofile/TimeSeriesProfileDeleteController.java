@@ -39,14 +39,16 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import javax.servlet.http.HttpServletResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -68,9 +70,11 @@ public final class TimeSeriesProfileDeleteController extends TimeSeriesProfileBa
                 @OpenApiParam(name = PARAMETER_ID, description = "The key parameter associated with the "
                     + "time series profile")
             },
-            method = HttpMethod.DELETE,
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            methods = HttpMethod.DELETE,
             summary = "Delete a time series profile",
             tags = {TAG},
+            path = "/timeseries/profile/{" + LOCATION_ID + "}/{" + PARAMETER_ID + "}",
             responses = {
                 @OpenApiResponse(status = STATUS_400, description = "Invalid input"),
                 @OpenApiResponse(status = STATUS_204, description = "Time series profile deleted"),

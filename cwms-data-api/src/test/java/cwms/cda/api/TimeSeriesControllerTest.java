@@ -7,8 +7,8 @@ import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -295,7 +295,7 @@ class TimeSeriesControllerTest extends ControllerTest {
                 .orElseThrow();
 
         assertEquals(1, okResponse.content().length);
-        assertEquals(RecentValue.class, okResponse.content()[0].from());
+        assertEquals(RecentValue[].class, okResponse.content()[0].from());
     }
 
 }

@@ -33,13 +33,15 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
-import cwms.cda.formatters.json.JsonV2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
     aliases = {Formats.JSON, Formats.DEFAULT})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonDeserialize(builder = CwmsIdLocationKind.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class CwmsIdLocationKind extends CwmsDTOBase {
     private final CwmsId location;
     private final String locationKindId;

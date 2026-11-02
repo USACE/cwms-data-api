@@ -40,13 +40,16 @@ import com.codahale.metrics.MetricRegistry;
 import cwms.cda.data.dto.Blob;
 import cwms.cda.data.dto.Blobs;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import org.jetbrains.annotations.NotNull;
 
 
@@ -89,7 +92,9 @@ public class BlobControllerV1 extends BlobController {
                             @OpenApiContent(type = Formats.JSONV2, from = Blobs.class),
                     })
             },
-            tags = {TAG}
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            tags = {TAG},
+            path = "/blobs"
     )
     @Override
     public void getAll(@NotNull Context ctx) {
@@ -125,7 +130,9 @@ public class BlobControllerV1 extends BlobController {
                                     @OpenApiContent(type = "application/octet-stream", from = byte[].class)
                             })
             },
-            tags = {TAG}
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            tags = {TAG},
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String blobId) {
@@ -145,8 +152,9 @@ public class BlobControllerV1 extends BlobController {
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            tags = {TAG},
+            path = "/blobs"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -172,8 +180,9 @@ public class BlobControllerV1 extends BlobController {
                             + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
                             + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
-            method = HttpMethod.PATCH,
-            tags = {TAG}
+            methods = HttpMethod.PATCH,
+            tags = {TAG},
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void update(@NotNull Context ctx, @NotNull String blobId) {
@@ -195,8 +204,9 @@ public class BlobControllerV1 extends BlobController {
                             + "We will likely add support for encoding the ID in the path in the future. For now use the id field for those IDs. "
                             + "Client libraries should detect slashes and choose the appropriate field. \"ignored\" is suggested for the path endpoint."),
             },
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = HttpMethod.DELETE,
+            tags = {TAG},
+            path = "/blobs/{" + BLOB_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String blobId) {
