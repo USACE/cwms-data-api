@@ -1060,7 +1060,8 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
 
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
-        TimeSeriesGroup newGroup = new TimeSeriesGroup(group, Arrays.asList(assignedTimeSeries2, assignedTimeSeries));
+        TimeSeriesGroup newGroup = new TimeSeriesGroup(group, List.of(assignedTimeSeries));
+        createGroup(newGroup);
 
         TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
             .withId(groupId)
@@ -1074,13 +1075,13 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .build())
             .build();
 
-        String newGroupJson2 = Formats.format(new ContentType(Formats.JSONV2), patch);
+        String newGroupJson2 = Formats.format(new ContentType(Formats.JSON), patch);
 
         // Attempt a patch on TS owned by CWMS with replacement
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSON)
             .header("Authorization", user.toHeaderValue())
             .queryParam(OFFICE, officeId)
             .queryParam(REPLACE_ASSIGNED_TS, true)
@@ -1098,9 +1099,9 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(format)
-            .contentType(Formats.JSONV2)
+            .contentType(Formats.JSONV1)
             .queryParam(OFFICE, officeId)
-            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(GROUP_OFFICE_ID, officeId)
             .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
         .when()
             .redirects().follow(true)
