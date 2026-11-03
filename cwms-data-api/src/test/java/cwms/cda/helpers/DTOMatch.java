@@ -905,8 +905,8 @@ public final class DTOMatch {
             return;
         }
         assertTrue(actual.getDatumList().size() >= expected.getDatumList().size(), "Datum list size does not match");
-        List<VerticalDatumInfo> remaining = new ArrayList<>(expected.getDatumList());
-        for (VerticalDatumInfo expectedVdi : actual.getDatumList()) {
+        List<VerticalDatumInfo> remaining = new ArrayList<>(actual.getDatumList());
+        for (VerticalDatumInfo expectedVdi : expected.getDatumList()) {
             VerticalDatumInfo matched = null;
             for (VerticalDatumInfo candidate : remaining) {
                 try {
