@@ -44,7 +44,6 @@ import static cwms.cda.api.Controllers.UPDATE;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-
 import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.CollectionPatchStrategy;
 import cwms.cda.api.errors.NotFoundException;
@@ -58,14 +57,13 @@ import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.http.Context;
-import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApi;
 import io.javalin.openapi.OpenApiContent;
 import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -93,8 +91,8 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
     @OpenApi(
             pathParams = {
                 @OpenApiParam(name = OFFICE, required = true, description = "Specifies the owning "
-                        + "office of the timeseries group(s) to be included in the response. This is NOT the office of the "
-                        + "category."),
+                        + "office of the timeseries group(s) to be included in the response. "
+                        + "This is NOT the office of the category."),
             },
             queryParams = {
                 @OpenApiParam(name = OFFICE, description = "Specifies the owning office of the "
@@ -104,11 +102,13 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
                         + "owning office of the group(s) themselves."),
                 @OpenApiParam(name = INCLUDE_ASSIGNED, type = Boolean.class, description = "Include"
                         + " the assigned timeseries in the returned timeseries groups. (default: true)"),
-                @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                @OpenApiParam(name = TIMESERIES_CATEGORY_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
                         + "matching against the timeseries category id"),
                 @OpenApiParam(name = CATEGORY_OFFICE_ID, description = "Specifies the owning office of the "
                     + "timeseries group category"),
-                @OpenApiParam(name = TIMESERIES_GROUP_LIKE, description = "Posix <a href=\"regexp.html\">regular expression</a> "
+                @OpenApiParam(name = TIMESERIES_GROUP_LIKE,
+                    description = "Posix <a href=\"regexp.html\">regular expression</a> "
                         + "matching against the timeseries group id")
             },
             responses = {
@@ -193,7 +193,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         },
         methods = HttpMethod.POST,
         tags = {TAG},
-        path = "/v2/timeseries/group/{" + OFFICE +"}"
+        path = "/v2/timeseries/group/{" + OFFICE + "}"
     )
     @Override
     public void create(@NotNull Context ctx) {
@@ -213,17 +213,18 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
             required = true),
         pathParams = {
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
-                + "office of the timeseries group, category, and time series being patched. Must "
-                + "match the office id in the request body."),
+                + "office of the time series being patched. Must "
+                + "match the time series office id in the request body."),
             @OpenApiParam(name = GROUP_ID, required = true, description = "Specifies "
                 + "the original timeseries group to rename.")
             },
         queryParams = {
             @OpenApiParam(name = IGNORE_MISSING, type = Boolean.class, description = "If true, do not fail when "
                 + "a time series to assign does not exist. Default is false"),
-            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class, description = "Ignore null values in the request body. "
-                + IGNORE_NULLS + " is not used to unassign time series. Unassignment must be explicitly specified in the request body. "
-                + "Default: true"),
+            @OpenApiParam(name = IGNORE_NULLS, type = Boolean.class,
+                description = "Ignore null values in the request body. "
+                + IGNORE_NULLS + " is not used to unassign time series. "
+                + "Unassignment must be explicitly specified in the request body. Default: true"),
             @OpenApiParam(name = COLLECTION_PATCH_STRATEGY, type = CollectionPatchStrategy.class,
                 description = "Controls how the assign list in the request body is applied. OVERWRITE: all "
                     + "time series currently assigned to the group for this office are unassigned and only the "
@@ -251,14 +252,18 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
 
             TimeSeriesGroupDao dao = new TimeSeriesGroupDao(dsl);
             String categoryId = patch.getTimeSeriesCategory().getId();
-            TimeSeriesGroup existingGroup = dao.getTimeSeriesGroup(office, null, null, categoryId, oldGroupId);
-            if(existingGroup == null) {
+            String categoryOffice = patch.getTimeSeriesCategory().getOfficeId();
+            String groupOffice = patch.getOfficeId();
+            TimeSeriesGroup existingGroup = dao.getTimeSeriesGroup(office, groupOffice,
+                categoryOffice, categoryId, oldGroupId);
+            if (existingGroup == null) {
                 throw new NotFoundException("Time series group " + oldGroupId + " does not exist in category "
                         + categoryId + " for group office " + office);
             }
 
             boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
-            String mergeStrategyVal = ctx.queryParamAsClass(COLLECTION_PATCH_STRATEGY, String.class).getOrDefault(CollectionPatchStrategy.MERGE.name());
+            String mergeStrategyVal = ctx.queryParamAsClass(COLLECTION_PATCH_STRATEGY, String.class)
+                .getOrDefault(CollectionPatchStrategy.MERGE.name());
             CollectionPatchStrategy mergeStrategy = CollectionPatchStrategy.strategyFor(mergeStrategyVal);
 
             // OVERWRITE: the DAO unassigns the office's existing assignments and stores only the
@@ -312,7 +317,8 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
         return new ArrayList<>(byKey.values());
     }
 
-    private static List<AssignedTimeSeries> mergeAssigned(TimeSeriesGroup existingGroup, TimeSeriesGroupMembership membership) {
+    private static List<AssignedTimeSeries> mergeAssigned(TimeSeriesGroup existingGroup,
+            TimeSeriesGroupMembership membership) {
         Map<String, AssignedTimeSeries> byKey = new LinkedHashMap<>();
         for (AssignedTimeSeries ts : existingGroup.getAssignedTimeSeries()) {
             byKey.put(key(ts.getOfficeId(), ts.getTimeseriesId()), ts);

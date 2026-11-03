@@ -124,7 +124,12 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
 
             for (TimeSeries ts : timeSeriesToCleanup) {
                 try {
-                    TimeSeriesDeleteOptions options = new TimeSeriesDaoImpl.DeleteOptions.Builder().build();
+                    TimeSeriesDeleteOptions options = new TimeSeriesDaoImpl.DeleteOptions.Builder()
+                        .withOverrideProtection("T")
+                        .withEndTimeInclusive(true)
+                        .withStartTimeInclusive(true)
+                        .withMaxVersion(false)
+                        .build();
                     timeSeriesDao.delete(ts.getOfficeId(), ts.getName(), options);
                 } catch (NotFoundException ex) {
                     LOGGER.atInfo().withCause(ex).log("Time series not found");
@@ -1098,7 +1103,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         // Retrieve the group and assert the changes
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
-            .accept(format)
+            .accept(Formats.JSONV1)
             .contentType(Formats.JSONV1)
             .queryParam(OFFICE, officeId)
             .queryParam(GROUP_OFFICE_ID, officeId)
