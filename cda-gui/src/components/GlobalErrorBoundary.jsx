@@ -23,7 +23,7 @@ export default class GlobalErrorBoundary extends Component {
           <p className="mt-2 text-slate-700">
             {this.state.error?.message ?? "An unexpected error occurred."}
           </p>
-          <a className="mt-4 inline-block text-blue-700 underline" href="/cwms-data/">
+          <a className="mt-4 inline-block text-blue-700 underline" href="/">
             Return to CDA
           </a>
         </main>

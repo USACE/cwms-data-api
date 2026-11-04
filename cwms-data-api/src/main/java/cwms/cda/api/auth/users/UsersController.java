@@ -29,16 +29,15 @@ import cwms.cda.data.dto.auth.users.Users;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 
 public class UsersController implements CrudHandler {
@@ -56,13 +55,13 @@ public class UsersController implements CrudHandler {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void create(Context ctx) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void delete(Context ctx, String username) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -106,11 +105,9 @@ public class UsersController implements CrudHandler {
             @OpenApiResponse(status = STATUS_400, description = "The page or page-size parameter is invalid."),
             @OpenApiResponse(status = "500", description = "The users could not be retrieved.")
         },
-        security = {
-                @OpenApiSecurity(name = "gets overridden allows lock icon.")
-            },
         description = "View all users",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/users"
     )
     @Override
     public void getAll(Context ctx) {
@@ -127,7 +124,7 @@ public class UsersController implements CrudHandler {
 
             if (!CwmsDTOPaginated.CURSOR_CHECK.invoke(cursor)) {
                 ctx.json(new CdaError("cursor or page passed in but failed validation"))
-                        .status(HttpCode.BAD_REQUEST);
+                        .status(HttpStatus.BAD_REQUEST);
                 return;
             }
 
@@ -147,7 +144,7 @@ public class UsersController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Users", ex);
@@ -171,11 +168,9 @@ public class UsersController implements CrudHandler {
             @OpenApiResponse(status = STATUS_404, description = "User not found."),
             @OpenApiResponse(status = "500", description = "The user could not be retrieved.")
         },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
-        },
         description = "View specific user",
-        tags = {TAG}
+        tags = {TAG},
+        path = "/user/{user-name}"
     )
     @Override
     public void getOne(Context ctx, String userName) {
@@ -193,7 +188,7 @@ public class UsersController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve User", ex);
@@ -203,7 +198,8 @@ public class UsersController implements CrudHandler {
     }
 
     @OpenApi(
-        ignore = true // users cannot be updated. Rolls are handled by a separate endpoint.
+        ignore = true, // users cannot be updated. Rolls are handled by a separate endpoint.
+        path = ""
     )
     @Override
     public void update(Context ctx, String arg1) {

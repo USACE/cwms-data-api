@@ -35,6 +35,10 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
+
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.List;
 
 @JacksonXmlRootElement(localName = RatingsDocument.ROOT_ELEMENT)
@@ -45,6 +49,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({RatingsDocument.SCHEMA_LOCATION, "rating-template", "rating-spec", "simple-rating",
     "usgs-stream-rating", "virtual-rating", "transitional-rating"})
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class RatingsDocument {
 
     public static final String ROOT_ELEMENT = "ratings";

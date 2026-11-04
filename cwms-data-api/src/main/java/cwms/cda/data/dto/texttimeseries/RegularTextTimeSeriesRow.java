@@ -8,12 +8,16 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.annotations.Identifier;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.time.Instant;
 import java.util.Objects;
 
 @JsonDeserialize(builder = RegularTextTimeSeriesRow.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class RegularTextTimeSeriesRow extends CwmsDTOBase implements TextTimeSeriesRow {
 
     // Together, date-time and data-entry-date are this row's identity (see Identifier): two rows

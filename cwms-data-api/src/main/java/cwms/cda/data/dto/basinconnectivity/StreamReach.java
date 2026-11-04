@@ -1,8 +1,10 @@
 package cwms.cda.data.dto.basinconnectivity;
 
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class StreamReach extends CwmsDTO
 {
     private final String upstreamLocationName;
