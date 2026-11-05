@@ -6,6 +6,7 @@ import externalLinks from "../links/external-links";
 import Breadcrumbs from "./Breadcrumbs";
 import { FaGithub } from "react-icons/fa";
 import AuthButton from "./AuthButton";
+import EnvironmentBadge from "./EnvironmentBadge";
 import { useAuth } from "@usace-watermanagement/groundwork-water";
 
 export default function Layout() {
@@ -15,6 +16,12 @@ export default function Layout() {
       links={headerLinks.filter((link) => !link.requiresAuth || isAuth)}
       usaBanner
       army250Logo
+      title={
+        <span className="inline-flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-x-2 gap-y-1 py-1">
+          <span>US Army Corps of Engineers</span>
+          <EnvironmentBadge />
+        </span>
+      }
       subtitle="CWMS Restful API for Data Retrieval"
       aboutText="Deliver vital engineering solutions, in collaboration with our partners, to secure our Nation, energize our economy, and reduce disaster risk. The official public website of the U.S. Army Corps of Engineers Hydrologic Engineering Center (HEC)."
       navRight={
