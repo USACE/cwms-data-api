@@ -1,12 +1,13 @@
 /*
+ *
  * MIT License
  *
- * Copyright (c) 2024 Hydrologic Engineering Center
+ * Copyright (c) 2026 Hydrologic Engineering Center
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
@@ -18,39 +19,36 @@
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE
  * SOFTWARE.
  */
 
 package fixtures;
 
-import cwms.cda.data.dao.AuthDao;
-import java.sql.SQLException;
 import java.util.Objects;
-import org.jooq.impl.DSL;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class SchemaVersionCondition implements ExecutionCondition {
-
+public class SchemaMaximumVersionCondition implements ExecutionCondition {
     private static final ConditionEvaluationResult ENABLED = ConditionEvaluationResult
-        .enabled("@MinimumSchemaVersion is not present");
+        .enabled("@MaximumSchemaVersion is not present");
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
         return context.getElement()
-            .map(el -> el.getAnnotation(MinimumSchema.class))
+            .map(el -> el.getAnnotation(MaximumSchema.class))
             .filter(Objects::nonNull)
             .map(annotation -> {
                 int version = annotation.value();
                 int currentVersion = CwmsDataApiSetupCallback.getSchemaVersion();
-                if (currentVersion < version) {
+                if (currentVersion > version) {
                     return ConditionEvaluationResult.disabled("Test disabled because schema version "
-                        + currentVersion + " is less than " + version);
+                        + currentVersion + " is greater than " + version);
                 }
                 return ConditionEvaluationResult.enabled("Test enabled because schema version "
-                    + currentVersion + " is at least " + version);
+                    + currentVersion + " is less than " + version);
             })
             .orElse(ENABLED);
     }
