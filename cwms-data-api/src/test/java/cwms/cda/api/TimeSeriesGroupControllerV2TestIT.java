@@ -65,6 +65,7 @@ import io.restassured.filter.log.LogDetail;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -72,6 +73,7 @@ import java.util.List;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.Configuration;
+import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterEach;
@@ -995,7 +997,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
-    void test_v2_assign_ts_to_district_owned_group_with_cwms_cat(String format) throws Exception {
+    void test_v2_assign_ts_to_SPK_district_owned_group_with_cwms_cat(String format) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream resource = this.getClass().getResourceAsStream(
@@ -1117,6 +1119,257 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
             .body("description", equalTo(String.format("All %s Time Series", officeId)))
+            .body("assigned-time-series.size()", equalTo(2));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_v2_assign_ts_to_SWT_district_owned_group_with_cwms_cat(String format) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        TestAccounts.KeyUser user1 = TestAccounts.KeyUser.SWT_NORMAL;
+
+        InputStream resource = this.getClass().getResourceAsStream(
+            "/cwms/cda/api/timeseries_create_SPK.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+        String tsData2 = tsData
+            .replace("ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TEST", "ZACK.Stage.Inst.5Minutes.0.ZSTORE_TS_TESTV2");
+        tsData = tsData.replace("SPK", "SWT");
+        tsData2 = tsData2.replace("SPK", "SWT");
+
+        TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
+        TimeSeries deserialize2 = Formats.parseContent(new ContentType(Formats.JSON), tsData2, TimeSeries.class);
+        timeSeriesToCleanup.add(deserialize2);
+        timeSeriesToCleanup.add(deserialize);
+
+        JsonNode ts = mapper.readTree(tsData);
+        JsonNode ts2 = mapper.readTree(tsData2);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+        try {
+            createLocation(location, true, officeId);
+        } catch (RuntimeException e) {
+            // Location already exists
+        }
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user1.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData2)
+            .header("Authorization", user1.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        String categoryName = "Default";
+        String groupId = "Group TS";
+        String tsId = ts.get("name").asText();
+        String tsId2 = ts2.get("name").asText();
+        TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Default");
+        TimeSeriesGroup group = new TimeSeriesGroup(category, officeId, groupId, String.format("All %s Time Series", officeId), null, null);
+
+        groupsToCleanup.add(group); // can't delete CWMS groups but we should be able to unassign SPK assignments
+
+        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
+        AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
+        TimeSeriesGroup newGroup = new TimeSeriesGroup(group, List.of(assignedTimeSeries));
+        createGroup(newGroup);
+
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+            .withId(groupId)
+            .withDescription(group.getDescription())
+            .withSharedAliasId(group.getSharedAliasId())
+            .withSharedRefTsId(group.getSharedRefTsId())
+            .withOfficeId(officeId)
+            .withTimeSeriesCategory(category)
+            .withMembership(new TimeSeriesGroupMembership.Builder()
+                .withAssign(Arrays.asList(assignedTimeSeries, assignedTimeSeries2))
+                .build())
+            .build();
+
+        String newGroupJson2 = Formats.format(new ContentType(Formats.JSON), patch);
+
+        // Attempt a patch on TS owned by CWMS with replacement
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user1.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(REPLACE_ASSIGNED_TS, true)
+            .body(newGroupJson2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch(String.format("/v2/timeseries/group/%s/%s", officeId, newGroup.getId()))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Retrieve the group and assert the changes
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .queryParam(OFFICE, officeId)
+            .queryParam(GROUP_OFFICE_ID, officeId)
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(String.format("/v2/timeseries/group/%s/%s", officeId, newGroup.getId()))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", equalTo(String.format("All %s Time Series", officeId)))
+            .body("assigned-time-series.size()", equalTo(2));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSONV2, Formats.DEFAULT})
+    void test_v2_assign_ts_to_cwms_owned_group_with_cwms_cat(String format) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        String locId = "Cache Creek";
+
+        InputStream resource = this.getClass().getResourceAsStream(
+            "/cwms/cda/api/timeseries_create_SPK.json");
+        assertNotNull(resource);
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8).replace("ZACK", locId);
+        String tsData2 = tsData
+            .replace("ZSTORE_TS_TEST", "ZSTORE_TS_TESTV2");
+
+        TimeSeries deserialize = Formats.parseContent(new ContentType(Formats.JSON), tsData, TimeSeries.class);
+        TimeSeries deserialize2 = Formats.parseContent(new ContentType(Formats.JSON), tsData2, TimeSeries.class);
+        timeSeriesToCleanup.add(deserialize2);
+        timeSeriesToCleanup.add(deserialize);
+
+        JsonNode ts = mapper.readTree(tsData);
+        JsonNode ts2 = mapper.readTree(tsData2);
+        String location = ts.get("name").asText().split("\\.")[0];
+        String officeId = user.getOperatingOffice();
+        createLocation(location, true, officeId);
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData2)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        String categoryName = "Agency Aliases";
+        String groupId = "USACE Standard";
+        String tsId = ts.get("name").asText();
+        String tsId2 = ts2.get("name").asText();
+        TimeSeriesCategory category = new TimeSeriesCategory(CWMS_OFFICE, categoryName, "Time series aliases for various agencies");
+        TimeSeriesGroup group = new TimeSeriesGroup(category, CWMS_OFFICE, groupId, "USACE National Standard Naming Convention", null, null);
+
+        AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
+        AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
+        TimeSeriesGroup newGroup = new TimeSeriesGroup(group, List.of(assignedTimeSeries));
+
+        TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
+            .withId(groupId)
+            .withDescription(group.getDescription())
+            .withSharedAliasId(group.getSharedAliasId())
+            .withSharedRefTsId(group.getSharedRefTsId())
+            .withOfficeId(CWMS_OFFICE)
+            .withTimeSeriesCategory(category)
+            .withMembership(new TimeSeriesGroupMembership.Builder()
+                .withAssign(Arrays.asList(assignedTimeSeries, assignedTimeSeries2))
+                .build())
+            .build();
+
+        String newGroupJson2 = Formats.format(new ContentType(Formats.JSON), patch);
+
+        // Attempt a patch on TS owned by CWMS with replacement
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+            .queryParam(REPLACE_ASSIGNED_TS, true)
+            .body(newGroupJson2)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch(String.format("/v2/timeseries/group/%s/%s", CWMS_OFFICE, newGroup.getId()))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+
+        // Retrieve the group and assert the changes
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV1)
+            .contentType(Formats.JSONV1)
+            .queryParam(OFFICE, officeId)
+            .queryParam(GROUP_OFFICE_ID, CWMS_OFFICE)
+            .queryParam(CATEGORY_OFFICE_ID, CWMS_OFFICE)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get(String.format("/v2/timeseries/group/%s/%s", CWMS_OFFICE, newGroup.getId()))
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("description", equalTo("USACE National Standard Naming Convention"))
             .body("assigned-time-series.size()", equalTo(2));
     }
 }
