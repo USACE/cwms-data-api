@@ -195,8 +195,6 @@ public final class CwmsDataApi {
         }, "cda-shutdown"));
 
         api.start();
-
-        logger.atInfo().log("Using listening on http://127.0.0.1:%d", api.getPort());
     }
     
     private CwmsDataApi(int port, String context, File uiWar, DataSource ds, SessionHandler sessionHandler) {
@@ -334,7 +332,7 @@ public final class CwmsDataApi {
         QueueManager.ensureRssSubscribers(ds);
         logger.atFine().log("Starting CDA.");
         app.start(getListenHost(), port); // Always localhost, we only allow containerization or through proxy.
-        logger.atInfo().log("Listening on port %d", getPort());
+        logger.atInfo().log("Listening on %s:%d", app.unsafe.jetty.host, getPort());
     }
 
     /**
@@ -348,7 +346,7 @@ public final class CwmsDataApi {
      */
     private String getListenHost() {
         var metaDataUrl = System.getenv("ECS_CONTAINER_METADATA_URI_V4");
-        if (metaDataUrl != null) {
+        if (metaDataUrl != null && !metaDataUrl.isBlank()) {
             logger.atWarning()
                   .log("""
                     Environment appears to be AWS. Listening on any host. If the environement is not

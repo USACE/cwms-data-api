@@ -97,7 +97,7 @@ services:
       - blob.store.accessKey=cda_user
       - blob.store.secretKey=cda_password
       # Uncomment this to verify manually verify if the logic is behaving.
-      #- ECS_CONTAINER_METADATA_URI_V4=active
+      - ECS_CONTAINER_METADATA_URI_V4=${ECS_CONTAINER_METADATA_URI_V4:-}
     expose:
       - 7000
       - 5005
