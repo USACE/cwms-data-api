@@ -193,7 +193,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         return cat;
     }
 
-    private void createGroup(TimeSeriesGroup group) {
+    private void createGroupForOffice(TimeSeriesGroup group, TestAccounts.KeyUser user) {
         ContentType contentType = Formats.parseHeader(Formats.JSON, TimeSeriesGroup.class);
         String groupJson = Formats.format(contentType, group);
         given()
@@ -209,6 +209,10 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
                 .log().ifValidationFails()
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_CREATED));
+    }
+
+    private void createGroup(TimeSeriesGroup group) {
+        createGroupForOffice(group, user);
     }
 
     private String patchBody(TimeSeriesGroupPatch patch) {
@@ -1198,7 +1202,7 @@ final class TimeSeriesGroupControllerV2TestIT extends DataApiTestIT {
         AssignedTimeSeries assignedTimeSeries = new AssignedTimeSeries(officeId, tsId, null, null, null);
         AssignedTimeSeries assignedTimeSeries2 = new AssignedTimeSeries(officeId, tsId2, null, null, null);
         TimeSeriesGroup newGroup = new TimeSeriesGroup(group, List.of(assignedTimeSeries));
-        createGroup(newGroup);
+        createGroupForOffice(newGroup, user1);
 
         TimeSeriesGroupPatch patch = new TimeSeriesGroupPatch.Builder()
             .withId(groupId)
