@@ -134,6 +134,7 @@ public final class Controllers {
     public static final String CREATE_AS_LRTS = "create-as-lrts";
     public static final String STORE_RULE = "store-rule";
     public static final String OVERRIDE_PROTECTION = "override-protection";
+    public static final String DUPLICATE_DATE_TIME_RESOLUTION = "duplicate-date-time-resolution";
     public static final String START_TIME_INCLUSIVE = "start-time-inclusive";
     public static final String END_TIME_INCLUSIVE = "end-time-inclusive";
     public static final String MAX_VERSION = "max-version";

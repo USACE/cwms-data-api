@@ -23,10 +23,16 @@ public interface TimeSeriesDao {
     void create(TimeSeries input,
                 boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection, VerticalDatum vd);
 
+    void create(TimeSeries input, boolean createAsLrts, StoreRule replaceAll,
+                boolean overrideProtection, VerticalDatum vd, DuplicateDateTimeResolution duplicateResolution);
+
     void store(TimeSeries timeSeries, Timestamp versionDate);
 
     void store(TimeSeries timeSeries, boolean createAsLrts,
                StoreRule replaceAll, boolean overrideProtection, VerticalDatum vd);
+
+    void store(TimeSeries timeSeries, boolean createAsLrts, StoreRule replaceAll,
+               boolean overrideProtection, VerticalDatum vd, DuplicateDateTimeResolution duplicateResolution);
 
     void delete(String officeId, String tsId, TimeSeriesDeleteOptions options);
 
