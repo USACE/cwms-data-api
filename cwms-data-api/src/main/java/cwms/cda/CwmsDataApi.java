@@ -333,8 +333,33 @@ public final class CwmsDataApi {
         logger.atFine().log("Starting queue subscriber for RSS feed.");
         QueueManager.ensureRssSubscribers(ds);
         logger.atFine().log("Starting CDA.");
-        app.start("127.0.0.1", port); // Always localhost, we only allow containerization or through proxy.
+        app.start(getListenHost(), port); // Always localhost, we only allow containerization or through proxy.
         logger.atInfo().log("Listening on port %d", getPort());
+    }
+
+    /**
+     * We only need CDA to listen on anyhost in the production environment.
+     * Otherwise we force 127.0.0.1. AWS set the below environment variables
+     * on all containers so we can check. However, as that is easily spoofed by a savy admin, we
+     * print a message informating them they're on their own.
+     *
+     * Unfortunately, we can only make this so difficult to use the application incorrectly.
+     * @return
+     */
+    private String getListenHost() {
+        var metaDataUrl = System.getenv("ECS_CONTAINER_METADATA_URI_V4");
+        if (metaDataUrl != null) {
+            logger.atWarning()
+                  .log("""
+                    Environment appears to be AWS. Listening on any host. If the environement is not
+                    actually AWS fargate which requires anyhost, remove the environment variable
+                    'ECS_CONTAINER_METADATA_URI_V4' used to trick the application.
+                    You are otherwise on your own for support.
+                  """.trim());
+            return "0.0.0.0";
+        } else {
+            return "127.0.0.1";
+        }
     }
 
     public void stop() {
