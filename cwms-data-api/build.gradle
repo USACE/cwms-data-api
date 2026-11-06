@@ -209,10 +209,14 @@ jar {
         attributes "Main-Class": 'cwms.cda.CwmsDataApi' // duplicating this here because doing this appears to interfere
                                                         // with the application setup aove.
     }
-    doFirst {
+}
+
+processResources {
+    inputs.property("buildVersion", project.version)
+    doLast {
         def manifestDir = layout.buildDirectory.dir("resources/main/META-INF").get()
         manifestDir.asFile.mkdirs()
-        manifest.writeTo(manifestDir.file(("MANIFEST.MF")))
+        tasks.jar.manifest.writeTo(manifestDir.file("MANIFEST.MF"))
     }
 }
 
