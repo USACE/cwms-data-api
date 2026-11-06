@@ -58,9 +58,9 @@ import io.opentelemetry.api.trace.Span;
 import io.swagger.v3.oas.models.PathItem;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.DateTimeException;
 import java.util.HashMap;
 import java.util.List;
@@ -357,12 +357,17 @@ public final class CwmsDataApi {
     private static String obtainFullVersion() {
         final String manifestPath = "META-INF/MANIFEST.MF";
         var loc = CwmsDataApi.class.getProtectionDomain().getCodeSource().getLocation();
-        String absoluteDiskPath = loc.getFile();
-        Path path = Paths.get(absoluteDiskPath);
+        Path path;
+        try {
+            // URL.getFile() is not a filesystem path on Windows ("/C:/..."), so go through the URI.
+            path = Path.of(loc.toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Error resolving cda code location", e);
+        }
         Manifest manifest = null;
         try {
-            if (absoluteDiskPath.endsWith("jar")) {
-                try (var jarFile = new JarFile(absoluteDiskPath)) {
+            if (path.toString().endsWith(".jar")) {
+                try (var jarFile = new JarFile(path.toFile())) {
                     var entry = jarFile.getEntry(manifestPath);
                     try (var is = jarFile.getInputStream(entry)) {
                         manifest = new Manifest(is);
