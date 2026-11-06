@@ -5,6 +5,7 @@ plugins {
     id 'base'
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
+    id 'cda.version-conventions'
     id 'war'
     id 'com.github.node-gradle.node' version '7.1.0'
 }

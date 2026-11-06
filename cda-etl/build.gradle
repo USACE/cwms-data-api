@@ -20,6 +20,7 @@
 
 plugins {
     id 'base'
+    id 'cda.version-conventions'
 }
 
 final def imageName = 'cwms-data-api/etl'
