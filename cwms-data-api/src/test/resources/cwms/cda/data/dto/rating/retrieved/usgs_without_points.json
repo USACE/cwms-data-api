@@ -1,0 +1,26 @@
+{
+  "ratings": {
+    "ratings": [
+      {
+        "usgs-stream-rating": {
+          "office": "SWT",
+          "name": "A.Stage;Flow.USGS-EXSA.USGS-NWIS",
+          "ind-parameter": "Stage (ft)",
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "shifts": [
+            {
+              "effective-date": "2020-06-01T00:00:00Z",
+              "values": [
+                [1, 0.1]
+              ]
+            }
+          ],
+          "offsets": [],
+          "values": []
+        }
+      }
+    ]
+  }
+}

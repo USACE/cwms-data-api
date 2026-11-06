@@ -73,7 +73,14 @@ public final class JsonRatingUtils {
         return RatingXmlFactory.ratingSet(writeXml(ratings));
     }
 
+    /**
+     * Reads either the json written by writeJson(RatingsDocument) (GET /ratings/{rating-id})
+     * or the json returned by GET /ratings so that it can be round-tripped back to POST /ratings.
+     */
     public static RatingsDocument readJson(String json) throws JsonProcessingException {
+        if (RetrievedRatingsJsonConverter.isRetrievedFormat(JSON_MAPPER, json)) {
+            return RetrievedRatingsJsonConverter.toRatingsDocument(JSON_MAPPER, json);
+        }
         return JSON_MAPPER.readValue(json, RatingsDocument.class);
     }
 

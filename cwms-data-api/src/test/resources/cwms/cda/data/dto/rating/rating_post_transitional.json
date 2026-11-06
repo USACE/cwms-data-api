@@ -1,0 +1,144 @@
+{
+  "ratings": {
+    "rating-templates": [
+      {
+        "office": "SPK",
+        "name": "Stage;Flow.TransSrc",
+        "parameters-string": "Stage;Flow",
+        "version": "TransSrc",
+        "ind-parameters": [
+          {
+            "name": "Stage",
+            "value-lookup-in-range": "LINEAR",
+            "value-lookup-below-range": "NEAREST",
+            "value-lookup-above-range": "NEAREST"
+          }
+        ],
+        "dep-parameter": "Flow",
+        "description": null
+      },
+      {
+        "office": "SPK",
+        "name": "Stage;Flow.Transitional",
+        "parameters-string": "Stage;Flow",
+        "version": "Transitional",
+        "ind-parameters": [
+          {
+            "name": "Stage",
+            "value-lookup-in-range": "LINEAR",
+            "value-lookup-below-range": "NEAREST",
+            "value-lookup-above-range": "NEAREST"
+          }
+        ],
+        "dep-parameter": "Flow",
+        "description": null
+      }
+    ],
+    "rating-specs": [
+      {
+        "office": "SPK",
+        "name": "TRANSTEST.Stage;Flow.TransSrc.Low",
+        "location": "TRANSTEST",
+        "version": "Low",
+        "source-agency": null,
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": ["2223456782"],
+          "dep-parameter": "2222233332"
+        },
+        "description": "Low flow rating"
+      },
+      {
+        "office": "SPK",
+        "name": "TRANSTEST.Stage;Flow.TransSrc.High",
+        "location": "TRANSTEST",
+        "version": "High",
+        "source-agency": null,
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": ["2223456782"],
+          "dep-parameter": "2222233332"
+        },
+        "description": "High flow rating"
+      },
+      {
+        "office": "SPK",
+        "name": "TRANSTEST.Stage;Flow.Transitional.Production",
+        "location": "TRANSTEST",
+        "version": "Production",
+        "source-agency": null,
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": ["2223456782"],
+          "dep-parameter": "2222233332"
+        },
+        "description": "Low or high flow rating by stage"
+      }
+    ],
+    "ratings": [
+      {
+        "simple-rating": {
+          "office": "SPK",
+          "name": "TRANSTEST.Stage;Flow.TransSrc.Low",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "values": [
+            [0, 0],
+            [10, 800],
+            [20, 4000],
+            [30, 10000]
+          ]
+        }
+      },
+      {
+        "simple-rating": {
+          "office": "SPK",
+          "name": "TRANSTEST.Stage;Flow.TransSrc.High",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "values": [
+            [0, 0],
+            [10, 1000],
+            [20, 5000],
+            [30, 12000]
+          ]
+        }
+      },
+      {
+        "transitional-rating": {
+          "office": "SPK",
+          "name": "TRANSTEST.Stage;Flow.Transitional.Production",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "cases": [
+            {
+              "when": "I1 GT 20",
+              "then": "R2"
+            }
+          ],
+          "default": "R1",
+          "references": [
+            {
+              "R1": "TRANSTEST.Stage;Flow.TransSrc.Low"
+            },
+            {
+              "R2": "TRANSTEST.Stage;Flow.TransSrc.High"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

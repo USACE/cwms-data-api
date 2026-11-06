@@ -1,0 +1,21 @@
+{
+  "ratings": {
+    "ratings": [
+      {
+        "simple-rating": {
+          "office": "SPK",
+          "name": "A.Opening,Elev;Flow.Standard.Production",
+          "ind-parameters": ["Opening (ft)", "Elev (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "values": [
+            [1, 100, 10],
+            [1, 101, 20],
+            [2, 100, 30],
+            [2, 101, 40]
+          ]
+        }
+      }
+    ]
+  }
+}
