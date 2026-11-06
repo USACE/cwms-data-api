@@ -286,7 +286,7 @@ public final class TimeSeriesGroupControllerV2 extends TimeSeriesGroupController
 
             //Handle rename
             String currentGroupId = oldGroupId;
-            if (!office.equalsIgnoreCase(CWMS_OFFICE) && patch.getId() != null
+            if (!groupOffice.equalsIgnoreCase(CWMS_OFFICE) && patch.getId() != null
                     && !oldGroupId.equals(patch.getId())) {
                 TimeSeriesGroup renameTarget = new TimeSeriesGroup(existingGroup.getTimeSeriesCategory(),
                         existingGroup.getOfficeId(), patch.getId(), existingGroup.getDescription(),
