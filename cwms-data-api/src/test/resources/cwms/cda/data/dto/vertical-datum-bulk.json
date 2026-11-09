@@ -1,0 +1,25 @@
+{
+  "vertical-datum-info" : [ {
+    "office" : "SPK",
+    "unit" : "m",
+    "location" : "VDI_LOC_TEST",
+    "native-datum" : "NGVD-29",
+    "elevation" : 100.0,
+    "offsets" : [ {
+      "estimate" : true,
+      "to-datum" : "NAVD-88",
+      "value" : -0.5
+    } ]
+  }, {
+    "office" : "SPK",
+    "unit" : "m",
+    "location" : "VDI_LOC_TEST2",
+    "native-datum" : "NGVD-29",
+    "elevation" : 200.0,
+    "offsets" : [ {
+      "estimate" : true,
+      "to-datum" : "NAVD-88",
+      "value" : -0.5
+    } ]
+  } ]
+}
