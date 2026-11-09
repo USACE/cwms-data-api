@@ -133,7 +133,7 @@ jobs:
         uses: actions/checkout@v7.0.1
       - name: Startup System
         run: |
-          docker compose up -d --wait --wait-timeout 600
+          docker compose up -d --wait --wait-timeout 900
       - name: Health Check - default listen host
         run: |
           timeout 60s bash -c 'until curl -i http://localhost:8081/cwms-data/office/SPK &> /dev/null; do sleep 2; done'
@@ -144,7 +144,7 @@ jobs:
       - name: Alt listen host
         run: |
           echo "ECS_CONTAINER_METADATA_URI_V4=active" >> .env
-          docker compose up -d data-api --force-recreate
+          docker compose up -d data-api --force-recreate -no-deps
           timeout 300s bash -c 'until docker compose logs -f data-api | grep -q "appears to be AWS"  &> /dev/null; do sleep 2; done'
 
       
