@@ -196,6 +196,11 @@ services:
           cpus: "1.0"
           memory: 2G
   cda-etl:
+    # if we want this enabled by default in the future, which isn't unreasonable, we need to make
+    # sure this stack contains all required configuration at start up.
+    # This also needs the dependencies on the above appropriately set.
+    profiles:
+      - manual
     build:
       context: ./cda-etl
       dockerfile: Dockerfile

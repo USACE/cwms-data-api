@@ -134,17 +134,18 @@ jobs:
       - name: Startup System
         run: |
           docker compose up -d --wait --wait-timeout 600
-      - run: |
-          curl -i http://localhost:8081/cwms-data/office/SPK
+      - name: Health Check - default listen host
+        run: |
+          timeout 60s bash -c 'until curl -i http://localhost:8081/cwms-data/office/SPK &> /dev/null; do sleep 2; done'
           if [ $? != 0 ]; then
-            echo "CDA compose stack did not start in a reasonable about of time, or provide a simple health check value"
+            echo "CDA compose stack did not start in a reasonable about of time, or provide a simple health check value."
             exit 1
           fi
-      - run: |
+      - name: Alt listen host
+        run: |
           echo "ECS_CONTAINER_METADATA_URI_V4=active" >> .env
-          docker compose up data-api -d --force-create --wait --wait-timeout 300
-          docker compose logs data-api | grep "appears to be AWS"
-          exit $?
+          docker compose up -d data-api --force-recreate
+          timeout 300s bash -c 'until docker compose logs -f data-api | grep -q "appears to be AWS"  &> /dev/null; do sleep 2; done'
 
       
         
