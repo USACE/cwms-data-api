@@ -105,8 +105,8 @@ services:
       test: ["CMD","/usr/bin/wget", "-q","localhost:7000/cwms-data/offices/HEC", "-O", "-"]
       interval: 5s
       timeout: 1s
-      retries: 100
-      start_period: 2s
+      retries: 200
+      start_period: 5s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.data-api.rule=PathPrefix(`/`)"

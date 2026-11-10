@@ -159,6 +159,7 @@ jobs:
           docker compose logs auth
           docker compose logs traefik
           docker compose ps
+          docker inspect --format '{{json .State.Health}}' cwms-data-api-data-api-1 | jq
       
         
   build-schema-migration-image:
