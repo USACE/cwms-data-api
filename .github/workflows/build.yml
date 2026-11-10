@@ -130,14 +130,17 @@ jobs:
         run : |
           # build CDA first. NOTE: a separate PR exists to split the compile step and share it.
           # that should work here to reduce times.
+          docker compose pull --ignore-buildable
           docker compose build data-api
       - name: Startup System
         run: |
           docker compose up -d --wait --wait-timeout 600
           exitVal=$?
-          if [ $exitVal -ne 0]; then
+          if [ $exitVal != 0 ]; then
+            echo "Failed to start"
             docker compose ps
-            docker compose logs
+            docker compose logs --no-color
+            echo "End of reason"
           fi
           exit $exitVal
       - name: Health Check - default listen host

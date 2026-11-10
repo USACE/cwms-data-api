@@ -96,7 +96,7 @@ services:
       - blob.store.bucket=cwms-test
       - blob.store.accessKey=cda_user
       - blob.store.secretKey=cda_password
-      # Uncomment this to verify manually verify if the logic is behaving.
+      # set any value in a .env to verify behavior manually.
       - ECS_CONTAINER_METADATA_URI_V4=${ECS_CONTAINER_METADATA_URI_V4:-}
     expose:
       - 7000
