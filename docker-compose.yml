@@ -102,7 +102,7 @@ services:
       - 7000
       - 5005
     healthcheck:
-      test: ["CMD","/usr/bin/wget", "-q","localhost:7000/cwms-data/offices/HEC", "-O", "-"]
+      test: ["CMD","/usr/bin/wget", "-q","127.0.0.1:7000/cwms-data/offices/HEC", "-O", "-"]
       interval: 5s
       timeout: 1s
       retries: 200
