@@ -134,6 +134,8 @@ jobs:
           docker compose build data-api
       - name: Startup System
         run: |
+          # intentionally start auth first
+          docker compose up auth -d --wait --wait-timeout 300 --no-deps
           docker compose up -d --wait --wait-timeout 900
       - name: Health Check - default listen host
         run: |
@@ -150,7 +152,12 @@ jobs:
       - name: Show logs
         if: failure()
         run: |
-          docker compose logs
+          # list them in order for easier review
+          docker compose logs db
+          docker compose logs db_webuser_permissions
+          docker compose logs data-api
+          docker compose logs auth
+          docker compose logs traefik
           docker compose ps
       
         
