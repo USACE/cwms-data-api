@@ -20,10 +20,6 @@
 
 package cwms.cda.api.location.kind;
 
-import static cwms.cda.api.Controllers.CREATE;
-import static cwms.cda.api.Controllers.FAIL_IF_EXISTS;
-import static cwms.cda.api.Controllers.STATUS_201;
-
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import cwms.cda.api.BaseHandler;
@@ -32,18 +28,19 @@ import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.location.kind.GateChange;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
+import static cwms.cda.api.Controllers.*;
 
 
 public class GateChangeCreateController extends BaseHandler {
@@ -55,24 +52,30 @@ public class GateChangeCreateController extends BaseHandler {
     @OpenApi(
         requestBody = @OpenApiRequestBody(
             content = {
-                @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSONV1),
-                @OpenApiContent(from = GateChange.class, isArray = true, type = Formats.JSON)
+                @OpenApiContent(from = GateChange[].class, type = Formats.JSONV1),
+                @OpenApiContent(from = GateChange[].class, type = Formats.JSON)
             },
             required = true),
         queryParams = {
-            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
-                description = "Create will fail if provided Gate Changes already exist. Default: true")
+            @OpenApiParam(name = OVERRIDE_PROTECTION, type = Boolean.class,
+                    description = "A flag ('True'/'False') specifying whether to delete protected data. "
+                            + "Default is True"),
+            @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class, deprecated = true,
+                    description = "A flag ('True'/'False') specifying whether to delete protected data. "
+                            + "Default is True"
+                            + "  Deprecated, use " + OVERRIDE_PROTECTION)
         },
         description = "Create CWMS Gate Changes",
-        method = HttpMethod.POST,
+        methods = HttpMethod.POST,
         tags = {OutletController.TAG},
+        path = "/projects/gate-changes",
         responses = {
             @OpenApiResponse(status = STATUS_201, description = "Gate Changes successfully stored to CWMS.")
         }
     )
     @Override
     public void handle(@NotNull Context context) throws Exception {
-        boolean failIfExists = context.queryParamAsClass(FAIL_IF_EXISTS, Boolean.class).getOrDefault(true);
+        boolean overrideProtection = queryParamAsClass(context, new String[] { OVERRIDE_PROTECTION, FAIL_IF_EXISTS }, Boolean.class, true);
         String formatHeader = context.header(Header.ACCEPT) != null ? context.header(Header.ACCEPT) : Formats.JSONV1;
         ContentType contentType = Formats.parseHeader(formatHeader, GateChange.class);
         List<GateChange> changes = Formats.parseContentList(contentType, context.body(), GateChange.class);
@@ -83,7 +86,7 @@ public class GateChangeCreateController extends BaseHandler {
         try (Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = JooqDao.getDslContext(context);
             OutletDao dao = new OutletDao(dsl);
-            dao.storeOperationalChanges(changes, failIfExists);
+            dao.storeOperationalChanges(changes, overrideProtection);
             context.status(HttpServletResponse.SC_CREATED);
         }
     }

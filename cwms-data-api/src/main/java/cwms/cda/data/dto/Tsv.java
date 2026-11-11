@@ -2,6 +2,10 @@ package cwms.cda.data.dto;
 
 import java.util.Date;
 
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class Tsv implements java.io.Serializable {
 
 	private final TsvId id;

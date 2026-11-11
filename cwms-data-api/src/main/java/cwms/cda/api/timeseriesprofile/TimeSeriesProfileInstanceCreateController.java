@@ -31,6 +31,8 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileInstanceDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
@@ -38,14 +40,14 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import java.time.Instant;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -73,9 +75,11 @@ public final class TimeSeriesProfileInstanceCreateController extends TimeSeriesP
             @OpenApiParam(name = VERSION, description = "The version of the"
                 + " time series profile instance.", required = true),
         },
-        method = HttpMethod.POST,
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+        methods = HttpMethod.POST,
         summary = "Create a new time series profile instance by parsing provided data",
         tags = {TAG},
+        path = "/timeseries/profile-instance",
         requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = TimeSeriesProfile.class)}),
         responses = {
             @OpenApiResponse(status = "201", description = "Time series profile instance created"),

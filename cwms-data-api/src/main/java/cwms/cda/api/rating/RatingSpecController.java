@@ -40,15 +40,17 @@ import cwms.cda.data.dto.rating.RatingSpecs;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.FormattingException;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -56,7 +58,7 @@ import java.util.Optional;
 
 import com.google.common.flogger.FluentLogger;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -115,7 +117,9 @@ public class RatingSpecController implements CrudHandler {
                                     @OpenApiContent(type = Formats.XMLV2, from = RatingSpecs.class)
                             }
                     )},
-            tags = {TAG}
+            tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            path = "/ratings/spec"
     )
     @Override
     public void getAll(Context ctx) {
@@ -143,7 +147,7 @@ public class RatingSpecController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException e) {
             CdaError re = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Ratings", e);
@@ -172,7 +176,8 @@ public class RatingSpecController implements CrudHandler {
                             }
                     )
             },
-            tags = {TAG}
+            tags = {TAG},
+            path = "/ratings/spec/{" + RATING_ID + "}"
     )
     @Override
     public void getOne(Context ctx, @NotNull String ratingId) {
@@ -197,7 +202,7 @@ public class RatingSpecController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                OutputStream os = ctx.res.getOutputStream();
+                OutputStream os = ctx.outputStream();
                 if (os != null) {
                     os.write(bytes);
                 } else {
@@ -235,15 +240,16 @@ public class RatingSpecController implements CrudHandler {
                     @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                             description = "Create will fail if provided ID already exists. Default: true")
             },
-            method = HttpMethod.POST,
-            tags = {TAG}
+            methods = HttpMethod.POST,
+            tags = {TAG},
+            path = "/ratings/spec"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
 
-            String contentTypeHeader = ctx.req.getContentType();
+            String contentTypeHeader = ctx.contentType();
             String body = ctx.body();
             ContentType contentType = Formats.parseHeader(contentTypeHeader, RatingSpec.class);
 
@@ -269,7 +275,7 @@ public class RatingSpecController implements CrudHandler {
     }
 
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(Context ctx, @NotNull String locationCode) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -286,8 +292,9 @@ public class RatingSpecController implements CrudHandler {
                             type = JooqDao.DeleteMethod.class)
             },
             description = "Deletes requested rating specification",
-            method = HttpMethod.DELETE,
-            tags = {TAG}
+            methods = HttpMethod.DELETE,
+            tags = {TAG},
+            path = "/ratings/spec/{" + RATING_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String ratingSpecId) {

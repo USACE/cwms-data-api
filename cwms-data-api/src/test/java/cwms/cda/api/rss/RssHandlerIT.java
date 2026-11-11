@@ -52,7 +52,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.Configuration;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.BeforeEach;

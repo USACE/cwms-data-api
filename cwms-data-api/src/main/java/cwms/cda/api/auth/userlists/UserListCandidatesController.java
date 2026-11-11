@@ -2,6 +2,8 @@ package cwms.cda.api.auth.userlists;
 
 import static cwms.cda.api.Controllers.GET_ALL;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.requiredParam;
 
 import com.codahale.metrics.MetricRegistry;
@@ -12,12 +14,11 @@ import cwms.cda.data.dto.auth.userlists.UserListCandidates;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import org.jooq.DSLContext;
 
 public final class UserListCandidatesController implements Handler {
@@ -38,12 +39,14 @@ public final class UserListCandidatesController implements Handler {
         },
         responses = {
             @OpenApiResponse(status = STATUS_200,
-                content = @OpenApiContent(from = UserListCandidates.class, type = Formats.JSON))
+                content = @OpenApiContent(from = UserListCandidates.class, type = Formats.JSON)),
+            @OpenApiResponse(status = STATUS_400, description = "Search or page-size is missing or invalid."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Search existing CWMS users for user-list membership.",
-        method = HttpMethod.GET,
-        tags = UserListController.TAG
+        methods = HttpMethod.GET,
+        tags = UserListController.TAG,
+        path = "/user/list-member-candidates"
     )
     @Override
     public void handle(Context ctx) {

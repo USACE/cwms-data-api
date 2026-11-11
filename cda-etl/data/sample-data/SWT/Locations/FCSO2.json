@@ -1,0 +1,20 @@
+{
+  "office-id": "SWT",
+  "name": "FCSO2",
+  "latitude": 35.15,
+  "longitude": -98.46667,
+  "active": true,
+  "public-name": "FORT COBB",
+  "timezone-name": "US/Central",
+  "location-type": "Mesonet",
+  "location-kind": "SITE",
+  "nation": "US",
+  "state-initial": "OK",
+  "county-name": "Caddo",
+  "nearest-city": "Fort Cobb, OK",
+  "horizontal-datum": "NAD83",
+  "vertical-datum": "NGVD29",
+  "elevation": 0.0,
+  "bounding-office-id": "SWT",
+  "elevation-units": "ft"
+}

@@ -3,6 +3,9 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.GET_ONE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_404;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
 import static cwms.cda.data.dao.JooqDao.getDslContext;
@@ -15,15 +18,14 @@ import cwms.cda.data.dao.UserListDao;
 import cwms.cda.data.dto.auth.userlists.UserList;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import org.jooq.DSLContext;
 
 public final class UserListController implements Handler {
@@ -53,14 +55,15 @@ public final class UserListController implements Handler {
                 content = {
                     @OpenApiContent(from = UserList.class, type = Formats.JSON)
                 }
-            )
-        },
-        security = {
-            @OpenApiSecurity(name = "gets overridden allows lock icon.")
+            ),
+            @OpenApiResponse(status = STATUS_400, description = "A list parameter is missing or invalid."),
+            @OpenApiResponse(status = STATUS_404, description = "User list not found."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
         description = "Retrieve user list metadata.",
-        method = HttpMethod.GET,
-        tags = {TAG}
+        methods = HttpMethod.GET,
+        tags = {TAG},
+        path = "/user/list/{" + USER_LIST_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

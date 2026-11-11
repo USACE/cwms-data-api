@@ -27,6 +27,10 @@ package cwms.cda.data.dto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public abstract class CwmsIdentifiedDTO extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId id;

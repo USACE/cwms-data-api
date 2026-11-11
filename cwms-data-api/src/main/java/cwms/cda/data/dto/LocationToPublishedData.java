@@ -33,6 +33,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +43,7 @@ import java.util.Map;
 @JsonDeserialize(builder = LocationToPublishedData.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class LocationToPublishedData extends CwmsDTOBase {
     @JsonProperty(required = true)
     private final CwmsId locationId;

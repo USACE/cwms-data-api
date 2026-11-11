@@ -2,7 +2,7 @@ package cwms.cda.api.errors;
 
 import java.util.HashMap;
 import java.util.logging.Level;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class AlreadyExists extends ApplicationException {
     private static final String ALREADY_EXISTS = "Already exists";

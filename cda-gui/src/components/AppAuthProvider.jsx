@@ -1,5 +1,6 @@
 import {
   AuthProvider,
+  createCwmsLoginAuthMethod,
   createKeycloakAuthMethod,
 } from "@usace-watermanagement/groundwork-water";
 import PropTypes from "prop-types";
@@ -66,10 +67,19 @@ async function loadDeployedAuthMethod() {
   const spec = await response.json();
   normalizeOpenIdConnectUrls(spec, window.location.origin);
   const config = getKeycloakConfig(spec, window.location.href);
-  if (!config) {
-    throw new Error("The OpenAPI document does not advertise a usable OpenID client.");
+  // Match Swagger's preference when a deployment advertises both methods.
+  if (config) {
+    return createKeycloakAuthMethod(config);
   }
-  return createKeycloakAuthMethod(config);
+  if (spec.components?.securitySchemes?.CwmsAAACacAuth) {
+    return createCwmsLoginAuthMethod({
+      authUrl: `${window.location.origin}/CWMSLogin`,
+      authCheckUrl: `${getBasePath()}/auth/keys`,
+    });
+  }
+  throw new Error(
+    "The OpenAPI document does not advertise a usable OpenID client or CWMS AAA authentication.",
+  );
 }
 
 export default function AppAuthProvider({ children }) {

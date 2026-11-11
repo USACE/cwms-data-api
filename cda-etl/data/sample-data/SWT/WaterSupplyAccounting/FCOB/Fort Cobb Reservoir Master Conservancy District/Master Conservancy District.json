@@ -1,0 +1,1821 @@
+[
+  {
+    "contract-name": "Master Conservancy District",
+    "water-user": {
+      "entity-name": "Fort Cobb Reservoir Master Conservancy District",
+      "project-id": {
+        "office-id": "SWT",
+        "name": "FCOB"
+      },
+      "water-right": "OWRB"
+    },
+    "pump-locations": {
+      "pump-out": {
+        "office-id": "SWT",
+        "name": "FCOB-Master Conservancy District Pump"
+      }
+    },
+    "pump-accounting": {
+      "2026-06-01T00:00:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-01 00:00:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-01T15:57:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-01 15:57:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-01T21:17:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-01 21:17:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-02T02:36:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-02 02:36:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-02T13:14:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-02 13:14:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-02T18:34:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-02 18:34:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-02T23:53:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-02 23:53:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-03T04:59:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-03 04:59:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-03T15:37:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.31148531251199996,
+          "flow-unit": "2026-06-03 15:37:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-04T02:16:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-04 02:16:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-04T18:14:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.31148531251199996,
+          "flow-unit": "2026-06-04 18:14:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-04T23:33:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-04 23:33:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-05T04:52:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-05 04:52:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-05T10:11:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-05 10:11:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-05T15:31:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-05 15:31:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-06T12:48:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-06 12:48:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-06T23:26:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.22653477273599998,
+          "flow-unit": "2026-06-06 23:26:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-07T20:43:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-06-07 20:43:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-08T12:41:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.22653477273599998,
+          "flow-unit": "2026-06-08 12:41:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-08T18:00:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.19821792614399997,
+          "flow-unit": "2026-06-08 18:00:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-08T23:19:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-06-08 23:19:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-09T04:39:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-09 04:39:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-09T09:58:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-09 09:58:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-09T20:37:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.31148531251199996,
+          "flow-unit": "2026-06-09 20:37:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-10T17:54:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-10 17:54:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-10T23:13:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-10 23:13:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-11T04:32:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-11 04:32:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-11T15:11:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-11 15:11:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-11T20:30:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-11 20:30:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-12T17:47:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.31148531251199996,
+          "flow-unit": "2026-06-12 17:47:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-12T23:06:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-12 23:06:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-13T09:45:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-13 09:45:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-14T12:21:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.28316846592,
+          "flow-unit": "2026-06-14 12:21:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-14T17:40:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.22653477273599998,
+          "flow-unit": "2026-06-14 17:40:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-14T22:59:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.19821792614399997,
+          "flow-unit": "2026-06-14 22:59:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-15T09:38:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-15 09:38:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-16T01:36:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-16 01:36:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-17T04:12:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-17 04:12:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-17T09:31:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-17 09:31:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-17T14:51:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-17 14:51:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-17T20:10:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-17 20:10:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-18T17:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-18 17:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-19T04:05:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.28316846592,
+          "flow-unit": "2026-06-19 04:05:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-19T14:44:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-19 14:44:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-21T19:56:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-06-21 19:56:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-22T01:16:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-22 01:16:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-22T17:13:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-06-22 17:13:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-22T22:33:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-22 22:33:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-23T09:11:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-06-23 09:11:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-23T14:31:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-23 14:31:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-23T19:50:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.31148531251199996,
+          "flow-unit": "2026-06-23 19:50:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-24T01:09:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-24 01:09:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-24T06:28:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-24 06:28:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-25T09:05:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-06-25 09:05:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-25T19:43:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-25 19:43:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-26T01:02:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-06-26 01:02:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-26T06:22:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-06-26 06:22:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-26T11:41:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-06-26 11:41:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-26T17:00:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.48138639206399997,
+          "flow-unit": "2026-06-26 17:00:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-26T22:19:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.509703238656,
+          "flow-unit": "2026-06-26 22:19:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-28T06:15:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5380200852479999,
+          "flow-unit": "2026-06-28 06:15:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-28T22:13:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.48138639206399997,
+          "flow-unit": "2026-06-28 22:13:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-29T19:30:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-06-29 19:30:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-06-30T06:08:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.48138639206399997,
+          "flow-unit": "2026-06-30 06:08:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-01T19:23:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-07-01 19:23:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-02T00:42:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-02 00:42:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-02T16:40:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-02 16:40:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-03T03:19:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.48138639206399997,
+          "flow-unit": "2026-07-03 03:19:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-03T08:38:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-07-03 08:38:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-03T13:57:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-07-03 13:57:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-03T19:16:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5380200852479999,
+          "flow-unit": "2026-07-03 19:16:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-04T00:36:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.56633693184,
+          "flow-unit": "2026-07-04 00:36:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-04T05:55:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5380200852479999,
+          "flow-unit": "2026-07-04 05:55:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-04T21:53:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.56633693184,
+          "flow-unit": "2026-07-04 21:53:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-05T03:12:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.509703238656,
+          "flow-unit": "2026-07-05 03:12:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-05T19:10:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5380200852479999,
+          "flow-unit": "2026-07-05 19:10:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-06T00:29:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-06 00:29:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-06T05:48:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-06 05:48:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-06T11:07:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-07-06 11:07:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-06T16:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-06 16:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-07T08:25:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-07-07 08:25:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-07T13:44:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-07 13:44:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-07T19:03:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-07 19:03:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-08T05:42:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-08 05:42:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-09T02:59:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-09 02:59:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-09T08:18:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-07-09 08:18:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-09T18:56:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-09 18:56:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-10T16:13:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-07-10 16:13:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-10T21:33:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-10 21:33:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-11T02:52:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5380200852479999,
+          "flow-unit": "2026-07-11 02:52:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-12T05:28:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-07-12 05:28:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-12T10:47:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.28316846592,
+          "flow-unit": "2026-07-12 10:47:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-12T21:26:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-07-12 21:26:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-13T13:24:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5380200852479999,
+          "flow-unit": "2026-07-13 13:24:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-14T00:02:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.509703238656,
+          "flow-unit": "2026-07-14 00:02:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-14T10:41:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5380200852479999,
+          "flow-unit": "2026-07-14 10:41:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-14T16:00:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.509703238656,
+          "flow-unit": "2026-07-14 16:00:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-15T07:58:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.31148531251199996,
+          "flow-unit": "2026-07-15 07:58:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-15T13:17:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-07-15 13:17:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-15T23:56:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.16990107955199998,
+          "flow-unit": "2026-07-15 23:56:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-16T15:53:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-07-16 15:53:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-16T21:13:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.48138639206399997,
+          "flow-unit": "2026-07-16 21:13:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-17T02:32:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-17 02:32:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-18T05:08:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.509703238656,
+          "flow-unit": "2026-07-18 05:08:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-18T10:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-07-18 10:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-19T02:25:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.22653477273599998,
+          "flow-unit": "2026-07-19 02:25:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-19T18:23:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.19821792614399997,
+          "flow-unit": "2026-07-19 18:23:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-19T23:42:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-19 23:42:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-20T10:21:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.48138639206399997,
+          "flow-unit": "2026-07-20 10:21:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-20T15:40:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-20 15:40:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-21T02:19:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-07-21 02:19:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-21T07:38:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.22653477273599998,
+          "flow-unit": "2026-07-21 07:38:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-21T23:36:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-07-21 23:36:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-22T04:55:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-07-22 04:55:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-22T15:33:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.22653477273599998,
+          "flow-unit": "2026-07-22 15:33:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-24T10:07:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-07-24 10:07:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-24T15:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-24 15:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-25T07:24:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.45306954547199996,
+          "flow-unit": "2026-07-25 07:24:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-26T15:33:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.48138639206399997,
+          "flow-unit": "2026-07-26 15:33:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-27T23:29:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.22653477273599998,
+          "flow-unit": "2026-07-27 23:29:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-28T04:48:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.19821792614399997,
+          "flow-unit": "2026-07-28 04:48:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-28T10:07:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-07-28 10:07:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-28T15:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-28 15:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-29T07:24:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-07-29 07:24:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-29T12:44:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.14158423296,
+          "flow-unit": "2026-07-29 12:44:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-30T10:01:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.19821792614399997,
+          "flow-unit": "2026-07-30 10:01:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-30T15:20:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.16990107955199998,
+          "flow-unit": "2026-07-30 15:20:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-30T20:39:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.14158423296,
+          "flow-unit": "2026-07-30 20:39:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-31T07:18:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-07-31 07:18:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-07-31T12:37:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-07-31 12:37:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-01T04:35:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-08-01 04:35:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-01T20:33:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.16990107955199998,
+          "flow-unit": "2026-08-01 20:33:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-02T07:11:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.14158423296,
+          "flow-unit": "2026-08-02 07:11:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-04T07:05:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.16990107955199998,
+          "flow-unit": "2026-08-04 07:05:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-04T12:24:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.14158423296,
+          "flow-unit": "2026-08-04 12:24:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-07T14:53:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.11326738636799999,
+          "flow-unit": "2026-08-07 14:53:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-07T20:13:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.16990107955199998,
+          "flow-unit": "2026-08-07 20:13:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-08T01:32:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.14158423296,
+          "flow-unit": "2026-08-08 01:32:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-08T22:49:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-08 22:49:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-09T20:06:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-09 20:06:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-10T22:42:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-10 22:42:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-11T04:02:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-11 04:02:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-11T09:21:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-11 09:21:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-12T06:38:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-12 06:38:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-12T17:16:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-12 17:16:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-13T03:55:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3681137919444443,
+          "flow-unit": "2026-08-13 03:55:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-14T01:12:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.254851619328,
+          "flow-unit": "2026-08-14 01:12:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-14T06:31:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.14158423296,
+          "flow-unit": "2026-08-14 06:31:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-15T09:07:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.11326738636799999,
+          "flow-unit": "2026-08-15 09:07:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-15T14:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.14158423296,
+          "flow-unit": "2026-08-15 14:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-16T01:05:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-16 01:05:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-16T17:03:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-16 17:03:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-17T03:42:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-17 03:42:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-17T14:20:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-17 14:20:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-18T11:37:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-18 11:37:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-18T16:56:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.5704145577492479,
+          "flow-unit": "2026-08-18 16:56:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-18T22:16:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-18 22:16:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-19T03:35:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-19 03:35:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-19T08:54:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-19 08:54:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-20T00:52:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-20 00:52:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-20T06:11:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-20 06:11:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-20T11:30:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-08-20 11:30:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-20T16:50:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-20 16:50:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-22T00:45:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-22 00:45:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-22T11:24:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-22 11:24:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-22T16:43:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-22 16:43:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-22T21:49:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-22 21:49:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-23T03:08:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.33980215910399997,
+          "flow-unit": "2026-08-23 03:08:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-23T08:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-23 08:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-23T13:47:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-23 13:47:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-23T19:06:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-23 19:06:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-24T16:23:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-08-24 16:23:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-25T03:02:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-25 03:02:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-25T08:21:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39643585228799993,
+          "flow-unit": "2026-08-25 08:21:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-26T10:57:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.42475269887999995,
+          "flow-unit": "2026-08-26 10:57:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-26T16:16:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.368119005696,
+          "flow-unit": "2026-08-26 16:16:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-26T21:36:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39571575444444435,
+          "flow-unit": "2026-08-26 21:36:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-27T02:55:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39571575444444435,
+          "flow-unit": "2026-08-27 02:55:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-27T08:14:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.39571575444444435,
+          "flow-unit": "2026-08-27 08:14:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-27T13:33:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3964944695977716,
+          "flow-unit": "2026-08-27 13:33:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-27T18:53:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-27 18:53:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-28T00:12:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-28 00:12:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-28T05:31:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3964944695977716,
+          "flow-unit": "2026-08-28 05:31:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-28T10:50:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-28 10:50:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-28T16:10:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-28 16:10:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-28T21:29:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-28 21:29:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-29T02:48:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3964944695977716,
+          "flow-unit": "2026-08-29 02:48:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-29T08:07:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-29 08:07:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-29T13:27:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3964944695977716,
+          "flow-unit": "2026-08-29 13:27:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-29T18:46:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-29 18:46:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-30T00:05:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-30 00:05:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-30T05:24:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3964944695977716,
+          "flow-unit": "2026-08-30 05:24:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-30T10:44:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-30 10:44:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-30T16:03:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-30 16:03:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-30T21:22:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-30 21:22:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-31T02:41:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3964944695977716,
+          "flow-unit": "2026-08-31 02:41:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-31T08:01:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-31 08:01:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-31T13:20:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-31 13:20:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-31T18:39:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.36817343606133257,
+          "flow-unit": "2026-08-31 18:39:00",
+          "comment": "cms"
+        }
+      ],
+      "2026-08-31T23:59:00Z": [
+        {
+          "pump-type": "OUT",
+          "transfer-type-display": "Pipeline",
+          "flow": 0.3964944695977716,
+          "flow-unit": "2026-08-31 23:59:00",
+          "comment": "cms"
+        }
+      ]
+    }
+  }
+]

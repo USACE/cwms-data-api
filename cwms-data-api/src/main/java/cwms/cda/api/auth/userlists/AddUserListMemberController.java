@@ -3,6 +3,8 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.CREATE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_201;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
 
@@ -15,14 +17,13 @@ import cwms.cda.data.dto.auth.userlists.UserListMemberInput;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import org.jooq.DSLContext;
 
 public final class AddUserListMemberController implements Handler {
@@ -42,14 +43,16 @@ public final class AddUserListMemberController implements Handler {
         responses = {
             @OpenApiResponse(status = STATUS_201,
                 content = @OpenApiContent(from = UserListMember.class, type = Formats.JSON)),
+            @OpenApiResponse(status = STATUS_400, description = "The request body or a list parameter is invalid."),
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
             @OpenApiResponse(status = "404", description = "List or CWMS user not found."),
-            @OpenApiResponse(status = "409", description = "User is already a member.")
+            @OpenApiResponse(status = "409", description = "User is already a member."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Add an existing CWMS user to an office-scoped user list.",
-        method = HttpMethod.POST,
-        tags = UserListController.TAG
+        methods = HttpMethod.POST,
+        tags = UserListController.TAG,
+        path = "/user/list/{" + USER_LIST_ID + "}/members"
     )
     @Override
     public void handle(Context ctx) {
@@ -64,7 +67,7 @@ public final class AddUserListMemberController implements Handler {
             UserListSupport.requireOfficeAdmin(ctx, dao, office);
             UserListMemberInput input = ctx.bodyAsClass(UserListMemberInput.class);
             String userId = UserListSupport.validateUserId(input.getUserId());
-            ctx.status(HttpCode.CREATED).json(dao.addMember(
+            ctx.status(HttpStatus.CREATED).json(dao.addMember(
                     office, UserListSupport.validateUserListId(ctx.pathParam(USER_LIST_ID)), userId,
                     UserListSupport.principal(ctx).getName()));
         }

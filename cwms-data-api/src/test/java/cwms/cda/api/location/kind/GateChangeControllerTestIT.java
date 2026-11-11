@@ -42,7 +42,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
@@ -163,7 +163,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, USER.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(OVERRIDE_PROTECTION, "false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -212,7 +212,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, USER.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, "false")
+            .queryParam(OVERRIDE_PROTECTION, "false")
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -320,7 +320,7 @@ class GateChangeControllerTestIT extends BaseOutletDaoIT {
             .contentType(Formats.JSONV1)
             .body(json)
             .header(AUTH_HEADER, USER.toHeaderValue())
-            .queryParam(FAIL_IF_EXISTS, false)
+            .queryParam(OVERRIDE_PROTECTION, false)
         .when()
             .redirects().follow(true)
             .redirects().max(3)

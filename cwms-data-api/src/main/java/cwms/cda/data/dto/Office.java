@@ -12,6 +12,8 @@ import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.tab.TabV1;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2Office;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.HashMap;
@@ -19,6 +21,7 @@ import java.util.HashMap;
 @Schema(description = "A representation of a CWMS office")
 @JsonRootName("office")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2Office.class, aliases = {Formats.XML})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)

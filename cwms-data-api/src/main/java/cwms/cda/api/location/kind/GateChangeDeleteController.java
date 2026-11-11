@@ -30,12 +30,12 @@ import cwms.cda.data.dao.location.kind.OutletDao;
 import cwms.cda.data.dto.CwmsId;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.time.Instant;
-import javax.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -68,7 +68,8 @@ public class GateChangeDeleteController extends BaseHandler {
                     + "inputs provided the project was not found.")},
             description = "Deletes matching CWMS gate change data for a Reservoir Project.",
             tags = {OutletController.TAG},
-            method = HttpMethod.DELETE
+            methods = HttpMethod.DELETE,
+            path = "/projects/{" + OFFICE + "}/{" + PROJECT_ID + "}/gate-changes"
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
     @Override
@@ -83,7 +84,7 @@ public class GateChangeDeleteController extends BaseHandler {
             DSLContext dsl = JooqDao.getDslContext(context);
             OutletDao dao = new OutletDao(dsl);
             dao.deleteOperationalChanges(projectId, startTime, endTime, overrideProtection);
-            context.res.setStatus(HttpServletResponse.SC_NO_CONTENT);
+            context.status(HttpStatus.NO_CONTENT);
         }
     }
 }

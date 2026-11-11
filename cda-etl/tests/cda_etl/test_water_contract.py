@@ -83,7 +83,9 @@ def test_download_one_contract_also_stages_accounting_when_enabled(mocker):
 
     water_contract._download_one_contract(["SWT", "EUFA", "ENTITY1", contract, None, None])
 
-    mock_accounting.assert_called_once_with("SWT", "EUFA", "ENTITY1", "CONTRACT1", "2026-01-01", "2026-02-01")
+    mock_accounting.assert_called_once_with(
+        "SWT", "EUFA", "ENTITY1", "CONTRACT1", "2026-01-01T00:00:00", "2026-02-01T00:00:00"
+    )
     assert mock_write.call_args_list[-1].args == (
         accounting_entries, "SWT", "WaterSupplyAccounting", "EUFA", "ENTITY1", "CONTRACT1"
     )
@@ -102,7 +104,9 @@ def test_download_one_contract_accounting_falls_back_to_default_window(mocker):
         ["SWT", "EUFA", "ENTITY1", contract, "2026-01-01", "2026-06-01"]
     )
 
-    mock_accounting.assert_called_once_with("SWT", "EUFA", "ENTITY1", "CONTRACT1", "2026-01-01", "2026-06-01")
+    mock_accounting.assert_called_once_with(
+        "SWT", "EUFA", "ENTITY1", "CONTRACT1", "2026-01-01T00:00:00", "2026-06-01T00:00:00"
+    )
 
 
 def test_download_one_contract_accounting_skips_on_no_data(mocker):
@@ -199,7 +203,7 @@ def test_upload_one_contract_publishes_staged_accounting(mocker):
 def test_resolve_window_translates_now():
     start, end = water_contract._resolve_window("2026-01-01", "now")
 
-    assert start == "2026-01-01"
+    assert start == "2026-01-01T00:00:00"
     assert end != "now"
 
 

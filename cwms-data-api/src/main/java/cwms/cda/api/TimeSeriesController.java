@@ -1,16 +1,19 @@
 package cwms.cda.api;
 
 import static com.codahale.metrics.MetricRegistry.name;
+import static cwms.cda.CwmsDataApi.CWMS_USERS_ROLE;
 import static cwms.cda.api.Controllers.*;
 
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
+import cwms.cda.CwmsDataApiAttributes;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
+import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.JooqDao;
@@ -29,18 +32,26 @@ import cwms.cda.formatters.csv.CsvConfiguration;
 import cwms.cda.data.dto.csv.TimeSeriesCsv;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
+import cwms.cda.security.CdaAccessManager;
+import cwms.cda.security.CwmsAuthException;
+import cwms.cda.security.Role;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
-import io.javalin.core.validation.JavalinValidation;
-import io.javalin.core.validation.Validator;
+import io.javalin.http.Header;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
+import usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID;
+import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URISyntaxException;
@@ -50,13 +61,15 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
+import org.jooq.impl.DSL;
 
 public class TimeSeriesController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -121,6 +134,8 @@ public class TimeSeriesController implements CrudHandler {
     private final Histogram requestResultSize;
     static final int DEFAULT_PAGE_SIZE = 500;
 
+    private static final boolean USE_DMZ_LIST = Boolean.parseBoolean(System.getenv("TS_USE_DMZ_INCLUDE"));
+
 
     public TimeSeriesController(MetricRegistry metrics) {
         this.metrics = metrics;
@@ -128,10 +143,6 @@ public class TimeSeriesController implements CrudHandler {
         requestResultSize = this.metrics.histogram((name(className, RESULTS, SIZE)));
     }
 
-    static {
-        JavalinValidation.register(StoreRule.class, StoreRule::getStoreRule);
-        JavalinValidation.register(VerticalDatum.class, VerticalDatum::getVerticalDatum);
-    }
 
     private Timer.Context markAndTime(String subject) {
         return Controllers.markAndTime(metrics, getClass().getName(), subject);
@@ -166,7 +177,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                         + "and should be converted to the as-stored datum before being saved.")
             },
-            method = HttpMethod.POST,
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
+            methods = {HttpMethod.POST},
             path = "/timeseries",
             tags = TAG
     )
@@ -180,7 +192,7 @@ public class TimeSeriesController implements CrudHandler {
                 .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
         VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                .getOrDefault(null);
+                .getOrNull();
 
         try (final Timer.Context ignored = markAndTime(CREATE)) {
             DSLContext dsl = getDslContext(ctx);
@@ -201,10 +213,10 @@ public class TimeSeriesController implements CrudHandler {
 
     protected DSLContext getDslContext(Context ctx) {
         String office = null;
-        if (ctx.handlerType() == HandlerType.GET
+        if (ctx.method() == HandlerType.GET
                 && ctx.attribute(AuthDao.DATA_API_PRINCIPAL) != null) {
             office = ctx.queryParamAsClass(OFFICE, String.class)
-                    .getOrDefault(ctx.attribute(ApiServlet.OFFICE_ID));
+                    .getOrDefault(ctx.appData(CwmsDataApiAttributes.OFFICE_ID_KEY));
         }
         return JooqDao.getDslContext(ctx, office);
     }
@@ -249,8 +261,9 @@ public class TimeSeriesController implements CrudHandler {
                     + "('True'/'False') specifying whether to delete protected data. "
                     + "Default is False")
         },
-        method = HttpMethod.DELETE,
+        methods = {HttpMethod.DELETE},
         path = "/timeseries/{timeseries}",
+        headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
         tags = TAG
     )
     @Override
@@ -432,7 +445,9 @@ public class TimeSeriesController implements CrudHandler {
                 @OpenApiResponse(status = STATUS_501, description = "Requested format is not "
                         + "implemented")
             },
-            method = HttpMethod.GET,
+            methods = {HttpMethod.GET},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             path = "/timeseries",
             tags = TAG
     )
@@ -445,7 +460,6 @@ public class TimeSeriesController implements CrudHandler {
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             String format = ctx.queryParamAsClass(FORMAT, String.class).getOrDefault("");
             String names = requiredParam(ctx, NAME);
-
             //try 'unit' if 'units' is not provided as that was the original parameter name
             String units = ctx.queryParamAsClass(UNITS, String.class)
                     .getOrDefault(ctx.queryParamAsClass(UNIT, String.class)
@@ -498,7 +512,7 @@ public class TimeSeriesController implements CrudHandler {
             ZonedDateTime endZdt = end != null
                     ? DateUtils.parseUserDate(end, timezone)
                     : ZonedDateTime.now(tz);
-
+            checkAuth(ctx, names, ctx.queryParam(OFFICE));
             if (version != null && version.equals("2")) {
 
                 String office = requiredParam(ctx, OFFICE);
@@ -558,7 +572,7 @@ public class TimeSeriesController implements CrudHandler {
 
                 byte[] bytes = results.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 String office = ctx.queryParam(OFFICE);
 
@@ -599,7 +613,7 @@ public class TimeSeriesController implements CrudHandler {
 
                 byte[] bytes = results.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             }
 
             addDeprecatedContentTypeWarning(ctx, contentType);
@@ -620,6 +634,59 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
+    /**
+     * Presumably a stop gap until formal authorization is in place. Compares provided time series id to DMZ include TS
+     * Group and if the session is authorized to determine if the request should proceed.
+     * @param ctx
+     * @param dsl
+     * @param names
+     * @param office
+     */
+    public static void checkAuth(Context ctx, String names, String office)
+    {
+        if (!USE_DMZ_LIST)
+        {
+                return;
+        }
+        final var authEx = new CwmsAuthException("Required time series is not authorized for public release at this time.", HttpStatus.SC_UNAUTHORIZED);
+        var p = CdaAccessManager.getApiPrincipal(ctx);
+        if (p != null && p.getRoles().contains(new Role(CWMS_USERS_ROLE)))
+        {
+            logger.atInfo().log("access allowed, authenticated. %s", p.getName());
+            return; // at this time there are no access restrictions on "CWMS Users"
+        }
+        final var TS_ID = AV_CWMS_TS_ID.AV_CWMS_TS_ID;
+        final var TS_GROUP = AV_TS_GRP_ASSGN.AV_TS_GRP_ASSGN;
+        var dsl = JooqDao.getDslContext(ctx, null);
+        var countQuery =
+                dsl.selectOne()
+                .from(TS_GROUP)
+                .where(
+                        TS_GROUP.GROUP_ID.eq("DMZ Include List")
+                        .and(TS_GROUP.TS_CODE.in(
+                                dsl.select(TS_ID.TS_CODE)
+                                .from(TS_ID)
+                                // There are a few endpoints which may not required the office id
+                                // with a time series id. in that case office will be null, possibly
+                                // restricting data when it should not be. Unfortunately, as their may
+                                // be duplicate names, there is not a better way to handle that beside
+                                // requiring the office id, which is the behavior of any new endpoint.
+                                .where(TS_ID.DB_OFFICE_ID.equalIgnoreCase(office).and(
+                                       TS_ID.CWMS_TS_ID.equalIgnoreCase(names)))
+                                )
+                        )
+                );
+        boolean found = dsl.fetchExists(countQuery);
+
+        if (found)
+        {
+                logger.atInfo().log("access allowed, include list.");
+                return;
+        }
+        logger.atInfo().log("access denied, include list.");
+        throw authEx;
+    }
+
     private void streamCsv(@NotNull Context ctx, CsvConfiguration csvConfig, int batchSize, TimeSeriesDao dao, TimeSeriesRequestParameters requestParameters) {
         int csvBatchSize = validateCsvBatchSize(batchSize);
         dao.streamRequestedTimeSeriesCsv(
@@ -630,7 +697,7 @@ public class TimeSeriesController implements CrudHandler {
                     ctx.header(Header.CONTENT_TYPE, Formats.CSV + "; charset=UTF-8");
                     ctx.header("X-Stream-Batch-Size", String.valueOf(batchSize));
                     try (stream) {
-                        IOUtils.copy(stream, ctx.res.getOutputStream());
+                        IOUtils.copy(stream, ctx.outputStream());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -682,7 +749,7 @@ public class TimeSeriesController implements CrudHandler {
         }
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void getOne(@NotNull Context ctx, @NotNull String id) {
 
@@ -695,7 +762,7 @@ public class TimeSeriesController implements CrudHandler {
     @OpenApi(
             description = "Update a TimeSeries with provided values",
             pathParams = {
-                @OpenApiParam(name = TIMESERIES, description = "Full CWMS Timeseries name")
+                @OpenApiParam(name = TIMESERIES, description = "Full CWMS Timeseries name", required = true)
             },
             requestBody = @OpenApiRequestBody(
                     content = {
@@ -718,18 +785,28 @@ public class TimeSeriesController implements CrudHandler {
                         + "this parameter is provided it is assumed that the data is in the Datum named by the argument "
                         + "and should be converted to the as-stored datum before being saved.")
             },
-            method = HttpMethod.PATCH,
-            path = "/timeseries/{timeseries}",
+            methods = {HttpMethod.PATCH},
+            path = "/timeseries/{" + TIMESERIES + "}",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = TAG
     )
     @Override
-    public void update(@NotNull Context ctx, @NotNull String id) {
+    public void update(@NotNull Context ctx, @NotNull String timeseries) {
 
         try (final Timer.Context ignored = markAndTime(UPDATE)) {
             DSLContext dsl = getDslContext(ctx);
 
             TimeSeriesDao dao = getTimeSeriesDao(dsl);
             TimeSeries timeSeries = deserializeTimeSeries(ctx);
+            var bodyTsId = timeSeries.getName();
+            // allow case insensitivity. Otherwise expect them to match
+            // E.g. no mixing and matching 1DayLocal with ~1Day differences.
+            if (!timeseries.equalsIgnoreCase(bodyTsId)) {
+                throw new InvalidItemException(
+                "Provided object time series name and path url time series name do not match.", null);
+            }
+
+
             boolean createAsLrts = ctx.queryParamAsClass(CREATE_AS_LRTS, Boolean.class)
                     .getOrDefault(false);
             StoreRule storeRule = ctx.queryParamAsClass(STORE_RULE, StoreRule.class)
@@ -738,7 +815,7 @@ public class TimeSeriesController implements CrudHandler {
                     .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
 
             VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
-                    .getOrDefault(null);
+                    .getOrNull();
             vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
 
             dao.store(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
@@ -752,9 +829,9 @@ public class TimeSeriesController implements CrudHandler {
     }
 
     private TimeSeries deserializeTimeSeries(Context ctx) throws IOException {
-        String contentTypeHeader = ctx.req.getContentType();
+        String contentTypeHeader = ctx.contentType();
         StringWriter writer = new StringWriter();
-        IOUtils.copy(ctx.bodyAsInputStream(), writer, StandardCharsets.UTF_8);
+        IOUtils.copy(ctx.bodyInputStream(), writer, StandardCharsets.UTF_8);
         if (writer.toString().contains("data-entry-date")) {
             throw new IllegalArgumentException("Data entry date is not allowed in the request");
         }
@@ -770,11 +847,11 @@ public class TimeSeriesController implements CrudHandler {
      * @return a URL that references the same query, but with a different "page" parameter
      */
     public String buildRequestUrl(Context ctx, TimeSeries ts, String cursor) throws URISyntaxException {
-        URIBuilder builder = new URIBuilder(ctx.req.getRequestURL().toString()); // requestURL stops just before '?'
+        URIBuilder builder = new URIBuilder(ctx.url()); // requestURL stops just before '?'
 
         // Instead of adding specific parameters and risk forgetting to add one to this method
         // Lets add all the previous parameters and then (cont.)
-        builder.setParameters(URLEncodedUtils.parse(ctx.req.getQueryString(), StandardCharsets.UTF_8));
+        builder.setParameters(URLEncodedUtils.parse(ctx.queryString(), StandardCharsets.UTF_8));
 
         // (cont.) override or add the page parameter with the new cursor value
         if (cursor != null && !cursor.isEmpty()) {
