@@ -1,0 +1,78 @@
+{
+  "ratings": {
+    "query-info": {
+      "time-of-query": "2026-10-13T16:52:08Z",
+      "requested-format": "JSON",
+      "requested-office-id": "SPK",
+      "total-ratings-retrieved": 1,
+      "unique-ratings-retrieved": 1
+    },
+    "rating-templates": [
+      {
+        "office": "SPK",
+        "name": "Stage;Flow.USGS-EXSA",
+        "parameters-string": "Stage;Flow",
+        "version": "USGS-EXSA",
+        "ind-parameters": [
+          {
+            "name": "Stage",
+            "value-lookup-in-range": "LOGARITHMIC",
+            "value-lookup-below-range": "NEAREST",
+            "value-lookup-above-range": "NEAREST"
+          }
+        ],
+        "dep-parameter": "Flow",
+        "description": null
+      }
+    ],
+    "rating-specs": [
+      {
+        "office": "SPK",
+        "name": "USGSTEST.Stage;Flow.USGS-EXSA.USGS-NWIS",
+        "location": "USGSTEST",
+        "version": "USGS-NWIS",
+        "source-agency": "USGS",
+        "time-lookup-in-range": "PREVIOUS",
+        "time-lookup-before-first": "NEAREST",
+        "time-lookup-after-last": "PREVIOUS",
+        "rounding": {
+          "ind-parameters": [
+            "2223456782"
+          ],
+          "dep-parameter": "2222233332"
+        },
+        "description": null
+      }
+    ],
+    "ratings": [
+      {
+        "usgs-stream-rating": {
+          "office": "SPK",
+          "name": "USGSTEST.Stage;Flow.USGS-EXSA.USGS-NWIS",
+          "ind-parameter": "Stage (ft)",
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "shifts": [
+            {
+              "effective-date": "2020-06-01T00:00:00Z",
+              "values": [
+                [1, 0.1],
+                [5, 0.2, "MANUAL"]
+              ]
+            }
+          ],
+          "offsets": [
+            [0, 0.5]
+          ],
+          "values": [
+            [0.6, 1],
+            [1, 10],
+            [2, 40],
+            [5, 300, "BASE"]
+          ]
+        }
+      }
+    ]
+  }
+}

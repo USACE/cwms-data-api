@@ -1,0 +1,31 @@
+{
+  "ratings": {
+    "ratings": [
+      {
+        "simple-rating": {
+          "office": "SWT",
+          "name": "A.Elev;Stor.Linear.Production",
+          "ind-parameters": ["Elev (ft NAVD88)"],
+          "dep-parameter": "Stor (ac-ft)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "description": null,
+          "values": [
+            [500, 0],
+            [510, 100, "spillway"]
+          ]
+        }
+      },
+      {
+        "simple-rating": {
+          "office": "SWT",
+          "name": "A.Stage;Flow.Formula.Production",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2021-01-01T00:00:00Z",
+          "description": null,
+          "formula": "i1 * 2"
+        }
+      }
+    ]
+  }
+}
