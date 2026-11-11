@@ -16,10 +16,9 @@ Browse Ratings GET Endpoints:
 .. toctree::
     :maxdepth: 1
 
-    Ratings Basic Information <../../data/ratings.rst>
     Common Parameter Definitions <./shared_definitions.rst>
     Common Reasons for Parameter Usage <./shared_when_to_use.rst>
-    /ratings <timeSeries>
+    /ratings <ratings>
     /ratings/effective-dates <ratings-effective_dates>
     /ratings/metadata <ratings-metadata>
     /ratings/{rating-id}/ <ratings-ratingID>

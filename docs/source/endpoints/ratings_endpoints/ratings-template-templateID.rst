@@ -1,5 +1,5 @@
 Ratings — GET /ratings/template/{template-id}
-===================================
+=============================================
 
 What it does
 ------------
@@ -7,8 +7,7 @@ Returns the information for a specified rating template.
 
 When to use
 -----------
-- Dashboards needing the latest readings
-- Health checks and alerts for current conditions
+- When needing information for a rating's template
 
 
 .. csv-table:: GET /ratings/template/{template-id} - Endpoint Parameters
@@ -29,7 +28,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/template/Elev%3BStor.Standard?office=SWT&_cb=1790795318595
+        GET /ratings/template/Elev%3BStor.Standard?office=SWT
 
 2. | The user wants to retrieve the information for the rating template of `Opening,Elev;Flow.Standard`
    | for the office of `LRH`:
@@ -39,7 +38,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/template/Opening%2CElev%3BFlow.Standard?office=LRH&_cb=1790795191925
+        GET /ratings/template/Opening%2CElev%3BFlow.Standard?office=LRH
 
 3. | The user wants to retrieve the information for the rating template of `Stage;Flow.Standard`
    | for the office of `LRH`:
@@ -49,7 +48,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/template/Stage%3BFlow.Standard?office=LRH&_cb=1790795918415
+        GET /ratings/template/Stage%3BFlow.Standard?office=LRH
 
 See the consolidated API documentation: :doc:`/api-references`.
 

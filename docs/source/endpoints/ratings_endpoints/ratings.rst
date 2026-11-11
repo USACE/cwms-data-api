@@ -18,7 +18,7 @@ When to use
 
 .. csv-table:: GET /ratings - Endpoint Parameters
     :header: "Parameter", "Description", "Required", "When to Use"
-    :widths: 30, 60, 20, 60
+    :widths: 30, 60, 25, 55
 
     at, ":ref:`def-start`", "", ":ref:`when_start`"
     datum, "The standardized reference system used for either vertical measurements. \
@@ -31,7 +31,9 @@ When to use
     office, ":ref:`def-office`", "", ":ref:`when_office`"
     timezone, ":ref:`def-timezone`", "", "To retrieve data points in a timezone that works best with \
     your use case, such as your local timezone."
-    unit, ":ref:`def-unit`", "", ""
+    unit, ":ref:`def-unit`", "", "To \
+    convert the retrieved values into a desired unit, such as retrieving elevation data in feet (ft) instead \
+    of meters (m)."
 
 
 .. note::
@@ -56,11 +58,10 @@ Examples
    | (**name**)  :code:`TULA.Stage;Flow.EXSA.Production`
    |
    | (**office**)  :code:`SWT`
-   |
 
    .. code-block:: urlencoded
 
-        GET /ratings?name=TULA.Stage%3BFlow.EXSA.PRODUCTION&office=SWT&_cb=1790797962720
+        GET /ratings?name=TULA.Stage%3BFlow.EXSA.PRODUCTION&office=SWT
 
 3. | The user wants to retrieve the available rating data for the rating specification of
    | `TORO.Elev;Area.Linear.Production` in English units:
@@ -72,8 +73,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings?name=KEYS&office=SWT&unit=SI
-
+        GET /ratings?name=TORO.Elev;Area.Linear.Production&office=SWT&unit=EN
 
 
 See the consolidated API documentation: :doc:`/api-references`.

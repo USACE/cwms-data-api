@@ -17,7 +17,7 @@ When to use
 
     office, ":ref:`def-office`","", ":ref:`when_office`"
     page, ":ref:`def-page`", "", ":ref:`when_page`"
-    page-size, ":ref:`def-page-size", "", ":ref:`when_page_size`"
+    page-size, ":ref:`def-page-size`", "", ":ref:`when_page_size`"
     template-id-mask, ":ref:`def-template-id-mask`", "", ":ref:`when_template_id_mask`"
 
 Examples
@@ -40,13 +40,13 @@ Examples
         GET /ratings/template?office=SWT&template-id-mask=%2AOpening%2CElev%3BFlow%2A
 
 3. | The user wants to retrieve the first 500 rating templates containing the parameters of `Elev;Stor`:
-   | (**template-id-mask**) :code:`*Elev;Area*`
+   | (**template-id-mask**) :code:`*Elev;Stor*`
    |
    | (**page-size**) :code:`500`
 
    .. code-block:: urlencoded
 
-        GET /ratings/template?template-id-mask=*Elev%3BStor*&page-size=500&_cb=1790786522039
+        GET /ratings/template?template-id-mask=*Elev%3BStor*&page-size=500
 
 See the consolidated API documentation: :doc:`/api-references`.
 

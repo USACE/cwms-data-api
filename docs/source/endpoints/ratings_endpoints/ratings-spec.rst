@@ -17,21 +17,21 @@ When to use
 
     office, ":ref:`def-office`","", ":ref:`when_office`"
     page, ":ref:`def-page`", "", ":ref:`when_page`"
-    page-size, ":ref:`def-page-size", "", ":ref:`when_page_size`"
+    page-size, ":ref:`def-page-size`", "", ":ref:`when_page_size`"
     rating-id-mask, ":ref:`def-rating-id-mask`", "", ":ref:`when_rating_id_mask`"
 
 Examples
 --------
-1. | The user wants to retrieve all available rating specifications in the Tulsa District, which has the office ID of
-   | `SWT`:
+1. | The user wants to retrieve all available rating specifications in the Tulsa District, which has
+   | the office ID of `SWT`:
    | (**office**) :code:`SWT`
 
    .. code-block:: urlencoded
 
         GET /ratings/spec?office=SWT
 
-2. | The user wants to retrieve the all available rating specifications in the Tulsa District (SWT) that follows
-   | the patter of `*Elev;Area.Linear.Production*`:
+2. | The user wants to retrieve the all available rating specifications in the Tulsa District (SWT)
+   | that follows the pattern of `*Elev;Area.Linear.Production*`:
    | (**office**) :code:`SWT`
    |
    | (**rating-id-mask**) :code:`*Elev;Area.Linear.Production`
@@ -40,8 +40,8 @@ Examples
 
         GET /ratings/spec?office=SWT&rating-id-mask=%2AElev%3BArea.Linear.Production%2A
 
-3. | The user wants to retrieve the available rating specifications for Keystone Lake, which has the Location ID of
-   | `KEYS`, which is in the Tulsa District (SWT):
+3. | The user wants to retrieve the available rating specifications for Keystone Lake, which has
+   | the Location ID of `KEYS`, which is in the Tulsa District (SWT):
    | (**office**) :code:`SWT`
    |
    | (**rating-id-mask**) :code:`KEYS*`

@@ -22,7 +22,7 @@ When to use
     end, ":ref:`def-end`", "", ":ref:`when_end`"
     method, ":ref:`def-method`", "", ":ref:`when_method`"
     office, ":ref:`def-office`","Yes", ":ref:`when_office`"
-    rating-id, ":ref:`def-rating-id", "Yes", ":ref:`when-rating-id`"
+    rating-id, ":ref:`def-rating-id`", "Yes", ":ref:`when_rating_id`"
     timezone, ":ref:`def-timezone`", "", "To retrieve data points in a timezone that works best with \
     your use case, such as your local timezone."
 
@@ -61,7 +61,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/KEYS.Elev%3BArea.Linear.Production?office=SWT&method=LAZY&_cb=1791902125861
+        GET /ratings/KEYS.Elev%3BArea.Linear.Production?office=SWT&method=LAZY
 
 See the consolidated API documentation: :doc:`/api-references`.
 

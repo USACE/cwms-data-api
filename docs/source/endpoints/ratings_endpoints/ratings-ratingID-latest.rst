@@ -1,5 +1,5 @@
 Ratings — GET /ratings/{rating-id}/latest
-===================================
+=========================================
 
 What it does
 ------------
@@ -15,7 +15,7 @@ When to use
     :widths: 30, 60, 25, 55
 
     office, ":ref:`def-office`","Yes", ":ref:`when_office`"
-    rating-id, ":ref:`def-rating-id", "Yes", ":ref:`when-rating-id`"
+    rating-id, ":ref:`def-rating-id`", "Yes", ":ref:`when_rating_id`"
 
 
 Examples
@@ -38,7 +38,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/TULA.Stage%3BFlow.EXSA.Production/latest?office=SWT&_cb=1791902543500
+        GET /ratings/TULA.Stage%3BFlow.EXSA.Production/latest?office=SWT
 
 3. | The user wants to retrieve the latest available rating data for the rating ID
    | `KEYS.Head-Net,Energy;Flow.Standard.Production`:
@@ -48,7 +48,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/KEYS.Head-Net%2CEnergy%3BFlow.Standard.Production/latest?office=SWT&_cb=1791902787755
+        GET /ratings/KEYS.Head-Net%2CEnergy%3BFlow.Standard.Production/latest?office=SWT
 
 
 See the consolidated API documentation: :doc:`/api-references`.

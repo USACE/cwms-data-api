@@ -11,13 +11,13 @@ When to use
 - Needing information about the rating without retrieving all of the rating's computational data
 
 
-.. csv-table:: GET /ratings/recent - Endpoint Parameters
+.. csv-table:: GET /ratings/metadata - Endpoint Parameters
     :header: "Parameter", "Description", "Required", "When to Use"
     :widths: 30, 60, 25, 55
 
     end, ":ref:`def-end`", "", ":ref:`when_end`"
     page, ":ref:`def-page`", "", ":ref:`when_page`"
-    page-size, ":ref:`def-page-size", "", ":ref:`when_page_size`"
+    page-size, ":ref:`def-page-size`", "", ":ref:`when_page_size`"
     start, ":ref:`def-start`", "", ":ref:`when_start`"
     rating-id-mask, ":ref:`def-rating-id-mask`", "", ":ref:`when_rating_id_mask`"
     office, ":ref:`def-office`","", ":ref:`when_office`"
@@ -43,7 +43,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/metadata?rating-id-mask=*Elev%3BStor*&page-size=100&_cb=1790801150071
+        GET /ratings/metadata?rating-id-mask=*Elev%3BStor*&page-size=100
 
 
 3. | The user wants to retrieve the metadata for the rating ID mask including the parameters of
@@ -54,7 +54,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/metadata?office=SWT&rating-id-mask=*Opening%2CElev%3BFlow*&_cb=1790802020631
+        GET /ratings/metadata?office=SWT&rating-id-mask=*Opening%2CElev%3BFlow*
 
 See the consolidated API documentation: :doc:`/api-references`.
 

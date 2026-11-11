@@ -1,5 +1,5 @@
 Ratings — GET /ratings/spec/{rating-id}
-===================================
+=======================================
 
 What it does
 ------------
@@ -23,7 +23,8 @@ When to use
 
 Examples
 --------
-1. | The user wants to retrieve the rating specification of `KEYS.Head-Net,Energy;Flow.Standard.Production`:
+1. | The user wants to retrieve the rating specification of
+   | `KEYS.Head-Net,Energy;Flow.Standard.Production`:
    | (**rating-id**) :code:`KEYS.Head-Net,Energy;Flow.Standard.Production`
    |
    | (**office**) :code:`SWT`
@@ -32,8 +33,8 @@ Examples
 
         GET /ratings/spec/KEYS.Head-Net%2CEnergy%3BFlow.Standard.Production?office=SWT
 
-2. | The user wants to retrieve the first available rating specification that matches the rating-id of `KEYS*`
-   | in the office of `SWT`:
+2. | The user wants to retrieve the first available rating specification that matches
+   | the rating-id of `KEYS*` in the office of `SWT`:
    | (**rating-id**) :code:`KEYS*`
    |
    | (**office**) :code:`SWT`
@@ -42,8 +43,8 @@ Examples
 
         GET /ratings/spec/KEYS%2A?office=SWT
 
-3. | The user wants to retrieve the first available rating specification that contains `Elev;Area` in the
-   | office of `SWT`:
+3. | The user wants to retrieve the first available rating specification
+   | that contains `Elev;Area` in the office of `SWT`:
    | (**rating-id**) :code:`*Elev;Area`
    |
    | (**office**) :code:`SWT`

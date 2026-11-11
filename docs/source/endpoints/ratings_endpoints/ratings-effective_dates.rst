@@ -42,7 +42,7 @@ Examples
 
    .. code-block:: urlencoded
 
-        GET /ratings/effective-dates?rating-id-mask=*.Elev%3BArea.Linear.Production&_cb=1790799953975
+        GET /ratings/effective-dates?rating-id-mask=*.Elev%3BArea.Linear.Production
 
 3. | The user wants to retrieve the effective dates for the rating specification ID mask of
    | `Elev;Stor.Linear.Production` from the `SWT` office in the timezone of `CST/CDT`:
@@ -50,11 +50,11 @@ Examples
    |
    | (**rating-id-mask**) :code:`*.Elev;Stor.Linear.Production`
    |
-   | (**timezone**) :code: `CST/CDT`
+   | (**timezone**) :code:`CST/CDT`
 
    .. code-block:: urlencoded
 
-        GET /ratings/effective-dates?office-mask=SWT&rating-id-mask=*.Elev%3BStor.Linear.Production&timezone=CST%2FCDT&_cb=1790800682152
+        GET /ratings/effective-dates?office-mask=SWT&rating-id-mask=*.Elev%3BStor.Linear.Production&timezone=CST%2FCDT
 
 See the consolidated API documentation: :doc:`/api-references`.
 
