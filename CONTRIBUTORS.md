@@ -20,6 +20,8 @@
 -                     Rohaan S. Sandhu (rohaan@rmanet.com)
 - - Copyright 2025 Resource Management Associates
 -                     Kayla J. Arritola (kayla@rmanet.com)
+- Copyright 2026 Resource Management Associates
+-                     Deziree L. Seidner (deziree@rmanet.com)
 - _Add the copyright date, your name, and email address here. (PLEASE KEEP THIS LINE)_
 
 ## Note for U.S. Federal Employees
