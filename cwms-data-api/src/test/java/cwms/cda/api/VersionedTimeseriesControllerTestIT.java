@@ -21,7 +21,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -74,7 +74,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -178,7 +178,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
 
         // Get versioned time series
         given()
@@ -330,7 +330,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
         // Get versioned time series
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
@@ -484,7 +484,7 @@ public class VersionedTimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(ts.getOfficeId(), ts.getName());
         given()
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .accept(format)

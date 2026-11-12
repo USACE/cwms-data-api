@@ -14,18 +14,18 @@ jobs:
       fail-fast: false
       matrix:
         jdk: [17]
-        # place holder for now and leaving commented but in place. General scheme target tests again the current release, the next release, the previous release, and latest development.
-        # at this time every possible instance of concern is on 25.07.01, once 26.02.17 is finalized it becomes release and 25.07.01 becomes previous.
-        # next-release will be comment out until such time as a RC gets made
+        # place holder for now and leaving commented but in place. General scheme target tests again the current
+        # release, the next release, the previous release, and latest development. Next-release will be the current
+        # release until the next version is started. This is to make the required builds integration easier to deal with.
         schema:
           - env: latest
             image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:latest-dev"
           - env: release
-            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17"
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16"
           - env: next-release
-            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16-RC02"
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.07.16"
           - env: previous
-            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:25.07.01"
+            image: "ghcr.io/hydrologicengineeringcenter/cwms-database/cwms/database-ready-ora-23.5:26.02.17"
     name: build and test (jdk ${{matrix.jdk}}, schema ${{matrix.schema.env}})
     runs-on: ubuntu-latest
     outputs:
@@ -37,7 +37,7 @@ jobs:
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
       - name: setup java
         uses: actions/setup-java@v5.2.0
         with:
@@ -96,7 +96,7 @@ jobs:
       OPEN_API_TEST: "true"
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
       - name: setup java
         uses: actions/setup-java@v5.2.0
         with:
@@ -118,14 +118,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
       - name: Build docker image
         run: docker build -t cda:build-latest .
   build-schema-migration-image:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
       # No uploads, we're just verifying that nothing broke the docker image.
       - name: Build Migration image
         uses: ./.github/actions/database-migration-image
@@ -143,7 +143,7 @@ jobs:
     if: always() && (github.ref_name == 'develop')
     steps:
       - name: Badge Branch
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
         with:
           ref: badges
           fetch-depth: 1

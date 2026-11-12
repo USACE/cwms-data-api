@@ -2,6 +2,8 @@ package cwms.cda.api.auth.userlists;
 
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_200;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.UPDATE;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -15,13 +17,12 @@ import cwms.cda.data.dto.auth.userlists.UserListInput;
 import cwms.cda.formatters.Formats;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
 import org.jooq.DSLContext;
 
 public final class UpdateUserListController implements Handler {
@@ -41,13 +42,15 @@ public final class UpdateUserListController implements Handler {
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 content = @OpenApiContent(from = UserList.class, type = Formats.JSON)),
+            @OpenApiResponse(status = STATUS_400, description = "The request body or a list parameter is invalid."),
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
-            @OpenApiResponse(status = "404", description = "User list not found.")
-        },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
+            @OpenApiResponse(status = "404", description = "User list or office not found."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
+        },        
         description = "Update user-list metadata. Creator ownership is immutable.",
-        method = HttpMethod.PATCH,
-        tags = UserListController.TAG
+        methods = HttpMethod.PATCH,
+        tags = UserListController.TAG,
+        path = "/user/list/{" + USER_LIST_ID + "}"
     )
     @Override
     public void handle(Context ctx) {

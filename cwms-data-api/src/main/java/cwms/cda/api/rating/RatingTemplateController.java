@@ -31,6 +31,7 @@ import static cwms.cda.data.dao.JooqDao.getDslContext;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import cwms.cda.api.Controllers;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.data.dao.JooqDao;
@@ -38,22 +39,25 @@ import cwms.cda.data.dao.JsonRatingUtils;
 import cwms.cda.data.dao.RatingTemplateDao;
 import cwms.cda.data.dto.rating.RatingTemplate;
 import cwms.cda.data.dto.rating.RatingTemplates;
+import cwms.cda.data.dto.rating.document.RatingsDocument;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiRequestBody;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.util.Optional;
 import com.google.common.flogger.FluentLogger;
-import javax.servlet.http.HttpServletResponse;
-import javax.xml.transform.TransformerException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -108,7 +112,9 @@ public class RatingTemplateController implements CrudHandler {
                                             Formats.JSONV2),
                             }
                     )},
-            tags = {TAG}
+            tags = {TAG},
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            path = "/ratings/template"
     )
     @Override
     public void getAll(Context ctx) {
@@ -136,7 +142,7 @@ public class RatingTemplateController implements CrudHandler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError re = new CdaError("Error while writing response ");
             logger.atInfo().log("%s%sfor request %s", re, System.lineSeparator(), ctx.fullUrl());
@@ -164,11 +170,11 @@ public class RatingTemplateController implements CrudHandler {
             responses = {
                     @OpenApiResponse(status = STATUS_200,
                             content = {
-                                    @OpenApiContent(isArray = true, from = RatingTemplate.class,
-                                            type = Formats.JSONV2),
+                                    @OpenApiContent(from = RatingTemplate[].class, type = Formats.JSONV2),
                             }
                     )},
-            tags = {TAG}
+            tags = {TAG},
+            path = "/ratings/template/{" + TEMPLATE_ID + "}"
     )
     @Override
     public void getOne(Context ctx, @NotNull String templateId) {
@@ -194,7 +200,7 @@ public class RatingTemplateController implements CrudHandler {
 
                 byte[] bytes = result.getBytes();
                 ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-                ctx.res.getOutputStream().write(bytes);
+                ctx.outputStream().write(bytes);
             } else {
                 CdaError re = new CdaError("Unable to find Rating Template based on "
                         + "parameters given");
@@ -220,15 +226,16 @@ public class RatingTemplateController implements CrudHandler {
             @OpenApiParam(name = FAIL_IF_EXISTS, type = Boolean.class,
                 description = "Create will fail if provided ID already exists. Default: true")
         },
-        method = HttpMethod.POST,
-        tags = {TAG}
+        methods = HttpMethod.POST,
+        tags = {TAG},
+        path = "/ratings/template"
     )
     @Override
     public void create(@NotNull Context ctx) {
         try (final Timer.Context ignored = markAndTime(CREATE)){
             DSLContext dsl = getDslContext(ctx);
 
-            String reqContentType = ctx.req.getContentType();
+            String reqContentType = ctx.contentType();
             String formatHeader = reqContentType != null ? reqContentType : Formats.XMLV2;
             String body = ctx.body();
             String xml = translateToXml(body, formatHeader);
@@ -255,16 +262,15 @@ public class RatingTemplateController implements CrudHandler {
     }
 
     private static String translateJsonToXml(String body) {
-        String retval;
         try {
-            retval = JsonRatingUtils.jsonToXml(body);
-        } catch (IOException | TransformerException ex) {
-            throw new IllegalArgumentException("Failed to translate request into rating spec XML", ex);
+            RatingsDocument ratings = JsonRatingUtils.readJson(body);
+            return JsonRatingUtils.writeXml(ratings);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalArgumentException("Failed to translate request into rating template XML", ex);
         }
-        return retval;
     }
 
-    @OpenApi(ignore = true)
+    @OpenApi(ignore = true, path = "")
     @Override
     public void update(@NotNull Context ctx, @NotNull String locationCode) {
         ctx.status(HttpServletResponse.SC_NOT_IMPLEMENTED).json(CdaError.notImplemented());
@@ -281,8 +287,9 @@ public class RatingTemplateController implements CrudHandler {
                 type = JooqDao.DeleteMethod.class)
         },
         description = "Deletes requested rating specification",
-        method = HttpMethod.DELETE,
-        tags = {TAG}
+        methods = HttpMethod.DELETE,
+        tags = {TAG},
+        path = "/ratings/template/{" + TEMPLATE_ID + "}"
     )
     @Override
     public void delete(@NotNull Context ctx, @NotNull String ratingTemplateId) {

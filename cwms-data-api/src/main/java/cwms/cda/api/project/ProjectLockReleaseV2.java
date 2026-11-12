@@ -33,9 +33,9 @@ import cwms.cda.data.dao.project.ProjectLockDao;
 import cwms.cda.data.dao.project.ProjectLockDaoV2;
 import cwms.cda.data.dto.project.ProjectLockV2;
 import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
 import org.jetbrains.annotations.NotNull;
 
 public final class ProjectLockReleaseV2 extends ProjectLockRelease<ProjectLockV2> {
@@ -65,7 +65,7 @@ public final class ProjectLockReleaseV2 extends ProjectLockRelease<ProjectLockV2
                 @OpenApiParam(name = LOCK_ID, required = true,
                         description = "The id of the lock to release."),
             },
-            method = HttpMethod.PUT,
+            methods = HttpMethod.PUT,
             tags = {TAGS},
             path = PATH
     )

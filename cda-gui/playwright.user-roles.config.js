@@ -6,7 +6,8 @@ export default defineConfig({
   workers: 1,
   webServer: {
     command: "npm run dev:onboarding",
-    url: "http://127.0.0.1:18742/cwms-data/",
-    reuseExistingServer: true,
+    url: "http://127.0.0.1:18742",
+    //reuseExistingServer: true,
+    env: { VITE_CDA_API_ROOT: "/cwms-data" },
   },
 });

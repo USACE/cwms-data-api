@@ -1,48 +1,61 @@
 package cwms.cda.data.dao;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.cfg.CoercionAction;
+import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.type.LogicalType;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import cwms.cda.data.dto.rating.document.RatingsDocument;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.stream.Collectors;
-import javax.xml.XMLConstants;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
 
-public class JsonRatingUtils {
+
+public final class JsonRatingUtils {
+
+    private static final ObjectMapper JSON_MAPPER = JsonMapper.builder()
+            // Repeated xml elements that only occur once are written (and may be sent back)
+            // as a plain object instead of a one element array.
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .enable(SerializationFeature.WRITE_SINGLE_ELEM_ARRAYS_UNWRAPPED)
+            // An empty element such as <rating-points/> is "" in json, read it back as an empty object.
+            .withCoercionConfig(LogicalType.POJO,
+                    cfg -> cfg.setCoercion(CoercionInputShape.EmptyString, CoercionAction.AsEmpty))
+            .build();
+
+    private static final XmlMapper XML_MAPPER = XmlMapper.builder()
+            .defaultUseWrapper(false)
+            // Lets an aliased or stray single element land in a List property.
+            .enable(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+            .build();
+
     private JsonRatingUtils() {
     }
 
     public static RatingSet fromJson(String json) throws RatingException {
-        String xml;
         try {
-            xml = jsonToXml(json);
-        } catch (IOException | TransformerException e) {
+            return toRatingSet(readJson(json));
+        } catch (JsonProcessingException e) {
             throw new RatingException(e);
         }
-
-        return RatingXmlFactory.ratingSet(xml);
     }
 
     public static String toJson(RatingSet ratingSet) throws RatingException {
         String retval = null;
         if (ratingSet != null) {
             try {
-                retval = xmlToJson(RatingXmlFactory.toXml(ratingSet, " "));
+                retval = writeJson(fromRatingSet(ratingSet));
             } catch (JsonProcessingException e) {
                 throw new RatingException(e);
             }
@@ -50,113 +63,72 @@ public class JsonRatingUtils {
         return retval;
     }
 
-    public static String jsonToXml(String json) throws IOException, TransformerException {
-        ObjectMapper om = new ObjectMapper();
-
-        JsonNode jsonNode = om.readTree(json);
-
-        XmlMapper mapper = new XmlMapper();
-        ObjectWriter writer = mapper.writer()
-                .withRootName("ratings");
-        String xml = writer.writeValueAsString(jsonNode);
-
-        return cleanupXml(xml);
+    public static RatingsDocument fromRatingSet(RatingSet ratingSet)
+            throws JsonProcessingException {
+        return readXml(RatingXmlFactory.toXml(ratingSet, " "));
     }
 
-    private static String cleanupXml(String xml) throws TransformerException {
-        // Doing this in steps b/c I'm not good enough at xslt to make it happen at once.
+    public static RatingSet toRatingSet(RatingsDocument ratings)
+            throws RatingException, JsonProcessingException {
+        return RatingXmlFactory.ratingSet(writeXml(ratings));
+    }
 
-        // The way we are writing out json, all the xml attributes were turned into
-        // child json fields.  We know certain fields (e.g. office-id, position)
-        // should be attributes.
-        String resourceLocation = "/cwms/cda/data/rating/remove_office.xsl";
-        InputStream resourceAsStream = JsonRatingUtils.class.getResourceAsStream(resourceLocation);
-        String officeXsl = readStream(resourceAsStream);
+    public static RatingsDocument readJson(String json) throws JsonProcessingException {
+        return JSON_MAPPER.readValue(json, RatingsDocument.class);
+    }
 
-        xml = applyTransform(xml, new StreamSource(new StringReader(officeXsl)));
+    public static String writeJson(RatingsDocument ratings) throws JsonProcessingException {
+        JsonNode tree = JSON_MAPPER.valueToTree(ratings);
+        replaceEmptyObjectsWithEmptyStrings(tree);
+        return JSON_MAPPER.writeValueAsString(tree);
+    }
 
-
-        String[] additionalAttributes = new String[]{"position", "estimate", "unit",};
-
-        for (String attributeName : additionalAttributes) {
-            String template = officeXsl.replace("office-id", attributeName);
-            xml = applyTransform(xml, new StreamSource(new StringReader(template)));
+    // The legacy json was a direct conversion of the xml tree, where an empty element such as
+    // <rating-points/> became "" rather than {}.
+    private static void replaceEmptyObjectsWithEmptyStrings(JsonNode node) {
+        if (node instanceof ObjectNode) {
+            ObjectNode object = (ObjectNode) node;
+            List<String> emptyFields = new ArrayList<>();
+            for (Map.Entry<String, JsonNode> field : object.properties()) {
+                if (isEmptyObject(field.getValue())) {
+                    emptyFields.add(field.getKey());
+                } else {
+                    replaceEmptyObjectsWithEmptyStrings(field.getValue());
+                }
+            }
+            emptyFields.forEach(name -> object.put(name, ""));
+        } else if (node instanceof ArrayNode) {
+            ArrayNode array = (ArrayNode) node;
+            for (int i = 0; i < array.size(); i++) {
+                if (isEmptyObject(array.get(i))) {
+                    array.set(i, TextNode.valueOf(""));
+                } else {
+                    replaceEmptyObjectsWithEmptyStrings(array.get(i));
+                }
+            }
         }
-
-        // Value should become an attribute except when its inside offset so it needs
-        // a special transform.
-        xml = applyTransform(xml, buildSourceFromResource("move_value.xsl"));
-
-        // There is also the issue where the value of some elements was being
-        // written as an empty child field.  We manually renamed
-        // those to element-value in the json transformation.
-        // move_element-value will move the value of element-value
-        // back into the value of the parent element.
-        xml = applyTransform(xml, buildSourceFromResource("move_element-value.xsl"));
-
-        return xml;
     }
 
-    static Source buildSourceFromResource(String filename) {
-        String resourceLocation = "/cwms/cda/data/rating/" + filename;
-        InputStream resourceAsStream = JsonRatingUtils.class.getResourceAsStream(resourceLocation);
-        if (resourceAsStream == null) {
-            throw new IllegalArgumentException("Could not find resource: " + resourceLocation);
-        }
-
-        return new StreamSource(resourceAsStream);
+    private static boolean isEmptyObject(JsonNode node) {
+        return node.isObject() && node.isEmpty();
     }
 
-    private static String readStream(InputStream inputStream) {
-        return new BufferedReader(new InputStreamReader(inputStream))
-                .lines().collect(Collectors.joining("\n"));
+    public static RatingsDocument readXml(String xml) throws JsonProcessingException {
+        return XML_MAPPER.readValue(xml, RatingsDocument.class);
     }
 
-    static String applyTransform(String xml, Source xslt) throws TransformerException {
-        TransformerFactory factory = TransformerFactory.newInstance();
-        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+    public static String writeXml(RatingsDocument ratings) throws JsonProcessingException {
+        RatingsDocument dbRatings = new RatingsDocument.Builder(ratings)
+                .withNoNamespaceSchemaLocation(null)
+                .build();
+        return XML_MAPPER.writeValueAsString(dbRatings);
+    }
 
-        Transformer transformer = factory.newTransformer(xslt);
-
-        StringReader input = new StringReader(xml);
-        StreamSource source = new StreamSource(input);
-
-        StringWriter sw = new StringWriter();
-        StreamResult outputResult = new StreamResult(sw);
-        transformer.transform(source, outputResult);
-
-        return sw.toString();
+    public static String jsonToXml(String json) throws JsonProcessingException {
+        return writeXml(readJson(json));
     }
 
     public static String xmlToJson(String xml) throws JsonProcessingException {
-        XmlMapper mapper = new XmlMapper();
-        JsonNode jsonNode = mapper.readTree(xml);
-
-        ObjectMapper om = new ObjectMapper();
-        ObjectWriter writer = om.writer();
-
-        String json = writer.writeValueAsString(jsonNode);
-
-        // When converted to json by parsing with XmlMapper
-        // and passing the result to ObjectMapper
-        // the xml like:
-        // 		<ind-rounding-specs>
-        //			<ind-rounding-spec position="1">2223456782</ind-rounding-spec>
-        //		</ind-rounding-specs>
-        // becomes:
-        // 		"ind-rounding-specs": {
-        // 			"ind-rounding-spec": {
-        //				"position": "1",
-        //				"": "2223456782"
-        //			}
-        //		}
-        //
-        // There is a weird field with an empty name in the json...
-        // Lets find those and rename the empty field to something else.
-
-        json = json.replace("\"\":", "\"element-value\":");
-
-        return json;
+        return writeJson(readXml(xml));
     }
 }

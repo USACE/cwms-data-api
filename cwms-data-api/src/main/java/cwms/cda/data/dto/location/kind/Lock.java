@@ -33,11 +33,14 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = Lock.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @JsonPropertyOrder({"projectId", "location", "chamber-type", "lock-width", "lock-length", "normal-lock-lift",
     "maximum-lock-lift", "length-units", "volume-units", "volume-per-lockage", "minimum-draft",
     "high-water-upper-pool-location-level", "low-water-lower-pool-location-level",

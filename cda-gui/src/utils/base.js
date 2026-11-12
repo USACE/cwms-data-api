@@ -1,8 +1,7 @@
 // base.js
 export function getBasePath() {
-  const { pathname } = window.location;
-  const basePath = "/" + pathname.split("/")[1];
-  return basePath;
+  const configuredRoot = import.meta.env.VITE_CDA_API_ROOT || "/cwms-data";
+  return new URL(configuredRoot, window.location.origin).pathname.replace(/\/$/, "");
 }
 
 export function getOrigin() {

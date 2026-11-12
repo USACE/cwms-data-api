@@ -36,6 +36,8 @@ import cwms.cda.data.dto.TimeSeriesCategory;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A PATCH of a timeseries group, describing time series "
@@ -43,6 +45,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonRootName("timeseries-group")
 @JsonDeserialize(builder = TimeSeriesGroupPatch.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class)
 public final class TimeSeriesGroupPatch extends CwmsDTO {

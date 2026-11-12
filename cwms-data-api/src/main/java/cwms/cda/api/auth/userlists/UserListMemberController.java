@@ -3,6 +3,8 @@ package cwms.cda.api.auth.userlists;
 import static cwms.cda.api.Controllers.DELETE;
 import static cwms.cda.api.Controllers.OFFICE;
 import static cwms.cda.api.Controllers.STATUS_204;
+import static cwms.cda.api.Controllers.STATUS_400;
+import static cwms.cda.api.Controllers.STATUS_501;
 import static cwms.cda.api.Controllers.USER_ID;
 import static cwms.cda.api.Controllers.USER_LIST_ID;
 import static cwms.cda.api.Controllers.requiredParam;
@@ -13,12 +15,11 @@ import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.UserListDao;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import org.jooq.DSLContext;
 
 public final class UserListMemberController implements Handler {
@@ -39,13 +40,15 @@ public final class UserListMemberController implements Handler {
             description = "The office that owns the list."),
         responses = {
             @OpenApiResponse(status = STATUS_204, description = "Member removed."),
+            @OpenApiResponse(status = STATUS_400, description = "A list parameter is missing or invalid."),
             @OpenApiResponse(status = "403", description = "Office administrator access required."),
-            @OpenApiResponse(status = "404", description = "List or member not found.")
+            @OpenApiResponse(status = "404", description = "List, office, or member not found."),
+            @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Remove a member from an office-scoped user list.",
-        method = HttpMethod.DELETE,
-        tags = UserListController.TAG
+        methods = HttpMethod.DELETE,
+        tags = UserListController.TAG,
+        path = "/user/list/{" + USER_LIST_ID + "}/members/{" + USER_ID + "}"
     )
     @Override
     public void handle(Context ctx) {
@@ -61,7 +64,7 @@ public final class UserListMemberController implements Handler {
             dao.removeMember(office,
                     UserListSupport.validateUserListId(ctx.pathParam(USER_LIST_ID)),
                     UserListSupport.validateUserId(ctx.pathParam(USER_ID)));
-            ctx.status(HttpCode.NO_CONTENT);
+            ctx.status(HttpStatus.NO_CONTENT);
         }
     }
 }
