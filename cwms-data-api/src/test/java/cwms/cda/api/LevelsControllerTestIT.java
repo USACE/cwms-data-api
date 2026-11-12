@@ -50,6 +50,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.CwmsDataApi;
@@ -95,6 +97,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
@@ -1998,6 +2001,122 @@ public class LevelsControllerTestIT extends DataApiTestIT {
     }
 
     @Test
+    void testSeasonalLevelIntervalSupportsLargeIntervalYear() throws Exception {
+        assumeTrue(supportsLongIntervalYear());
+
+        String locName = "seasonalLoc29";
+        createLocation(locName, true, OFFICE);
+        String levelId = String.format("%s.Elev.Ave.1Day.Bottom of Spillway", locName);
+        ZonedDateTime intervalOrigin = ZonedDateTime.ofInstant(Instant.parse("2012-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        ZonedDateTime levelDate = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        List<SeasonalValueBean> values = new ArrayList<>();
+        int numValues = 1300;
+        for (int i = 0; i < numValues; i++) {
+            values.add(new SeasonalValueBean.Builder()
+                .withValue(i + 1.0)
+                .withOffsetMonths(i)
+                .build());
+        }
+        SeasonalLocationLevel level = new SeasonalLocationLevel.Builder(levelId, levelDate.toInstant())
+            .withOfficeId(OFFICE)
+            .withLevelUnitsId("ft")
+            .withIntervalMonths(numValues)
+            .withIntervalOrigin(intervalOrigin.toInstant())
+            .withSeasonalValues(values)
+            .withInterpolateString("T")
+            .withExpirationDate(levelDate.plusYears(150).toInstant())
+            .build();
+
+        levelList.add(level);
+
+        String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
+
+        // assert the level does not exist
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .queryParam(EFFECTIVE_DATE, "2024-01-01T00:00:00Z")
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .get("/levels/" + levelId)
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED))
+            .body(MESSAGE, equalTo("Created Location Level"));
+    }
+
+    @Test
+    void testSeasonalLevelIntervalSupportsShortIntervalYear() throws Exception {
+        assumeFalse(supportsLongIntervalYear());
+
+        String locName = "seasonalLoc34";
+        createLocation(locName, true, OFFICE);
+        String levelId = String.format("%s.Elev.Ave.1Day.Bottom of Spillway", locName);
+        ZonedDateTime intervalOrigin = ZonedDateTime.ofInstant(Instant.parse("2012-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        ZonedDateTime levelDate = ZonedDateTime.ofInstant(Instant.parse("2024-01-01T00:00:00Z"), ZoneId.of("UTC"));
+        List<SeasonalValueBean> values = new ArrayList<>();
+        int numValues = 1300;
+        for (int i = 0; i < numValues; i++) {
+            values.add(new SeasonalValueBean.Builder()
+                .withValue(i + 1.0)
+                .withOffsetMonths(i)
+                .build());
+        }
+        SeasonalLocationLevel level = new SeasonalLocationLevel.Builder(levelId, levelDate.toInstant())
+            .withOfficeId(OFFICE)
+            .withLevelUnitsId("ft")
+            .withIntervalMonths(numValues)
+            .withIntervalOrigin(intervalOrigin.toInstant())
+            .withSeasonalValues(values)
+            .withInterpolateString("T")
+            .withExpirationDate(levelDate.plusYears(150).toInstant())
+            .build();
+
+        String levelJson = Formats.format(new ContentType(Formats.JSONV2), level);
+
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .queryParam(Controllers.OFFICE, OFFICE)
+            .header("Authorization", TestAccounts.KeyUser.SPK_NORMAL.toHeaderValue())
+            .body(levelJson)
+            .contentType(Formats.JSONV2)
+        .when()
+            .redirects()
+            .follow(true)
+            .redirects()
+            .max(3)
+            .post("/levels/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+    }
+
+    @Test
     void testStoreTimeSeriesLevel() throws Exception {
         String locName = "tsLocation123";
         createLocation(locName, true, OFFICE);
@@ -2687,5 +2806,15 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 dao.storeLocationLevel(level);
             }
         });
+    }
+
+    private boolean supportsLongIntervalYear() throws Exception {
+        AtomicBoolean supportsLongIntervalYear = new AtomicBoolean(false);
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            supportsLongIntervalYear.set(dao.supportsLargeInterval());
+        });
+        return supportsLongIntervalYear.get();
     }
 }

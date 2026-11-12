@@ -106,17 +106,17 @@ import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
 import org.jooq.types.DayToSecond;
 import org.jooq.types.YearToMonth;
-import usace.cwms.db.jooq.codegen.packages.CWMS_ENV_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LEVEL_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-import usace.cwms.db.jooq.codegen.packages.CWMS_UTIL_PACKAGE;
-import usace.cwms.db.jooq.codegen.udt.records.LOCATION_LEVEL_T;
-import usace.cwms.db.jooq.codegen.udt.records.SEASONAL_VALUE_T;
-import usace.cwms.db.jooq.codegen.udt.records.SEASONAL_VALUE_TAB_T;
-import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_T;
-import usace.cwms.db.jooq.codegen.udt.records.STR_TAB_TAB_T;
-import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
-import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
+import usace.cwms.db.jooq.codegen_latest.packages.CWMS_ENV_PACKAGE;
+import usace.cwms.db.jooq.codegen_latest.packages.CWMS_LEVEL_PACKAGE;
+import usace.cwms.db.jooq.codegen_latest.packages.CWMS_LOC_PACKAGE;
+import usace.cwms.db.jooq.codegen_latest.packages.CWMS_UTIL_PACKAGE;
+import usace.cwms.db.jooq.codegen_latest.udt.records.LOCATION_LEVEL_T;
+import usace.cwms.db.jooq.codegen_latest.udt.records.SEASONAL_VALUE_T;
+import usace.cwms.db.jooq.codegen_latest.udt.records.SEASONAL_VALUE_TAB_T;
+import usace.cwms.db.jooq.codegen_latest.udt.records.STR_TAB_T;
+import usace.cwms.db.jooq.codegen_latest.udt.records.STR_TAB_TAB_T;
+import usace.cwms.db.jooq.codegen_latest.udt.records.ZTSV_ARRAY;
+import usace.cwms.db.jooq.codegen_latest.udt.records.ZTSV_TYPE;
 import usace.cwms.db.jooq.codegen_latest.tables.AV_LOCATION_LEVEL_REF;
 import usace.cwms.db.jooq.codegen_latest.tables.AV_LOCATION_LEVEL_VALUES;
 
@@ -626,7 +626,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 SEASONAL_VALUE_T seasonalValueT = new SEASONAL_VALUE_T();
                 seasonalValueT.setOFFSET_MINUTES(toBigDecimal(seasonalValue.getOffsetMinutes()));
                 if (seasonalValue.getOffsetMonths() != null) {
-                    seasonalValueT.setOFFSET_MONTHS(seasonalValue.getOffsetMonths().byteValue());
+                    seasonalValueT.setOFFSET_MONTHS(new BigDecimal(seasonalValue.getOffsetMonths()));
                 }
                 seasonalValueT.setVALUE(toBigDecimal(seasonalValue.getValue()));
                 pSeasonalValues.add(seasonalValueT);
@@ -637,7 +637,7 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
 
     public static SeasonalValueBean buildSeasonalValue(SEASONAL_VALUE_T fromBean) {
         return new SeasonalValueBean.Builder(fromBean.getVALUE().doubleValue())
-                .withOffsetMonths(fromBean.getOFFSET_MONTHS())
+                .withOffsetMonths(fromBean.getOFFSET_MONTHS().toBigInteger().intValue())
                 .withOffsetMinutes(Optional.ofNullable(fromBean.getOFFSET_MINUTES())
                     .map(BigDecimal::toBigInteger).orElse(null))
                 .build();
@@ -1448,6 +1448,20 @@ public class LocationLevelsDaoImpl extends JooqDao<LocationLevel> implements Loc
                 .thenComparing((LocationLevelRef l) -> l.getLocationLevelId().getName()))
             .forEach(builder::add);
         return builder.build();
+    }
+
+    /**
+     * Determines if the database supports intervals of more than 99 years.
+     * @return boolean true if the database supports intervals of more than 99 years.
+     */
+    public boolean supportsLargeInterval() {
+        try {
+            CWMS_UTIL_PACKAGE.call_MONTHS_TO_YMINTERVAL(dsl.configuration(), BigInteger.valueOf(1250L));
+            return true;
+        } catch (Exception ex) {
+            logger.atFiner().withCause(ex).log("Database does not support intervals of more than 99 years.");
+            return false;
+        }
     }
 
     private static void buildLocationLevelSelectFieldsNewView() {
