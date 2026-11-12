@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
 
 @Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(SchemaMinimumVersionCondition.class)
+@ExtendWith(SchemaVersionCondition.class)
 public @interface MinimumSchema {
     int value();
 }

@@ -50,6 +50,8 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.codahale.metrics.MetricRegistry;
 import cwms.cda.CwmsDataApi;
@@ -72,7 +74,6 @@ import cwms.cda.data.dto.locationlevel.VirtualLocationLevel;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import fixtures.CwmsDataApiSetupCallback;
-import fixtures.MaximumSchema;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
 import hec.data.RatingException;
@@ -96,6 +97,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicBoolean;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSetContainerXmlFactory;
 import mil.army.usace.hec.cwms.rating.io.xml.RatingSpecXmlFactory;
@@ -1998,9 +2000,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body("total", is(1));
     }
 
-//    @MinimumSchema(20261001)
     @Test
     void testSeasonalLevelIntervalSupportsLargeIntervalYear() throws Exception {
+        assumeTrue(supportsLongIntervalYear());
+
         String locName = "seasonalLoc29";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Elev.Ave.1Day.Bottom of Spillway", locName);
@@ -2066,9 +2069,10 @@ public class LevelsControllerTestIT extends DataApiTestIT {
             .body(MESSAGE, equalTo("Created Location Level"));
     }
 
-//    @MaximumSchema(20260716)
     @Test
     void testSeasonalLevelIntervalSupportsShortIntervalYear() throws Exception {
+        assumeFalse(supportsLongIntervalYear());
+
         String locName = "seasonalLoc34";
         createLocation(locName, true, OFFICE);
         String levelId = String.format("%s.Elev.Ave.1Day.Bottom of Spillway", locName);
@@ -2802,5 +2806,15 @@ public class LevelsControllerTestIT extends DataApiTestIT {
                 dao.storeLocationLevel(level);
             }
         });
+    }
+
+    private boolean supportsLongIntervalYear() throws Exception {
+        AtomicBoolean supportsLongIntervalYear = new AtomicBoolean(false);
+        CwmsDataApiSetupCallback.getDatabaseLink().connection(c -> {
+            DSLContext dsl = dslContext(c, OFFICE);
+            LocationLevelsDaoImpl dao = new LocationLevelsDaoImpl(dsl);
+            supportsLongIntervalYear.set(dao.supportsLargeInterval());
+        });
+        return supportsLongIntervalYear.get();
     }
 }
