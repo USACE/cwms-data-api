@@ -53,5 +53,7 @@ Some decisions may also be a proposal and marked appropriately.
     Data Event Message Formats - Gates <./0026-data-event-formats-gates.rst>
     Data Event Message Formats - Turbines <./0027-data-event-formats-turbines.rst>
     Data Event Message Formats - Pumps <./0028-data-event-formats-pumps.rst>
+    CWMS-Data-Api Test Policy <./0029-test-requirements.rst>
+    CWMS-Data-Api Feature Enablement Policy <./0030-feature-enablement-policy.rst>
 
     ADR Template <./adr-template.rst>
