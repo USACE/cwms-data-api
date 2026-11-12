@@ -96,15 +96,17 @@ services:
       - blob.store.bucket=cwms-test
       - blob.store.accessKey=cda_user
       - blob.store.secretKey=cda_password
+      # set any value in a .env to verify behavior manually.
+      - ECS_CONTAINER_METADATA_URI_V4=${ECS_CONTAINER_METADATA_URI_V4:-}
     expose:
       - 7000
       - 5005
     healthcheck:
-      test: ["CMD","/usr/bin/wget", "-q","localhost:7000/cwms-data/offices/HEC", "-O", "-"]
+      test: ["CMD","/usr/bin/wget", "-q","127.0.0.1:7000/cwms-data/offices/HEC", "-O", "-"]
       interval: 5s
       timeout: 1s
-      retries: 100
-      start_period: 2s
+      retries: 200
+      start_period: 5s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.data-api.rule=PathPrefix(`/`)"
@@ -194,6 +196,11 @@ services:
           cpus: "1.0"
           memory: 2G
   cda-etl:
+    # if we want this enabled by default in the future, which isn't unreasonable, we need to make
+    # sure this stack contains all required configuration at start up.
+    # This also needs the dependencies on the above appropriately set.
+    profiles:
+      - manual
     build:
       context: ./cda-etl
       dockerfile: Dockerfile
