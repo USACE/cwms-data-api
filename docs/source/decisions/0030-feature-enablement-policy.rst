@@ -14,6 +14,11 @@ allowing continous integration.
 A "Feature" is defined as a specific behavior that may affect general usage of the API. A new endpoint, *CAN* be
 considered a feature for the purpose of this possible; however, it is not required to be controlled by a feature.
 
+Additionally, new behavior of an existing endpoint can be considered a "Feature". However, whether a feature flag
+is required depends on whether that change is both specific to the endpoint and the nature of the change, in these cases
+it is acceptable for the parameter itself to act as the feature gate. See Example 3 below.
+
+
 This document describes the way and the why. The how is minimal.
 
 Opinions
@@ -22,8 +27,7 @@ Opinions
 Opinion 1
 ---------
 
-Summary: Use Togglez for all features. Per feature, as appropriate, allow for a combination of system level, and user
-control of a given feature.
+Summary: Use Togglez for all features affecting global behavior. Per feature, as appropriate, allow for a combination of system level, and user control of a given feature.
 
 Author @MikeNeilson
 
@@ -48,6 +52,7 @@ It is proposed that we use the following policy:
    features without the endpoint code getting bogged down in conditional statements.
   
 Example 1. Blobs in S3
+~~~~~~~~~~~~~~~~~~~~~~
 
 This one is on-going. While we continously test on each build the use of Object Storage for the "blob" end point, 
 it is not enabled anywhere. As the enablement cannot be controlled at runtime, or per request, we have not had the time
@@ -55,7 +60,8 @@ to turn it on, even in cwbi-dev, and verify configuration of the environment. Be
 set of POST and GET, would allow verification of the infrastructure without impacting 
 
 
-Example 2.
+Example 2. Time series
+~~~~~~~~~~~~~~~~~~~~~~
 
 The future Time Series Database improvements work, while much testing can be done locally, we want to start excercising
 it in the cloud environments quickly without affecting on-going work, additionally, local usage would not be able to use
@@ -63,6 +69,24 @@ the same storage method so we need to retain the Oracle storage.
 
 During the development of the work, a new Feature is added, say TIMESERIES_DATABASE_S3. By default this would be disabled.
 Initial testors can then enable the change per-request to verify operation.
+
+
+Example 3. New behavior
+~~~~~~~~~~~~~~~~~~~~~~~
+
+https://github.com/USACE/cwms-data-api/pull/2031 is a good example of an additional behavior that is opt-in only. 
+If a given usage does not provide a value for the new query parameter the existing behavior is used. This is an example
+of change in behavior that is specific to an endpoint and usage determmined. The query parameter parameter itself
+acts as the feature-gate, and allows for more than a True/False. Thus, this is an example of a Feature that *SHOULD NOT*
+be a Togglz feature flag.
+
+Example 4. LRTS
+~~~~~~~~~~~~~~~
+
+The LRTS rendering (e.g. using ~1Day vs 1DayLocal) is currently toggled by a header value, `X-CWMS-Lrts-Formatting`. At
+this time it is a user session level feature; however, it affects multiple end-points and requires both CDA and the
+database to change behavior based on it's state. This an example of a Feature that *SHOULD* be a Togglz feature flag.
+
 
 
 Regarding Gating And Activing Feature behavior
