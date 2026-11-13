@@ -26,7 +26,7 @@ export function AssignOfficeDialog({
   const usersQuery = useCdaUsers({
     cdaUrl,
     token,
-    usernameLike: submittedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    usernameLike: submittedSearch,
     queryOptions: { enabled: Boolean(submittedSearch) },
   });
   const updateRoles = useUpdateCdaUserRoles({ cdaUrl, token });
@@ -84,7 +84,8 @@ export function AssignOfficeDialog({
           <Input
             id="office-user-search"
             autoFocus
-            placeholder="Enter all or part of a username"
+            placeholder="Enter a username or regular expression"
+            aria-describedby="office-user-search-help"
             value={search}
             disabled={working}
             onChange={(event) => setSearch(event.target.value)}
@@ -98,6 +99,10 @@ export function AssignOfficeDialog({
           Search
         </Button>
       </form>
+      <Text id="office-user-search-help" className="mt-2 text-sm">
+        Search is case-insensitive. Use .* for all users or USER.* for usernames
+        containing USER. Use {"\\."} to match a literal period.
+      </Text>
       {usersQuery.error && <Notice kind="error">{usersQuery.error.message}</Notice>}
       {error && <Notice kind="error">{error}</Notice>}
       {usersQuery.isFetching ? (
