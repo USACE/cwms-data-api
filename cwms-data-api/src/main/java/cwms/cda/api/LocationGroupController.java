@@ -349,6 +349,7 @@ public class LocationGroupController implements CrudHandler {
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);
             }
+            deserialize = Formats.parsePatchContent(contentType, deserialize, body, LocationGroup.class);
             locationGroupDao.replaceMetadata(deserialize, oldGroup.get(), replaceAssignedLocs);
             boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             List<CwmsId> missingLocations = locationGroupDao.assignLocs(deserialize, office, ignoreMissing);
