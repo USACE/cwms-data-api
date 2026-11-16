@@ -96,14 +96,16 @@ jobs:
       - name: show version
         run: echo ${{ steps.version.outputs.version }}
       - name: build war
-        run: ./gradlew build --info --init-script init.gradle -PversionOverride=$VERSION
+        run: ./gradlew installDist assembleDist --info --init-script init.gradle -PversionOverride=$VERSION
       - name: Create GitHub Release
         id: create_release
         # Allow testing without creating a release
         if: github.event_name != 'pull_request' && (github.event.ref == 'refs/heads/develop' || startsWith(github.event.ref, 'refs/tags'))
         uses: softprops/action-gh-release@v2.6.1
         with:
-          files: cwms-data-api/build/libs/cwms-data-api-${{steps.version.outputs.version}}.war
+          files: |
+            cwms-data-api/build/distributions/cwms-data-api-${{steps.version.outputs.version}}.tar
+            cwms-data-api/build/distributions/cwms-data-api-${{steps.version.outputs.version}}.zip
           tag_name: ${{steps.version.outputs.version}}
           generate_release_notes: true
           prerelease: ${{steps.version.outputs.prerelease}}
