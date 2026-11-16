@@ -81,6 +81,8 @@ import org.eclipse.jetty.ee10.servlet.SessionHandler;
 import org.jooq.exception.DataAccessException;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
+import org.togglz.core.bootstrap.FeatureManagerBootstrapper;
+import org.togglz.core.context.ContextClassLoaderFeatureManagerProvider;
 
 
 /**
@@ -202,7 +204,9 @@ public final class CwmsDataApi {
         this.port = port;
         this.appContext = context;
         logger.atInfo().log("Initializing Javalin.");
-
+        var fmbs = new FeatureManagerBootstrapper();
+        var manager = fmbs.createFeatureManager(ds);
+        ContextClassLoaderFeatureManagerProvider.bind(manager);
         var totalRequests = metrics.meter("cwms.dataapi.total_requests");
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);

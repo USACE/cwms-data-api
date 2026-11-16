@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import org.togglz.core.manager.FeatureManager;
 import org.togglz.core.manager.FeatureManagerBuilder;
+import org.togglz.core.repository.composite.CompositeStateRepository;
 import org.togglz.core.repository.file.FileBasedStateRepository;
 import org.togglz.core.spi.FeatureManagerProvider;
 
@@ -27,9 +28,14 @@ public class CdaFeatureManagerProvider implements FeatureManagerProvider {
         if (manager == null) {
             synchronized (this) {
                 if (manager == null) {
+                    var composite = new CompositeStateRepository(
+                                    new CdaFeatureStateRepository(), // TODO: the datasource?
+                                    new FileBasedStateRepository(resolvePropertiesFile())
+                                );
+                                composite.setSetterSelection(CompositeStateRepository.SetterSelection.FIRST);
                     manager = new FeatureManagerBuilder()
                             .featureEnum(CdaFeatures.class)
-                            .stateRepository(new FileBasedStateRepository(resolvePropertiesFile()))
+                            .stateRepository(composite)
                             .build();
                 }
             }
