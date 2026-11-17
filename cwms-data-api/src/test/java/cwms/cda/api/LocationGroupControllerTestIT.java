@@ -1590,6 +1590,93 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
 
     @ParameterizedTest
     @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
+    void test_partial_failed_patch(String format) throws Exception {
+        // Verify that a PATCH body containing only a subset of fields updates just those fields
+        // and leaves everything else on the existing group untouched (JSON merge patch semantics).
+        String officeId = user.getOperatingOffice();
+        String locationId = "LocGrpPartialPatch3";
+        String locationId2 = "LocGrpPartialPatch4";
+        createLocation(locationId, true, officeId);
+        createLocation(locationId2, true, officeId);
+        String sharedLocAliasId = "sharedLocAliasId";
+        String originalDescription = "IntegrationTesting";
+        String patchedDescription = "Partially Patched Description";
+        AssignedLocation assignLoc = new AssignedLocation(locationId, officeId, "AliasId", 1, locationId);
+        LocationCategory cat = new LocationCategory(officeId, "test_partial_patch1", "PartialPatchCategoryDesc");
+        LocationGroup group = new LocationGroup(new LocationGroup(cat, officeId, "test_partial_patch2", originalDescription,
+            sharedLocAliasId, locationId, 123), Collections.singletonList(assignLoc));
+        groupsToCleanup.add(group);
+        categoriesToCleanup.add(cat);
+        ContentType contentType = Formats.parseHeader(Formats.JSON, LocationCategory.class);
+        String categoryJson = Formats.format(contentType, cat);
+        String groupJson = Formats.format(contentType, group);
+        //Create Category
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(categoryJson)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/category/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+        //Create Group
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(groupJson)
+            .header("Authorization", user.toHeaderValue())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/location/group")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_CREATED));
+
+        // Partial body: only the identifying/required fields, a new description, and one additional
+        // assigned location. shared-loc-alias-id, shared-ref-location-id, loc-group-attribute, the
+        // category description, and the existing assigned location are intentionally omitted.
+        String partialPatchJson = "{"
+            + "\"office-id\":\"" + officeId + "\","
+            + "\"id\":\"" + group.getId() + "\","
+            + "\"description\":\"" + patchedDescription + "\","
+            + "\"assigned-locations\":[{"
+            +     "\"location-id\":\"" + locationId2 + "\","
+            +     "\"office-id\":\"" + officeId + "\","
+            +     "\"alias-id\":\"AliasId2\","
+            +     "\"attribute\":2,"
+            +     "\"ref-location-id\":\"" + locationId2 + "\""
+            + "}]"
+            + "}";
+
+        //Partial Patch
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(format)
+            .contentType(Formats.JSON)
+            .body(partialPatchJson)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .patch("/location/group/" + group.getId())
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {Formats.JSON, Formats.DEFAULT})
     void test_district_permissions(String format) throws Exception {
         String officeId = user.getOperatingOffice();
         String locationId = "LocationGroupTest";

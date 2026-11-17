@@ -45,6 +45,8 @@ import cwms.cda.formatters.csv.CsvV1LocationGroup;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
 import io.javalin.apibuilder.CrudHandler;
 import io.javalin.config.Key;
+import io.javalin.http.BadRequestResponse;
+import io.javalin.http.Context;
 import io.javalin.http.Header;
 import io.javalin.http.HttpStatus;
 import io.javalin.openapi.HttpMethod;
@@ -54,13 +56,12 @@ import io.javalin.openapi.OpenApiParam;
 import io.javalin.openapi.OpenApiRequestBody;
 import io.javalin.openapi.OpenApiResponse;
 import io.javalin.openapi.OpenApiSecurity;
-import io.javalin.http.Context;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import jakarta.servlet.http.HttpServletResponse;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -342,10 +343,11 @@ public class LocationGroupController implements CrudHandler {
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
-            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class)
-                .getOrDefault(deserialize.getLocationCategory().getId());
+            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).getOrNull();
+            categoryId = categoryId == null && deserialize.getLocationCategory() != null
+                ? deserialize.getLocationCategory().getId() : categoryId;
             if (categoryId == null || categoryId.isEmpty()) {
-                throw new BadRequestException("Category ID is required, either as a query parameter or"
+                throw new BadRequestResponse("Category ID is required, either as a query parameter or"
                     + " in the request body");
             }
             Optional<LocationGroup> oldGroup = locationGroupDao.getLocationGroup(office, categoryId, groupId);
