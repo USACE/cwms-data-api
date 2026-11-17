@@ -1,7 +1,8 @@
 package cwms.cda.spi;
 
 import io.javalin.http.Context;
-import io.swagger.v3.oas.models.security.SecurityScheme;
+//import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.javalin.openapi.SecurityScheme;
 import java.security.Principal;
 
 

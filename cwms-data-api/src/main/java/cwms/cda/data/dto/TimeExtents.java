@@ -25,15 +25,15 @@ package cwms.cda.data.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonFormat.Shape;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.ZonedDateTime;
@@ -43,6 +43,7 @@ import java.time.ZonedDateTime;
 @JsonDeserialize(builder = TimeExtents.Builder.class)
 @Schema(description = "Represents the start and end times of an extent")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class TimeExtents extends CwmsDTOBase {
 
     @Schema(description = "Earliest value in the timeseries")

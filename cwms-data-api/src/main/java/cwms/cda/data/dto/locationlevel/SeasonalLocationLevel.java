@@ -47,6 +47,8 @@ import hec.data.level.IParameterTypedValue;
 import hec.data.level.ISeasonalInterval;
 import hec.data.level.ISeasonalValue;
 import hec.data.level.ISeasonalValues;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -59,6 +61,7 @@ import rma.util.RMAConst;
 @JsonDeserialize(builder = SeasonalLocationLevel.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV2, formatter = XMLv2.class, aliases = {Formats.XML})

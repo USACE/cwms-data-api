@@ -7,7 +7,7 @@ export default defineConfig({
   webServer: {
     command:
       "npx vite --mode dev-cda-compose --host 127.0.0.1 --port 5178 --strictPort",
-    url: "http://127.0.0.1:5178/cwms-data/",
+    url: "http://127.0.0.1:5178",
     timeout: 120000,
     env: {
       VITE_CDA_API_ROOT: "/cwms-data",

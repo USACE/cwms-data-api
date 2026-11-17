@@ -1,6 +1,6 @@
 package cwms.cda.security;
 
-import io.javalin.core.security.RouteRole;
+import io.javalin.security.RouteRole;
 
 public class Role implements RouteRole {
     String name;

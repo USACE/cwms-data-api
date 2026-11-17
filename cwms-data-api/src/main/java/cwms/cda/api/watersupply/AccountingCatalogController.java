@@ -61,18 +61,18 @@ import cwms.cda.data.dto.watersupply.WaterUserContract;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
-import io.javalin.core.util.Header;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -83,6 +83,7 @@ public class AccountingCatalogController implements Handler {
     private static final String TAG = "Pump Accounting";
     private static final String ROW_LIMIT = "row-limit";
     private static final String ASCENDING = "ascending";
+    private static final int DEFAULT_ROW_LIMIT = 500;
     private final MetricRegistry metrics;
 
     private Timer.Context markAndTime(String subject) {
@@ -117,7 +118,7 @@ public class AccountingCatalogController implements Handler {
             @OpenApiParam(name = ASCENDING, description = "Whether or not the entries should be returned "
                 + "in ascending order. Defaults to TRUE.", type = Boolean.class),
             @OpenApiParam(name = ROW_LIMIT, description = "The maximum number of rows to return. "
-                + "Defaults to 0, which means no limit.", type = Integer.class)
+                + "Defaults to " + DEFAULT_ROW_LIMIT + ".", type = Integer.class)
         },
         pathParams = {
             @OpenApiParam(name = OFFICE, description = "The office ID of the project the "
@@ -132,10 +133,8 @@ public class AccountingCatalogController implements Handler {
         responses = {
             @OpenApiResponse(status = STATUS_200,
                 content = {
-                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
-                        type = Formats.JSONV1),
-                    @OpenApiContent(from = WaterSupplyAccounting.class, isArray = true,
-                        type = Formats.JSON)
+                    @OpenApiContent(from = WaterSupplyAccounting[].class, type = Formats.JSONV1),
+                    @OpenApiContent(from = WaterSupplyAccounting[].class, type = Formats.JSON)
                 }),
             @OpenApiResponse(status = STATUS_404, description = "Pump Accounting not found for "
                 + "provided input parameters."),
@@ -148,8 +147,8 @@ public class AccountingCatalogController implements Handler {
                 + Formats.JSONV1 + " will be used as the default.")
         },
         description = "Get pump accounting entries associated with a water supply contract.",
-        path = "/projects/{office}/water-user/{water-user}/contracts/{contract-name}/accounting",
-        method = HttpMethod.GET,
+        path = "/projects/{office}/{project-id}/water-user/{water-user}/contracts/{contract-name}/accounting",
+        methods = HttpMethod.GET,
         tags = {TAG}
     )
     @IgnoreRequiredQueryParamMismatch(parameterNames = {TIMEZONE})
@@ -167,7 +166,15 @@ public class AccountingCatalogController implements Handler {
                 .getOrDefault(true);
             final boolean endInclusive = ctx.queryParamAsClass(END_TIME_INCLUSIVE, Boolean.class).getOrDefault(true);
             final boolean ascending = ctx.queryParamAsClass(ASCENDING, Boolean.class).getOrDefault(true);
-            final int rowLimit = ctx.queryParamAsClass(ROW_LIMIT, Integer.class).getOrDefault(0);
+            final int rowLimit = ctx.queryParamAsClass(ROW_LIMIT, Integer.class).getOrDefault(DEFAULT_ROW_LIMIT);
+
+            if (rowLimit == 0) {
+                CdaError error = new CdaError("Unable to retrieve accounting - " + ROW_LIMIT + " must be greater than 0.");
+                LOGGER.atSevere().log("Unable to retrieve accounting - " + ROW_LIMIT + " must be greater than 0.");
+                ctx.status(HttpServletResponse.SC_BAD_REQUEST).json(error);
+                return;
+            }
+
             DSLContext dsl = getDslContext(ctx);
 
             String formatHeader = ctx.headerAsClass(Header.ACCEPT, String.class).getOrDefault(Formats.JSONV1);
@@ -219,7 +226,7 @@ public class AccountingCatalogController implements Handler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve pump accounting", ex);

@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +18,7 @@ import java.util.List;
 @JsonDeserialize(builder = TimeSeriesIdentifierDescriptors.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class)
 public class TimeSeriesIdentifierDescriptors extends CwmsDTOPaginated {
 

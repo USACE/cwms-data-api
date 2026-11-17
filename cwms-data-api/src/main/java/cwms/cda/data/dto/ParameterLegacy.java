@@ -9,6 +9,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 /**
  * DTO used exclusively for legacy JSON (version 1) parameter payloads.
@@ -19,6 +21,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = ParameterLegacy.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class ParameterLegacy extends CwmsDTOBase {
 
     private final String abstractParam;

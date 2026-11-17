@@ -37,7 +37,7 @@ jobs:
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
       - name: setup java
         uses: actions/setup-java@v5.2.0
         with:
@@ -96,7 +96,7 @@ jobs:
       OPEN_API_TEST: "true"
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
       - name: setup java
         uses: actions/setup-java@v5.2.0
         with:
@@ -114,18 +114,59 @@ jobs:
           include_passed: true
           report_paths: '**/TEST-*.xml'
           detailed_summary: true
-  build-docker-image:
+  # Image test was removed as the below smoke test builds the image. Though using Docker Compose
+  # it is handled the same way.
+  image-smoke-test:
     runs-on: ubuntu-latest
     steps:
+      - name: Clean up disk space, so we don't run out.
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
       - name: checkout code
-        uses: actions/checkout@v5.0.0
-      - name: Build docker image
-        run: docker build -t cda:build-latest .
+        uses: actions/checkout@v7.0.1
+      - name: Build Data-API image
+        run : |
+          # build CDA first. NOTE: a separate PR exists to split the compile step and share it.
+          # that should work here to reduce times.
+          docker compose pull --ignore-buildable
+          docker compose build data-api
+      - name: Startup System
+        run: |
+          # intentionally start auth first
+          docker compose up auth -d --wait --wait-timeout 300 --no-deps
+          docker compose up -d --wait --wait-timeout 900
+      - name: Health Check - default listen host
+        run: |
+          timeout 60s bash -c 'until curl -i http://localhost:8081/cwms-data/office/SPK &> /dev/null; do sleep 2; done'
+          if [ $? != 0 ]; then
+            echo "CDA compose stack did not start in a reasonable about of time, or provide a simple health check value."
+            exit 1
+          fi
+      - name: Alt listen host
+        run: |
+          echo "ECS_CONTAINER_METADATA_URI_V4=active" >> .env
+          docker compose up -d data-api --force-recreate --no-deps
+          timeout 300s bash -c 'until docker compose logs -f data-api | grep -q "appears to be AWS"  &> /dev/null; do sleep 2; done'
+      - name: Show logs
+        if: failure()
+        run: |
+          # list them in order for easier review
+          docker compose logs db
+          docker compose logs db_webuser_permissions
+          docker compose logs data-api
+          docker compose logs auth
+          docker compose logs traefik
+          docker compose ps
+          docker inspect --format '{{json .State.Health}}' cwms-data-api-data-api-1 | jq
+      
+        
   build-schema-migration-image:
     runs-on: ubuntu-latest
     steps:
       - name: checkout code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
       # No uploads, we're just verifying that nothing broke the docker image.
       - name: Build Migration image
         uses: ./.github/actions/database-migration-image
@@ -143,7 +184,7 @@ jobs:
     if: always() && (github.ref_name == 'develop')
     steps:
       - name: Badge Branch
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v7.0.1
         with:
           ref: badges
           fetch-depth: 1

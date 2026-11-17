@@ -13,6 +13,8 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 /**
  * Columnar time series profile parser
@@ -23,6 +25,7 @@ import cwms.cda.formatters.json.JsonV1;
 @JsonDeserialize(builder = TimeSeriesProfileParserColumnar.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @JsonTypeName(COLUMNAR_TYPE)
 public final class TimeSeriesProfileParserColumnar extends TimeSeriesProfileParser {
     private final Integer timeStartColumn;

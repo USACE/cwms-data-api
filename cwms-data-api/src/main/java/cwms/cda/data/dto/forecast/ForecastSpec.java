@@ -7,11 +7,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
-import cwms.cda.api.errors.FieldException;
 import cwms.cda.data.dto.CwmsDTO;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,6 +23,7 @@ import java.util.List;
 @JsonDeserialize(builder = ForecastSpec.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class ForecastSpec extends CwmsDTO {
     @Schema(description = "Forecast Spec ID")
     private final String specId;

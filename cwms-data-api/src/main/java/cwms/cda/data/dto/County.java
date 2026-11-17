@@ -31,12 +31,15 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 @Schema(description = "A representation of a county")
 @JsonRootName("county")
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class County extends CwmsDTOBase {
 
     @JsonProperty(required = true)

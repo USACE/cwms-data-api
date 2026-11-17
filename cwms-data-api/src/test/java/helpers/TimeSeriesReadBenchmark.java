@@ -69,7 +69,7 @@ public final class TimeSeriesReadBenchmark {
             System.out.println("Benchmark report written to " + resultFile);
 
             for (BenchmarkRun run: report.runs) {
-                if (run.httpCode != 200) {
+                if (run.HttpStatus != 200) {
                     throw new IllegalStateException(
                             "Benchmark completed with HTTP failures. Results saved to " + resultFile);
                 }
@@ -321,20 +321,20 @@ public final class TimeSeriesReadBenchmark {
         RequestResult requestResult = executeRequest(config, responseFile);
         ResponseSummary responseSummary = summarizeResponse(responseFile);
         String responseFileValue = responseFile.toAbsolutePath().toString();
-        if (!config.keepResponses && requestResult.httpCode == 200) {
+        if (!config.keepResponses && requestResult.HttpStatus == 200) {
             Files.deleteIfExists(responseFile);
             responseFileValue = null;
         }
         return new BenchmarkRun(
                 runIndex,
-                requestResult.httpCode,
+                requestResult.HttpStatus,
                 roundSeconds(requestResult.timeTotalNanos),
                 responseSummary.responseBytes,
                 responseSummary.reportedTotal,
                 responseSummary.reportedPageSize,
                 responseSummary.firstTimestamp,
                 responseSummary.lastTimestamp,
-                requestResult.httpCode == 200 ? null : Files.readString(responseFile),
+                requestResult.HttpStatus == 200 ? null : Files.readString(responseFile),
                 responseFileValue
         );
     }
@@ -558,11 +558,11 @@ public final class TimeSeriesReadBenchmark {
     }
 
     private static final class RequestResult {
-        private final int httpCode;
+        private final int HttpStatus;
         private final long timeTotalNanos;
 
-        private RequestResult(int httpCode, long timeTotalNanos) {
-            this.httpCode = httpCode;
+        private RequestResult(int HttpStatus, long timeTotalNanos) {
+            this.HttpStatus = HttpStatus;
             this.timeTotalNanos = timeTotalNanos;
         }
     }
@@ -611,7 +611,7 @@ public final class TimeSeriesReadBenchmark {
         private static BenchmarkSummary fromRuns(List<BenchmarkRun> runs) {
             List<BenchmarkRun> successfulRuns = new ArrayList<>();
             for (BenchmarkRun run : runs) {
-                if (run.httpCode == 200) {
+                if (run.HttpStatus == 200) {
                     successfulRuns.add(run);
                 }
             }
@@ -638,7 +638,7 @@ public final class TimeSeriesReadBenchmark {
 
     public static final class BenchmarkRun {
         public final int run;
-        public final int httpCode;
+        public final int HttpStatus;
         public final double timeTotalSeconds;
         public final long responseBytesOnDisk;
         public final Integer reportedTotal;
@@ -648,11 +648,11 @@ public final class TimeSeriesReadBenchmark {
         public final String errorBody;
         public final String responseFile;
 
-        private BenchmarkRun(int run, int httpCode, double timeTotalSeconds, long responseBytesOnDisk,
+        private BenchmarkRun(int run, int HttpStatus, double timeTotalSeconds, long responseBytesOnDisk,
                              Integer reportedTotal, Integer reportedPageSize, Long firstTimestamp,
                              Long lastTimestamp, String errorBody, String responseFile) {
             this.run = run;
-            this.httpCode = httpCode;
+            this.HttpStatus = HttpStatus;
             this.timeTotalSeconds = timeTotalSeconds;
             this.responseBytesOnDisk = responseBytesOnDisk;
             this.reportedTotal = reportedTotal;

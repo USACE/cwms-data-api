@@ -30,6 +30,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.List;
 
 @JsonDeserialize(builder = VirtualSourceRatingsElement.Builder.class)
@@ -37,6 +41,7 @@ import java.util.List;
         getterVisibility = JsonAutoDetect.Visibility.NONE,
         isGetterVisibility = JsonAutoDetect.Visibility.NONE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class VirtualSourceRatingsElement {
 
     @JsonProperty("source-rating")

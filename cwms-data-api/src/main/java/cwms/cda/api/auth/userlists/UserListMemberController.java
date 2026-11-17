@@ -15,12 +15,11 @@ import cwms.cda.api.Controllers;
 import cwms.cda.data.dao.UserListDao;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.HttpCode;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import io.javalin.plugin.openapi.annotations.OpenApiSecurity;
+import io.javalin.http.HttpStatus;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import org.jooq.DSLContext;
 
 public final class UserListMemberController implements Handler {
@@ -46,10 +45,10 @@ public final class UserListMemberController implements Handler {
             @OpenApiResponse(status = "404", description = "List, office, or member not found."),
             @OpenApiResponse(status = STATUS_501, description = UserListFeature.UNSUPPORTED_MESSAGE)
         },
-        security = @OpenApiSecurity(name = "gets overridden allows lock icon."),
         description = "Remove a member from an office-scoped user list.",
-        method = HttpMethod.DELETE,
-        tags = UserListController.TAG
+        methods = HttpMethod.DELETE,
+        tags = UserListController.TAG,
+        path = "/user/list/{" + USER_LIST_ID + "}/members/{" + USER_ID + "}"
     )
     @Override
     public void handle(Context ctx) {
@@ -65,7 +64,7 @@ public final class UserListMemberController implements Handler {
             dao.removeMember(office,
                     UserListSupport.validateUserListId(ctx.pathParam(USER_LIST_ID)),
                     UserListSupport.validateUserId(ctx.pathParam(USER_ID)));
-            ctx.status(HttpCode.NO_CONTENT);
+            ctx.status(HttpStatus.NO_CONTENT);
         }
     }
 }

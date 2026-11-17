@@ -33,6 +33,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.data.dto.AssignedTimeSeries;
 import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.data.dto.CwmsId;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +43,7 @@ import java.util.List;
 @Schema(description = "Describes time series to assign to, and/or unassign from, a timeseries group")
 @JsonDeserialize(builder = TimeSeriesGroupMembership.Builder.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonRootName("membership")
 public final class TimeSeriesGroupMembership extends CwmsDTOBase {

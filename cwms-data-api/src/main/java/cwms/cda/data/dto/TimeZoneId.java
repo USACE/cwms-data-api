@@ -17,6 +17,9 @@ import cwms.cda.formatters.json.JsonV1;
 import cwms.cda.formatters.json.JsonV2;
 import cwms.cda.formatters.xml.XMLv1;
 import cwms.cda.formatters.xml.XMLv2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.time.ZoneId;
 
 @JsonRootName("time-zone")
@@ -25,6 +28,7 @@ import java.time.ZoneId;
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @FormattableWith(contentType = Formats.XMLV1, formatter = XMLv1.class)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class TimeZoneId extends CwmsDTOBase {
     @JsonProperty(required = true)
     private String timeZone;

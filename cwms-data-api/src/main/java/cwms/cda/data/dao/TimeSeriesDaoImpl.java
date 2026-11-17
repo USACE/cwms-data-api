@@ -1,20 +1,6 @@
 package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
-
-import cwms.cda.api.errors.InvalidItemException;
-import cwms.cda.data.dao.rsql.FieldResolver;
-import cwms.cda.data.dao.rsql.MapFieldResolver;
-import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
-import cwms.cda.data.dto.CwmsId;
-import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
-import cwms.cda.data.dto.catalog.TimeSeriesAlias;
-import cwms.cda.formatters.csv.CsvConfiguration;
-import cwms.cda.helpers.DateUtils;
-
-import java.io.IOException;
-import java.sql.Connection;
-
 import static org.jooq.impl.DSL.asterisk;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
@@ -27,8 +13,7 @@ import static org.jooq.impl.DSL.selectDistinct;
 import static org.jooq.impl.DSL.table;
 import static usace.cwms.db.jooq.codegen.tables.AV_CWMS_TS_ID2.AV_CWMS_TS_ID2;
 import static usace.cwms.db.jooq.codegen.tables.AV_TS_EXTENTS_UTC.AV_TS_EXTENTS_UTC;
-import cwms.cda.data.dto.TimeSeriesExtents;
-import cwms.cda.data.dto.TimeSeriesVersions;
+
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -40,21 +25,36 @@ import com.google.common.cache.CacheStats;
 import com.google.common.flogger.FluentLogger;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.enums.VersionType;
+import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
+import cwms.cda.data.dao.rsql.FieldResolver;
+import cwms.cda.data.dao.rsql.MapFieldResolver;
+import cwms.cda.data.dao.rsql.RSQLConditionBuilder;
 import cwms.cda.data.dto.Catalog;
 import cwms.cda.data.dto.CwmsDTOPaginated;
+import cwms.cda.data.dto.CwmsId;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.data.dto.TimeSeries;
+import cwms.cda.data.dto.TimeSeriesExtents;
+import cwms.cda.data.dto.TimeSeriesVersions;
 import cwms.cda.data.dto.Tsv;
 import cwms.cda.data.dto.TsvDqu;
 import cwms.cda.data.dto.TsvId;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.catalog.CatalogEntry;
+import cwms.cda.data.dto.catalog.TimeSeriesAlias;
 import cwms.cda.data.dto.catalog.TimeseriesCatalogEntry;
+import cwms.cda.data.dto.filteredtimeseries.FilteredTimeSeries;
+import cwms.cda.formatters.Formats;
+import cwms.cda.formatters.csv.CsvConfiguration;
+import cwms.cda.formatters.csv.CsvV1;
 import cwms.cda.formatters.xml.XMLv1;
+import cwms.cda.helpers.DateUtils;
 import cwms.cda.helpers.ZoneIdHelper;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Duration;
@@ -90,7 +90,26 @@ import mil.army.usace.hec.metadata.IntervalFactory;
 import mil.army.usace.hec.metadata.IntervalOffset;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jooq.*;
+import org.jooq.CommonTableExpression;
+import org.jooq.Condition;
+import org.jooq.Cursor;
+import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Result;
+import org.jooq.ResultQuery;
+import org.jooq.SQL;
+import org.jooq.Select;
+import org.jooq.SelectConditionStep;
+import org.jooq.SelectHavingStep;
+import org.jooq.SelectJoinStep;
+import org.jooq.SelectLimitStep;
+import org.jooq.SelectOnConditionStep;
+import org.jooq.SelectSeekStep2;
+import org.jooq.SortOrder;
+import org.jooq.Table;
+import org.jooq.TableField;
+import org.jooq.TableLike;
+import org.jooq.TableOnConditionStep;
 import org.jooq.conf.ParamType;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
@@ -103,13 +122,10 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
-import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.DATE_RANGE_T;
+import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_TYPE;
-
-import cwms.cda.formatters.csv.CsvV1;
-import cwms.cda.formatters.Formats;
 
 public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeriesDao {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -1950,7 +1966,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                     .withTsGroupLike(catPage.getTsGroupLike())
                     .withBoundingOfficeLike(catPage.getBoundingOfficeLike())
                     .withIncludeExtents(catPage.isIncludeExtents())
-                    .withIncludeExtents(catPage.isIncludeVersions())
+                    .withIncludeVersions(catPage.isIncludeVersions())
                     .withExcludeEmpty(catPage.isExcludeEmpty())
                     .build();
         }
@@ -1980,7 +1996,7 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             }
         }
         final SelectSeekStep2<?, String, String> overallQuery = tmpQuery.orderBy(cwmsTsIdFields.getDbOfficeId(),
-                        cwmsTsIdFields.getCwmsTsId());
+                        DSL.upper(cwmsTsIdFields.getCwmsTsId()));
         logger.atFine().log("%s", lazy(() -> overallQuery.getSQL(ParamType.INLINED)));
         Result<?> result = overallQuery.fetch();
 
@@ -2218,22 +2234,22 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                                      .from(fromTable)
                                      .where(whereConditions).and(DSL.and(pagingConditions))
                                      .orderBy(cwmsTsIdFields.getDbOfficeId(),
-                                             cwmsTsIdFields.getCwmsTsId())
+                                             DSL.upper(cwmsTsIdFields.getCwmsTsId()))
                                      .asTable("limiterInner");
         if (forCount) {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
                     .orderBy(innerSelect.field(cwmsTsIdFields.getDbOfficeId()),
-                            innerSelect.field(cwmsTsIdFields.getCwmsTsId()))
+                            DSL.upper(innerSelect.field(cwmsTsIdFields.getCwmsTsId())))
                     );
         } else {
             return name("limiter").as(
                     select(asterisk())
                     .from(innerSelect)
-                    .where(field("rownum").lessOrEqual(pageSize))
                     .orderBy(innerSelect.field(cwmsTsIdFields.getDbOfficeId()),
-                            innerSelect.field(cwmsTsIdFields.getCwmsTsId()))
+                            DSL.upper(innerSelect.field(cwmsTsIdFields.getCwmsTsId())))
+                    .limit(pageSize)
                     );
         }
     }

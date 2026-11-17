@@ -30,7 +30,7 @@
         "type": "string"
       },
       "vertical-datum-info": {
-        "$ref": "#/components/schemas/vertical-datum-info"
+        "$ref": "#/components/schemas/VerticalDatumInfo"
       }
     }
   }

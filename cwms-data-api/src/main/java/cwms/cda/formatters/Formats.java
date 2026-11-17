@@ -73,6 +73,7 @@ public class Formats {
     public static final String PGJSON = "application/vnd.pg+json";
     public static final String NAMED_PGJSON = "application/vnd.named+pg+json";
     public static final String RSS = "application/rss+xml";
+    public static final String MULTIPART_FORM_DATA = "multipart/form-data";
     public static final String DEFAULT = "*/*";
 
     public static final String JSON_LEGACY = "json";
@@ -84,13 +85,14 @@ public class Formats {
     public static final String PGJSON_LEGACY = "pgjson";
     public static final String NAMED_PGJSON_LEGACY = "named-pgjson";
 
+    private static final String NO_FORMAT_MESSAGE = "No Format for this content-type and data type : (%s, %s)";
 
     private static final List<ContentType> contentTypeList = new ArrayList<>();
 
     static {
         contentTypeList.addAll(
                 Stream.of(DEFAULT, JSON, JSONV1, XML, XMLV1, XMLV2, RSS, WML2, JSONV2,
-                        TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON)
+                        TAB, CSV, GEOJSON, PGJSON, NAMED_PGJSON, MULTIPART_FORM_DATA)
                         .map(ContentType::new)
                         .collect(Collectors.toList()));
     }
@@ -157,7 +159,7 @@ public class Formats {
         if (outputFormatter != null) {
             return outputFormatter.format(dtos);
         } else {
-            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+            String message = String.format(NO_FORMAT_MESSAGE,
                     type.toString(), rootType.getName());
             throw new UnsupportedFormatException(message);
         }
@@ -171,7 +173,7 @@ public class Formats {
             retval.validate();
             return retval;
         } else {
-            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+            String message = String.format(NO_FORMAT_MESSAGE,
                     type.toString(), rootType.getName());
             throw new UnsupportedFormatException(message);
         }
@@ -185,7 +187,7 @@ public class Formats {
             retval.validate();
             return retval;
         } else {
-            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+            String message = String.format(NO_FORMAT_MESSAGE,
                     type.toString(), rootType.getName());
             throw new UnsupportedFormatException(message);
         }
@@ -204,7 +206,7 @@ public class Formats {
             }
             return retval;
         } else {
-            String message = String.format("No Format for this content-type and data type : (%s, %s)",
+            String message = String.format(NO_FORMAT_MESSAGE,
                 type.toString(), rootType.getName());
             throw new UnsupportedFormatException(message);
         }

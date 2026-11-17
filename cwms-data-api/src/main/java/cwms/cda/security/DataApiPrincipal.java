@@ -1,6 +1,6 @@
 package cwms.cda.security;
 
-import io.javalin.core.security.RouteRole;
+import io.javalin.security.RouteRole;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.Set;

@@ -31,12 +31,15 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = GateSetting.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @JsonSubTypes({@JsonSubTypes.Type(value = GateChange.class, name = "gate-change")})
 @JsonTypeName("gate-setting")
 public final class GateSetting extends Setting {

@@ -41,7 +41,7 @@ import fixtures.TestAccounts;
 import io.restassured.filter.log.LogDetail;
 import java.sql.SQLException;
 import java.time.Instant;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jooq.DSLContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

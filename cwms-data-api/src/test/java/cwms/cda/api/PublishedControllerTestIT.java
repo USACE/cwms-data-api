@@ -52,7 +52,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 
 import static org.hamcrest.Matchers.greaterThan;

@@ -12,11 +12,14 @@ import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class)
 @JsonDeserialize(builder = ParameterInfoIndexed.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @JsonTypeName("indexed-parameter-info")
 public final class ParameterInfoIndexed extends ParameterInfo {
     private final Integer index;

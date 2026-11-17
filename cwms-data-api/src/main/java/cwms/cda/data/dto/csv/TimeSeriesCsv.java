@@ -9,12 +9,14 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.csv.CsvRows;
 import cwms.cda.formatters.csv.CsvV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @JsonDeserialize(builder = TimeSeriesCsv.Builder.class)
 @FormattableWith(contentType = Formats.CSV, formatter = CsvV1.class, aliases = {Formats.DEFAULT})
 public final class TimeSeriesCsv extends CwmsDTOBase implements CwmsCsvDTO<TimeSeriesCsvRow> {

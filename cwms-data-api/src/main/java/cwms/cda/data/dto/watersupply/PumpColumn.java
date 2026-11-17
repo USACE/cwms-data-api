@@ -32,6 +32,7 @@ import cwms.cda.data.dto.CwmsDTOBase;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiName;
 
 @JsonDeserialize(builder = PumpColumn.Builder.class)
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class,
@@ -42,6 +43,7 @@ public final class PumpColumn extends CwmsDTOBase {
     @JsonProperty(value = "ordinal", required = true)
     private final int ordinal;
     @JsonProperty(value = "datatype", required = true)
+    @OpenApiName("datatype")
     private final String dataType;
 
     private PumpColumn(Builder builder) {
