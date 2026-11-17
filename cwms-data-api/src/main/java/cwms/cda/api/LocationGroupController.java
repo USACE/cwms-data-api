@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BadRequestException;
 import org.geojson.FeatureCollection;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
@@ -315,6 +316,9 @@ public class LocationGroupController implements CrudHandler {
             @OpenApiParam(name = REPLACE_ASSIGNED_LOCS, type = Boolean.class, description = "Specifies whether to "
                 + "unassign all existing locations before assigning new locations specified in the content body "
                 + "Default: false"),
+            @OpenApiParam(name = CATEGORY_ID, required = false, description = "Specifies the "
+                + "category of the location_group to be renamed. If not provided as a query parameter, the category "
+                + "ID from the request body will be used."),
             @OpenApiParam(name = OFFICE, required = true, description = "Specifies the "
                 + "office of the user making the request. This is the office that the location, group, and category "
                 + "belong to. If the group and/or category belong to the CWMS office, "
@@ -338,10 +342,16 @@ public class LocationGroupController implements CrudHandler {
             boolean replaceAssignedLocs = ctx.queryParamAsClass(REPLACE_ASSIGNED_LOCS,
                     Boolean.class).getOrDefault(false);
             LocationGroupDao locationGroupDao = new LocationGroupDao(dsl);
-            String categoryId = deserialize.getLocationCategory().getId();
+            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class)
+                .getOrDefault(deserialize.getLocationCategory().getId());
+            if (categoryId == null || categoryId.isEmpty()) {
+                throw new BadRequestException("Category ID is required, either as a query parameter or"
+                    + " in the request body");
+            }
             Optional<LocationGroup> oldGroup = locationGroupDao.getLocationGroup(office, categoryId, groupId);
             if (oldGroup.isEmpty()) {
-                throw new NotFoundException(String.format("Location Group not found with ID: %s", groupId));
+                throw new NotFoundException(
+                    String.format("Location Group not found with ID: %s and Category ID: %s", groupId, categoryId));
             }
             if (!office.equalsIgnoreCase(CWMS_OFFICE) && !groupId.equals(deserialize.getId())) {
                 locationGroupDao.renameLocationGroup(groupId, deserialize);
@@ -349,7 +359,7 @@ public class LocationGroupController implements CrudHandler {
             if (replaceAssignedLocs) {
                 locationGroupDao.unassignAllLocs(deserialize, office);
             }
-            deserialize = Formats.parsePatchContent(contentType, deserialize, body, LocationGroup.class);
+            deserialize = Formats.parsePatchContent(contentType, oldGroup.get(), body, LocationGroup.class);
             locationGroupDao.replaceMetadata(deserialize, oldGroup.get(), replaceAssignedLocs);
             boolean ignoreMissing = ctx.queryParamAsClass(IGNORE_MISSING, Boolean.class).getOrDefault(false);
             List<CwmsId> missingLocations = locationGroupDao.assignLocs(deserialize, office, ignoreMissing);
