@@ -83,6 +83,7 @@ import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import org.togglz.core.bootstrap.FeatureManagerBootstrapper;
 import org.togglz.core.context.ContextClassLoaderFeatureManagerProvider;
+import org.togglz.core.context.StaticFeatureManagerProvider;
 
 
 /**
@@ -175,6 +176,14 @@ public final class CwmsDataApi {
         final var port = args.length > 2 ? Integer.parseInt(args[2]) : 7000;
         logger.atInfo().log("Initializing CWMS Data API Version:  " + VERSION);
         var ds = buildDataSource();
+        var fmbs = new FeatureManagerBootstrapper();
+        // intentionally duplicate data source, we *can't*, at least I can't think of a way right now that isn't a bit
+        // ... nuts, to share the current connection with Togglz.
+        // Given how Javalin works and that we're async, and other reason, maybe we do need to build a 
+        // per context FeatureManager and pass it along. but honestly this is probably fine... maybe with better
+        // defaults for the secondary pool before we merge.
+        var manager = fmbs.createFeatureManager(buildDataSource());
+        StaticFeatureManagerProvider.setFeatureManager(manager);
         var sessions = builderDefaultSessionHandler();
         var api = CwmsDataApi.builder()
                              .withContext(appContext)
@@ -204,9 +213,7 @@ public final class CwmsDataApi {
         this.port = port;
         this.appContext = context;
         logger.atInfo().log("Initializing Javalin.");
-        var fmbs = new FeatureManagerBootstrapper();
-        var manager = fmbs.createFeatureManager(ds);
-        ContextClassLoaderFeatureManagerProvider.bind(manager);
+
         var totalRequests = metrics.meter("cwms.dataapi.total_requests");
         ObjectMapper om = new ObjectMapper();
         om.setPropertyNamingStrategy(PropertyNamingStrategies.KEBAB_CASE);

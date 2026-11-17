@@ -37,6 +37,8 @@ import io.restassured.config.EncoderConfig;
 import io.restassured.filter.log.LogDetail;
 import jakarta.servlet.http.HttpServletResponse;
 import org.testcontainers.images.PullPolicy;
+import org.togglz.core.bootstrap.FeatureManagerBootstrapper;
+import org.togglz.core.context.StaticFeatureManagerProvider;
 
 import static cwms.cda.helpers.DatabaseHelpers.LATEST_SCHEMA;
 import static io.restassured.RestAssured.given;
@@ -172,7 +174,15 @@ public class CwmsDataApiSetupCallback implements BeforeAllCallback,AfterAllCallb
             cache.setSessionDataStore(new NullSessionDataStore());
             sessionHandler.setSessionCache(cache);
             sessionHandler.setSessionCookie("JSESSIONIDSSO");
-
+            
+            var fmbs = new FeatureManagerBootstrapper();
+            // intentionally duplicate data source, we *can't*, at least I can't think of a way right now that isn't a bit
+            // ... nuts, to share the current connection with Togglz.
+            // Given how Javalin works and that we're async, and other reason, maybe we do need to build a 
+            // per context FeatureManager and pass it along. but honestly this is probably fine... maybe with better
+            // defaults for the secondary pool before we merge.
+            var manager = fmbs.createFeatureManager(CwmsDataApi.buildDataSource());
+            StaticFeatureManagerProvider.setFeatureManager(manager);
             cdaInstance = CwmsDataApi.builder()
                                      .withPort(0)
                                      .withContext("/cwms-data")

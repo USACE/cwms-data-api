@@ -30,6 +30,8 @@ import static org.mockito.Mockito.mock;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.data.dao.AuthDao;
 import cwms.cda.data.dao.DeleteRule;
 import cwms.cda.data.dao.StreamDao;
@@ -217,8 +219,7 @@ public class DataApiTestIT {
                         }
                     }
 
-                    if(user != TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER)
-                    {
+                    if (user != TestAccounts.KeyUser.SPK_CAC_BUT_NOT_CWMS_USER) {
                         addUserToGroup(name, "CWMS Users", officeId);
                     }
                     addUserToGroup(name, "All Users", officeId);
@@ -226,9 +227,11 @@ public class DataApiTestIT {
                 }
 
                 db.connection((c) -> {
-                    String key = AuthDao.getInstance(DSL.using(c), null)
-                        .createApiKey(new DataApiPrincipal(user.getName(), Set.of()),
-                            new ApiKey(user.getName(), user.getKeyName(), null,
+                    // delete and recreate key
+                    var dao = AuthDao.getInstance(DSL.using(c), null);
+                    var principal = new DataApiPrincipal(user.getName(), Set.of());
+                    dao.deleteKeyForUser(principal, user.getKeyName());
+                    String key = dao.createApiKey(principal, new ApiKey(user.getName(), user.getKeyName(), null,
                                 ZonedDateTime.now(), null)).getApiKey();
                     user.setApiKey(key);
                 }, "cwms_20");
@@ -241,7 +244,7 @@ public class DataApiTestIT {
                     s.setMaxInactiveInterval(3600);
                 });
             }
-        } catch (RuntimeException ex) {
+        } catch (RuntimeException ex) {            
             throw new Exception("User registration failed", ex);
         }
     }

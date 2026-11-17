@@ -77,7 +77,7 @@ public class UserManagementTestIT extends DataApiTestIT {
             .statusCode(is(HttpStatus.OK.getCode()))
             .body("user-name", equalTo(theUser.getName().toUpperCase()))
             .body("cac-auth", equalTo(true))
-            .body("roles.SPK",contains("All Users", "CWMS Users", "TS ID Creator"))
+            .body("roles.SPK", hasItems("All Users", "CWMS Users", "TS ID Creator"))
             ;
     }
 
