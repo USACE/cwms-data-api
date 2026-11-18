@@ -1,0 +1,34 @@
+{
+  "begin": "2026-02-27T12:30:34.182026Z",
+  "end": "2026-02-27T13:37:53.366357Z",
+  "name": "McGregor.Elev.Inst.~15Minutes.0.best-MSL1912",
+  "office-id": "SPK",
+  "units": "ft",
+  "values": [
+    [
+      1772196300000,
+      613.7199999999999,
+      0
+    ]
+  ],
+  "vertical-datum-info": {
+    "office": "SPK",
+    "unit": "ft",
+    "location": "McGregor",
+    "native-datum": "OTHER",
+    "elevation": 600,
+    "local-datum-name": "MSL1912",
+    "offsets": [
+      {
+        "estimate": false,
+        "to-datum": "NAVD-88",
+        "value": -0.771
+      },
+      {
+        "estimate": true,
+        "to-datum": "NGVD-29",
+        "value": -0.6185
+      }
+    ]
+  }
+}
