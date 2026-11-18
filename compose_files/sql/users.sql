@@ -38,22 +38,30 @@ begin
    cwms_sec.add_user_to_group('q0hectest', 'TS ID Creator', 'LRL');
    execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
 
-    cwms_sec.add_cwms_user('m5hectest',NULL,'SWT');
-    cwms_sec.add_user_to_group('m5hectest','All Users', 'SWT');
-    cwms_sec.add_user_to_group('m5hectest','CWMS Users', 'SWT');
-    cwms_sec.add_user_to_group('m5hectest','CWMS User Admins', 'SWT');
-    cwms_sec.add_user_to_group('m5hectest','TS ID Creator', 'SWT');
-    execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
+   cwms_sec.add_cwms_user('m5hectest',NULL,'SWT');
+   cwms_sec.add_user_to_group('m5hectest','All Users', 'SWT');
+   cwms_sec.add_user_to_group('m5hectest','CWMS Users', 'SWT');
+   cwms_sec.add_user_to_group('m5hectest','CWMS User Admins', 'SWT');
+   cwms_sec.add_user_to_group('m5hectest','TS ID Creator', 'SWT');
+   execute immediate 'grant execute on cwms_20.cwms_upass to web_user';
 
 
-    cwms_sec.add_cwms_user('m5testadmin', NULL, 'LRL');
-    cwms_sec.add_user_to_group('m5testadmin','All Users', 'LRL');
-    cwms_sec.add_user_to_group('m5testadmin','CWMS Users', 'LRL');
-    cwms_sec.add_user_to_group('m5testadmin','CWMS User Admins', 'LRL');
-    cwms_sec.add_user_to_group('m5testadmin','SHOW STACK TRACE', 'LRL');
+   cwms_sec.add_cwms_user('m5testadmin', NULL, 'LRL');
+   cwms_sec.add_user_to_group('m5testadmin','All Users', 'LRL');
+   cwms_sec.add_user_to_group('m5testadmin','CWMS Users', 'LRL');
+   cwms_sec.add_user_to_group('m5testadmin','CWMS User Admins', 'LRL');
+   cwms_sec.add_user_to_group('m5testadmin','SHOW STACK TRACE', 'LRL');
 
-    execute immediate 'grant insert, update, delete on cwms_20.at_user_lists to web_user';
-    execute immediate 'grant insert, update, delete on cwms_20.at_user_list_members to web_user';
+   execute immediate 'grant insert, update, delete on cwms_20.at_user_lists to web_user';
+   execute immediate 'grant insert, update, delete on cwms_20.at_user_list_members to web_user';
+
+    -- togglz table for testing.
+   execute immediate 'CREATE TABLE IF NOT EXISTS cwms_20.TOGGLZ (
+                           FEATURE_NAME VARCHAR(100) PRIMARY KEY, FEATURE_ENABLED INTEGER, FEATURE_USERS VARCHAR(2000),
+                           STRATEGY_ID VARCHAR(200), STRATEGY_PARAMS VARCHAR(2000)  
+                        )';
+   execute immediate 'create or replace public synonym TOGGLZ for cwms_20.TOGGLZ';
+   execute immediate 'grant SELECT, INSERT, UPDATE, DELETE on cwms_20.TOGGLZ to web_user';
 
 end;
 /
