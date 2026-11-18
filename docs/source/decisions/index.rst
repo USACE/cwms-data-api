@@ -45,6 +45,7 @@ Some decisions may also be a proposal and marked appropriately.
     Duplicate Time-Series Values <./0018-duplicate-timeseries-values.rst>
     Generated SDK Lifecycle <./0019-generated-sdk-lifecycle.rst>
     Composite Time Series <./0020-composite-time-series.rst>
+    Composite Time Series Work Plan <./0020-composite-time-series-work-plan.rst>
     Data Event Message Formats - Streams <./0021-data-event-formats-streams.rst>
     Data Event Message Formats - Entities <./0022-data-event-formats-entities.rst>
     Data Event Message Formats - Embankments <./0023-data-event-formats-embankments.rst>
