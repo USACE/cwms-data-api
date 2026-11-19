@@ -27,12 +27,14 @@ package cwms.cda.data.dao;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dto.VerticalDatumInfo;
 import cwms.cda.data.dto.rating.RatingSpec;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -125,10 +127,13 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
 
 
         } catch (DataAccessException ex) {
+            if (JooqDao.isNotFound(ex)) {
+                throw new NotFoundException("Rating specification not found: " + specificationId, ex);
+            }
             Throwable cause = ex.getCause();
             if (cause instanceof RatingException) {
-                if (cause.getMessage().contains("contains no rating templates")) {
-                    return null;
+                if (isMissingSpec(cause)) {
+                    throw new NotFoundException("Rating specification not found: " + specificationId, cause);
                 }
 
                 throw (RatingException) cause;
@@ -136,6 +141,20 @@ public class RatingSetDao extends JooqDao<RatingSet> implements RatingDao {
             throw new IOException("Failed to retrieve Rating", ex);
         }
         return retval[0];
+    }
+
+    private static boolean isMissingSpec(Throwable throwable) {
+        for (Throwable t = throwable; t != null; t = t.getCause()) {
+            if (t instanceof SQLException && JooqDao.isNotFound(new DataAccessException("rating", t))) {
+                return true;
+            }
+            String message = t.getMessage();
+            if (message != null && (message.contains("contains no rating templates")
+                    || message.contains("contains no rating specifications"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // store/update

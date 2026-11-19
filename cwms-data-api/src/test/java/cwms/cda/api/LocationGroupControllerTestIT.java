@@ -36,7 +36,7 @@ import fixtures.CwmsDataApiSetupCallback;
 import fixtures.FunctionalSchemas;
 import fixtures.MinimumSchema;
 import fixtures.TestAccounts;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.restassured.filter.log.LogDetail;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import com.google.common.flogger.FluentLogger;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.Configuration;
@@ -181,6 +181,25 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
             .assertThat()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_NO_CONTENT));
+    }
+
+    @Test
+    void test_get_all_returns_empty_list_when_none_match() {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(Formats.JSON)
+            .queryParam(CATEGORY_OFFICE_ID, user.getOperatingOffice())
+            .queryParam(INCLUDE_ASSIGNED, false)
+            .queryParam(LOCATION_CATEGORY_LIKE, "NoSuchCategory_" + System.nanoTime())
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/location/group")
+        .then()
+            .assertThat()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .statusCode(is(HttpServletResponse.SC_OK))
+            .body("$.size()", is(0));
     }
 
     @ParameterizedTest
@@ -1919,7 +1938,7 @@ class LocationGroupControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
-            .statusCode(is(HttpCode.MULTI_STATUS.getStatus()))
+            .statusCode(is(HttpStatus.MULTI_STATUS.getCode()))
             .body("missing-locations", equalTo("notReal-loc"));
 
         //Retrieve Group

@@ -28,7 +28,7 @@ package cwms.cda.api.errors;
 
 import java.util.HashMap;
 import java.util.logging.Level;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 public final class FieldLengthExceededException extends ApplicationException {
     private static final Level LOG_LEVEL = Level.INFO;

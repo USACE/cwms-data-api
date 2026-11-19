@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
@@ -63,7 +63,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
@@ -109,6 +109,8 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
+
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
 
             // get it back
             given()
@@ -165,7 +167,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .contentType(Formats.JSONV2)
             .body(tsData)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(CREATE_AS_LRTS, true)
         .when()
@@ -177,12 +179,14 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
+        assignTsToDmzInclude(officeId, ts.get("name").asText().replace("1DayLocal", "~1Day"));
+
         // get it back
         given()
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
             .log().ifValidationFails(LogDetail.ALL,true)
             .accept(Formats.JSONV2)
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(UNIT,"F")
             .queryParam(NAME, ts.get(NAME).asText())
@@ -205,7 +209,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
             .header("Authorization", user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, officeId)
             .queryParam(BEGIN, "2025-05-08T11:00:00+00:00")
             .queryParam(END, "2025-05-19T11:00:00+00:00")
@@ -228,7 +232,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .accept(Formats.JSONV2)
                 .contentType(Formats.JSONV2)
                 .header("Authorization", user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
                 .queryParam(OFFICE, officeId)
                 .queryParam(CREATE_AS_LRTS, true)
                 .body(tsData)
@@ -280,6 +284,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // get it back
         String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
         // 1675335600000
@@ -344,6 +349,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
 
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // get it back
         String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
         // 1675335600000
@@ -405,7 +411,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String secondVersionDate = "1604786000000";
         tsData = tsData.replace("1594786000000", secondVersionDate).replace("35,", "47.5,");
         // inserting the second time series
@@ -513,7 +519,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String secondVersionDate = "1604786000000";
         tsData = tsData.replace("1594786000000", secondVersionDate).replace("35,", "47.5,");
         // inserting the second time series
@@ -661,7 +667,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -715,7 +721,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .contentType(Formats.JSONV2)
                 .body(tsDataPsuedoOff)
                 .header("Authorization",user.toHeaderValue())
-                .header(ApiServlet.IS_NEW_LRTS, false)
+                .header(CwmsDataApi.IS_NEW_LRTS, false)
                 .queryParam("office",officeId)
             .when()
                 .redirects().follow(true)
@@ -743,7 +749,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // get it back
             given()
                 .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -841,7 +847,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
         ;
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         //     1675335600000 is Thursday, February 2, 2023 11:00:00 AM
         // fyi 1675422000000 is Friday, February 3, 2023 11:00:00 AM
 
@@ -928,7 +934,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK))
         ;
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // get it back using 'units' parameter
         given()
                 .log().ifValidationFails(LogDetail.ALL, true)
@@ -1109,7 +1115,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -1192,6 +1198,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
     @Test
     void test_invalid_office() {
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
         given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.JSONV2)
@@ -1199,6 +1206,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             //Purposefully misspelled office id
             .queryParam(OFFICE, "NWDW")
             .queryParam(NAME, "Buckhorn.Temp-Water.Inst.1Day.0.cda-test")
+            .header("Authorization", user.toHeaderValue())
         .when()
             .redirects().follow(true)
             .redirects().max(3)
@@ -1299,7 +1307,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         String location = ts.get(NAME).asText().split("\\.")[0];
         String officeId = ts.get("office-id").asText();
         createLocation(location, true, officeId);
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
         // 1675335600000
         given()
@@ -1358,7 +1366,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
 
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
             // The ts we created has   two values 1675335600000, 1675422000000,
 
             // get it back
@@ -1457,7 +1465,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .log().ifValidationFails(LogDetail.ALL, true)
             .assertThat()
                 .statusCode(is(HttpServletResponse.SC_OK));
-
+            assignTsToDmzInclude(officeId, ts.get("name").asText());
 
             // The ts we created has   two values 1675335600000, 1675422000000,
 
@@ -1667,7 +1675,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK))
         ;
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // this doesn't cross Daylight savings - should work
         given()
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -1749,7 +1757,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // get it back
         given()
             .config(RestAssured.config().jsonConfig(jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE)))
@@ -1804,7 +1812,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // get it back
         String firstPoint = "2023-02-02T06:00:00-05:00"; //aka 2023-02-02T11:00:00.000Z or
         // 1675335600000
@@ -1859,7 +1867,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // retrieve CSV v2 with metadata comments explicitly requested
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -1909,7 +1917,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.CSV)
@@ -1956,7 +1964,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.CSV)
@@ -2013,7 +2021,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String secondVersionDate = "1604786000000";
         tsData = tsData.replace("1594786000000", secondVersionDate).replace("35,", "47.5,");
         // inserting the second time series
@@ -2125,7 +2133,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // 2. Client requests CSV with optional columns and receives a single streamed response.
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -2186,7 +2194,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         // 2. Client requests CSV and receives a single streamed response.
         // The small page-size (10) forces the server to perform 5 internal fetch cycles
         // for the 50 points in large_timeseries.json.
@@ -2304,7 +2312,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         //this should use csv not json because the query param overrides the header
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
@@ -2360,7 +2368,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String body = given()
             .log().ifValidationFails(LogDetail.ALL, true)
             .accept(Formats.CSV)
@@ -2406,7 +2414,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String firstPoint = "2023-01-11T12:00:00Z";
 
         // Test with date-format param in query string
@@ -2455,7 +2463,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .post("/timeseries/")
         .then()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
         String firstPoint = "2023-01-11T12:00:00Z";
 
         // Test with custom date-format-pattern
@@ -2534,7 +2542,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
         .assertThat()
             .statusCode(is(HttpServletResponse.SC_OK));
-
+        assignTsToDmzInclude(officeId, ts.get("name").asText());
 
         // 1209654000000 as ms == Thursday, May 1, 2008 3:00:00 PM
 
@@ -2738,7 +2746,6 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
 
         createLocation(location, true, officeId);  // This marks for delete at end of test.
         updateLocation(location, true, officeId);
-
         TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
 
         // Helper lambda to GET the series and return a ValidatableResponse
@@ -2752,6 +2759,7 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
                 .queryParam(BEGIN, beginIso)
                 .queryParam(END, endIso)
                 .queryParam(TRIM, true)
+                .header("Authorization", user.toHeaderValue())
             .when()
                 .redirects().follow(true)
                 .redirects().max(3)

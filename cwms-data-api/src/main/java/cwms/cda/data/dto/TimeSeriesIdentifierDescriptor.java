@@ -32,6 +32,9 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +43,7 @@ import java.util.List;
 @JsonDeserialize(builder = cwms.cda.data.dto.TimeSeriesIdentifierDescriptor.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @FormattableWith(contentType = Formats.JSONV2, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSON})
 public class TimeSeriesIdentifierDescriptor extends CwmsDTO {
     private final String timeSeriesId;

@@ -40,6 +40,8 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.flogger.FluentLogger;
+
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.enums.UnitSystem;
 import cwms.cda.api.errors.CdaError;
 import cwms.cda.api.errors.ExceptionTraceSupport;
@@ -49,14 +51,18 @@ import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dto.RecentValue;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
-import io.javalin.core.util.Header;
+import cwms.cda.openapi.OpenApiSchemeProcessor;
+import cwms.cda.security.CwmsAuthException;
+import io.javalin.http.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiContent;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
+import io.javalin.openapi.OpenApiSecurity;
+
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -72,7 +78,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -118,24 +124,28 @@ public class TimeSeriesRecentController implements Handler {
             },
             responses = {
                 @OpenApiResponse(status = STATUS_200, content = {
-                    @OpenApiContent(isArray = true, from = RecentValue.class, type = Formats.JSON)}),
+                    @OpenApiContent(from = RecentValue[].class, type = Formats.JSON)}),
                 @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "
                         + "inputs provided the timeseries group(s) were not found."),
                 @OpenApiResponse(status = STATUS_501, description = "request format is not "
                         + "implemented")
             },
             path = "/timeseries/recent",
-            description = "Returns CWMS Timeseries Groups Data",
+            description = "Returns CWMS Timeseries Groups Data. NOTE: as groups may be defined with restricted time series"
+                        + "for internal use, instead of the whole request returning a 403 error the restricted data is"
+                        + "instead silently removed so that rest of the group may be retrieved.",
+            headers = {@OpenApiParam (name = CwmsDataApi.IS_NEW_LRTS, description = CwmsDataApi.LRTS_DESCRIPTION)},
             tags = TimeSeriesController.TAG,
-            method = HttpMethod.GET
+            security = @OpenApiSecurity(name = OpenApiSchemeProcessor.ANONYMOUS_ALLOWED),
+            methods = {HttpMethod.GET}
     )
     public void handle(@NotNull Context ctx) {
 
         try (final Timer.Context ignored = markAndTime("getRecent")) {
             String office = ctx.queryParam(OFFICE);
-            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).allowNullable().get();
-            String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).allowNullable().get();
-            String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).allowNullable().get();
+            String categoryId = ctx.queryParamAsClass(CATEGORY_ID, String.class).getOrNull();
+            String groupId = ctx.queryParamAsClass(GROUP_ID, String.class).getOrNull();
+            String tsIdsParam = ctx.queryParamAsClass(TS_IDS, String.class).getOrNull();
             UnitSystem unitSystem = ctx.queryParamAsClass(UNIT_SYSTEM, UnitSystem.class)
                     .getOrDefault(UnitSystem.EN);
 
@@ -181,6 +191,21 @@ public class TimeSeriesRecentController implements Handler {
             } else {
                 latestValues = dao.findMostRecentsInRange(office, tsIds, pastLimit, futureLimit, unitSystem);
             }
+            latestValues = latestValues.stream()
+                                       .filter(rv -> {
+                                           // while not the most performant code,
+                                           // it'll work. Additionally for users with authorization
+                                            // checkAuth bypasses any database calls
+                                           try {
+                                               TimeSeriesController.checkAuth(ctx,
+                                                                              rv.getDqu().getCwmsTsId(),
+                                                                              rv.getDqu().getOfficeId());
+                                               return true;
+                                           } catch (CwmsAuthException ex) {
+                                               return false;
+                                           }
+                                       })
+                                       .collect(Collectors.toList());
 
             String formatHeader = ctx.header(Header.ACCEPT);
             ContentType contentType = Formats.parseHeader(formatHeader, RecentValue.class);
@@ -194,7 +219,7 @@ public class TimeSeriesRecentController implements Handler {
 
             byte[] bytes = result.getBytes();
             ctx.header(Header.CONTENT_LENGTH, String.valueOf(bytes.length));
-            ctx.res.getOutputStream().write(bytes);
+            ctx.outputStream().write(bytes);
         } catch (IOException ex) {
             CdaError error = ExceptionTraceSupport.buildError(ctx,
                 "Failed to process request to retrieve Timeseries Recents", ex);

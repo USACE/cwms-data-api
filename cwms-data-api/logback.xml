@@ -42,7 +42,9 @@
 
     <logger name="cwms.cda" level="${LOG_LEVEL}"/>
     <logger name="fixtures" level="${LOG_LEVEL}"/>
-    <logger name="org.apache" level="ERROR"/>
+    
+    <logger name="org.jetty" level="INFO"/>
+    <logger name="io.javalin" level="TRACE"/>
 
     <root level="INFO">
         <appender-ref ref="OTEL-STDERR"/>

@@ -37,12 +37,12 @@ import cwms.cda.data.dto.StatusResponse;
 import cwms.cda.helpers.annotations.IgnoreRequiredQueryParamMismatch;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import io.javalin.openapi.OpenApi;
+import io.javalin.openapi.HttpMethod;
+import io.javalin.openapi.OpenApiParam;
+import io.javalin.openapi.OpenApiResponse;
 import java.time.Instant;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 
@@ -84,8 +84,9 @@ public final class TurbineChangesDeleteController implements Handler {
                 + "Default is False")
         },
         description = "Delete CWMS Turbine Changes",
-        method = HttpMethod.DELETE,
+        methods = {HttpMethod.DELETE},
         tags = {TurbineController.TAG},
+        path = "/projects/{" + OFFICE + "}/{" + NAME + "}/turbine-changes",
         responses = {
             @OpenApiResponse(status = STATUS_200, description = "Turbine successfully deleted from CWMS."),
             @OpenApiResponse(status = STATUS_404, description = "Based on the combination of "

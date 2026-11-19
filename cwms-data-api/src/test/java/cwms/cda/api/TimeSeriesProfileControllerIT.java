@@ -26,7 +26,7 @@
 
 package cwms.cda.api;
 
-import cwms.cda.ApiServlet;
+import cwms.cda.CwmsDataApi;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.timeseriesprofile.TimeSeriesProfileDao;
 import cwms.cda.data.dto.timeseriesprofile.TimeSeriesProfile;
@@ -43,7 +43,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import com.google.common.flogger.FluentLogger;
@@ -215,7 +215,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .contentType(Formats.JSONV1)
             .body(tsData3)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(FAIL_IF_EXISTS, false)
         .when()
             .redirects().follow(true)
@@ -233,7 +233,7 @@ final class TimeSeriesProfileControllerIT extends DataApiTestIT {
             .accept(format)
             .contentType(Formats.JSONV1)
             .header(AUTH_HEADER, user.toHeaderValue())
-            .header(ApiServlet.IS_NEW_LRTS, true)
+            .header(CwmsDataApi.IS_NEW_LRTS, true)
             .queryParam(OFFICE, OFFICE_ID)
             .queryParam(LOCATION_ID, tsProfile3.getLocationId().getName())
         .when()

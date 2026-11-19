@@ -1,3 +1,5 @@
+import { getBasePath } from "../utils/base";
+
 export default [
   {
     id: "home",
@@ -17,7 +19,7 @@ export default [
       {
         id: "swagger-schema",
         text: "Swagger Docs Schema",
-        href: "/swagger-docs",
+        href: `${getBasePath()}/swagger-docs`,
       },
     ],
   },

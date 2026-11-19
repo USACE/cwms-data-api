@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiName;
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.JSON, Formats.DEFAULT})
 @JsonDeserialize(builder = DataColumnInfo.Builder.class)
@@ -42,6 +43,7 @@ public final class DataColumnInfo {
     @JsonProperty("ordinal")
     private final int ordinal;
     @JsonProperty("datatype")
+    @OpenApiName("datatype")
     private final String dataType;
 
     private DataColumnInfo(Builder builder) {

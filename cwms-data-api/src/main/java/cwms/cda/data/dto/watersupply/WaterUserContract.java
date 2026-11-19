@@ -34,11 +34,15 @@ import cwms.cda.data.dto.LookupType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.time.Instant;
 
 
 @FormattableWith(contentType = Formats.JSONV1, formatter = JsonV1.class, aliases = {Formats.DEFAULT, Formats.JSON})
 @JsonDeserialize(builder = WaterUserContract.Builder.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class WaterUserContract extends CwmsDTO {
 
     @JsonProperty(required = true)

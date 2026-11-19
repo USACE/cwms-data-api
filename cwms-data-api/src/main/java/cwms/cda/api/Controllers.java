@@ -29,15 +29,14 @@ import static com.codahale.metrics.MetricRegistry.name;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import cwms.cda.api.enums.UnitSystem;
-import cwms.cda.api.enums.VersionType;
+
+import cwms.cda.api.errors.RequiredPathParameterException;
 import cwms.cda.api.errors.RequiredQueryParameterException;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.formatters.ContentType;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
-import io.javalin.core.validation.JavalinValidation;
-import io.javalin.core.validation.Validator;
+import io.javalin.validation.Validator;
 import io.javalin.http.Context;
 import java.time.Instant;
 import java.time.ZonedDateTime;
@@ -254,14 +253,7 @@ public final class Controllers {
     private static final String DEPRECATED_CSV = "2024-11-01 CSV is not used often.";
 
     public static final String QUERY = "query";
-    public static final String INCLUDE_ROLES = "include-roles";
-
-
-    static {
-        JavalinValidation.register(JooqDao.DeleteMethod.class, Controllers::getDeleteMethod);
-        JavalinValidation.register(VersionType.class, VersionType::versionTypeFor);
-        JavalinValidation.register(UnitSystem.class, UnitSystem::systemFor);
-    }
+    public static final String INCLUDE_ROLES = "include-roles";    
 
     private Controllers() {
 
@@ -421,6 +413,22 @@ public final class Controllers {
     }
 
     /**
+     * Returns the required path parameter. Primarily used when the parameters are required but embedded in the url.
+     * as a create method for something that adds additional data.
+     * @param ctx Request Context
+     * @param name Path parameter name
+     * @return value of the parameter
+     * @throws RequiredPathParameterException if the parameter is not found
+     */
+    public static String requiredPathParam(io.javalin.http.Context ctx, String name) {
+        String param = ctx.pathParam(name);
+        if (param == null || param.isEmpty()) {
+            throw new RequiredPathParameterException(name);
+        }
+        return param;
+    }
+
+    /**
      * Returns the first matching query param or throws RequiredQueryParameterException.
      * @param ctx Request Context
      * @param name Query parameter name
@@ -509,9 +517,9 @@ public final class Controllers {
 
     public static void addDeprecatedContentTypeWarning(Context ctx, ContentType type) {
         if (type.getType().equalsIgnoreCase(Formats.TAB)) {
-            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
+            ctx.addHeader(DEPRECATED_HEADER, DEPRECATED_TAB);
         } else if (type.getType().equalsIgnoreCase(Formats.CSV)) {
-            ctx.res.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
+            ctx.addHeader(DEPRECATED_HEADER, DEPRECATED_CSV);
         }
     }
 }

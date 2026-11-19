@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import cwms.cda.api.DataApiTestIT;
 import fixtures.KeyCloakExtension;
-import io.javalin.http.HttpCode;
+import io.javalin.http.HttpStatus;
 import io.restassured.filter.log.LogDetail;
 
 @Tag("integration")
@@ -37,7 +37,7 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
             .log().ifValidationFails(LogDetail.ALL,true)
             // 403 Forbidden here means the user was created, but has no privileges as the user was just created.
             // Which is what we desire to happen in this test.
-            .statusCode(is(HttpCode.FORBIDDEN.getStatus()));
+            .statusCode(is(HttpStatus.FORBIDDEN.getCode()));
     }
 
     @Test
@@ -53,6 +53,6 @@ public class OpenIdConnectTestIT extends DataApiTestIT {
             .get("/properties")
         .then()
             .log().ifValidationFails(LogDetail.ALL,true)
-            .statusCode(is(HttpCode.OK.getStatus()));
+            .statusCode(is(HttpStatus.OK.getCode()));
     }
 }

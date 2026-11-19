@@ -14,6 +14,8 @@ import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV2;
 import hec.data.timeSeriesText.DateDateKey;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,6 +31,7 @@ import java.util.TreeMap;
 @JsonDeserialize(builder = TextTimeSeries.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 @FormattableWith(contentType = Formats.JSON, formatter = JsonV2.class, aliases = {Formats.DEFAULT, Formats.JSONV2})
 public class TextTimeSeries extends CwmsDTO {
 

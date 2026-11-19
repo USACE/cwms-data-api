@@ -33,6 +33,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 @JsonDeserialize(builder = IndParameterSpecElement.Builder.class)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY,
         getterVisibility = JsonAutoDetect.Visibility.NONE,
@@ -40,6 +43,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"position", "parameter", "in-range-method", "out-range-low-method",
     "out-range-high-method"})
+    @OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class IndParameterSpecElement {
 
     @JsonProperty("position")

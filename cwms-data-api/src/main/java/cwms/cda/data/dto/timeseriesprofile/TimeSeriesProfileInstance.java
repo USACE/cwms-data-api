@@ -13,6 +13,9 @@ import cwms.cda.data.dto.CwmsDTOValidator;
 import cwms.cda.formatters.Formats;
 import cwms.cda.formatters.annotations.FormattableWith;
 import cwms.cda.formatters.json.JsonV1;
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +25,7 @@ import java.util.TreeMap;
 @JsonDeserialize(builder = TimeSeriesProfileInstance.Builder.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonNaming(PropertyNamingStrategies.KebabCaseStrategy.class)
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class TimeSeriesProfileInstance extends CwmsDTOPaginated {
     private final TimeSeriesProfile timeSeriesProfile;
     private final List<ParameterColumnInfo> parameterColumns;

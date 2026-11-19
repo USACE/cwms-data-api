@@ -41,7 +41,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 
@@ -442,6 +442,23 @@ class RatingsControllerTestIT extends DataApiTestIT
             .statusCode(is(HttpServletResponse.SC_OK))
             .header("Content-Length", is("19831"))
             .contentType(is(Formats.JSONV2));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GetOneTest.class)
+    void test_get_one_spec_not_found_returns_404(GetOneTest test) {
+        given()
+            .log().ifValidationFails(LogDetail.ALL,true)
+            .accept(test.accept)
+            .queryParam(OFFICE, SPK)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .get("/ratings/NoSuchLoc.Stage;Flow.Standard.NoSuchSpec")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL,true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_NOT_FOUND));
     }
 
 	enum GetOneTest

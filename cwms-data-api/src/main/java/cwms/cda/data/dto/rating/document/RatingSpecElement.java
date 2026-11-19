@@ -33,6 +33,9 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 @JsonDeserialize(builder = RatingSpecElement.Builder.class)
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY,
         getterVisibility = JsonAutoDetect.Visibility.NONE,
@@ -42,6 +45,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
     "source-agency", "in-range-method", "out-range-low-method", "out-range-high-method", "active",
     "auto-update", "auto-activate", "auto-migrate-extension", "ind-rounding-specs",
     "dep-rounding-spec", "description"})
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class RatingSpecElement {
 
     @JsonProperty("office-id")

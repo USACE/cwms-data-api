@@ -19,7 +19,7 @@ async function searchLocations(page, pageCount) {
       },
     });
   });
-  await page.goto("/cwms-data/data-query");
+  await page.goto("/data-query");
   await page.getByRole("button", { name: "Guided", exact: true }).click();
   await page
     .locator("select")

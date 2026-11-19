@@ -3,6 +3,10 @@ package cwms.cda.data.dto;
 import java.util.Date;
 import java.util.Objects;
 
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public class TsvId implements java.io.Serializable {
 
 	private final Long tsCode;

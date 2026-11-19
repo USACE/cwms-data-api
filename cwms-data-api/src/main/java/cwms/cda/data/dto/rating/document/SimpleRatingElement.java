@@ -33,6 +33,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+
+import io.javalin.openapi.OpenApiNaming;
+import io.javalin.openapi.OpenApiNamingStrategy;
+
 import java.util.List;
 
 @JsonDeserialize(builder = SimpleRatingElement.Builder.class)
@@ -43,6 +47,7 @@ import java.util.List;
 @JsonPropertyOrder({"office-id", "rating-spec-id", "vertical-datum-info", "units-id",
     "effective-date", "transition-start-date", "create-date", "active", "description", "formula",
     "rating-points", "extension-points"})
+@OpenApiNaming(OpenApiNamingStrategy.KEBAB_CASE)
 public final class SimpleRatingElement {
 
     @JsonProperty("office-id")

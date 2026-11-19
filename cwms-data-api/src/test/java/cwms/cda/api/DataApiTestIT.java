@@ -26,6 +26,7 @@ package cwms.cda.api;
 
 import static cwms.cda.data.dao.JooqDao.REQUIRE_NEW_LRTS_ID_FORMAT;
 import static cwms.cda.data.dao.JooqDao.SESSION_USE_LRTS_ID_FORMAT;
+import static org.mockito.Mockito.mock;
 
 import com.atlassian.oai.validator.restassured.OpenApiValidationFilter;
 import com.google.common.flogger.FluentLogger;
@@ -42,6 +43,8 @@ import cwms.cda.data.dto.basin.Basin;
 import cwms.cda.data.dto.stream.Stream;
 import cwms.cda.helpers.ZoneIdHelper;
 import cwms.cda.security.DataApiPrincipal;
+import cwms.cda.security.Role;
+import cwms.cda.spi.IdentityProvider;
 import fixtures.CwmsDataApiSetupCallback;
 import fixtures.IntegrationTestNameGenerator;
 import fixtures.KeyCloakExtension;
@@ -51,6 +54,7 @@ import fixtures.users.MockCwmsUserPrincipalImpl;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import io.javalin.security.RouteRole;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -70,12 +74,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
-import org.apache.catalina.Manager;
-import org.apache.catalina.SessionEvent;
-import org.apache.catalina.SessionListener;
-import org.apache.catalina.session.StandardSession;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.security.SecurityHandler;
+import org.eclipse.jetty.security.authentication.SessionAuthentication;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.util.security.SecurityUtils;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -123,7 +128,8 @@ public class DataApiTestIT {
 
     public static OpenApiValidationFilter getOpenApiValidationFilter() {
         if (validationFilter == null) {
-            OPEN_API_SPEC_URL = String.format("%s:%s%s/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort(), System.getProperty("warContext"));
+            OPEN_API_SPEC_URL = String.format("%s:%s/cwms-data/swagger-docs", CwmsDataApiSetupCallback.httpUrl(), CwmsDataApiSetupCallback.httpPort());
+            logger.atInfo().log("OPENAPI Spec URL: %s", OPEN_API_SPEC_URL);
             validationFilter = new OpenApiValidationFilter(OPEN_API_SPEC_URL);
         }
         return validationFilter;
@@ -189,7 +195,7 @@ public class DataApiTestIT {
     @BeforeAll
     public static void register_users() throws Exception {
         try {
-            final Manager tsm = CwmsDataApiSetupCallback.getTestSessionManager();
+            final var tsm = CwmsDataApiSetupCallback.getTestSessionManager();
             CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
             for (TestAccounts.KeyUser user : TestAccounts.KeyUser.values()) {
                 if (user.getKeyName() == null) {
@@ -227,25 +233,13 @@ public class DataApiTestIT {
                     user.setApiKey(key);
                 }, "cwms_20");
 
-                StandardSession session = (StandardSession) tsm.createSession(user.getJSessionId());
-                if (session == null) {
-                    throw new RuntimeException("Test Session Manager is unusable.");
-                }
-                MockCwmsUserPrincipalImpl mcup = new MockCwmsUserPrincipalImpl(user.getName(), user.getEdipi(), user.getRoles());
-                session.setAuthType("CLIENT-CERT");
-                session.setPrincipal(mcup);
-                session.activate();
-                session.addSessionListener(new SessionListener() {
-
-                    @Override
-                    public void sessionEvent(SessionEvent event) {
-                        logger.atInfo().log("Got event of type: %s", event.getType());
-                        logger.atInfo().log("Session is: %s", event.getSession().toString());
-                    }
-
+                final Set<RouteRole> roles = List.of(user.getRoles()).stream().map(Role::new).collect(Collectors.toSet());
+                final var p = new DataApiPrincipal(user.getName(), roles);
+                tsm.createTestSession(user.getJSessionId(), s -> {
+                    s.setAttribute(SecurityHandler.SESSION_AUTHENTICATED_ATTRIBUTE, Boolean.TRUE);
+                    s.setAttribute(IdentityProvider.PRINCIPAL_KEY, p);
+                    s.setMaxInactiveInterval(3600);
                 });
-                CwmsDataApiSetupCallback.getSsoValve()
-                        .wrappedRegister(user.getJSessionId(), mcup, "CLIENT-CERT", null, null);
             }
         } catch (RuntimeException ex) {
             throw new Exception("User registration failed", ex);
@@ -490,6 +484,19 @@ public class DataApiTestIT {
      * @throws SQLException
      */
     protected static void createTimeseries(String office, String timeseries) throws SQLException {
+        createTimeseries(office, timeseries, true);
+    }
+
+    /**
+     * Create a timeseries (location must already exist), no data or other meta data will be set.
+     * This only creates the timeseries name. Not data or other parameters are set.
+     *
+     * @param office     owning office
+     * @param timeseries timeseries name
+     * @param inDmzList if this timeseries id should go in the DMZ include list.
+     * @throws SQLException
+     */
+    protected static void createTimeseries(String office, String timeseries, boolean inDmzList) throws SQLException {
         CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
         db.connection((c) -> {
             try (PreparedStatement stmt = c.prepareStatement(createTimeseriesQuery)) {
@@ -500,6 +507,36 @@ public class DataApiTestIT {
                 if (ex.getErrorCode() == 20003) {
                     return; // TS already exists. that's fine for these tests.
                 }
+                throw new RuntimeException("Unable to create timeseries", ex);
+            }
+        }, "cwms_20");
+        if (inDmzList) {
+            assignTsToDmzInclude(office, timeseries);
+        }
+    }
+
+    /**
+     * Stop gap to make establishing timeseries for tests easier
+     * without disabling the time series auth check.
+     * NOTE: this method currently assumes the database default is still using ~ for local regular
+     * instead of the new intervals with Local in the name. It will eventually need to be adjusted.
+     * Though preferably as this is part of a stop gap change, this method would just go away.
+     * @param office
+     * @param timeSeries
+     * @throws SQLException
+     */
+    protected static void assignTsToDmzInclude(String office, String timeSeries) throws SQLException {
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        final String query = "begin cwms_ts.assign_ts_group(p_ts_category_id => 'Data Dissemination', p_ts_group_id => 'DMZ Include List', p_ts_id => ?, p_db_office_id => ?); end;";
+        String ts = timeSeries.replaceFirst("(\\d+.*?)Local", "~$1");
+        logger.atInfo().log("Replacing %s with %s", timeSeries, ts);
+        db.connection((c) -> {
+            try (PreparedStatement stmt = c.prepareStatement(query)) {
+                // at this time the default is using non-local names
+                stmt.setString(1, ts);
+                stmt.setString(2, office);
+                stmt.execute();
+            } catch (SQLException ex) {
                 throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
@@ -521,6 +558,7 @@ public class DataApiTestIT {
                 throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
+        assignTsToDmzInclude(office, timeseries);
     }
 
     protected static void createTimeseriesWithNewLRTSInterval(String office, String timeseries, int offset) throws SQLException {
@@ -541,6 +579,7 @@ public class DataApiTestIT {
                 throw new RuntimeException("Unable to create timeseries", ex);
             }
         }, "cwms_20");
+        assignTsToDmzInclude(office, timeseries);
     }
 
     /**

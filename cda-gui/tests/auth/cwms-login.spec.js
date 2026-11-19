@@ -10,7 +10,7 @@ async function mockDeployment(page, schemes = { CwmsAAACacAuth: cwmsScheme }) {
   await page.route("**/swagger-docs", (route) =>
     route.fulfill({
       json: {
-        openapi: "3.0.3",
+        openapi: "3.1.0",
         info: { title: "CWMS authentication test", version: "1" },
         paths: {},
         components: { securitySchemes: schemes },
@@ -46,7 +46,7 @@ async function mockDeployment(page, schemes = { CwmsAAACacAuth: cwmsScheme }) {
 
 test("header CWMS login and logout return to the current page", async ({ page }) => {
   await mockDeployment(page);
-  await page.goto("/cwms-data/regexp/?office=SWT#login");
+  await page.goto("/regexp/?office=SWT#login");
   const originalLocation = page.url();
 
   const loginRequest = page.waitForRequest("**/CWMSLogin/login?*");
@@ -71,18 +71,18 @@ test("header CWMS login and logout return to the current page", async ({ page })
 
 test("Swagger CWMS login also establishes the header session", async ({ page }) => {
   await mockDeployment(page);
-  await page.goto("/cwms-data/swagger-ui");
+  await page.goto("/swagger-ui");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Log out", exact: true }),
+    page.getByRole("button", { name: "Sign out", exact: true }),
   ).toBeVisible();
-  await expect(page).toHaveURL(/\/cwms-data\/swagger-ui$/);
+  await expect(page).toHaveURL(/\/swagger-ui$/);
 });
 
 test("unsupported authentication still reports sign-in unavailable", async ({
   page,
 }) => {
   await mockDeployment(page, {});
-  await page.goto("/cwms-data/");
+  await page.goto("/");
   await expect(page.getByText("Sign-in unavailable", { exact: true })).toBeVisible();
 });

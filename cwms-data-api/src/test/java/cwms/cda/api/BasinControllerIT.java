@@ -47,7 +47,7 @@ import org.junit.jupiter.api.Test;
 import static cwms.cda.api.Controllers.*;
 import static cwms.cda.security.ApiKeyIdentityProvider.AUTH_HEADER;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
 import java.time.Instant;
