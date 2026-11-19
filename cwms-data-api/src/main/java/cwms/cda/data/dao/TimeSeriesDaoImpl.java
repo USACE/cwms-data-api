@@ -2744,6 +2744,19 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     @SuppressWarnings("unused")
     public void create(TimeSeries input,
                        boolean createAsLrts, StoreRule storeRule, boolean overrideProtection, VerticalDatum vd) {
+        create(input, createAsLrts, storeRule, overrideProtection, vd, DuplicateDateTimeResolution.ERROR);
+    }
+
+    /**
+     * Same as {@link #create(TimeSeries, boolean, StoreRule, boolean, VerticalDatum)}.
+     *
+     * @param duplicateResolution How to resolve multiple values supplied for the same storage minute.
+     *                      Resolved before any database call.
+     */
+    @Override
+    public void create(TimeSeries input, boolean createAsLrts, StoreRule storeRule,
+                       boolean overrideProtection, VerticalDatum vd, DuplicateDateTimeResolution duplicateResolution) {
+        List<TimeSeries.Record> values = duplicateResolution.resolve(input.getValues());
 
         Timestamp versionDate;
         if (input.getVersionDate() != null) {
@@ -2759,9 +2772,9 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 // the code does not need to be created before hand.
                 // do not add a call to create_ts_code
 
-                if (!input.getValues().isEmpty()) {
+                if (values != null && !values.isEmpty()) {
                     store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
-                            versionDate, input.getValues(), createAsLrts, storeRule,
+                            versionDate, values, createAsLrts, storeRule,
                             overrideProtection);
                 }
             });
@@ -2774,6 +2787,14 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
     }
 
     public void store(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection, VerticalDatum vd) {
+        store(input, createAsLrts, replaceAll, overrideProtection, vd, DuplicateDateTimeResolution.ERROR);
+    }
+
+    @Override
+    public void store(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection,
+                      VerticalDatum vd, DuplicateDateTimeResolution duplicateResolution) {
+        List<TimeSeries.Record> values = duplicateResolution.resolve(input.getValues());
+
         Timestamp versionDate;
         if (input.getVersionDate() != null) {
             versionDate = Timestamp.from(input.getVersionDate().toInstant());
@@ -2781,14 +2802,16 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
             versionDate = null;
         }
 
-        connection(dsl, connection -> storeWithDefaultDatum(input, createAsLrts, replaceAll, overrideProtection, vd, connection, versionDate));
+        connection(dsl, connection -> storeWithDefaultDatum(input, values, createAsLrts, replaceAll,
+                overrideProtection, vd, connection, versionDate));
     }
 
-    private void storeWithDefaultDatum(TimeSeries input, boolean createAsLrts, StoreRule replaceAll, boolean overrideProtection,
+    private void storeWithDefaultDatum(TimeSeries input, List<TimeSeries.Record> values, boolean createAsLrts,
+                                       StoreRule replaceAll, boolean overrideProtection,
                                        VerticalDatum vd, Connection connection, Timestamp versionDate) throws Throwable {
         DSLContext dslContext = getDslContext(connection, input.getOfficeId());
         withDefaultDatum(vd, dslContext, (conn) -> store(dslContext, input.getOfficeId(), input.getName(), input.getUnits(),
-                versionDate, input.getValues(), createAsLrts, replaceAll, overrideProtection));
+                versionDate, values, createAsLrts, replaceAll, overrideProtection));
     }
 
     private void store(DSLContext dslContext, String officeId, String tsId, String units,
