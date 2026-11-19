@@ -30,6 +30,7 @@ import cwms.cda.formatters.DateFormatResolver;
 import cwms.cda.formatters.DateFormat;
 import cwms.cda.formatters.csv.CsvConfiguration;
 import cwms.cda.data.dto.csv.TimeSeriesCsv;
+import cwms.cda.features.CdaFeatures;
 import cwms.cda.formatters.Formats;
 import cwms.cda.helpers.DateUtils;
 import cwms.cda.openapi.OpenApiSchemeProcessor;
@@ -70,6 +71,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jooq.DSLContext;
 import org.jooq.exception.DataAccessException;
 import org.jooq.impl.DSL;
+import org.togglz.core.context.FeatureContext;
 
 public class TimeSeriesController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
@@ -134,7 +136,7 @@ public class TimeSeriesController implements CrudHandler {
     private final Histogram requestResultSize;
     static final int DEFAULT_PAGE_SIZE = 500;
 
-    private static final boolean USE_DMZ_LIST = Boolean.parseBoolean(System.getenv("TS_USE_DMZ_INCLUDE"));
+    //private static final boolean USE_DMZ_LIST = Boolean.parseBoolean(System.getenv("TS_USE_DMZ_INCLUDE"));
 
 
     public TimeSeriesController(MetricRegistry metrics) {
@@ -644,7 +646,7 @@ public class TimeSeriesController implements CrudHandler {
      */
     public static void checkAuth(Context ctx, String names, String office)
     {
-        if (!USE_DMZ_LIST)
+        if (!FeatureContext.getFeatureManager().isActive(CdaFeatures.TS_USE_DMZ_INCLUDE))
         {
                 return;
         }

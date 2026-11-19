@@ -220,7 +220,7 @@ public class AuthDao extends Dao<DataApiPrincipal> {
 
                 boolean legacySupport = FeatureContext.getFeatureManager()
                         .isActive(CdaFeatures.AUTH_RE_ENABLE_NON_HASH_KEY_SUPPORT);
-
+                logger.atSevere().log("State of legacy keys %b", legacySupport);
                 if (key.startsWith(API_KEY_V1_PREFIX) && key.length() > API_KEY_ID_LENGTH) {
                     try (PreparedStatement checkForKey = c.prepareStatement(CHECK_API_KEY)) {
                         String keyId = key.substring(0, API_KEY_ID_LENGTH);

@@ -1,6 +1,7 @@
 package cwms.cda.features;
 
 import org.togglz.core.Feature;
+import org.togglz.core.annotation.EnabledByDefault;
 import org.togglz.core.annotation.Label;
 
 public enum CdaFeatures implements Feature {
@@ -13,5 +14,9 @@ public enum CdaFeatures implements Feature {
     INCLUDE_ERROR_STACK_TRACES,
 
     @Label("Enable office-scoped reusable user lists")
-    USER_LISTS
+    USER_LISTS,
+
+    @Label("Enable filtering of accessible data by DMZ Include list")
+    @EnabledByDefault
+    TS_USE_DMZ_INCLUDE
 }
