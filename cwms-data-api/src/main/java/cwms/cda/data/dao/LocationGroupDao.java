@@ -40,6 +40,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -94,7 +95,19 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
      * @return An optional location group.
      */
     public Optional<LocationGroup> getLocationGroup(@NotNull String officeId, @NotNull String categoryId,
-                                                    @NotNull String groupId) {
+        @NotNull String groupId) {
+        return getLocationGroup(dsl, officeId, categoryId, groupId);
+    }
+
+    /**
+     * Get a location group by office, category, and group id.
+     * @param officeId The office id to use for the query.
+     * @param categoryId The category id to use for the query.
+     * @param groupId The group id to use for the query.
+     * @return An optional location group.
+     */
+    public Optional<LocationGroup> getLocationGroup(@NotNull DSLContext context, @NotNull String officeId,
+                                                    @NotNull String categoryId, @NotNull String groupId) {
         officeId = officeId.toUpperCase();
 
         Condition joinCondition;
@@ -109,7 +122,7 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
             .and(catGroupView.GRP_DB_OFFICE_ID.in(CWMS, officeId))
             .and(catGroupView.CAT_DB_OFFICE_ID.in(CWMS, officeId));
 
-        LocationGroup locGroup = buildQuery(whereCondition, joinCondition)
+        LocationGroup locGroup = buildQuery(whereCondition, joinCondition, context)
                 .fetchSize(DEFAULT_FETCH_SIZE)
                 .fetchOne(mapToLocationGroup);
 
@@ -507,6 +520,45 @@ public final class LocationGroupDao extends JooqDao<LocationGroup> {
                 return assignLocs(config, group, office, allowPartialAssignment);
             });
         });
+    }
+
+    /**
+     * Replace a stored location group with a new group, storing the new group's metadata
+     * @param group The new group to replace the old one with
+     * @param oldGroup The old group to be replaced
+     * @param replaceAssignedLocs If true, replace the assigned locations with the new group's assigned locations
+     */
+    public void replaceMetadata(LocationGroup group, LocationGroup oldGroup, boolean replaceAssignedLocs) {
+        String office =  group.getOfficeId();
+        String categoryId = group.getLocationCategory().getId();
+        String groupId = group.getId();
+        if (isChanged(oldGroup, group)) {
+            connection(dsl, conn -> {
+                DSLContext dslContext = getDslContext(conn, office);
+                dslContext.transaction((Configuration trx) -> {
+                    DSLContext transactionContext = trx.dsl();
+                    Configuration config = transactionContext.configuration();
+                    CWMS_LOC_PACKAGE.call_UNASSIGN_LOC_GROUP(config,
+                        categoryId, groupId, null, "T", office);
+                    CWMS_LOC_PACKAGE.call_DELETE_LOC_GROUP__2(config, categoryId,
+                        groupId, "F", office);
+                    LocationGroup newGroup = new LocationGroup(group, oldGroup.getAssignedLocations());
+                    CWMS_LOC_PACKAGE.call_CREATE_LOC_GROUP2(config, categoryId,
+                        newGroup.getId(), newGroup.getDescription(), newGroup.getOfficeId(),
+                        newGroup.getSharedLocAliasId(), newGroup.getSharedRefLocationId());
+                    if (!replaceAssignedLocs) {
+                        assignLocs(trx, newGroup, office);
+                    }
+                });
+            });
+        }
+    }
+
+    private static boolean isChanged(LocationGroup oldGroup, LocationGroup newGroup) {
+        return !Objects.equals(oldGroup.getDescription(), newGroup.getDescription())
+                || !Objects.equals(oldGroup.getOfficeId(), newGroup.getOfficeId())
+                || !Objects.equals(oldGroup.getSharedLocAliasId(), newGroup.getSharedLocAliasId())
+                || !Objects.equals(oldGroup.getSharedRefLocationId(), newGroup.getSharedRefLocationId());
     }
 
     @NotNull
