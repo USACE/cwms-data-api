@@ -1,0 +1,35 @@
+{
+  "ratings": {
+    "ratings": [
+      {
+        "simple-rating": {
+          "office": "SWT",
+          "name": "A.Stage;Flow.Linear.Production",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "values": [
+            [1, 10],
+            [2, 20]
+          ]
+        }
+      },
+      {
+        "transitional-rating": {
+          "office": "SWT",
+          "name": "A.Stage;Flow.Transitional.Production",
+          "ind-parameters": ["Stage (ft)"],
+          "dep-parameter": "Flow (cfs)",
+          "effective-date": "2020-01-01T00:00:00Z",
+          "cases": [],
+          "default": "R1",
+          "references": [
+            {
+              "R1": "A.Stage;Flow.Linear.Production"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
