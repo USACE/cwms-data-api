@@ -156,7 +156,7 @@ public enum DuplicateDateTimeResolution {
     }
 
     private static boolean isMissing(Double value) {
-        return value == null || value.isNaN() || value == -Float.MAX_VALUE;
+        return value == null || value.isNaN() || value == -Float.MAX_VALUE || value == Double.MIN_VALUE;
     }
 
     private static int mostCommonQuality(List<TimeSeries.Record> records, int tieQuality) {
