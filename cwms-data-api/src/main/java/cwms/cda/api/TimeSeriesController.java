@@ -16,6 +16,7 @@ import cwms.cda.api.errors.ExceptionTraceSupport;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
 import cwms.cda.data.dao.AuthDao;
+import cwms.cda.data.dao.DuplicateDateTimeResolution;
 import cwms.cda.data.dao.JooqDao;
 import cwms.cda.data.dao.StoreRule;
 import cwms.cda.data.dao.TimeSeriesDao;
@@ -74,6 +75,21 @@ import org.jooq.impl.DSL;
 public class TimeSeriesController implements CrudHandler {
     private static final FluentLogger logger = FluentLogger.forEnclosingClass();
     public static final String TAG = "TimeSeries";
+    public static final String DUPLICATE_DATE_TIME_RESOLUTION_DESC = "How to resolve multiple values in the request "
+            + "that resolve to the same storage date-time. Values are stored at minute precision, so "
+            + "records whose date-times fall within the same minute are treated as duplicates. "
+            + "Resolved before store-rule is applied.\n"
+            + "<table  border=\"1\" summary=\"\">\n"
+            + "<tr><td>error</td><td>Default. Reject the request with a 400 if any minute has more "
+            + "than one value. Nothing is stored.</td></tr>\n"
+            + "<tr><td>first</td><td>Store the first value (and its quality) supplied for each minute."
+            + "</td></tr>\n"
+            + "<tr><td>last</td><td>Store the last value (and its quality) supplied for each minute."
+            + "</td></tr>\n"
+            + "<tr><td>average</td><td>Store the mean of the non-missing values for each minute. The "
+            + "quality is the most common quality among the averaged values; if there is a tie, the "
+            + "value is stored as unscreened (0), or as missing (5) if all values are missing.</td></tr>\n"
+            + "</table>";
     public static final String STORE_RULE_DESC = "The business rule to use "
             + "when merging the incoming with existing data\n"
             + "<table  border=\"1\" summary=\"\">\n"
@@ -164,6 +180,8 @@ public class TimeSeriesController implements CrudHandler {
                         + "timeseries should be created as Local Regular Time Series. "
                         + "'True' or 'False', default is 'False'"),
                 @OpenApiParam(name = STORE_RULE, type = StoreRule.class,  description = STORE_RULE_DESC),
+                @OpenApiParam(name = DUPLICATE_DATE_TIME_RESOLUTION, type = String.class,
+                        description = DUPLICATE_DATE_TIME_RESOLUTION_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description = "A flag "
                         + "to ignore the protected data quality when storing data. 'True' or 'False'"
                         + ", default is " + TimeSeriesDaoImpl.OVERRIDE_PROTECTION),
@@ -190,6 +208,9 @@ public class TimeSeriesController implements CrudHandler {
                 .getOrDefault(StoreRule.REPLACE_ALL);
         boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
                 .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+        DuplicateDateTimeResolution duplicateResolution = ctx
+                .queryParamAsClass(DUPLICATE_DATE_TIME_RESOLUTION, DuplicateDateTimeResolution.class)
+                .getOrDefault(DuplicateDateTimeResolution.ERROR);
 
         VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
                 .getOrNull();
@@ -202,7 +223,7 @@ public class TimeSeriesController implements CrudHandler {
 
             vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
 
-            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
+            dao.create(timeSeries, createAsLrts, storeRule, overrideProtection, vd, duplicateResolution);
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
             CdaError re = ExceptionTraceSupport.buildError(ctx, "Internal Error", ex);
@@ -773,6 +794,8 @@ public class TimeSeriesController implements CrudHandler {
             queryParams = {
                 @OpenApiParam(name = CREATE_AS_LRTS, type = Boolean.class, description = ""),
                 @OpenApiParam(name = STORE_RULE,  type = StoreRule.class, description = STORE_RULE_DESC),
+                @OpenApiParam(name = DUPLICATE_DATE_TIME_RESOLUTION, type = String.class,
+                        description = DUPLICATE_DATE_TIME_RESOLUTION_DESC),
                 @OpenApiParam(name = OVERRIDE_PROTECTION,  type = Boolean.class, description =
                         "A flag to ignore the protected data quality when storing data.  \"'true' or 'false'\""),
                 @OpenApiParam(name = DATUM, type = VerticalDatum.class, description = "If the provided "
@@ -813,12 +836,15 @@ public class TimeSeriesController implements CrudHandler {
                     .getOrDefault(StoreRule.REPLACE_ALL);
             boolean overrideProtection = ctx.queryParamAsClass(OVERRIDE_PROTECTION, Boolean.class)
                     .getOrDefault(TimeSeriesDaoImpl.OVERRIDE_PROTECTION);
+            DuplicateDateTimeResolution duplicateResolution = ctx
+                    .queryParamAsClass(DUPLICATE_DATE_TIME_RESOLUTION, DuplicateDateTimeResolution.class)
+                    .getOrDefault(DuplicateDateTimeResolution.ERROR);
 
             VerticalDatum vd = ctx.queryParamAsClass(DATUM, VerticalDatum.class)
                     .getOrNull();
             vd = TimeSeriesVerticalDatumConverter.getVerticalDatum(timeSeries).orElse(vd);
 
-            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection, vd);
+            dao.store(timeSeries, createAsLrts, storeRule, overrideProtection, vd, duplicateResolution);
 
             ctx.status(HttpServletResponse.SC_OK);
         } catch (DataAccessException | IOException ex) {
