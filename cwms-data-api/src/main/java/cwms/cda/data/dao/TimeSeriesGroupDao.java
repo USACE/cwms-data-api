@@ -488,9 +488,14 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
     public List<CwmsId> create(TimeSeriesGroup group, boolean failIfExists, boolean ignoreNulls,
             boolean ignoreMissing, boolean replaceAssigned) {
         return connectionResult(dsl, c -> {
-            Configuration configuration = getDslContext(c, group.getOfficeId()).configuration();
+            String officeId = group.getOfficeId();
+            if (!group.getAssignedTimeSeries().isEmpty()) {
+                officeId = group.getAssignedTimeSeries().get(0).getOfficeId();
+            }
+            Configuration configuration = getDslContext(c, officeId).configuration();
             String categoryId = group.getTimeSeriesCategory().getId();
-            DSLContext dslContext = getDslContext(c, group.getOfficeId());
+            DSLContext dslContext = getDslContext(c, officeId);
+            String assignmentOffice = officeId;
             return dslContext.transactionResult((Configuration trx) -> {
                 CWMS_TS_PACKAGE.call_STORE_TS_GROUP(configuration, categoryId,
                     group.getId(), group.getDescription(), formatBool(failIfExists),
@@ -498,9 +503,9 @@ public class TimeSeriesGroupDao extends JooqDao<TimeSeriesGroup> {
                     group.getSharedRefTsId(), group.getOfficeId());
                 if (replaceAssigned) {
                     unassignForOffice(configuration, categoryId, group.getId(),
-                        group.getOfficeId(), group.getOfficeId());
+                        group.getOfficeId(), assignmentOffice);
                 }
-                return assignTs(configuration, group, group.getOfficeId(), ignoreNulls, ignoreMissing);
+                return assignTs(configuration, group, assignmentOffice, ignoreNulls, ignoreMissing);
             });
         });
     }
