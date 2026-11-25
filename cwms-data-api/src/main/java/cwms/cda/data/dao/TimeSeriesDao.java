@@ -79,4 +79,6 @@ public interface TimeSeriesDao {
                                       Integer dbFetchSize,
                                       Integer rowsPerBuffer);
 
+    boolean supports369MonthDurations();
+
 }

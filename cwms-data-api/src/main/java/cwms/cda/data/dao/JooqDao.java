@@ -33,7 +33,6 @@ import cwms.cda.api.errors.AlreadyExists;
 import cwms.cda.api.errors.FieldLengthExceededException;
 import cwms.cda.api.errors.InvalidItemException;
 import cwms.cda.api.errors.NotFoundException;
-import cwms.cda.api.Controllers;
 import cwms.cda.datasource.ConnectionPreparingDataSource;
 import cwms.cda.datasource.DelegatingConnectionPreparer;
 import cwms.cda.datasource.LrtsSessionPreparer;
@@ -43,6 +42,7 @@ import cwms.cda.security.CwmsAuthException;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -65,7 +65,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import jakarta.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,7 +107,7 @@ public abstract class JooqDao<T> extends Dao<T> {
             "ORA-12899: value too large for column \".+\"\\.\".+\"\\.\"(.+)\" "
                     + "\\(actual: (\\d+), maximum: (\\d+)\\)");
     private static final Pattern REGEX_META_CHARS_EXCEPT_DOT = Pattern.compile("[\\\\^$|?+()\\[\\]{}]");
-    private static final Pattern ORA_CODE = Pattern.compile("^ORA-\\d+: ERROR: .*");
+    private static final Pattern ORA_CODE = Pattern.compile("^ORA-\\d+: ERROR: (?!ORA-\\d+:).*");
 
     public enum DeleteMethod {
         DELETE_ALL(DeleteRule.DELETE_ALL),
@@ -378,6 +377,8 @@ public abstract class JooqDao<T> extends Dao<T> {
             retVal = buildUnsupportedOperationException(input);
         } else if (isInvalidOffice(input)) {
             retVal = buildInvalidOffice(input);
+        } else if (isUnsupportedDurationException(input)) {
+            retVal = buildUnsupportedDurationException(input);
         } else if (isValueTooLargeException(input)) {
             retVal = buildFieldLengthExceededException(input);
         } else if (isTSIDInvalidIntervalException(input)) {
@@ -389,7 +390,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retVal;
     }
 
-    public static Optional<SQLException> getSqlException(Throwable input) {
+    private static Optional<SQLException> getSqlException(Throwable input) {
         Throwable cause = input;
 
         if (input instanceof DataAccessException) {
@@ -426,7 +427,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     // See link for a more complete list of CWMS Error codes:
     // https://bitbucket.hecdev.net/projects/CWMS/repos/cwms_database_origin_teamcity_work/browse/src/buildSqlScripts.py#4866
 
-    public static boolean isBadRequest(RuntimeException input) {
+    private static boolean isBadRequest(RuntimeException input) {
         boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
@@ -441,7 +442,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return retVal;
     }
 
-    public static BadRequestResponse buildBadRequest(RuntimeException input) {
+    private static BadRequestResponse buildBadRequest(RuntimeException input) {
         Throwable cause = input;
         if (input instanceof DataAccessException) {
             DataAccessException dae = (DataAccessException) input;
@@ -460,6 +461,46 @@ public abstract class JooqDao<T> extends Dao<T> {
             Map<String, String> errorDetails = new HashMap<>();
             errorDetails.put("message", errorMessage);
             return new BadRequestResponse("", errorDetails);
+        }
+        return new BadRequestResponse();
+    }
+
+    private static boolean isUnsupportedDurationException(RuntimeException input) {
+        boolean retVal = false;
+
+        Optional<SQLException> optional = getSqlException(input);
+        if (optional.isPresent()) {
+            SQLException sqlException = optional.get();
+
+            List<Integer> codes = List.of(20998);
+            List<String> segments = List.of("No such duration");
+
+            retVal = hasCodeOrMessage(sqlException, codes, segments);
+        }
+        return retVal;
+    }
+
+    private static BadRequestResponse buildUnsupportedDurationException(RuntimeException input) {
+        Throwable cause = input;
+        if (input instanceof DataAccessException) {
+            DataAccessException dae = (DataAccessException) input;
+            cause = dae.getCause();
+        }
+
+        String localizedMessage = cause.getLocalizedMessage();
+
+        if (localizedMessage != null) {
+            String[] parts = localizedMessage.split("\n");
+            for (String part : parts) {
+                String errorMessage = part.replace("'", "").replace("\"", "");
+                if (ORA_CODE.matcher(errorMessage).matches()) {
+                    errorMessage = errorMessage.substring(errorMessage.indexOf("ERROR: ") + 7);
+                    errorMessage = sanitizeOrNull(errorMessage);
+                    Map<String, String> errorDetails = new HashMap<>();
+                    errorDetails.put("message", errorMessage);
+                    return new BadRequestResponse("Duration not supported by the database", errorDetails);
+                }
+            }
         }
         return new BadRequestResponse();
     }
@@ -493,7 +534,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 .orElse(false);
     }
 
-    public static boolean isValueTooLargeException(RuntimeException input) {
+    private static boolean isValueTooLargeException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeOrMessage(sqlException,
                         Arrays.asList(6502, 12899, 20041, 17072),
                         Arrays.asList("value too large for column", "character string buffer too small",
@@ -501,7 +542,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 .orElse(false);
     }
 
-    public static boolean isTSIDInvalidIntervalException(RuntimeException input) {
+    private static boolean isTSIDInvalidIntervalException(RuntimeException input) {
         return getSqlException(input.getCause()).map(sqlException -> hasCodeAndMessage(sqlException,
                         Arrays.asList(20205, 20998),
                         Arrays.asList("Invalid Time Series Description",
@@ -510,7 +551,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 .orElse(false);
     }
 
-    static InvalidItemException buildInvalidTSIDIntervalException(RuntimeException input) {
+    private static InvalidItemException buildInvalidTSIDIntervalException(RuntimeException input) {
         Throwable cause = input.getCause();
         if (input instanceof DataAccessException) {
             DataAccessException dae = (DataAccessException) input;
@@ -531,7 +572,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException("Invalid time series description", cause);
     }
 
-    public static boolean isInvalidItem(RuntimeException input) {
+    private static boolean isInvalidItem(RuntimeException input) {
         boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
@@ -547,7 +588,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     @NotNull
-    static NotFoundException buildNotFound(RuntimeException input) {
+    private static NotFoundException buildNotFound(RuntimeException input) {
         // The cause can be kinda long and include all the line numbers from the pl/sql.
 
         Throwable cause = input;
@@ -604,7 +645,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return exception;
     }
 
-    public static boolean isCantSetSessionNoPermissions(RuntimeException input) {
+    private static boolean isCantSetSessionNoPermissions(RuntimeException input) {
         boolean retVal = false;
         Optional<SQLException> optional = getSqlException(input);
         if (optional.isPresent()) {
@@ -621,7 +662,7 @@ public abstract class JooqDao<T> extends Dao<T> {
     }
 
     @NotNull
-    static CwmsAuthException buildNotAuthorizedForOffice(RuntimeException input) {
+    private static CwmsAuthException buildNotAuthorizedForOffice(RuntimeException input) {
         // The cause can be kinda long and include all the line numbers from the pl/sql.
 
         Throwable cause = input;
@@ -634,7 +675,7 @@ public abstract class JooqDao<T> extends Dao<T> {
                 HttpServletResponse.SC_UNAUTHORIZED);
     }
 
-    public static boolean isAlreadyExists(RuntimeException input) {
+    private static boolean isAlreadyExists(RuntimeException input) {
         boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
@@ -731,7 +772,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException(message, cause);
     }
 
-    public static boolean isInvalidUnits(RuntimeException input) {
+    private static boolean isInvalidUnits(RuntimeException input) {
         boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
@@ -849,7 +890,7 @@ public abstract class JooqDao<T> extends Dao<T> {
         return new InvalidItemException(sanitizedMessage, cause);
     }
 
-    public static boolean isUnsupportedOperationException(RuntimeException input) {
+    private static boolean isUnsupportedOperationException(RuntimeException input) {
         boolean retVal = false;
 
         Optional<SQLException> optional = getSqlException(input);
