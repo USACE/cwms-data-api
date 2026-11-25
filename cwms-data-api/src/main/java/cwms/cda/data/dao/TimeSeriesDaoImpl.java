@@ -2,6 +2,7 @@ package cwms.cda.data.dao;
 
 import static com.google.common.flogger.LazyArgs.lazy;
 import static org.jooq.impl.DSL.asterisk;
+import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.countDistinct;
 import static org.jooq.impl.DSL.field;
 import static org.jooq.impl.DSL.max;
@@ -83,6 +84,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import mil.army.usace.hec.metadata.Interval;
@@ -95,6 +97,7 @@ import org.jooq.Condition;
 import org.jooq.Cursor;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.Record1;
 import org.jooq.Result;
 import org.jooq.ResultQuery;
 import org.jooq.SQL;
@@ -122,6 +125,7 @@ import usace.cwms.db.jooq.codegen.tables.AV_LOC_GRP_ASSGN;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV;
 import usace.cwms.db.jooq.codegen.tables.AV_TSV_DQU;
 import usace.cwms.db.jooq.codegen.tables.AV_TS_GRP_ASSGN;
+import usace.cwms.db.jooq.codegen.tables.CWMS_DURATION;
 import usace.cwms.db.jooq.codegen.udt.records.DATE_RANGE_T;
 import usace.cwms.db.jooq.codegen.udt.records.DATE_TABLE_TYPE;
 import usace.cwms.db.jooq.codegen.udt.records.ZTSV_ARRAY;
@@ -2889,6 +2893,21 @@ public class TimeSeriesDaoImpl extends JooqDao<TimeSeries> implements TimeSeries
                 versionDate, "UTC", pDateTimes, formatBool(options.getMaxVersion()),
                 pTsItemMask, officeId);
         });
+    }
+
+    @Override
+    public boolean supports369MonthDurations() {
+        AtomicBoolean result = new AtomicBoolean(false);
+        connection(dsl, connection -> {
+           Record1<Integer> countRec = dsl.select(count())
+               .from(CWMS_DURATION.CWMS_DURATION)
+               .where(CWMS_DURATION.CWMS_DURATION.DURATION_ID.eq("3Month")).fetchOne();
+           Integer count = countRec.getValue(0, Integer.class);
+           if (count != null && count > 0) {
+               result.set(true);
+           }
+        });
+        return result.get();
     }
 
 

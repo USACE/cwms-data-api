@@ -32,12 +32,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.codahale.metrics.MetricRegistry;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cwms.cda.CwmsDataApi;
 import cwms.cda.data.dao.StoreRule;
+import cwms.cda.data.dao.TimeSeriesDao;
+import cwms.cda.data.dao.TimeSeriesDaoImpl;
 import cwms.cda.data.dao.VerticalDatum;
 import cwms.cda.data.dto.TimeSeries;
 import cwms.cda.data.dto.VerticalDatumInfo;
@@ -53,6 +58,15 @@ import io.restassured.path.json.config.JsonPathConfig;
 import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import io.restassured.response.ValidatableResponse;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import mil.army.usace.hec.test.database.CwmsDatabaseContainer;
 import org.apache.commons.io.IOUtils;
 import org.jooq.DSLContext;
@@ -62,15 +76,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import usace.cwms.db.jooq.codegen.packages.CWMS_LOC_PACKAGE;
-
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 @Tag("integration")
 final class TimeseriesControllerTestIT extends DataApiTestIT {
@@ -2885,6 +2890,94 @@ final class TimeseriesControllerTestIT extends DataApiTestIT {
         }
     }
 
+    @Test
+    void test_create_ts_new_durations_unsupported() throws Exception {
+        assumeFalse(supports369MonthDurations());
 
+        ObjectMapper mapper = new ObjectMapper();
 
+        InputStream resource = this.getClass().getResourceAsStream(
+            "/cwms/cda/api/lrl/1day_offset_new_duration.json");
+        assertNotNull(resource);
+
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_BAD_REQUEST))
+            .body("details.message", equalTo("INVALID Time Series Identifier "
+                + "Buckhorn.Temp-Water.Inst.1Day.3Month.cda-test: No such duration"));
+    }
+
+    @Test
+    void test_create_ts_new_durations_supported() throws Exception {
+        assumeTrue(supports369MonthDurations());
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        InputStream resource = this.getClass().getResourceAsStream(
+            "/cwms/cda/api/lrl/1day_offset_new_duration.json");
+        assertNotNull(resource);
+
+        String tsData = IOUtils.toString(resource, StandardCharsets.UTF_8);
+
+        JsonNode ts = mapper.readTree(tsData);
+        String location = ts.get(NAME).asText().split("\\.")[0];
+        String officeId = ts.get("office-id").asText();
+        createLocation(location, true, officeId);
+
+        TestAccounts.KeyUser user = TestAccounts.KeyUser.SPK_NORMAL;
+
+        // inserting the time series
+        given()
+            .log().ifValidationFails(LogDetail.ALL, true)
+            .accept(Formats.JSONV2)
+            .contentType(Formats.JSONV2)
+            .body(tsData)
+            .header("Authorization", user.toHeaderValue())
+            .queryParam(OFFICE, officeId)
+        .when()
+            .redirects().follow(true)
+            .redirects().max(3)
+            .post("/timeseries/")
+        .then()
+            .log().ifValidationFails(LogDetail.ALL, true)
+        .assertThat()
+            .statusCode(is(HttpServletResponse.SC_OK));
+    }
+
+    private boolean supports369MonthDurations() {
+        AtomicBoolean supported = new AtomicBoolean(false);
+        CwmsDatabaseContainer<?> db = CwmsDataApiSetupCallback.getDatabaseLink();
+        try {
+            db.connection(c -> {
+                DSLContext context = dslContext(c);
+                TimeSeriesDao dao = new TimeSeriesDaoImpl(context, new MetricRegistry());
+                supported.set(dao.supports369MonthDurations());
+            }, "cwms_20");
+        } catch (SQLException e) {
+            return false;
+        }
+        return supported.get();
+    }
 }
