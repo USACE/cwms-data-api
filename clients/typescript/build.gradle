@@ -5,7 +5,11 @@ import org.openapitools.generator.gradle.plugin.tasks.ValidateTask
 
 plugins {
     id 'base'
+    id 'cda.version-conventions'
     id 'com.github.node-gradle.node' version '7.1.0'
+    // The below is triggering one gradle warning about Configuration.setVisible.
+    // The explicit call is found in the OpenAPiGeneratorPlugin source.
+    // Thus it would appear we must wait for an upstream fix.
     id 'org.openapi.generator' version '7.25.0'
 }
 
@@ -38,8 +42,8 @@ tasks.register('cleanGeneration', Delete) {
 clean.dependsOn cleanGeneration
 
 tasks.register('copyOpenApiSpec') {
-    group 'openapi'
-    description 'Copy the locally generated CDA OpenAPI spec into the TypeScript client workspace.'
+    group = 'openapi'
+    description = 'Copy the locally generated CDA OpenAPI spec into the TypeScript client workspace.'
     dependsOn ':cwms-data-api:compileJava'
     inputs.file "$rootDir/cwms-data-api/build/classes/java/main/openapi-plugin/openapi-default.json"
     outputs.file rawSpecFile
@@ -53,8 +57,8 @@ tasks.register('copyOpenApiSpec') {
 }
 
 tasks.register('modSpec', NpxTask) {
-    group 'openapi'
-    description 'Apply TypeScript client adjustments to the CDA OpenAPI spec.'
+    group = 'openapi'
+    description = 'Apply TypeScript client adjustments to the CDA OpenAPI spec.'
     dependsOn npmInstall
     dependsOn copyOpenApiSpec
     command = 'npm'
@@ -66,8 +70,8 @@ tasks.register('modSpec', NpxTask) {
 }
 
 tasks.register('validateOpenApiSpec', ValidateTask) {
-    group 'openapi'
-    description 'Validate the adjusted TypeScript client OpenAPI spec.'
+    group = 'openapi'
+    description = 'Validate the adjusted TypeScript client OpenAPI spec.'
     dependsOn modSpec
     inputSpec.set(modifiedSpecFile.asFile)
 }
@@ -92,8 +96,8 @@ tasks.register('generateTypeScriptClient', GenerateTask) {
 }
 
 tasks.register('modPackage', NpxTask) {
-    group 'openapi'
-    description 'Apply package metadata updates to the generated cwmsjs client.'
+    group = 'openapi'
+    description = 'Apply package metadata updates to the generated cwmsjs client.'
     dependsOn npmInstall
     dependsOn generateTypeScriptClient
     command = 'npm'
@@ -106,8 +110,8 @@ tasks.register('modPackage', NpxTask) {
 }
 
 tasks.register('postGenerate', NpxTask) {
-    group 'openapi'
-    description 'Apply source patches required after OpenAPI generation.'
+    group = 'openapi'
+    description = 'Apply source patches required after OpenAPI generation.'
     dependsOn modPackage
     command = 'npm'
     args = ['run', 'postGenerate']
@@ -117,8 +121,8 @@ tasks.register('postGenerate', NpxTask) {
 }
 
 tasks.register('installGeneratedClient', NpxTask) {
-    group 'build'
-    description 'Install dependencies for the generated cwmsjs client.'
+    group = 'build'
+    description = 'Install dependencies for the generated cwmsjs client.'
     dependsOn postGenerate
     workingDir = generatedClientDir.asFile
     command = 'npm'
@@ -128,8 +132,8 @@ tasks.register('installGeneratedClient', NpxTask) {
 }
 
 tasks.register('buildTypeScriptClient', NpxTask) {
-    group 'build'
-    description 'Compile the generated cwmsjs TypeScript client.'
+    group = 'build'
+    description = 'Compile the generated cwmsjs TypeScript client.'
     dependsOn installGeneratedClient
     workingDir = generatedClientDir.asFile
     command = 'npm'
@@ -141,8 +145,8 @@ tasks.register('buildTypeScriptClient', NpxTask) {
 }
 
 tasks.register('buildTypeScriptDocs', NpxTask) {
-    group 'documentation'
-    description 'Build TypeDoc and example documentation for the generated cwmsjs client.'
+    group = 'documentation'
+    description = 'Build TypeDoc and example documentation for the generated cwmsjs client.'
     dependsOn buildTypeScriptClient
     command = 'npm'
     args = ['run', 'buildDocs']

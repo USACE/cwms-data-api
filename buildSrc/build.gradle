@@ -9,4 +9,5 @@ repositories {
 
 dependencies {
     implementation 'org.owasp:dependency-check-gradle:12.2.2'
+    implementation 'com.palantir.git-version:com.palantir.git-version.gradle.plugin:5.1.0'
 }

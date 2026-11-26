@@ -1,6 +1,7 @@
 plugins {
     id 'cda.deps-conventions'
     id 'cda.java-conventions'
+    id 'cda.version-conventions'
 }
 
 dependencies {    

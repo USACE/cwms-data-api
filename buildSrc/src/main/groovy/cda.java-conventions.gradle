@@ -3,6 +3,8 @@ plugins {
     id 'checkstyle'
     id 'jacoco'
     id 'org.owasp.dependencycheck'
+    id 'eclipse'
+    id 'idea'
 }
 
 eclipse {
