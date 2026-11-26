@@ -5,12 +5,18 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import cwms.cda.data.dto.rating.document.HeightShiftsElement;
+import cwms.cda.data.dto.rating.document.IndParameterSpecElement;
+import cwms.cda.data.dto.rating.document.PointElement;
 import cwms.cda.data.dto.rating.document.PositionalValueElement;
 import cwms.cda.data.dto.rating.document.RatingPointsElement;
 import cwms.cda.data.dto.rating.document.RatingSpecElement;
+import cwms.cda.data.dto.rating.document.RatingTemplateElement;
 import cwms.cda.data.dto.rating.document.RatingsDocument;
 import cwms.cda.data.dto.rating.document.SimpleRatingElement;
+import cwms.cda.data.dto.rating.document.SourceRatingElement;
 import cwms.cda.data.dto.rating.document.TransitionalRatingElement;
+import cwms.cda.data.dto.rating.document.UsgsStreamRatingElement;
 import cwms.cda.data.dto.rating.document.VirtualRatingElement;
 import hec.data.RatingException;
 import hec.data.cwmsRating.RatingSet;
@@ -19,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import mil.army.usace.hec.cwms.rating.io.xml.RatingXmlFactory;
@@ -370,6 +377,253 @@ public class JsonRatingUtilsTest
     void test_unknown_field_rejected() {
         String json = "{\"simple-rating\": {\"office-id\": \"SWT\", \"not-a-field\": \"x\"}}";
         assertThrows(IOException.class, () -> JsonRatingUtils.readJson(json));
+    }
+
+    @Test
+    void test_read_retrieved_ratings_json() throws IOException, RatingException {
+        // json as returned by GET /ratings
+        String json = loadResourceAsString("cwms/cda/data/dto/rating/rating_post.json");
+        RatingsDocument ratings = JsonRatingUtils.readJson(json);
+
+        RatingTemplateElement template = ratings.getRatingTemplates().get(0);
+        assertEquals("SPK", template.getOfficeId());
+        assertEquals("Stage;Flow", template.getParametersId());
+        assertEquals("EXSA", template.getVersion());
+        assertEquals("Flow", template.getDepParameter());
+        assertEquals("", template.getDescription());
+        IndParameterSpecElement indSpec = template.getIndParameterSpecs().getIndParameterSpecs().get(0);
+        assertEquals("1", indSpec.getPosition());
+        assertEquals("Stage", indSpec.getParameter());
+        assertEquals("LINEAR", indSpec.getInRangeMethod());
+        assertEquals("NEAREST", indSpec.getOutRangeLowMethod());
+        assertEquals("NEAREST", indSpec.getOutRangeHighMethod());
+
+        RatingSpecElement spec = ratings.getRatingSpecs().get(0);
+        assertEquals("SPK", spec.getOfficeId());
+        assertEquals("FSMI.Stage;Flow.EXSA.PRODUCTION", spec.getRatingSpecId());
+        assertEquals("Stage;Flow.EXSA", spec.getTemplateId());
+        assertEquals("FSMI", spec.getLocationId());
+        assertEquals("PRODUCTION", spec.getVersion());
+        assertEquals("", spec.getSourceAgency());
+        assertEquals("PREVIOUS", spec.getInRangeMethod());
+        assertEquals("NEAREST", spec.getOutRangeLowMethod());
+        assertEquals("PREVIOUS", spec.getOutRangeHighMethod());
+        assertEquals("true", spec.getActive());
+        assertEquals("false", spec.getAutoUpdate());
+        PositionalValueElement indRounding = spec.getIndRoundingSpecs().getIndRoundingSpecs().get(0);
+        assertEquals("1", indRounding.getPosition());
+        assertEquals("2223456784", indRounding.getValue());
+        assertEquals("2223456784", spec.getDepRoundingSpec());
+
+        SimpleRatingElement simple = ratings.getSimpleRatings().get(0);
+        assertEquals("SPK", simple.getOfficeId());
+        assertEquals("FSMI.Stage;Flow.EXSA.PRODUCTION", simple.getRatingSpecId());
+        assertEquals("ft;cfs", simple.getUnitsId());
+        assertEquals("2007-07-11T20:38:00Z", simple.getEffectiveDate());
+        assertEquals("true", simple.getActive());
+        assertEquals(1, simple.getRatingPoints().size());
+        assertNull(simple.getRatingPoints().get(0).getOtherInds());
+        List<PointElement> points = simple.getRatingPoints().get(0).getPoints();
+        assertEquals(12, points.size());
+        assertEquals("17", points.get(0).getInd());
+        assertEquals("114000", points.get(0).getDep());
+        assertEquals("18.75", points.get(1).getInd());
+        assertEquals("520000", points.get(11).getDep());
+
+        String dbXml = JsonRatingUtils.writeXml(ratings);
+        assertTrue(dbXml.contains("<rating-template office-id=\"SPK\">"));
+        assertTrue(dbXml.contains("<rating-spec office-id=\"SPK\">"));
+        assertTrue(dbXml.contains("<simple-rating office-id=\"SPK\">"));
+        assertTrue(dbXml.contains("<ind-rounding-spec position=\"1\">2223456784</ind-rounding-spec>"));
+        assertFalse(dbXml.contains("query-info"));
+
+        RatingSet ratingSet = JsonRatingUtils.toRatingSet(ratings);
+        assertEquals("FSMI.Stage;Flow.EXSA.PRODUCTION", ratingSet.getRatingSpec().getRatingSpecId());
+    }
+
+    @Test
+    void test_read_retrieved_ratings_json_multiple_independent() throws IOException {
+        String json = loadRetrieved("multiple_independent.json");
+
+        SimpleRatingElement simple = JsonRatingUtils.readJson(json).getSimpleRatings().get(0);
+        assertEquals("ft,ft;cfs", simple.getUnitsId());
+        assertEquals(2, simple.getRatingPoints().size());
+        RatingPointsElement second = simple.getRatingPoints().get(1);
+        assertEquals("1", second.getOtherInds().get(0).getPosition());
+        assertEquals("2", second.getOtherInds().get(0).getValue());
+        assertEquals(2, second.getPoints().size());
+        assertEquals("101", second.getPoints().get(1).getInd());
+        assertEquals("40", second.getPoints().get(1).getDep());
+    }
+
+    @Test
+    void test_read_retrieved_ratings_json_rejects_bad_rows() {
+        String json = "{\"ratings\": {\"ratings\": [{\"simple-rating\": {"
+                + "\"name\": \"A.Stage;Flow.Linear.Production\", \"ind-parameters\": [\"Stage (ft)\"],"
+                + "\"dep-parameter\": \"Flow (cfs)\", \"values\": [[1, 2, 3]]}}]}}";
+        assertThrows(IOException.class, () -> JsonRatingUtils.readJson(json));
+    }
+
+    @Test
+    void test_read_retrieved_ratings_json_rejects_lossy_multiple_independent() {
+        // Ratings_v1_to_RADAR_json.xsl drops the other-ind values, leaving [ind, dep] rows
+        String json = "{\"ratings\": {\"ratings\": [{\"simple-rating\": {"
+                + "\"name\": \"A.Opening,Elev;Flow.Standard.Production\","
+                + "\"ind-parameters\": [\"Opening (ft)\", \"Elev (ft)\"], \"dep-parameter\": \"Flow (cfs)\","
+                + "\"values\": [[100, 10], [101, 20]]}}]}}";
+        IOException ex = assertThrows(IOException.class, () -> JsonRatingUtils.readJson(json));
+        assertTrue(ex.getMessage().contains("GET /ratings/{rating-id}"));
+    }
+
+    @Test
+    void test_read_retrieved_ratings_json_rejects_unknown_rating_type() {
+        String json = "{\"ratings\": {\"ratings\": [{\"not-a-rating\": "
+                + "{\"name\": \"A.Stage;Flow.Linear.Production\"}}]}}";
+        assertThrows(IOException.class, () -> JsonRatingUtils.readJson(json));
+    }
+
+    @Test
+    void test_read_retrieved_ratings_json_rejects_error() {
+        String json = "{\"ratings\":{\"error\":\"Query exceeded maximum time of +00 00:00:30\"}}";
+        IOException ex = assertThrows(IOException.class, () -> JsonRatingUtils.readJson(json));
+        assertTrue(ex.getMessage().contains("Query exceeded maximum time"));
+    }
+
+    @Test
+    void test_read_retrieved_simple_rating_formula_notes_and_datum() throws IOException {
+        String json = loadRetrieved("simple_formula_notes_datum.json");
+
+        List<SimpleRatingElement> ratings = JsonRatingUtils.readJson(json).getSimpleRatings();
+        SimpleRatingElement table = ratings.get(0);
+        assertEquals("ft;ac-ft", table.getUnitsId());
+        List<PointElement> points = table.getRatingPoints().get(0).getPoints();
+        assertNull(points.get(0).getNote());
+        assertEquals("510", points.get(1).getInd());
+        assertEquals("spillway", points.get(1).getNote());
+
+        SimpleRatingElement formula = ratings.get(1);
+        assertEquals("i1 * 2", formula.getFormula());
+        assertNull(formula.getRatingPoints());
+    }
+
+    @Test
+    void test_read_retrieved_usgs_stream_rating() throws IOException, RatingException {
+        String json = loadResourceAsString("cwms/cda/data/dto/rating/rating_post_usgs.json");
+        RatingsDocument ratings = JsonRatingUtils.readJson(json);
+
+        assertEquals("LOGARITHMIC", ratings.getRatingTemplates().get(0).getIndParameterSpecs()
+                .getIndParameterSpecs().get(0).getInRangeMethod());
+        assertEquals("USGS", ratings.getRatingSpecs().get(0).getSourceAgency());
+
+        UsgsStreamRatingElement usgs = ratings.getUsgsStreamRatings().get(0);
+        assertEquals("SPK", usgs.getOfficeId());
+        assertEquals("USGSTEST.Stage;Flow.USGS-EXSA.USGS-NWIS", usgs.getRatingSpecId());
+        assertEquals("ft;cfs", usgs.getUnitsId());
+        assertEquals("2020-01-01T00:00:00Z", usgs.getEffectiveDate());
+        assertEquals("true", usgs.getActive());
+
+        HeightShiftsElement shift = usgs.getHeightShifts().get(0);
+        assertEquals("2020-06-01T00:00:00Z", shift.getEffectiveDate());
+        assertEquals(2, shift.getPoints().size());
+        assertEquals("5", shift.getPoints().get(1).getInd());
+        assertEquals("0.2", shift.getPoints().get(1).getDep());
+        assertEquals("MANUAL", shift.getPoints().get(1).getNote());
+
+        assertEquals("0.5", usgs.getHeightOffsets().getPoints().get(0).getDep());
+
+        List<PointElement> points = usgs.getRatingPoints().get(0).getPoints();
+        assertEquals(4, points.size());
+        assertEquals("0.6", points.get(0).getInd());
+        assertEquals("300", points.get(3).getDep());
+        assertEquals("BASE", points.get(3).getNote());
+        assertNull(ratings.getSimpleRatings());
+
+        String dbXml = JsonRatingUtils.writeXml(ratings);
+        assertTrue(dbXml.contains("<usgs-stream-rating office-id=\"SPK\">"));
+        assertTrue(dbXml.contains("<height-shifts>"));
+        assertTrue(dbXml.contains("<height-offsets>"));
+
+        RatingSet ratingSet = JsonRatingUtils.toRatingSet(ratings);
+        assertEquals("USGSTEST.Stage;Flow.USGS-EXSA.USGS-NWIS", ratingSet.getRatingSpec().getRatingSpecId());
+    }
+
+    @Test
+    void test_read_retrieved_usgs_stream_rating_without_points() throws IOException {
+        // A rating holding only shifts for an existing base curve
+        String json = loadRetrieved("usgs_without_points.json");
+
+        RatingsDocument ratings = JsonRatingUtils.readJson(json);
+        UsgsStreamRatingElement usgs = ratings.getUsgsStreamRatings().get(0);
+        assertNull(usgs.getHeightOffsets().getPoints());
+        assertNull(usgs.getRatingPoints().get(0).getPoints());
+
+        String dbXml = JsonRatingUtils.writeXml(ratings);
+        assertTrue(dbXml.contains("<height-offsets/>"));
+        assertTrue(dbXml.contains("<rating-points/>"));
+    }
+
+    @Test
+    void test_read_retrieved_virtual_rating() throws IOException {
+        String json = loadRetrieved("virtual.json");
+
+        RatingsDocument ratings = JsonRatingUtils.readJson(json);
+        VirtualRatingElement virtual = ratings.getVirtualRatings().get(0);
+        assertEquals("SWT", virtual.getOfficeId());
+        assertEquals("A.Elev;Flow.Virtual.Production", virtual.getRatingSpecId());
+        assertEquals("R2I1=R1D,R3I1=R2D", virtual.getConnections());
+
+        List<SourceRatingElement> sources = virtual.getSourceRatings().getSourceRatings();
+        assertEquals(3, sources.size());
+        assertEquals("1", sources.get(0).getPosition());
+        assertEquals("A.Elev;Stage.Linear.Production {ft;ft}", sources.get(0).getRatingSpecId());
+        assertNull(sources.get(0).getRatingExpression());
+        assertEquals("2", sources.get(1).getPosition());
+        assertEquals("I1 * 2.5 {ft;cfs}", sources.get(1).getRatingExpression());
+        assertNull(sources.get(1).getRatingSpecId());
+        assertEquals("A.Flow;Flow.Linear.Production {cfs;cfs}", sources.get(2).getRatingSpecId());
+
+        String dbXml = JsonRatingUtils.writeXml(ratings);
+        assertTrue(dbXml.contains("<source-rating position=\"2\">"));
+        assertTrue(dbXml.contains("<rating-expression>I1 * 2.5 {ft;cfs}</rating-expression>"));
+    }
+
+    @Test
+    void test_read_retrieved_transitional_rating() throws IOException {
+        String json = loadRetrieved("transitional.json");
+
+        RatingsDocument ratings = JsonRatingUtils.readJson(json);
+        TransitionalRatingElement transitional = ratings.getTransitionalRatings().get(0);
+        assertEquals("SWT", transitional.getOfficeId());
+        assertEquals("ft;cfs", transitional.getUnitsId());
+        assertEquals("1900-01-01T06:00:00Z", transitional.getEffectiveDate());
+        assertEquals(2, transitional.getSelect().getCases().size());
+        assertEquals("2", transitional.getSelect().getCases().get(1).getPosition());
+        assertEquals("I1 GT 10", transitional.getSelect().getCases().get(1).getWhen());
+        assertEquals("R2", transitional.getSelect().getCases().get(1).getThen());
+        assertEquals("R2", transitional.getSelect().getDefault());
+        List<PositionalValueElement> sources = transitional.getSourceRatings().getRatingSpecIds();
+        assertEquals("1", sources.get(0).getPosition());
+        assertEquals("A.Stage;Flow.Linear.Dummy", sources.get(0).getValue());
+        assertEquals("2", sources.get(1).getPosition());
+        assertEquals("A.Stage;Flow.Linear.Production", sources.get(1).getValue());
+
+        String dbXml = JsonRatingUtils.writeXml(ratings);
+        assertTrue(dbXml.contains("<rating-spec-id position=\"2\">A.Stage;Flow.Linear.Production</rating-spec-id>"));
+    }
+
+    @Test
+    void test_read_retrieved_mixed_rating_types() throws IOException {
+        String json = loadRetrieved("mixed_types.json");
+
+        RatingsDocument ratings = JsonRatingUtils.readJson(json);
+        assertEquals(1, ratings.getSimpleRatings().size());
+        assertEquals(1, ratings.getTransitionalRatings().size());
+        assertNull(ratings.getTransitionalRatings().get(0).getSelect().getCases());
+    }
+
+    // json in the format returned by GET /ratings
+    private static String loadRetrieved(String fileName) throws IOException {
+        return loadResourceAsString("cwms/cda/data/dto/rating/retrieved/" + fileName);
     }
 
 }
